@@ -31,11 +31,35 @@
         "action": "DoNothing",
         "timeout": -1,
         "next": [
+            "HandleCloseAnnouncement",
+            "HandleEnterGame",
             "HandleShellPage",
             "CloseFeedPopup",
             "TriggerStarfishFeed",
             "CheckDutyCycle",
             "ClickFishBubble"
+        ]
+    },
+    "HandleCloseAnnouncement": {
+        "recognition": "TemplateMatch",
+        "template": "关闭公告.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 500,
+        "timeout": -1,
+        "next": [
+            "ResumeHarvest"
+        ]
+    },
+    "HandleEnterGame": {
+        "recognition": "TemplateMatch",
+        "template": "进入游戏.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2000,
+        "timeout": -1,
+        "next": [
+            "ResumeHarvest"
         ]
     },
     "ClickFishBubble": {
@@ -73,6 +97,8 @@
             "Node.Recognition.Succeeded": "[巡检收宝] 进入休眠等待，暂停收宝..."
         },
         "next": [
+            "HandleCloseAnnouncement",
+            "HandleEnterGame",
             "HandleShellPage",
             "CloseFeedPopup",
             "TriggerStarfishFeed",
@@ -140,10 +166,13 @@
     "OpenSettingsForStarfish": {
         "recognition": "DirectHit",
         "action": "DoNothing",
-        "timeout": 5000,
+        "timeout": 3000,
         "next": [
             "DismissFishBannerIfOpen",
             "ClickSettingsIcon"
+        ],
+        "on_error": [
+            "ResumeHarvest"
         ]
     },
     "DismissFishBannerIfOpen": {
@@ -177,7 +206,7 @@
             "SelectCuteStarfish"
         ],
         "on_error": [
-            "OpenSettingsForStarfish"
+            "ResumeHarvest"
         ]
     },
     "SelectCuteStarfish": {
@@ -190,7 +219,7 @@
             "ClickReplenishFood"
         ],
         "on_error": [
-            "OpenSettingsForStarfish"
+            "StarfishReturnFirst"
         ]
     },
     "ClickReplenishFood": {
@@ -304,7 +333,7 @@
             "SelectCuteStarfish_Standalone"
         ],
         "on_error": [
-            "FeedStarfishStandalone"
+            "StarfishReturnFirst_Standalone"
         ]
     },
     "SelectCuteStarfish_Standalone": {
@@ -317,7 +346,7 @@
             "ClickReplenishFood_Standalone"
         ],
         "on_error": [
-            "FeedStarfishStandalone"
+            "StarfishReturnFirst_Standalone"
         ]
     },
     "ClickReplenishFood_Standalone": {

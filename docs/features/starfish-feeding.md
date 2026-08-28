@@ -32,14 +32,18 @@ ResumeHarvest (万能返回节点)
 - **背景**: 游戏内频繁点击水域会触发鱼的详细信息横幅，遮挡主要 UI。
 - **设计**: 不使用随机点击水域来取消焦点，使用 `DismissFishBannerIfOpen` 挂机 `4.5s` (idle)，等待横幅自然超时消失。
 
-## 坑点记录 (Pitfalls)
-1. **Pipeline 节点超时重置**
-   - **现象**: 喂食定时器死活不触发。
-   - **修复**: 废弃 Pipeline 内部 timeout 定时，全量迁移到 Python 侧计算时间差。
-2. **深层返回路径崩溃**
-   - **现象**: 喂食完毕退出到主界面的 `StarfishReturnSecond` 配置了 3000ms 超时，未识别到气泡直接导致任务失败。
-   - **修复**: 在其后接上 `ResumeHarvest` (timeout:-1) 作为缓冲安全垫，保障容错。
+## 迭代与 Debug 因果日志
+
+### 2026-08-28 · 海星喂食 on_error 死循环狂点左上角导致游戏退出
+- **现象**: 挂机运行一段时间后游戏异常退出回到模拟器桌面，MFA 仍在运行但反复报错。日志分析显示 20:17~21:26 期间产生了 21,000+ 次对左上角 `[110, 30, 50, 50]` 的密集点击。
+- **根因**: `ClickSettingsIcon` 和 `SelectCuteStarfish` 的 `on_error` 指向了 `OpenSettingsForStarfish`，一旦某次 OCR 识别「萌海星」失败，会引发死循环无限重试点击左上角，高频事件堆积或点到系统退出区域导致游戏崩溃/退至桌面。
+- **修复**: 
+  1. 彻底切断喂食流程内部的错误递归，`ClickSettingsIcon.on_error` 和 `OpenSettingsForStarfish.on_error` 一律熔断退出至 `ResumeHarvest`；
+  2. `SelectCuteStarfish.on_error` 及后续节点失败时仅执行一次 `StarfishReturnFirst` 退出设置弹窗后回归主干；
+  3. 主干 `ResumeHarvest` 调度链加入 `HandleCloseAnnouncement` 与 `HandleEnterGame` 自动恢复。
+- **回归**: 验证任一节点识别失败均安全熔断返回 `ResumeHarvest`，不再产生高频连击。
 
 ## 当前状态
-- **状态**: 生产就绪，稳定运行。
+- **状态**: 生产就绪，安全熔断已加固。
 - **关键文件**: `agent/my_reco.py` (`CheckStarfishTimerReco`), `assets/resource/pipeline/collect_fish.json`
+
