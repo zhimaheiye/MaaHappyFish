@@ -452,3 +452,10 @@ tools/ImageCropper/**/*.png
 
 config
 debug
+
+# Clients and logs
+client/
+client_avalonia/
+logs/
+temp/
+*.log

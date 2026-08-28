@@ -1,105 +1,283 @@
-{
-    // 本文件主要定义了通用 UI 的行为和显示内容
-    // 可参考文档和示例添加更多您需要的功能
-    // 文档：https://maafw.xyz/docs/3.3-ProjectInterfaceV2
-    // 示例：https://github.com/MaaXYZ/MaaFramework/blob/main/sample/interface.json
+﻿{
     "interface_version": 2,
-    "name": "MaaXXX",
-    "description": "这是一个使用 MaaFramework 创建的新项目。",
-    "contact": "QQ群: 123456789",
-    "license": "MIT",
-    "welcome": "首次使用！欢迎使用 MAA!",
-    // 填写项目地址和版本号可实现自动更新功能
-    "github": "https://github.com/MaaXYZ/MaaPracticeBoilerplate",
+    "name": "HappyFishHelper",
+    "label": "开心水族箱小助手",
+    "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
     "version": "1.0.0",
-    // Mirror酱为第三方分发服务，新项目默认关闭
-    // 若有需要请联系 Mirror酱 开通，直接自行开启是无法使用的
-    // "mirrorchyan_rid": "MaaXXX",
-    // "mirrorchyan_multiplatform": true,
+    "agent": {
+        "child_exec": "python",
+        "child_args": [
+            "-u",
+            "./agent/main.py"
+        ]
+    },
     "controller": [
         {
-            "name": "安卓端",
+            "name": "Android",
+            "label": "安卓端",
             "type": "Adb",
-            "display_short_side": 720 // 默认缩放分辨率的短边长度
+            "display_short_side": 720
         },
         {
-            "name": "桌面端",
+            "name": "Windows",
+            "label": "桌面端",
             "type": "Win32",
             "win32": {
                 "class_regex": ".*",
-                "window_regex": "Visual Studio",
-                // 截图及控制方式，请根据项目实际情况修改
-                // 文档: https://maafw.xyz/docs/2.4-ControlMethods
-                "screencap": "PrintWindow", // 截图方式
-                "mouse": "PostMessageWithCursorPos", // 鼠标控制方式
-                "keyboard": "PostMessageWithCursorPos" // 键盘控制方式
+                "window_regex": ".*",
+                "screencap": "PrintWindow",
+                "mouse": "PostMessageWithCursorPos",
+                "keyboard": "PostMessageWithCursorPos"
             }
         }
     ],
     "resource": [
         {
-            "name": "官服",
+            "name": "Default",
+            "label": "OPPO服",
             "path": [
                 "./resource"
-            ]
-        },
-        {
-            "name": "B 服",
-            "path": [
-                "./resource"
-                // "./resource_bilibili"
             ]
         }
     ],
-    // 可选的 agent 示例
-    // "agent": {
-    //     "child_exec": "python",
-    //     "child_args": [
-    //         "./agent/main.py"
-    //     ]
-    // },
     "task": [
         {
-            "name": "普通任务",
-            "entry": "MyTask1"
+            "name": "启动游戏",
+            "entry": "StartAppTask",
+            "default_check": false,
+            "description": "自动启动开心水族箱并等待进入主界面"
         },
         {
-            "name": "选项任务",
-            "entry": "MyTask2",
+            "name": "日常签到",
+            "entry": "DailySignTask",
+            "default_check": false,
+            "description": "自动完成每日签到与领奖"
+        },
+        {
+            "name": "收鱼产物",
+            "entry": "CollectFishTask",
+            "default_check": true,
+            "description": "在鱼缸内循环收宝，支持按周期巡检收宝(每次收2分钟)或持续收宝、海星自动喂食与鱼食预算提醒",
             "option": [
-                "任务选项1"
+                "挂机鱼食计算",
+                "巡检收宝间隔",
+                "喂食间隔"
             ]
         },
         {
-            "name": "参数任务",
-            "entry": "MyTask3",
-            "option": [
-                "任务选项1"
-            ],
-            "pipeline_override": {}
-        },
-        {
-            "name": "带Custom的任务",
-            "entry": "MyTask4"
+            "name": "海星喂食(单次)",
+            "entry": "FeedStarfishStandalone",
+            "default_check": false,
+            "description": "单独执行一次：打开设置 -> 选中萌海星 -> 补充鱼食 -> 返回鱼缸"
         }
     ],
     "option": {
-        "任务选项1": {
+        "挂机鱼食计算": {
+            "type": "input",
+            "label": "挂机鱼食预算计算",
+            "description": "根据海星当前存粮与目标挂机时间，自动计算并提醒所需鱼食量",
+            "inputs": [
+                {
+                    "name": "海星容量",
+                    "label": "海星单次容量(粒)",
+                    "default": "100",
+                    "pipeline_type": "int",
+                    "verify": "^\\d+$"
+                },
+                {
+                    "name": "当前可用时长",
+                    "label": "当前存粮可用时长(分钟)",
+                    "default": "120",
+                    "pipeline_type": "int",
+                    "verify": "^\\d+$"
+                },
+                {
+                    "name": "目标整点",
+                    "label": "计划挂机到几点(0-23整点)",
+                    "default": "8",
+                    "pipeline_type": "int",
+                    "verify": "^([0-9]|1[0-9]|2[0-3])$"
+                }
+            ],
+            "pipeline_override": {
+                "CollectFishTask": {
+                    "custom_action_param": {
+                        "capacity": "{海星容量}",
+                        "current_duration": "{当前可用时长}",
+                        "target_hour": "{目标整点}"
+                    }
+                }
+            }
+        },
+        "巡检收宝间隔": {
             "type": "select",
+            "label": "巡检收宝间隔",
+            "description": "设置每隔多久激活一次鱼缸收宝(每次收宝2分钟)；选「持续实时」则全天不间断收宝",
+            "default_case": "持续实时",
             "cases": [
                 {
-                    "name": "文本1",
+                    "name": "持续实时",
                     "pipeline_override": {
-                        "OcrTask": {
-                            "text": "文本1"
+                        "CheckDutyCycle": {
+                            "custom_recognition_param": {
+                                "idle_interval": 0,
+                                "active_duration": 120
+                            }
                         }
                     }
                 },
                 {
-                    "name": "文本2",
+                    "name": "30秒(测试用)",
                     "pipeline_override": {
-                        "OcrTask": {
-                            "text": "文本2"
+                        "CheckDutyCycle": {
+                            "custom_recognition_param": {
+                                "idle_interval": 30,
+                                "active_duration": 120
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "1分钟(测试用)",
+                    "pipeline_override": {
+                        "CheckDutyCycle": {
+                            "custom_recognition_param": {
+                                "idle_interval": 60,
+                                "active_duration": 120
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "5分钟",
+                    "pipeline_override": {
+                        "CheckDutyCycle": {
+                            "custom_recognition_param": {
+                                "idle_interval": 300,
+                                "active_duration": 120
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "10分钟",
+                    "pipeline_override": {
+                        "CheckDutyCycle": {
+                            "custom_recognition_param": {
+                                "idle_interval": 600,
+                                "active_duration": 120
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "15分钟",
+                    "pipeline_override": {
+                        "CheckDutyCycle": {
+                            "custom_recognition_param": {
+                                "idle_interval": 900,
+                                "active_duration": 120
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "20分钟",
+                    "pipeline_override": {
+                        "CheckDutyCycle": {
+                            "custom_recognition_param": {
+                                "idle_interval": 1200,
+                                "active_duration": 120
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "30分钟",
+                    "pipeline_override": {
+                        "CheckDutyCycle": {
+                            "custom_recognition_param": {
+                                "idle_interval": 1800,
+                                "active_duration": 120
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "喂食间隔": {
+            "type": "select",
+            "label": "海星喂食间隔",
+            "description": "设置每隔多久通过萌海星集中补充一次鱼食",
+            "default_case": "10分钟",
+            "cases": [
+                {
+                    "name": "30秒(测试用)",
+                    "pipeline_override": {
+                        "TriggerStarfishFeed": {
+                            "custom_recognition_param": {
+                                "interval": 30
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "1分钟",
+                    "pipeline_override": {
+                        "TriggerStarfishFeed": {
+                            "custom_recognition_param": {
+                                "interval": 60
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "5分钟",
+                    "pipeline_override": {
+                        "TriggerStarfishFeed": {
+                            "custom_recognition_param": {
+                                "interval": 300
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "10分钟",
+                    "pipeline_override": {
+                        "TriggerStarfishFeed": {
+                            "custom_recognition_param": {
+                                "interval": 600
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "15分钟",
+                    "pipeline_override": {
+                        "TriggerStarfishFeed": {
+                            "custom_recognition_param": {
+                                "interval": 900
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "30分钟",
+                    "pipeline_override": {
+                        "TriggerStarfishFeed": {
+                            "custom_recognition_param": {
+                                "interval": 1800
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "不喂食",
+                    "pipeline_override": {
+                        "TriggerStarfishFeed": {
+                            "custom_recognition_param": {
+                                "interval": -1
+                            }
                         }
                     }
                 }
