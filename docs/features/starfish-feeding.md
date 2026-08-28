@@ -43,7 +43,17 @@ ResumeHarvest (万能返回节点)
   3. 主干 `ResumeHarvest` 调度链加入 `HandleCloseAnnouncement` 与 `HandleEnterGame` 自动恢复。
 - **回归**: 验证任一节点识别失败均安全熔断返回 `ResumeHarvest`，不再产生高频连击。
 
+### 2026-08-28 · 海星喂食动作节奏全链路延时与稳定性加固
+- **现象**: 实机运行时，进入海星页面后偶尔在加号尚未完全淡入展开时过快触发了左上角「返回」，导致喂食未完成就退出。
+- **根因**: 原配置中 `ClickReplenishFood` 仅等待 800ms，加号动画未完全加载；`ClickAddFoodTarget` 超时较短（5s）且点击后仅等待 600ms，动画未播完即连续快速点击两层返回退出，动作节奏过急。
+- **修复**: 
+  1. `ClickReplenishFood` 的 `post_delay` 提升至 `1800ms`，确保加号充能弹窗充分展开；
+  2. `ClickAddFoodTarget` 的 `timeout` 提升至 `8000ms`，阈值放宽至 `0.7`，点击后 `post_delay` 提升至 `2000ms`，给足加粮充能动画播放时间；
+  3. `StarfishReturnFirst` / `StarfishReturnSecond` 返回动作间隔分别提升至 `1500ms` 与 `2000ms`，确保界面彻底平稳再回归主干收宝。
+- **回归**: 实机全流程动作平稳从容，每个步骤均等动画彻底完成再进行下一步。
+
 ## 当前状态
-- **状态**: 生产就绪，安全熔断已加固。
+- **状态**: 生产就绪，动作延时已加固。
 - **关键文件**: `agent/my_reco.py` (`CheckStarfishTimerReco`), `assets/resource/pipeline/collect_fish.json`
+
 

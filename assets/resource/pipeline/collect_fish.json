@@ -188,7 +188,7 @@
             50,
             50
         ],
-        "post_delay": 1000,
+        "post_delay": 1500,
         "timeout": 3000,
         "next": [
             "SelectCuteStarfish"
@@ -201,8 +201,8 @@
         "recognition": "OCR",
         "expected": "萌海星|萌",
         "action": "Click",
-        "post_delay": 1000,
-        "timeout": 3000,
+        "post_delay": 1500,
+        "timeout": 4000,
         "next": [
             "ClickReplenishFood"
         ],
@@ -214,8 +214,8 @@
         "recognition": "OCR",
         "expected": "补充",
         "action": "Click",
-        "post_delay": 800,
-        "timeout": 5000,
+        "post_delay": 1800,
+        "timeout": 6000,
         "next": [
             "ClickAddFoodTarget"
         ],
@@ -226,7 +226,7 @@
     "ClickAddFoodTarget": {
         "recognition": "TemplateMatch",
         "template": "海星_加号.png",
-        "threshold": 0.75,
+        "threshold": 0.7,
         "action": "Click",
         "target": [
             646,
@@ -234,8 +234,8 @@
             64,
             78
         ],
-        "post_delay": 600,
-        "timeout": 5000,
+        "post_delay": 2000,
+        "timeout": 8000,
         "next": [
             "StarfishReturnFirst"
         ],
@@ -253,8 +253,8 @@
             150
         ],
         "action": "Click",
-        "post_delay": 800,
-        "timeout": 3000,
+        "post_delay": 1500,
+        "timeout": 4000,
         "next": [
             "StarfishReturnSecond"
         ],
@@ -272,8 +272,8 @@
             150
         ],
         "action": "Click",
-        "post_delay": 1000,
-        "timeout": 3000,
+        "post_delay": 2000,
+        "timeout": 4000,
         "next": [
             "ResumeHarvest"
         ],
@@ -315,7 +315,7 @@
             50,
             50
         ],
-        "post_delay": 1000,
+        "post_delay": 1500,
         "timeout": 3000,
         "next": [
             "SelectCuteStarfish_Standalone"
@@ -328,8 +328,8 @@
         "recognition": "OCR",
         "expected": "萌海星|萌",
         "action": "Click",
-        "post_delay": 1000,
-        "timeout": 3000,
+        "post_delay": 1500,
+        "timeout": 4000,
         "next": [
             "ClickReplenishFood_Standalone"
         ],
@@ -341,8 +341,8 @@
         "recognition": "OCR",
         "expected": "补充",
         "action": "Click",
-        "post_delay": 800,
-        "timeout": 5000,
+        "post_delay": 1800,
+        "timeout": 6000,
         "next": [
             "ClickAddFoodTarget_Standalone"
         ],
@@ -353,7 +353,7 @@
     "ClickAddFoodTarget_Standalone": {
         "recognition": "TemplateMatch",
         "template": "海星_加号.png",
-        "threshold": 0.75,
+        "threshold": 0.7,
         "action": "Click",
         "target": [
             646,
@@ -361,8 +361,8 @@
             64,
             78
         ],
-        "post_delay": 600,
-        "timeout": 5000,
+        "post_delay": 2000,
+        "timeout": 8000,
         "next": [
             "StarfishReturnFirst_Standalone"
         ],
@@ -380,8 +380,8 @@
             150
         ],
         "action": "Click",
-        "post_delay": 800,
-        "timeout": 3000,
+        "post_delay": 1500,
+        "timeout": 4000,
         "next": [
             "StarfishReturnSecond_Standalone"
         ],
@@ -399,8 +399,8 @@
             150
         ],
         "action": "Click",
-        "post_delay": 1000,
-        "timeout": 3000,
+        "post_delay": 2000,
+        "timeout": 4000,
         "next": []
     }
 }
