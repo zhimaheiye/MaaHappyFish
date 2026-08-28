@@ -78,10 +78,7 @@ class CalcFishingFoodReco(CustomRecognition):
             print("=" * 55, flush=True)
 
             focus_dict = {
-                "Node.Action.Starting": ui_msg,
-                "Node.Action.Succeeded": ui_msg,
-                "Node.PipelineNode.Succeeded": ui_msg,
-                "Node.Recognition.Succeeded": ui_msg,
+                "Node.Action.Succeeded": ui_msg
             }
 
             try:
@@ -108,10 +105,6 @@ class CheckStarfishTimerReco(CustomRecognition):
     ) -> Optional[RectType]:
         global timer_state
 
-        if not timer_state["is_inited"]:
-            timer_state["last_feed_time"] = time.time()
-            timer_state["is_inited"] = True
-
         param = argv.custom_recognition_param
         if isinstance(param, str) and param:
             try:
@@ -122,6 +115,11 @@ class CheckStarfishTimerReco(CustomRecognition):
                 pass
 
         interval = timer_state["interval_seconds"]
+
+        if not timer_state["is_inited"]:
+            timer_state["last_feed_time"] = time.time()
+            timer_state["is_inited"] = True
+
         if interval <= 0:
             return None
 
@@ -129,11 +127,24 @@ class CheckStarfishTimerReco(CustomRecognition):
         elapsed = now - timer_state["last_feed_time"]
 
         if elapsed >= interval:
+            mins = int(interval / 60) if interval >= 60 else int(interval)
+            unit = "分钟" if interval >= 60 else "秒"
             print("=" * 55, flush=True)
             print(f"[海星喂食] 定时已达! 距上次喂食 {int(elapsed)} 秒 (设定间隔: {int(interval)} 秒)", flush=True)
             print("[海星喂食] 正在触发萌海星自动补充鱼食...", flush=True)
             print("=" * 55, flush=True)
             timer_state["last_feed_time"] = time.time()
+            feed_msg = f"[海星喂食] 设定间隔({mins}{unit})已到达，正在自动补充鱼食..."
+            try:
+                context.override_pipeline({
+                    "TriggerStarfishFeed": {
+                        "focus": {
+                            "Node.Action.Succeeded": feed_msg
+                        }
+                    }
+                })
+            except Exception:
+                pass
             return (0, 0, 10, 10)
 
         return None
@@ -176,6 +187,7 @@ class CheckDutyCycleReco(CustomRecognition):
                 target_dt = now_dt + timedelta(seconds=idle_interval)
                 mins = int(idle_interval / 60) if idle_interval >= 60 else int(idle_interval)
                 unit = "分钟" if idle_interval >= 60 else "秒"
+                msg = f"[巡检收宝] 待机休眠中（间隔 {mins}{unit}），预计 {target_dt.strftime('%H:%M:%S')} 开启首轮收宝"
                 print("-" * 55, flush=True)
                 print(f"[巡检收宝] 任务启动, 默认进入【待机休眠】模式 (间隔 {mins} {unit})", flush=True)
                 print(f"[巡检收宝] 预计在 {target_dt.strftime('%H:%M:%S')} 开启第一轮收宝巡检", flush=True)
@@ -184,7 +196,7 @@ class CheckDutyCycleReco(CustomRecognition):
                     context.override_pipeline({
                         "CheckDutyCycle": {
                             "focus": {
-                                "Node.Recognition.Succeeded": f"[巡检收宝] 待机休眠中（间隔 {mins} {unit}），预计 {target_dt.strftime('%H:%M:%S')} 开始收宝"
+                                "Node.Action.Succeeded": msg
                             }
                         }
                     })
@@ -195,10 +207,21 @@ class CheckDutyCycleReco(CustomRecognition):
             else:
                 duty_state["mode"] = "ACTIVE"
                 duty_state["active_start_time"] = now_time
+                msg = "[巡检收宝] 模式:【持续实时】，全天候不间断监控鱼缸收宝！"
                 print("-" * 55, flush=True)
-                print("[巡检收宝] 【持续实时】收宝模式, 全天候不间断监控鱼缸!", flush=True)
+                print(msg, flush=True)
                 print("-" * 55, flush=True)
-                return None
+                try:
+                    context.override_pipeline({
+                        "CheckDutyCycle": {
+                            "focus": {
+                                "Node.Action.Succeeded": msg
+                            }
+                        }
+                    })
+                except Exception:
+                    pass
+                return (0, 0, 10, 10)
 
         # 如果是持续实时模式
         if idle_interval <= 0:
@@ -209,19 +232,20 @@ class CheckDutyCycleReco(CustomRecognition):
             if elapsed_active >= active_duration:
                 duty_state["mode"] = "IDLE"
                 duty_state["idle_start_time"] = now_time
+                duty_state["last_ui_log_time"] = now_time
                 target_dt = now_dt + timedelta(seconds=idle_interval)
                 mins = int(idle_interval / 60) if idle_interval >= 60 else int(idle_interval)
                 unit = "分钟" if idle_interval >= 60 else "秒"
+                msg = f"[巡检收宝] 本轮收宝完成！进入待机休眠，预计 {target_dt.strftime('%H:%M:%S')} 开始下一轮"
                 print("-" * 55, flush=True)
                 print(f"[巡检收宝] 本轮 {int(active_duration)} 秒密集收宝完成!", flush=True)
                 print(f"[巡检收宝] 进入休眠等待, 预计在 {target_dt.strftime('%H:%M:%S')} 开启下一轮...", flush=True)
                 print("-" * 55, flush=True)
-                # 注入 focus 让 MFA 日志面板也显示
                 try:
                     context.override_pipeline({
                         "CheckDutyCycle": {
                             "focus": {
-                                "Node.Recognition.Succeeded": f"[巡检收宝] 本轮收宝完成！待机休眠中，预计 {target_dt.strftime('%H:%M:%S')} 开始下一轮"
+                                "Node.Action.Succeeded": msg
                             }
                         }
                     })
@@ -238,6 +262,7 @@ class CheckDutyCycleReco(CustomRecognition):
                 duty_state["active_start_time"] = now_time
                 duty_state["last_ui_log_time"] = now_time
                 target_dt = now_dt + timedelta(seconds=active_duration)
+                msg = f"[巡检收宝] 休眠结束！开始收宝，本轮持续至 {target_dt.strftime('%H:%M:%S')}"
                 print("=" * 55, flush=True)
                 print(f"[巡检收宝] 休眠结束! 现在开始收宝!", flush=True)
                 print(f"[巡检收宝] 本轮密集收宝持续至 {target_dt.strftime('%H:%M:%S')}", flush=True)
@@ -246,13 +271,13 @@ class CheckDutyCycleReco(CustomRecognition):
                     context.override_pipeline({
                         "CheckDutyCycle": {
                             "focus": {
-                                "Node.Recognition.Failed": f"[巡检收宝] 休眠结束！开始收宝，本轮持续至 {target_dt.strftime('%H:%M:%S')}"
+                                "Node.Action.Succeeded": msg
                             }
                         }
                     })
                 except Exception:
                     pass
-                return None
+                return (0, 0, 10, 10)
             else:
                 # 节流：每 ui_log_interval 秒才更新一次 UI 播报，其余时间静默
                 since_last_log = now_time - duty_state["last_ui_log_time"]
@@ -262,12 +287,13 @@ class CheckDutyCycleReco(CustomRecognition):
                     wake_dt = now_dt + timedelta(seconds=remaining)
                     mins = int(idle_interval / 60) if idle_interval >= 60 else int(idle_interval)
                     unit = "分钟" if idle_interval >= 60 else "秒"
+                    msg = f"[巡检收宝] 待机休眠中（间隔 {mins}{unit}），预计 {wake_dt.strftime('%H:%M:%S')} 开始收宝"
                     print(f"[巡检收宝] 休眠中 | 剩余 {int(remaining)} 秒 | 预计 {wake_dt.strftime('%H:%M:%S')} 开始收宝", flush=True)
                     try:
                         context.override_pipeline({
                             "CheckDutyCycle": {
                                 "focus": {
-                                    "Node.Recognition.Succeeded": f"[巡检收宝] 待机休眠中（间隔 {mins} {unit}），预计 {wake_dt.strftime('%H:%M:%S')} 开始收宝"
+                                    "Node.Action.Succeeded": msg
                                 }
                             }
                         })
