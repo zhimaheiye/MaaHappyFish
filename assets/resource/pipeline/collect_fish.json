@@ -1,26 +1,14 @@
 {
     "CollectFishTask": {
-        "recognition": "DirectHit",
-        "action": "Custom",
-        "custom_action": "CalcFishingFoodAction",
-        "custom_action_param": {
+        "recognition": "Custom",
+        "custom_recognition": "CalcFishingFoodReco",
+        "custom_recognition_param": {
             "capacity": 100,
             "current_duration": 120,
             "target_hour": 8
         },
-        "post_delay": 100,
-        "timeout": -1,
-        "next": [
-            "LogFoodBudget"
-        ],
-        "focus": {
-            "Node.Action.Succeeded": "[收鱼任务] 启动成功，开始鱼缸挂机收宝流程！"
-        }
-    },
-    "LogFoodBudget": {
-        "recognition": "DirectHit",
         "action": "DoNothing",
-        "post_delay": 100,
+        "post_delay": 200,
         "timeout": -1,
         "next": [
             "ResumeHarvest"

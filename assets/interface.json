@@ -1,4 +1,4 @@
-﻿{
+{
     "interface_version": 2,
     "name": "HappyFishHelper",
     "label": "开心水族箱小助手",
@@ -101,7 +101,7 @@
             ],
             "pipeline_override": {
                 "CollectFishTask": {
-                    "custom_action_param": {
+                    "custom_recognition_param": {
                         "capacity": "{海星容量}",
                         "current_duration": "{当前可用时长}",
                         "target_hour": "{目标整点}"

@@ -10,7 +10,7 @@
 - [x] 海星定时自动喂食 (基于 `wall-clock` 解耦 Pipeline `timeout`)
 - [x] 防误触等待逻辑 (`4.5s` 自然消退替代乱点水域)
 - [x] 巡检收宝（占空比休眠/激活状态机切换）
-- [x] 挂机鱼食预算自动计算与 UI 界面播报 (`LogFoodBudget` focus 注入)
+- [x] 挂机鱼食预算自动计算与 UI 界面播报 (`CalcFishingFoodReco` Custom Recognition 原生 focus 注入)
 - [x] 清除所有 Emoji，修复 GBK 崩溃
 - [x] 修复 `main.py` socket_id 参数解析 (`socket_id=` 前缀匹配)
 - [x] MFA UI 日志面板动态播报（`focus` 字段 + `context.override_pipeline` 注入）

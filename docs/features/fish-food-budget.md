@@ -4,7 +4,7 @@
 在启动挂机任务时，根据玩家设置的海星容量、当前余粮和计划挂机时长，推算出需要补充的鱼食袋数，辅助玩家做好资源规划。
 
 ## 触发点与核心算法
-- **触发**: `CollectFishTask` 启动首节点绑定 Custom Action `CalcFishingFoodAction`，任务拉起即刻执行。
+- **触发**: `CollectFishTask` 启动首节点绑定 Custom Recognition `CalcFishingFoodReco`，任务拉起即刻执行识别与计算。
 - **算法模型**:
   ```python
   rate = capacity / current_duration
@@ -20,15 +20,15 @@
   3. 计划挂机至此时长 (分钟)
 - **输出端**: 
   - **Stdout 追踪**: 静默输出详细规划到 Python `stdout` 并持久化记录于客户端日志 `client_avalonia/logs/log-YYYYMMDD.log`。
-  - **MFA UI 日志面板**: 计算完成后通过 `context.override_pipeline` 动态注入紧邻的桥接节点 `LogFoodBudget` 的 `focus.Node.Action.Succeeded` 字段，以静默非阻塞形式在右侧日志面板输出单行摘要提示（如：`[鱼食预算] 挂机至 08:00 (共 12.6h) | 缺口 638分钟 | 需备鱼食: 532粒 (约 18袋)`）。
+  - **MFA UI 日志面板**: `CalcFishingFoodReco.analyze()` 在计算完成后，通过 `context.override_pipeline` 动态覆盖当前节点 `CollectFishTask` 的 `focus.Node.Recognition.Succeeded` 字段，随后返回命中 `(0, 0, 10, 10)`，使 MFAAvalonia 在任务开始第 1 毫秒即在日志面板展示单行动态预算规划（如：`[鱼食预算] 挂机至 08:00 (共 10.2h) | 缺口 493分钟 | 需备鱼食: 412粒 (约 14袋)`）。
 
 ## 迭代与 Debug 因果日志
 
-### 2026-08-28 · 鱼食预算未在 UI 日志面板展示
-- **现象**: 启动任务时控制台文件有输出，但 MFAAvalonia 界面日志面板中只有 `[收鱼任务] 启动成功...`，缺失鱼食计算结论。
-- **根因**: 原先鱼食计算仅依赖 Python `print()` 输出，未注入到 Pipeline 节点的 `focus` 属性中；且直接在当前 Action 节点注入当前节点的 focus 存在时序竞争风险。
-- **修复**: 在 `CollectFishTask` 与 `ResumeHarvest` 之间插入轻量桥接节点 `LogFoodBudget`（`DirectHit` + `DoNothing`）；`CalcFishingFoodAction.run()` 在计算完毕后将格式化的预算摘要动态注入到 `LogFoodBudget` 的 `focus.Node.Action.Succeeded`，完成启动瞬间的单次安全播报。
-- **回归**: 重新启动任务，MFAAvalonia 界面日志面板在任务开始后立即展示计算得到的挂机缺口与需备袋数。
+### 2026-08-28 · 鱼食预算改用 Custom Recognition 原生注入
+- **现象**: 原先尝试通过 Custom Action 桥接节点注入 focus，但在任务队列拉起时可能受到 interface override 覆盖影响导致桥接节点未触发。
+- **根因**: Custom Action 是在 Recognition 成功后才被调度的，对下一节点的 override 时序依赖较高；而 Custom Recognition 在节点一被解析执行时即刻调用 `analyze` 并直接向当前节点注入 `focus.Node.Recognition.Succeeded`，链路完全零时序竞争。
+- **修复**: 将 `CollectFishTask` 重构为 Custom Recognition `CalcFishingFoodReco`，与已稳定运行的 `CheckDutyCycleReco` 保持一致的标准注入范式。
+- **回归**: 单元测试模拟 `analyze()` 验证成功返回命中并正确覆写 focus 消息。
 
 ## 独立运行版本
 考虑到玩家有时只想单独算一下，提取了核心逻辑制作成独立的本地 GUI 小工具。
@@ -38,5 +38,7 @@
 ## 当前状态
 - **状态**: 生产就绪。
 - **关键文件**: 
-  - `agent/my_action.py` (`CalcFishingFoodAction`)
-  - `assets/resource/pipeline/collect_fish.json` (`CollectFishTask` -> `LogFoodBudget`)
+  - `agent/my_reco.py` (`CalcFishingFoodReco`)
+  - `assets/resource/pipeline/collect_fish.json` (`CollectFishTask`)
+  - `assets/interface.json`
+
