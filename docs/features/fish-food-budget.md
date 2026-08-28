@@ -24,11 +24,11 @@
 
 ## 迭代与 Debug 因果日志
 
-### 2026-08-28 · 鱼食预算改用 Custom Recognition 原生注入
-- **现象**: 原先尝试通过 Custom Action 桥接节点注入 focus，但在任务队列拉起时可能受到 interface override 覆盖影响导致桥接节点未触发。
-- **根因**: Custom Action 是在 Recognition 成功后才被调度的，对下一节点的 override 时序依赖较高；而 Custom Recognition 在节点一被解析执行时即刻调用 `analyze` 并直接向当前节点注入 `focus.Node.Recognition.Succeeded`，链路完全零时序竞争。
-- **修复**: 将 `CollectFishTask` 重构为 Custom Recognition `CalcFishingFoodReco`，与已稳定运行的 `CheckDutyCycleReco` 保持一致的标准注入范式。
-- **回归**: 单元测试模拟 `analyze()` 验证成功返回命中并正确覆写 focus 消息。
+### 2026-08-28 · 解决 focus 事件类型 Key 匹配缺失导致 UI 未渲染
+- **现象**: `CalcFishingFoodReco` 计算并注入成功，但 MFAAvalonia 面板依然未展示。
+- **根因**: 日志抓包显示 `analyze` 内部覆写当前节点的 `focus` 时，当前正在结算的 Recognition 阶段已完成上下文加载，挂载的 `focus` 顺延在随后的 `Node.Action.Starting` / `Node.Action.Succeeded` 事件中生效；原代码仅注入了 `Node.Recognition.Succeeded` 单个 key，导致 MFAAvalonia 在收到 Action 类事件时 key 不匹配而丢弃。
+- **修复**: 在 `focus` 字典中全量挂载 `Node.Action.Starting`、`Node.Action.Succeeded`、`Node.PipelineNode.Succeeded` 与 `Node.Recognition.Succeeded` 全部事件通道，确保 100% 触发 UI 渲染。
+- **回归**: 重新启动任务，MFAAvalonia 日志面板在任务拉起后立即展示鱼食缺口与袋数。
 
 ## 独立运行版本
 考虑到玩家有时只想单独算一下，提取了核心逻辑制作成独立的本地 GUI 小工具。

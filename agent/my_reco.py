@@ -77,12 +77,17 @@ class CalcFishingFoodReco(CustomRecognition):
             print(f"[鱼食预算] 至少需额外准备/购买: {extra_food} 粒 ~= {bags} 袋 (30粒/袋)", flush=True)
             print("=" * 55, flush=True)
 
+            focus_dict = {
+                "Node.Action.Starting": ui_msg,
+                "Node.Action.Succeeded": ui_msg,
+                "Node.PipelineNode.Succeeded": ui_msg,
+                "Node.Recognition.Succeeded": ui_msg,
+            }
+
             try:
                 context.override_pipeline({
                     "CollectFishTask": {
-                        "focus": {
-                            "Node.Recognition.Succeeded": ui_msg
-                        }
+                        "focus": focus_dict
                     }
                 })
             except Exception:
