@@ -19,11 +19,15 @@ SelectCuteStarfish (OCR 识别 "萌海星|萌")
   ↓
 ClickReplenishFood (OCR 识别 "补充")
   ↓
-ClickAddFoodTarget (TemplateMatch 海星_加号.png)
+ClickAddFoodTarget (TemplateMatch 海星_加号.png 自动居中点击)
   ↓
-StarfishReturnFirst
+CheckFoodFull (TemplateMatch 鱼食已装满.png 校验进度条右侧填满)
+  ├── 校验成功 → 播报 "鱼食补充成功！进度条已加满"
+  └── 校验失败 → 播报 "提示：未检测到鱼食加满，请检查背包"
   ↓
-StarfishReturnSecond
+StarfishReturnFirst (返回1)
+  ↓
+StarfishReturnSecond (返回2)
   ↓
 ResumeHarvest (万能返回节点)
 ```
@@ -52,8 +56,20 @@ ResumeHarvest (万能返回节点)
   3. `StarfishReturnFirst` / `StarfishReturnSecond` 返回动作间隔分别提升至 `1500ms` 与 `2000ms`，确保界面彻底平稳再回归主干收宝。
 - **回归**: 实机全流程动作平稳从容，每个步骤均等动画彻底完成再进行下一步。
 
+### 2026-08-28 · 修复加号硬编码坐标偏差，增加「鱼食已装满」进度条回执校验
+- **现象**: 连续两轮喂食日志显示准备投喂，但海星存粮未加满。
+- **根因**: `ClickAddFoodTarget` 写死了固定坐标 `target: [646, 179, 64, 78]`，导致模板匹配到加号后并未点击加号实际所在位置；且缺乏喂食后的状态确认。
+- **修复**: 
+  1. 移除 `ClickAddFoodTarget` 的写死 target，改为自动命中加号中心点击；
+  2. 引入 `CheckFoodFull` 节点，通过 `TemplateMatch` 匹配 `鱼食已装满.png`（橙色进度条右侧圆弧饱满状态），成功装满即在 UI 日志面板输出 `[海星喂食] 鱼食补充成功！进度条已加满，海星存粮充沛！`；若未满则触发 `NotifyFoodNotFull` 提示检查背包。
+- **回归**: 形成【点击加号 → 视觉校验装满 → 状态回执播报 → 安全返回】的完整闭环。
+
 ## 当前状态
-- **状态**: 生产就绪，动作延时已加固。
-- **关键文件**: `agent/my_reco.py` (`CheckStarfishTimerReco`), `assets/resource/pipeline/collect_fish.json`
+- **状态**: 生产就绪，具备进度条回执校验闭环。
+- **关键文件**: 
+  - `agent/my_reco.py` (`CheckStarfishTimerReco`)
+  - `assets/resource/pipeline/collect_fish.json` (`ClickAddFoodTarget` -> `CheckFoodFull`)
+  - `assets/resource/image/鱼食已装满.png`
+
 
 

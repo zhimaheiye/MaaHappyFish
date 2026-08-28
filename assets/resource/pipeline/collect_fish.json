@@ -228,18 +228,43 @@
         "template": "海星_加号.png",
         "threshold": 0.7,
         "action": "Click",
-        "target": [
-            646,
-            179,
-            64,
-            78
-        ],
         "post_delay": 2000,
         "timeout": 8000,
+        "next": [
+            "CheckFoodFull",
+            "StarfishReturnFirst"
+        ],
+        "on_error": [
+            "CheckFoodFull",
+            "StarfishReturnFirst"
+        ]
+    },
+    "CheckFoodFull": {
+        "recognition": "TemplateMatch",
+        "template": "鱼食已装满.png",
+        "threshold": 0.75,
+        "action": "DoNothing",
+        "post_delay": 500,
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[海星喂食] 鱼食补充成功！进度条已加满，海星存粮充沛！"
+        },
         "next": [
             "StarfishReturnFirst"
         ],
         "on_error": [
+            "NotifyFoodNotFull"
+        ]
+    },
+    "NotifyFoodNotFull": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 300,
+        "timeout": -1,
+        "focus": {
+            "Node.Action.Succeeded": "[海星喂食] 提示：未检测到鱼食加满，请检查背包鱼食储备"
+        },
+        "next": [
             "StarfishReturnFirst"
         ]
     },
@@ -355,18 +380,43 @@
         "template": "海星_加号.png",
         "threshold": 0.7,
         "action": "Click",
-        "target": [
-            646,
-            179,
-            64,
-            78
-        ],
         "post_delay": 2000,
         "timeout": 8000,
+        "next": [
+            "CheckFoodFull_Standalone",
+            "StarfishReturnFirst_Standalone"
+        ],
+        "on_error": [
+            "CheckFoodFull_Standalone",
+            "StarfishReturnFirst_Standalone"
+        ]
+    },
+    "CheckFoodFull_Standalone": {
+        "recognition": "TemplateMatch",
+        "template": "鱼食已装满.png",
+        "threshold": 0.75,
+        "action": "DoNothing",
+        "post_delay": 500,
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[海星喂食] 鱼食补充成功！进度条已加满，海星存粮充沛！"
+        },
         "next": [
             "StarfishReturnFirst_Standalone"
         ],
         "on_error": [
+            "NotifyFoodNotFull_Standalone"
+        ]
+    },
+    "NotifyFoodNotFull_Standalone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 300,
+        "timeout": -1,
+        "focus": {
+            "Node.Action.Succeeded": "[海星喂食] 提示：未检测到鱼食加满，请检查背包鱼食储备"
+        },
+        "next": [
             "StarfishReturnFirst_Standalone"
         ]
     },
