@@ -199,7 +199,7 @@ jobs:
     needs: meta
     runs-on: ubuntu-latest
     outputs:
-      release_body: ${{ steps.git-cliff.outputs.content }}
+      release_body: ${{ steps.release-notes.outputs.content }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -219,6 +219,18 @@ jobs:
         env:
           OUTPUT: CHANGES.md
           GITHUB_REPO: ${{ github.repository }}
+
+      - name: Add maintained release notes
+        id: release-notes
+        shell: bash
+        run: |
+          {
+            echo 'content<<MAA_RELEASE_NOTES'
+            cat RELEASE_NOTES.md
+            printf '\n\n'
+            cat CHANGES.md
+            echo 'MAA_RELEASE_NOTES'
+          } >> "$GITHUB_OUTPUT"
 
   release:
     if: ${{ needs.meta.outputs.is_release == 'true' }}
