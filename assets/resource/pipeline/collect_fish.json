@@ -183,38 +183,87 @@
         "recognition": "DirectHit",
         "action": "Click",
         "target": [
-            110,
-            30,
-            50,
-            50
+            176,
+            54,
+            4,
+            4
         ],
-        "post_delay": 1500,
+        "post_delay": 2200,
         "timeout": 3000,
         "next": [
-            "SelectCuteStarfish"
+            "VerifyTankSettings"
         ],
         "on_error": [
             "ResumeHarvest"
         ]
     },
-    "SelectCuteStarfish": {
+    "VerifyTankSettings": {
         "recognition": "OCR",
-        "expected": "萌海星|萌",
+        "expected": "鱼缸",
+        "roi": [
+            180,
+            10,
+            230,
+            80
+        ],
+        "action": "DoNothing",
+        "post_delay": 200,
+        "timeout": 3000,
+        "next": [
+            "SelectCuteStarfish"
+        ],
+        "on_error": [
+            "NotifyStarfishEntryFailed"
+        ]
+    },
+    "SelectCuteStarfish": {
+        "recognition": "DirectHit",
         "action": "Click",
-        "post_delay": 1500,
+        "target": [
+            450,
+            255,
+            100,
+            160
+        ],
+        "post_delay": 2200,
         "timeout": 4000,
+        "next": [
+            "VerifyStarfishPanel"
+        ],
+        "on_error": [
+            "NotifyStarfishEntryFailed"
+        ]
+    },
+    "VerifyStarfishPanel": {
+        "recognition": "OCR",
+        "expected": "萌海星",
+        "roi": [
+            350,
+            160,
+            350,
+            95
+        ],
+        "action": "DoNothing",
+        "post_delay": 200,
+        "timeout": 3000,
         "next": [
             "ClickReplenishFood"
         ],
         "on_error": [
-            "StarfishReturnFirst"
+            "NotifyStarfishEntryFailed"
         ]
     },
     "ClickReplenishFood": {
         "recognition": "OCR",
         "expected": "补充",
+        "roi": [
+            900,
+            270,
+            260,
+            90
+        ],
         "action": "Click",
-        "post_delay": 1800,
+        "post_delay": 2200,
         "timeout": 6000,
         "next": [
             "ClickFishFoodBag"
@@ -273,6 +322,18 @@
         "timeout": -1,
         "focus": {
             "Node.Action.Succeeded": "[海星喂食] 提示：未检测到鱼食加满，请检查背包鱼食储备"
+        },
+        "next": [
+            "StarfishReturnFirst"
+        ]
+    },
+    "NotifyStarfishEntryFailed": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 300,
+        "timeout": -1,
+        "focus": {
+            "Node.Action.Succeeded": "[海星喂食] 未找到萌海星入口，本轮已跳过"
         },
         "next": [
             "StarfishReturnFirst"
@@ -345,38 +406,87 @@
         "recognition": "DirectHit",
         "action": "Click",
         "target": [
-            110,
-            30,
-            50,
-            50
+            176,
+            54,
+            4,
+            4
         ],
-        "post_delay": 1500,
+        "post_delay": 2200,
+        "timeout": 3000,
+        "next": [
+            "VerifyTankSettings_Standalone"
+        ],
+        "on_error": [
+            "StarfishReturnFirst_Standalone"
+        ]
+    },
+    "VerifyTankSettings_Standalone": {
+        "recognition": "OCR",
+        "expected": "鱼缸",
+        "roi": [
+            180,
+            10,
+            230,
+            80
+        ],
+        "action": "DoNothing",
+        "post_delay": 200,
         "timeout": 3000,
         "next": [
             "SelectCuteStarfish_Standalone"
         ],
         "on_error": [
-            "StarfishReturnFirst_Standalone"
+            "NotifyStarfishEntryFailed_Standalone"
         ]
     },
     "SelectCuteStarfish_Standalone": {
-        "recognition": "OCR",
-        "expected": "萌海星|萌",
+        "recognition": "DirectHit",
         "action": "Click",
-        "post_delay": 1500,
+        "target": [
+            450,
+            255,
+            100,
+            160
+        ],
+        "post_delay": 2200,
         "timeout": 4000,
+        "next": [
+            "VerifyStarfishPanel_Standalone"
+        ],
+        "on_error": [
+            "NotifyStarfishEntryFailed_Standalone"
+        ]
+    },
+    "VerifyStarfishPanel_Standalone": {
+        "recognition": "OCR",
+        "expected": "萌海星",
+        "roi": [
+            350,
+            160,
+            350,
+            95
+        ],
+        "action": "DoNothing",
+        "post_delay": 200,
+        "timeout": 3000,
         "next": [
             "ClickReplenishFood_Standalone"
         ],
         "on_error": [
-            "StarfishReturnFirst_Standalone"
+            "NotifyStarfishEntryFailed_Standalone"
         ]
     },
     "ClickReplenishFood_Standalone": {
         "recognition": "OCR",
         "expected": "补充",
+        "roi": [
+            900,
+            270,
+            260,
+            90
+        ],
         "action": "Click",
-        "post_delay": 1800,
+        "post_delay": 2200,
         "timeout": 6000,
         "next": [
             "ClickFishFoodBag_Standalone"
@@ -435,6 +545,18 @@
         "timeout": -1,
         "focus": {
             "Node.Action.Succeeded": "[海星喂食] 提示：未检测到鱼食加满，请检查背包鱼食储备"
+        },
+        "next": [
+            "StarfishReturnFirst_Standalone"
+        ]
+    },
+    "NotifyStarfishEntryFailed_Standalone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 300,
+        "timeout": -1,
+        "focus": {
+            "Node.Action.Succeeded": "[海星喂食] 未找到萌海星入口，本轮已跳过"
         },
         "next": [
             "StarfishReturnFirst_Standalone"

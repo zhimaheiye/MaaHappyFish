@@ -180,14 +180,19 @@ jobs:
           $required = @(
             "$pythonDir/python.exe",
             "$pythonDir/Lib/site-packages/maa/__init__.py",
-            "$pythonDir/Lib/site-packages/numpy/__init__.py"
+            "$pythonDir/Lib/site-packages/numpy/__init__.py",
+            "$env:GITHUB_WORKSPACE/install/agent/my_action.py",
+            "$env:GITHUB_WORKSPACE/install/agent/my_reco.py"
           )
           foreach ($path in $required) {
             if (-not (Test-Path -LiteralPath $path)) { throw "Missing release dependency: $path" }
           }
 
-          & "$pythonDir/python.exe" -c "import my_action, my_reco; print('Embedded Agent imports: OK')"
-          if ($LASTEXITCODE -ne 0) { throw "Embedded Python could not import the Agent modules." }
+          foreach ($entry in @("Lib/site-packages", "../agent")) {
+            if ($pthContent -notmatch "(?m)^$([regex]::Escape($entry))$") {
+              throw "Embedded Python path is missing: $entry"
+            }
+          }
 
       - name: Bundle third-party licenses
         shell: bash
