@@ -37,16 +37,17 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: 日志和配置文件
+      label: 测试报告和日志
       description: |
-        **请在关闭 MXX 后，上传以下 3 个文件：**
-          1. `debug` 文件夹中的 `maa.log` `maa.bak.log` 日志文件，并说明问题出现的大致时间点
-          2. `config` 文件夹中的 `maa_pi_config.json`(MaaPiCli) 配置文件
+        1. 先记录问题发生的大致时间，然后停止任务并关闭 MFAAvalonia。
+        2. 双击程序目录中的 `收集测试日志.cmd`。收集器会将最近 3 份完整日志和一份待填写的测试信息保存为桌面上的 ZIP。
+        3. 上传完整 ZIP，并在本栏填写问题时间和运行时长；若无法运行收集器，请上传 `logs/log-*.log` 中与问题时间对应的完整日志。
 
-        如果你在使用 MacBook，请点击屏幕左上角的“文件”，点击“打开日志文件夹”
-        **请直接将完整的文件拖拽进来，而非自己裁切或复制的片段；若文件体积过大可压缩后再上传**
+        本仓库的 Issue 和附件公开可见，请在上传前检查 ZIP 中是否包含不希望公开的信息。收集器不会自动上传文件，也不会收集账号配置。
       placeholder: |
-        请确认上传文件前已关闭 MXX
+        问题发生的大致时间：
+        运行持续时间：
+        请将测试报告 ZIP 拖到此处
     validations:
       required: true
   - type: textarea
@@ -64,13 +65,9 @@ body:
     attributes:
       label: 截图或录屏
       description: |
-        `debug` 目录下按功能分类的文件夹内，有一些自动截图的错误图片，若有相关的，请一并打包上传
+        请尽量同时提供 MFAAvalonia 运行界面和模拟器出错画面。若是识别相关问题，请优先提供模拟器自带截图工具或 ADB 截取的无遮挡原图。
 
-        可上传屏幕截图或录制以帮助解释你的问题，包括但不限于 MaaHappyFish 软件截图、游戏画面截图、
-        MaaHappyFish debug 截图（`debug/vision` 路径图片，在修改 `config/maa_option.json` 中 `save_draw` 为 `true` 后再次运行 MaaHappyFish 获取）
-        若是**识别相关问题**，请尽可能提供模拟器自带的截图工具截取的无遮挡的**原图**（或通过 adb 截取原图）
-        用其他的工具（如QQ/微信）截取的图片包含窗口边框且长宽比、分辨率不固定，不利于我们排除bug
-        若文件体积过大可压缩后再上传
+        收集器不会自动打包截图或录屏，请单独上传；文件体积过大时可以压缩后再上传。
     validations:
       required: false
   - type: textarea

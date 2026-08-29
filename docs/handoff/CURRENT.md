@@ -1,11 +1,13 @@
 # 当前交接档案 (CURRENT.md)
 
-**更新时间**: 2026-08-29 00:55
+**更新时间**: 2026-08-29 13:50
 
 ## 当前状态概要
-核心功能群全部生产就绪，UI 日志播报机制已完整验证（focus 注入 + 节流）。
+
+核心功能开发与代码级验证已完成，UI 日志播报机制已验证（focus 注入 + 节流）；持续挂机目前仅有约 1 小时稳定记录，更长时间仍待台式机验证。
 
 ## 已完成事项 (Completed)
+
 - [x] 收鱼产物主干循环逻辑 (`ResumeHarvest` 万能节点中转模式)
 - [x] 海星定时自动喂食 (基于 `wall-clock` 解耦 Pipeline `timeout`)
 - [x] 防误触等待逻辑 (`4.5s` 自然消退替代乱点水域)
@@ -25,17 +27,21 @@
 - [x] 修复 `CalcFishingFoodAction` 的 `extra_mins` 未定义分支
 - [x] 完成 MaaHappyFish 首发整理：公开 README、项目命名、许可证声明与 GitHub Release 工作流
 - [x] Windows x64 发行包内置 Python 3.13 与 MaaFw；其他平台保留为未经维护者验证的实验性构建
+- [x] Windows 测试日志收集器：双击生成最近 3 份日志与测试信息 ZIP，不自动上传或收集账号配置
 
 ## 待验证事项 (To Verify)
+
 - [ ] 连续挂机稳定性测试（验证杜绝狂点左上角后不再退回桌面）
 - [ ] 在萌海星存粮不满时做一次端到端喂食验证，确认鱼食数量减少且进度条补满
 
 ## 暂不实现区域 (Non-Goals)
+
 - 鱼苗养殖相关自动化（范围外）。
 - 宝石兑换逻辑（范围外）。
 - 任何形式的涉及氪金/付费点击（严禁）。
 
 ## 交接备忘 (Handoff Notes)
+
 - `interface.json` 改动后，**务必**手动分发覆盖 `assets/`、`client_avalonia/` 和 `client/`，junction link 仅覆盖了 `resource` 文件夹。
 - 调试遇到 Agent 无故终止时，第一时间检查是否有新引入的代码打印了 UTF-8 特殊字符（如 Emoji）。
 - MFA UI 日志面板的内容来源是 Pipeline `focus` 字段触发的框架回调，**不是** Python `print()`。如需在 UI 显示动态消息，应在 Python Agent 中调用 `context.override_pipeline()` 注入目标节点的 `focus` 内容。

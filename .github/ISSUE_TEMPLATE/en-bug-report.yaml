@@ -51,17 +51,17 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Log and config files
-      description: >-
-        **After closing MXX, upload the following 3 files:**
-          1. The `maa.log` and `maa.bak.log` log file in the `debug` folder, and indicate the approximate point in time when the problem occurred.
-          2. The `maa_pi_config.json`(MaaPiCli) config file in the `config` folder
+      label: Test report and logs
+      description: |
+        1. Note the approximate failure time, stop the task, and close MFAAvalonia.
+        2. Double-click `收集测试日志.cmd` in the application directory. It saves the 3 most recent complete logs and a report form as a ZIP on your desktop.
+        3. Upload the complete ZIP and enter the failure time and run duration below. If the collector cannot run, upload the complete matching files from `logs/log-*.log`.
 
-        If you are using MacBook, please click the "File" option in the top-left corner of the screen, then click "Open Log Folder".
-        **Please drag and drop the full file in, not your own cuttings or copies;**
-        **compress it before uploading if too large.**
+        Issues and attachments in this repository are public. Review the ZIP before uploading it. The collector does not upload anything automatically or collect account configuration.
       placeholder: |
-        Please confirm that MXX is not running before uploading files.
+        Approximate failure time:
+        Run duration:
+        Drag the test report ZIP here
     validations:
       required: true
   - type: textarea
@@ -78,25 +78,10 @@ body:
     id: screenshots
     attributes:
       label: Screenshots or recordings
-      description: >-
-        In the `debug` directory, within the functionally categorized folders, 
-        there are some error images captured automatically.
-        If related to this issue, please upload them together.
+      description: |
+        If possible, provide both the MFAAvalonia window and the emulator screen showing the failure. For recognition problems, prefer an unobstructed original image captured by the emulator or ADB.
 
-        If available, upload screenshots and recordings to help explain your problem,
-        including but not limited to screenshots of MaaHappyFish software,
-        screenshots of game screens, MaaHappyFish debug screenshots (`debug/vision` path pictures,
-        after modifying `save_draw` in `config/maa_option.json` to `true`, run MaaHappyFish again to obtain)
-
-        If the problem is **recognition related**, please help by providing
-        the **original image** taken by the emulator's own screenshot tool
-        (or via adb).
-
-        Screenshots taken with other tools may contain the frames of the window/emulator
-        and their aspect ratio and resolution are inconsistent,
-        which makes it harder for us to debug.
-
-        If the file siz is too large, you may compress it before uploading.
+        The collector does not include screenshots or recordings. Upload them separately, or compress them if they are too large.
 
     validations:
       required: false

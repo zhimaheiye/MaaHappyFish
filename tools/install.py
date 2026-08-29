@@ -139,6 +139,15 @@ def install_chores():
         working_dir / "THIRD_PARTY_NOTICES.md",
         install_path,
     )
+    if os_name == "win":
+        shutil.copy2(
+            working_dir / "tools" / "collect_test_report.ps1",
+            install_path,
+        )
+        shutil.copy2(
+            working_dir / "tools" / "收集测试日志.cmd",
+            install_path,
+        )
 
 
 def install_agent():

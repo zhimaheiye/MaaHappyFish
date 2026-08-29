@@ -18,6 +18,8 @@ on:
       - ".github/workflows/install.yml"
       - "assets/**"
       - "**.py"
+      - "tools/collect_test_report.ps1"
+      - "tools/收集测试日志.cmd"
   pull_request:
     branches:
       - "**"
@@ -25,6 +27,8 @@ on:
       - ".github/workflows/install.yml"
       - "assets/**"
       - "**.py"
+      - "tools/collect_test_report.ps1"
+      - "tools/收集测试日志.cmd"
   workflow_dispatch:
 
 permissions:
