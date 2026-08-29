@@ -19,6 +19,7 @@
         "action": "DoNothing",
         "timeout": -1,
         "next": [
+            "CheckScreenStall",
             "HandleCloseAnnouncement",
             "HandleEnterGame",
             "HandleShellPage",
@@ -27,6 +28,19 @@
             "CheckDutyCycle",
             "ClickFishBubble"
         ]
+    },
+    "CheckScreenStall": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckScreenStallReco",
+        "custom_recognition_param": {
+            "static_seconds": 30,
+            "difference_threshold": 0.5,
+            "sample_step": 8
+        },
+        "action": "StopTask",
+        "focus": {
+            "Node.Recognition.Succeeded": "[运行保护] 画面长时间无变化，任务已停止。请检查游戏是否退出、卡死或截图是否冻结。"
+        }
     },
     "HandleCloseAnnouncement": {
         "recognition": "TemplateMatch",

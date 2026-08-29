@@ -3,6 +3,8 @@ import math
 import time
 from datetime import datetime, timedelta
 from typing import Optional
+
+import numpy as np
 from maa.agent.agent_server import AgentServer
 from maa.custom_recognition import CustomRecognition
 from maa.context import Context
@@ -24,6 +26,83 @@ duty_state = {
     "last_ui_log_time": 0.0,      # 上次向 MFA UI 注入 focus 消息的时间戳
     "ui_log_interval": 60.0,      # UI 播报最小间隔（秒）
 }
+
+screen_stall_state = {
+    "task_id": None,
+    "last_sample": None,
+    "last_change_time": 0.0,
+}
+
+
+def _make_screen_sample(image: np.ndarray, sample_step: int) -> np.ndarray:
+    if image is None or image.size == 0:
+        return np.zeros((1, 1), dtype=np.uint8)
+
+    sample_step = max(1, sample_step)
+    sample = image[::sample_step, ::sample_step]
+    if sample.ndim == 3:
+        sample = sample[..., :3]
+    return sample.astype(np.uint8, copy=True)
+
+
+def _screen_changed(previous: np.ndarray, current: np.ndarray, threshold: float) -> bool:
+    if previous.shape != current.shape:
+        return True
+
+    difference = np.abs(current.astype(np.int16) - previous.astype(np.int16))
+    return float(difference.mean()) > threshold
+
+
+@AgentServer.custom_recognition("CheckScreenStallReco")
+class CheckScreenStallReco(CustomRecognition):
+
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        global screen_stall_state
+
+        param = argv.custom_recognition_param
+        if isinstance(param, str) and param:
+            try:
+                param = json.loads(param)
+            except Exception:
+                param = {}
+        elif not isinstance(param, dict):
+            param = {}
+
+        static_seconds = max(5.0, float(param.get("static_seconds", 30)))
+        difference_threshold = max(0.0, float(param.get("difference_threshold", 0.5)))
+        sample_step = max(1, int(param.get("sample_step", 8)))
+        task_id = argv.task_detail.task_id
+        now = time.monotonic()
+        sample = _make_screen_sample(argv.image, sample_step)
+
+        if screen_stall_state["task_id"] != task_id:
+            screen_stall_state = {
+                "task_id": task_id,
+                "last_sample": sample,
+                "last_change_time": now,
+            }
+            return None
+
+        previous = screen_stall_state["last_sample"]
+        if previous is None or _screen_changed(previous, sample, difference_threshold):
+            screen_stall_state["last_sample"] = sample
+            screen_stall_state["last_change_time"] = now
+            return None
+
+        screen_stall_state["last_sample"] = sample
+        stalled_for = now - screen_stall_state["last_change_time"]
+        if stalled_for < static_seconds:
+            return None
+
+        print(
+            f"[运行保护] 画面已连续 {int(stalled_for)} 秒无明显变化，正在停止任务。",
+            flush=True,
+        )
+        return (0, 0, 10, 10)
 
 @AgentServer.custom_recognition("CalcFishingFoodReco")
 class CalcFishingFoodReco(CustomRecognition):

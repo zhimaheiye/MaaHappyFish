@@ -37,6 +37,24 @@ if ($logFiles.Count -eq 0) {
     throw "No .log files were found in: $logDirectory"
 }
 
+$debugDirectory = Join-Path $PackageRoot "debug"
+$frameworkLogFiles = @()
+$errorImageFiles = @()
+if (Test-Path -LiteralPath $debugDirectory -PathType Container) {
+    $frameworkLogFiles = @(Get-ChildItem -LiteralPath $debugDirectory -Filter "maafw*.log" -File |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First $MaxLogFiles)
+
+    $errorImageDirectory = Join-Path $debugDirectory "on_error"
+    if (Test-Path -LiteralPath $errorImageDirectory -PathType Container) {
+        $errorImageFiles = @(Get-ChildItem -LiteralPath $errorImageDirectory -Filter "*.png" -File |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 10)
+    }
+}
+
+$collectedFiles = @($logFiles) + @($frameworkLogFiles) + @($errorImageFiles)
+
 if (-not $OutputDirectory) {
     $desktop = [Environment]::GetFolderPath("Desktop")
     $OutputDirectory = Join-Path $desktop "MaaHappyFish-TestReports"
@@ -63,8 +81,8 @@ $zipPath = Join-Path $OutputDirectory "MaaHappyFish-TestReport-$timestamp.zip"
 $reportPath = Join-Path ([System.IO.Path]::GetTempPath()) "MaaHappyFish-report-$([guid]::NewGuid().ToString('N')).txt"
 $utf8WithBom = New-Object System.Text.UTF8Encoding($true)
 
-$logSummary = $logFiles | ForEach-Object {
-    "- {0} | {1:N2} MB | modified {2:yyyy-MM-dd HH:mm:ss}" -f $_.Name, ($_.Length / 1MB), $_.LastWriteTime
+$logSummary = $collectedFiles | ForEach-Object {
+    "- {0} | {1:N2} MB | modified {2:yyyy-MM-dd HH:mm:ss}" -f $_.FullName.Substring($PackageRoot.Length).TrimStart('\'), ($_.Length / 1MB), $_.LastWriteTime
 }
 
 $reportLines = @(
@@ -90,7 +108,7 @@ $reportLines = @(
 
 try {
     [System.IO.File]::WriteAllLines($reportPath, $reportLines, $utf8WithBom)
-    $archiveInputs = @($reportPath) + @($logFiles.FullName)
+    $archiveInputs = @($reportPath) + @($collectedFiles.FullName)
     Compress-Archive -LiteralPath $archiveInputs -DestinationPath $zipPath -CompressionLevel Optimal -Force
 }
 finally {
@@ -99,9 +117,9 @@ finally {
     }
 }
 
-$sourceBytes = ($logFiles | Measure-Object Length -Sum).Sum
+$sourceBytes = ($collectedFiles | Measure-Object Length -Sum).Sum
 $zipBytes = (Get-Item -LiteralPath $zipPath).Length
 Write-Host "Test report created successfully."
-Write-Host "Included $($logFiles.Count) log file(s): $([math]::Round($sourceBytes / 1MB, 2)) MB before compression."
+Write-Host "Included $($collectedFiles.Count) log/screenshot file(s): $([math]::Round($sourceBytes / 1MB, 2)) MB before compression."
 Write-Host "ZIP size: $([math]::Round($zipBytes / 1MB, 2)) MB"
 Write-Host "Saved to: $zipPath"
