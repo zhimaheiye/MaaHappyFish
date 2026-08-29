@@ -1,7 +1,7 @@
-# HappyFishHelper 导航地图 (AGENTS.md)
+# MaaHappyFish 导航地图 (AGENTS.md)
 
 ## 项目概述
-开心水族箱挂机小助手（HappyFishHelper）是一个基于 MaaFramework 和 Python Agent 的自动化黑盒测试工具，专为 MuMu 模拟器环境设计，提供收鱼、定时喂海星、挂机巡检等自动化辅助功能，并附带 MFAAvalonia 桌面 UI。
+开心水族箱挂机小助手（MaaHappyFish）是一个基于 MaaFramework 和 Python Agent 的自动化黑盒测试工具，专为 MuMu 模拟器环境设计，提供收鱼、定时喂海星、挂机巡检等自动化辅助功能，并附带 MFAAvalonia 桌面 UI。
 
 ## 开发环境启动命令
 - **设备要求**: MuMu 模拟器 v5+ (adb connect 127.0.0.1:16416)

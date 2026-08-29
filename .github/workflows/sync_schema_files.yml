@@ -2,8 +2,8 @@ name: Sync JSON Schema Files from MaaFramework
 
 on:
   schedule:
-    - cron: '10 0 * * *'  # UTC 00:10 每天运行
-  
+    - cron: "10 0 * * *" # UTC 00:10 每天运行
+
   workflow_dispatch:
 
 permissions:
@@ -17,11 +17,11 @@ jobs:
     steps:
       - id: check
         run: |
-          if [[ "${{ github.repository }}" == "MaaXYZ/MaaPracticeBoilerplate" ]]; then
-            echo "Repository is MaaXYZ/MaaPracticeBoilerplate, proceeding with sync"
+          if [[ "${{ github.repository }}" == "zhimaheiye/MaaHappyFish" ]]; then
+            echo "Repository is zhimaheiye/MaaHappyFish, proceeding with sync"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
-            echo "Repository is not MaaXYZ/MaaPracticeBoilerplate, skipping sync"
+            echo "Repository is not zhimaheiye/MaaHappyFish, skipping sync"
             echo "should_run=false" >> $GITHUB_OUTPUT
           fi
 

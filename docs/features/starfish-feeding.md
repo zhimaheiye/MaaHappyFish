@@ -19,7 +19,7 @@ SelectCuteStarfish (OCR 识别 "萌海星|萌")
   ↓
 ClickReplenishFood (OCR 识别 "补充")
   ↓
-ClickAddFoodTarget (TemplateMatch 海星_加号.png 自动居中点击)
+ClickFishFoodBag (TemplateMatch 普通鱼食袋.png, 固定点击第一格鱼食)
   ↓
 CheckFoodFull (TemplateMatch 鱼食已装满.png 校验进度条右侧填满)
   ├── 校验成功 → 播报 "鱼食补充成功！进度条已加满"
@@ -37,6 +37,17 @@ ResumeHarvest (万能返回节点)
 - **设计**: 不使用随机点击水域来取消焦点，使用 `DismissFishBannerIfOpen` 挂机 `4.5s` (idle)，等待横幅自然超时消失。
 
 ## 迭代与 Debug 因果日志
+
+### 2026-08-29 · 修复点击蓝色加号打开商店导致海星未喂食
+- **现象**: 日志显示触发补充并命中加号，但海星存粮没有增加；实机复现时还会进入糖果/鱼食购买页。
+- **根因**: 实机截图取证确认，「选择喂食」弹窗左上角的蓝色加号是“购买鱼食”入口，不是投喂按钮。旧链路一直精准点击了错误入口。另外 `ClickAddFoodTarget.next` 同时包含 `CheckFoodFull` 和 `StarfishReturnFirst`，校验一失败就会在同一层候选里立即切换到返回，导致投喂动画未完成就退出。
+- **修复**:
+  1. 新增 `普通鱼食袋.png`，将主干与单次喂食链路改为点击第一格普通鱼食，并显式指定 `(679, 215)` 作为点击中心；
+  2. 游戏规则确认：购买时一袋鱼食为 30 粒，但投喂海星时点击一次鱼食袋会一次性加满，或放入当前可用的全部鱼食，因此无需循环点击；
+  3. `CheckFoodFull` 的 ROI 限定为海星主面板进度条右端 `[640, 265, 260, 90]`，避免喂食弹窗遮挡区域造成误判；本地实测主面板命中 `1.0`，弹窗遮挡时仅 `0.229`；
+  4. 点击鱼食后等待 `2800ms`，校验超时提升到 `6000ms`；`next` 只保留校验节点，识别失败才进入一次失败播报和安全返回；
+  5. 修复 `CalcFishingFoodAction` 中 `extra_mins` 在“存粮充足”分支可能未定义的问题。
+- **回归**: JSON 解析、Python 编译、仓库内 MaaFramework 资源加载、鱼食袋/满仓模板匹配均通过。蓝色加号模板已从海星链路移除，消除误开商店风险。
 
 ### 2026-08-28 · 海星喂食 on_error 死循环狂点左上角导致游戏退出
 - **现象**: 挂机运行一段时间后游戏异常退出回到模拟器桌面，MFA 仍在运行但反复报错。日志分析显示 20:17~21:26 期间产生了 21,000+ 次对左上角 `[110, 30, 50, 50]` 的密集点击。
@@ -68,8 +79,7 @@ ResumeHarvest (万能返回节点)
 - **状态**: 生产就绪，具备进度条回执校验闭环。
 - **关键文件**: 
   - `agent/my_reco.py` (`CheckStarfishTimerReco`)
-  - `assets/resource/pipeline/collect_fish.json` (`ClickAddFoodTarget` -> `CheckFoodFull`)
+  - `assets/resource/pipeline/collect_fish.json` (`ClickFishFoodBag` -> `CheckFoodFull`)
   - `assets/resource/image/鱼食已装满.png`
-
-
+  - `assets/resource/image/普通鱼食袋.png`
 

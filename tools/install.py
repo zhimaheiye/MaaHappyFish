@@ -118,6 +118,10 @@ def install_resource():
 
     interface["version"] = version
 
+    # Windows x64 is the supported release and carries its own Python runtime.
+    if os_name == "win" and arch == "x86_64":
+        interface["agent"]["child_exec"] = r"{PROJECT_DIR}/python/python.exe"
+
     with open(install_path / "interface.json", "w", encoding="utf-8") as f:
         jsonc.dump(interface, f, ensure_ascii=False, indent=4)
 
@@ -129,6 +133,10 @@ def install_chores():
     )
     shutil.copy2(
         working_dir / "LICENSE",
+        install_path,
+    )
+    shutil.copy2(
+        working_dir / "THIRD_PARTY_NOTICES.md",
         install_path,
     )
 

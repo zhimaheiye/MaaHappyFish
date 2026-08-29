@@ -37,9 +37,10 @@ class CalcFishingFoodAction(CustomAction):
             diff_minutes = (target_time - now).total_seconds() / 60.0
             total_hours = diff_minutes / 60.0
 
+            extra_mins = max(0.0, diff_minutes - current_duration)
+
             if current_duration <= 0:
                 extra_food = 0
-                extra_mins = diff_minutes
                 ui_msg = f"[鱼食预算] 计划挂机至 {target_time.strftime('%H:%M')} (共 {total_hours:.1f}h) | 存粮为0，请及时为海星喂食！"
             elif extra_mins <= 0:
                 extra_food = 0
@@ -47,7 +48,6 @@ class CalcFishingFoodAction(CustomAction):
                 ui_msg = f"[鱼食预算] 计划挂机至 {target_time.strftime('%H:%M')} (共 {total_hours:.1f}h) | 存粮充足(剩余 {int(current_duration)} 分钟)，无需补充"
             else:
                 rate_per_min = capacity / current_duration
-                extra_mins = max(0.0, diff_minutes - current_duration)
                 extra_food = int(round(extra_mins * rate_per_min + 0.4999))
                 bags = math.ceil(extra_food / 30.0)
                 ui_msg = f"[鱼食预算] 挂机至 {target_time.strftime('%H:%M')} (共 {total_hours:.1f}h) | 缺口 {int(extra_mins)}分钟 | 需备鱼食: {extra_food}粒 (约 {bags}袋)"

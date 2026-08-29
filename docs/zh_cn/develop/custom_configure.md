@@ -12,7 +12,7 @@
 
 借鉴于 [MAA](https://github.com/MaaAssistantArknights/MaaAssistantArknights) 项目模板，我们结合 `MaaFramework` 实际使用情况，提供一套可行的选择。
 
-您可以简单的将 `.github/ISSUE_TEMPLATE` 目录下 `cn-bug-report.yaml` 和 `en-bug-report.yaml` 文件中 `MXX` 修改为您自己的项目名称，即可使用。
+项目问题模板位于 `.github/ISSUE_TEMPLATE`，已使用 MaaHappyFish 名称，可按后续功能调整字段。
 
 ## VSCode 插件 <a id="vscode-plugins"></a>
 

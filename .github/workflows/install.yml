@@ -6,6 +6,7 @@ env:
   # - 设置 VERSION 为具体版本号时（如 v1.2.3），下载指定版本
   MAAFW_VERSION: ""
   MFAA_VERSION: ""
+  PYTHON_VERSION: "3.13.5"
 
 on:
   push:
@@ -25,6 +26,9 @@ on:
       - "assets/**"
       - "**.py"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   meta:
@@ -46,7 +50,7 @@ jobs:
             tag=$(date "+$tag-%y%m%d-$(git rev-parse --short HEAD)")
           fi
 
-          if ! $($is_release) ; then
+          if [[ "$is_release" != "true" ]]; then
             prefix=${tag%-*-*}
             suffix=${tag#$prefix-}
             tag="$prefix-ci.$suffix"
@@ -96,7 +100,7 @@ jobs:
         id: download_mfa
         uses: robinraju/release-downloader@v1
         with:
-          repository: SweetSmellFox/MFAAvalonia
+          repository: MaaXYZ/MFAAvalonia
           fileName: "MFAAvalonia-*-${{ (matrix.os == 'win' && 'win') || (matrix.os == 'macos' && 'osx') || (matrix.os == 'linux' && 'linux') }}-${{ (matrix.arch == 'x86_64' && 'x64') || (matrix.arch == 'aarch64' && 'arm64') }}*"
           latest: ${{ env.MFAA_VERSION == '' }}
           tag: ${{ env.MFAA_VERSION }}
@@ -116,7 +120,7 @@ jobs:
         shell: bash
         run: |
           rm -rf MFA/runtimes
-      
+
       - name: Install
         shell: bash
         run: |
@@ -138,9 +142,56 @@ jobs:
           python ./install.py ${{ needs.meta.outputs.tag }} ${{ matrix.os }} ${{ matrix.arch }}
           cd ..
 
+      - name: Bundle Python and MaaFw for supported Windows x64 release
+        if: matrix.os == 'win' && matrix.arch == 'x86_64'
+        shell: pwsh
+        run: |
+          $pythonZip = Join-Path $env:RUNNER_TEMP "python-embed.zip"
+          $pythonDir = Join-Path $env:GITHUB_WORKSPACE "install/python"
+          $pythonUrl = "https://www.python.org/ftp/python/$env:PYTHON_VERSION/python-$env:PYTHON_VERSION-embed-amd64.zip"
+
+          Invoke-WebRequest -Uri $pythonUrl -OutFile $pythonZip
+          Expand-Archive -LiteralPath $pythonZip -DestinationPath $pythonDir -Force
+
+          $pthFile = Get-ChildItem -LiteralPath $pythonDir -Filter "python*._pth" | Select-Object -First 1
+          if (-not $pthFile) { throw "Embedded Python ._pth file was not found." }
+
+          $pthContent = (Get-Content -LiteralPath $pthFile.FullName -Raw).Replace("#import site", "import site")
+          if ($pthContent -notmatch "(?m)^Lib/site-packages$") {
+            $pthContent = $pthContent.TrimEnd() + "`nLib/site-packages`n"
+          }
+          [System.IO.File]::WriteAllText($pthFile.FullName, $pthContent, [System.Text.Encoding]::ASCII)
+
+          $parts = $env:PYTHON_VERSION.Split('.')
+          $pythonMinor = "$($parts[0]).$($parts[1])"
+          $pythonAbi = "cp$($parts[0])$($parts[1])"
+          python -m pip install --isolated --ignore-installed --upgrade `
+            --index-url https://pypi.org/simple --only-binary=:all: `
+            --platform win_amd64 --implementation cp --python-version $pythonMinor --abi $pythonAbi `
+            --target "$pythonDir/Lib/site-packages" maafw
+          if ($LASTEXITCODE -ne 0) { throw "Failed to install MaaFw into embedded Python." }
+
+          $required = @(
+            "$pythonDir/python.exe",
+            "$pythonDir/Lib/site-packages/maa/__init__.py",
+            "$pythonDir/Lib/site-packages/numpy/__init__.py"
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path -LiteralPath $path)) { throw "Missing release dependency: $path" }
+          }
+
+      - name: Bundle third-party licenses
+        shell: bash
+        run: |
+          mkdir -p install/licenses
+          cp assets/MaaCommonAssets/LICENSE install/licenses/MaaCommonAssets-LICENSE
+          curl -fsSL https://raw.githubusercontent.com/MaaXYZ/MaaFramework/main/LICENSE.md -o install/licenses/MaaFramework-LGPL-3.0.md
+          curl -fsSL https://raw.githubusercontent.com/MaaXYZ/MFAAvalonia/master/LICENSE -o install/licenses/MFAAvalonia-GPL-3.0.txt
+          curl -fsSL https://raw.githubusercontent.com/python/cpython/v${PYTHON_VERSION}/LICENSE -o install/licenses/CPython-LICENSE.txt
+
       - uses: actions/upload-artifact@v4
         with:
-          name: MaaXXX-${{ matrix.os }}-${{ matrix.arch }}
+          name: MaaHappyFish-${{ matrix.os }}-${{ matrix.arch }}
           path: "install"
 
   changelog:
@@ -183,7 +234,7 @@ jobs:
           for f in *; do
             (cd $f && zip -r ../$f-${{ needs.meta.outputs.tag }}.zip .)
           done
-          
+
       - uses: softprops/action-gh-release@v2
         with:
           files: assets/*

@@ -217,35 +217,45 @@
         "post_delay": 1800,
         "timeout": 6000,
         "next": [
-            "ClickAddFoodTarget"
+            "ClickFishFoodBag"
         ],
         "on_error": [
             "StarfishReturnFirst"
         ]
     },
-    "ClickAddFoodTarget": {
+    "ClickFishFoodBag": {
         "recognition": "TemplateMatch",
-        "template": "海星_加号.png",
-        "threshold": 0.7,
+        "template": "普通鱼食袋.png",
+        "threshold": 0.85,
         "action": "Click",
-        "post_delay": 2000,
-        "timeout": 8000,
+        "target": [
+            648,
+            195,
+            62,
+            40
+        ],
+        "post_delay": 2800,
+        "timeout": 6000,
         "next": [
-            "CheckFoodFull",
-            "StarfishReturnFirst"
+            "CheckFoodFull"
         ],
         "on_error": [
-            "CheckFoodFull",
-            "StarfishReturnFirst"
+            "NotifyFoodNotFull"
         ]
     },
     "CheckFoodFull": {
         "recognition": "TemplateMatch",
         "template": "鱼食已装满.png",
-        "threshold": 0.75,
+        "threshold": 0.82,
+        "roi": [
+            640,
+            265,
+            260,
+            90
+        ],
         "action": "DoNothing",
-        "post_delay": 500,
-        "timeout": 3000,
+        "post_delay": 300,
+        "timeout": 6000,
         "focus": {
             "Node.Action.Succeeded": "[海星喂食] 鱼食补充成功！进度条已加满，海星存粮充沛！"
         },
@@ -369,35 +379,45 @@
         "post_delay": 1800,
         "timeout": 6000,
         "next": [
-            "ClickAddFoodTarget_Standalone"
+            "ClickFishFoodBag_Standalone"
         ],
         "on_error": [
             "StarfishReturnFirst_Standalone"
         ]
     },
-    "ClickAddFoodTarget_Standalone": {
+    "ClickFishFoodBag_Standalone": {
         "recognition": "TemplateMatch",
-        "template": "海星_加号.png",
-        "threshold": 0.7,
+        "template": "普通鱼食袋.png",
+        "threshold": 0.85,
         "action": "Click",
-        "post_delay": 2000,
-        "timeout": 8000,
+        "target": [
+            648,
+            195,
+            62,
+            40
+        ],
+        "post_delay": 2800,
+        "timeout": 6000,
         "next": [
-            "CheckFoodFull_Standalone",
-            "StarfishReturnFirst_Standalone"
+            "CheckFoodFull_Standalone"
         ],
         "on_error": [
-            "CheckFoodFull_Standalone",
-            "StarfishReturnFirst_Standalone"
+            "NotifyFoodNotFull_Standalone"
         ]
     },
     "CheckFoodFull_Standalone": {
         "recognition": "TemplateMatch",
         "template": "鱼食已装满.png",
-        "threshold": 0.75,
+        "threshold": 0.82,
+        "roi": [
+            640,
+            265,
+            260,
+            90
+        ],
         "action": "DoNothing",
-        "post_delay": 500,
-        "timeout": 3000,
+        "post_delay": 300,
+        "timeout": 6000,
         "focus": {
             "Node.Action.Succeeded": "[海星喂食] 鱼食补充成功！进度条已加满，海星存粮充沛！"
         },
