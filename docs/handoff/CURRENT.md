@@ -1,6 +1,6 @@
 # 当前交接档案 (CURRENT.md)
 
-**更新时间**: 2026-08-29 13:50
+**更新时间**: 2026-08-29 14:30
 
 ## 当前状态概要
 
@@ -28,6 +28,8 @@
 - [x] 完成 MaaHappyFish 首发整理：公开 README、项目命名、许可证声明与 GitHub Release 工作流
 - [x] Windows x64 发行包内置 Python 3.13 与 MaaFw；其他平台保留为未经维护者验证的实验性构建
 - [x] Windows 测试日志收集器：双击生成最近 3 份日志与测试信息 ZIP，不自动上传或收集账号配置
+- [x] 修复首个测试版嵌入式 Python 未包含 `agent/` 模块搜索路径导致的 Agent 启动失败
+- [x] 将日志收集入口改为纯 ASCII 的 `collect-test-report.cmd`，避免 Windows `cmd.exe` 中文编码解析失败
 
 ## 待验证事项 (To Verify)
 

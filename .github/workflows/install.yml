@@ -19,7 +19,7 @@ on:
       - "assets/**"
       - "**.py"
       - "tools/collect_test_report.ps1"
-      - "tools/收集测试日志.cmd"
+      - "tools/collect-test-report.cmd"
   pull_request:
     branches:
       - "**"
@@ -28,7 +28,7 @@ on:
       - "assets/**"
       - "**.py"
       - "tools/collect_test_report.ps1"
-      - "tools/收集测试日志.cmd"
+      - "tools/collect-test-report.cmd"
   workflow_dispatch:
 
 permissions:
@@ -161,8 +161,10 @@ jobs:
           if (-not $pthFile) { throw "Embedded Python ._pth file was not found." }
 
           $pthContent = (Get-Content -LiteralPath $pthFile.FullName -Raw).Replace("#import site", "import site")
-          if ($pthContent -notmatch "(?m)^Lib/site-packages$") {
-            $pthContent = $pthContent.TrimEnd() + "`nLib/site-packages`n"
+          foreach ($entry in @("Lib/site-packages", "../agent")) {
+            if ($pthContent -notmatch "(?m)^$([regex]::Escape($entry))$") {
+              $pthContent = $pthContent.TrimEnd() + "`n$entry`n"
+            }
           }
           [System.IO.File]::WriteAllText($pthFile.FullName, $pthContent, [System.Text.Encoding]::ASCII)
 
@@ -183,6 +185,9 @@ jobs:
           foreach ($path in $required) {
             if (-not (Test-Path -LiteralPath $path)) { throw "Missing release dependency: $path" }
           }
+
+          & "$pythonDir/python.exe" -c "import my_action, my_reco; print('Embedded Agent imports: OK')"
+          if ($LASTEXITCODE -ne 0) { throw "Embedded Python could not import the Agent modules." }
 
       - name: Bundle third-party licenses
         shell: bash

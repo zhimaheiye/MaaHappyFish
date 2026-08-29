@@ -54,7 +54,7 @@ body:
       label: Test report and logs
       description: |
         1. Note the approximate failure time, stop the task, and close MFAAvalonia.
-        2. Double-click `收集测试日志.cmd` in the application directory. It saves the 3 most recent complete logs and a report form as a ZIP on your desktop.
+        2. Double-click `collect-test-report.cmd` in the application directory. It saves the 3 most recent complete logs and a report form as a ZIP on your desktop.
         3. Upload the complete ZIP and enter the failure time and run duration below. If the collector cannot run, upload the complete matching files from `logs/log-*.log`.
 
         Issues and attachments in this repository are public. Review the ZIP before uploading it. The collector does not upload anything automatically or collect account configuration.

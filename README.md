@@ -40,10 +40,10 @@ Windows x64 正式发行包自带 Python 与 `maafw`，用户不需要另外安�
 
 ## 故障日志收集
 
-Windows 发行包根目录自带 `收集测试日志.cmd`。出现问题后：
+Windows 发行包根目录自带 `collect-test-report.cmd`。出现问题后：
 
 1. 记录问题发生的大致时间，停止任务并关闭 MFAAvalonia。
-2. 双击 `收集测试日志.cmd`。
+2. 双击 `collect-test-report.cmd`。
 3. 在桌面的 `MaaHappyFish-TestReports` 文件夹中找到生成的 ZIP。
 4. 将 ZIP 与问题时间、运行时长和相关截图一起交给维护者分析。
 

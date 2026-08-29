@@ -145,7 +145,7 @@ def install_chores():
             install_path,
         )
         shutil.copy2(
-            working_dir / "tools" / "收集测试日志.cmd",
+            working_dir / "tools" / "collect-test-report.cmd",
             install_path,
         )
 
