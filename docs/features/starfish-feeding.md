@@ -20,9 +20,9 @@ ClickSettingsIcon
   ↓
 VerifyTankSettings (OCR 校验已进入鱼缸设置页)
   ↓
-SelectCuteStarfish (固定点击萌海星卡片)
+SelectCuteStarfish (在前 7 个宠物位置内 OCR 识别“海星”并点击)
   ↓
-VerifyStarfishPanel (OCR 校验已打开萌海星面板)
+VerifyStarfishPanel (OCR 校验已打开海星面板)
   ↓
 ClickReplenishFood (OCR 识别 "补充")
   ↓
@@ -45,6 +45,17 @@ ResumeHarvest (万能返回节点)
 - **设计**: 不使用随机点击水域来取消焦点，使用 `DismissFishBannerIfOpen` 挂机 `4.5s` (idle)，等待横幅自然超时消失。
 
 ## 迭代与 Debug 因果日志
+
+### 2026-08-31 · 每次任务启动后立即喂食一次
+
+- **需求**: 无论使用持续实时还是巡检收宝，任务启动后都先补充一次鱼食，再按所选间隔继续定时喂食。
+- **实现**: `CheckStarfishTimerReco` 按 Maa 任务 ID 识别新任务；首次检查立即触发共享喂食链路，并以此时刻重新开始间隔计时。选择「不喂食」时仍不触发。
+
+### 2026-08-31 · 支持海星出现在前 7 个宠物位置
+
+- **现象**: 宠物数量增多后，海星不再固定出现在第 2 格，最迟可出现在第 7 格；游戏内还存在多个名称不同的海星。
+- **修复**: 主干与单次喂食链路均改为在 `[97, 212, 1092, 504]` 内 OCR 搜索固定子串“海星”，并点击识别结果；进入后的面板校验同步改为“海星”。
+- **ROI 含义**: 四个数值为 `[x, y, width, height]`；未使用截图工具为观察上下文生成的 `ROI EX`。
 
 ### 2026-08-29 · 修复海星入口坐标过时与全屏 OCR 不稳定
 

@@ -11,9 +11,9 @@ from maa.context import Context
 from maa.define import RectType
 
 timer_state = {
-    "last_feed_time": time.time(),
+    "task_id": None,
+    "last_feed_time": 0.0,
     "interval_seconds": 600.0,
-    "is_inited": False
 }
 
 duty_state = {
@@ -150,7 +150,7 @@ class CalcFishingFoodReco(CustomRecognition):
                 ui_msg = f"[鱼食预算] 挂机至 {target_time.strftime('%H:%M')} (共 {total_hours:.1f}h) | 缺口 {int(extra_mins)}分钟 | 需备鱼食: {extra_food}粒 (约 {bags}袋)"
 
             print("=" * 55, flush=True)
-            print("[鱼食预算] 萌海星挂机鱼食规划结果:", flush=True)
+            print("[鱼食预算] 海星挂机鱼食规划结果:", flush=True)
             print(f"[鱼食预算] 当前时间: {now.strftime('%H:%M')} | 计划挂机至: {target_time.strftime('%H:%M')} (共 {total_hours:.1f} 小时)", flush=True)
             print(f"[鱼食预算] 当前存粮可用: {int(current_duration)} 分钟 | 缺口时长: {max(0, int(diff_minutes - current_duration))} 分钟", flush=True)
             print(f"[鱼食预算] 至少需额外准备/购买: {extra_food} 粒 ~= {bags} 袋 (30粒/袋)", flush=True)
@@ -194,26 +194,35 @@ class CheckStarfishTimerReco(CustomRecognition):
                 pass
 
         interval = timer_state["interval_seconds"]
+        task_id = argv.task_detail.task_id
+        is_new_task = timer_state["task_id"] != task_id
+        now = time.time()
 
-        if not timer_state["is_inited"]:
-            timer_state["last_feed_time"] = time.time()
-            timer_state["is_inited"] = True
+        if is_new_task:
+            timer_state["task_id"] = task_id
+            timer_state["last_feed_time"] = now
 
         if interval <= 0:
             return None
 
-        now = time.time()
         elapsed = now - timer_state["last_feed_time"]
 
-        if elapsed >= interval:
+        if is_new_task or elapsed >= interval:
             mins = int(interval / 60) if interval >= 60 else int(interval)
             unit = "分钟" if interval >= 60 else "秒"
             print("=" * 55, flush=True)
-            print(f"[海星喂食] 定时已达! 距上次喂食 {int(elapsed)} 秒 (设定间隔: {int(interval)} 秒)", flush=True)
-            print("[海星喂食] 正在触发萌海星自动补充鱼食...", flush=True)
+            if is_new_task:
+                print("[海星喂食] 任务已启动，先执行一次自动补充鱼食。", flush=True)
+            else:
+                print(f"[海星喂食] 定时已达! 距上次喂食 {int(elapsed)} 秒 (设定间隔: {int(interval)} 秒)", flush=True)
+            print("[海星喂食] 正在触发海星自动补充鱼食...", flush=True)
             print("=" * 55, flush=True)
-            timer_state["last_feed_time"] = time.time()
-            feed_msg = f"[海星喂食] 设定间隔({mins}{unit})已到达，正在自动补充鱼食..."
+            timer_state["last_feed_time"] = now
+            feed_msg = (
+                "[海星喂食] 任务已启动，正在先补充一次鱼食..."
+                if is_new_task
+                else f"[海星喂食] 设定间隔({mins}{unit})已到达，正在自动补充鱼食..."
+            )
             try:
                 context.override_pipeline({
                     "TriggerStarfishFeed": {

@@ -231,14 +231,15 @@
         ]
     },
     "SelectCuteStarfish": {
-        "recognition": "DirectHit",
-        "action": "Click",
-        "target": [
-            450,
-            255,
-            100,
-            160
+        "recognition": "OCR",
+        "expected": "海星",
+        "roi": [
+            97,
+            212,
+            1092,
+            504
         ],
+        "action": "Click",
         "post_delay": 2200,
         "timeout": 4000,
         "next": [
@@ -250,7 +251,7 @@
     },
     "VerifyStarfishPanel": {
         "recognition": "OCR",
-        "expected": "萌海星",
+        "expected": "海星",
         "roi": [
             350,
             160,
@@ -347,7 +348,7 @@
         "post_delay": 300,
         "timeout": -1,
         "focus": {
-            "Node.Action.Succeeded": "[海星喂食] 未找到萌海星入口，本轮已跳过"
+            "Node.Action.Succeeded": "[海星喂食] 未找到海星入口，本轮已跳过"
         },
         "next": [
             "StarfishReturnFirst"
@@ -454,14 +455,15 @@
         ]
     },
     "SelectCuteStarfish_Standalone": {
-        "recognition": "DirectHit",
-        "action": "Click",
-        "target": [
-            450,
-            255,
-            100,
-            160
+        "recognition": "OCR",
+        "expected": "海星",
+        "roi": [
+            97,
+            212,
+            1092,
+            504
         ],
+        "action": "Click",
         "post_delay": 2200,
         "timeout": 4000,
         "next": [
@@ -473,7 +475,7 @@
     },
     "VerifyStarfishPanel_Standalone": {
         "recognition": "OCR",
-        "expected": "萌海星",
+        "expected": "海星",
         "roi": [
             350,
             160,
@@ -570,7 +572,7 @@
         "post_delay": 300,
         "timeout": -1,
         "focus": {
-            "Node.Action.Succeeded": "[海星喂食] 未找到萌海星入口，本轮已跳过"
+            "Node.Action.Succeeded": "[海星喂食] 未找到海星入口，本轮已跳过"
         },
         "next": [
             "StarfishReturnFirst_Standalone"

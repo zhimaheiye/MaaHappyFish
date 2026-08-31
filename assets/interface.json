@@ -68,7 +68,7 @@
             "name": "海星喂食(单次)",
             "entry": "FeedStarfishStandalone",
             "default_check": false,
-            "description": "单独执行一次：打开设置 -> 选中萌海星 -> 补充鱼食 -> 返回鱼缸"
+            "description": "单独执行一次：打开设置 -> 识别海星 -> 补充鱼食 -> 返回鱼缸"
         }
     ],
     "option": {
@@ -208,7 +208,7 @@
         "喂食间隔": {
             "type": "select",
             "label": "海星喂食间隔",
-            "description": "设置每隔多久通过萌海星集中补充一次鱼食",
+            "description": "设置每隔多久为海星集中补充一次鱼食；任务启动后会先立即补充一次",
             "default_case": "10分钟",
             "cases": [
                 {
