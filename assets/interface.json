@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "1.0.0",
+    "version": "0.4.0",
     "agent": {
         "child_exec": "python",
         "child_args": [
