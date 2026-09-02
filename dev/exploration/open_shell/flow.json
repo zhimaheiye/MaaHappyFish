@@ -1,0 +1,312 @@
+{
+  "exploration_task": "open_shell",
+  "device": {
+    "type": "MuMu Android Emulator",
+    "address": "127.0.0.1:16384",
+    "native_resolution": [
+      1920,
+      1080
+    ],
+    "standard_resolution": [
+      1280,
+      720
+    ]
+  },
+  "summary": {
+    "round_completed": true,
+    "observed_cycle": "A -> B -> C1 -> C2 -> C3 -> D -> E -> A_return",
+    "all_expected_states_encountered": true,
+    "critical_correction": "State D in-game text is 保留一个随机奖品, not 保留一个随机奖励"
+  },
+  "states": [
+    {
+      "state": "A",
+      "name": "活动初始页",
+      "screenshot": "screenshots/A_001.png",
+      "resolution": [
+        1280,
+        720
+      ],
+      "recognition": {
+        "type": "OCR",
+        "expected": "立即开始",
+        "observed": "x1 立即开始",
+        "bbox": [
+          505,
+          605,
+          270,
+          60
+        ],
+        "recommended_roi": [
+          450,
+          560,
+          380,
+          130
+        ],
+        "template_fallback": {
+          "file": "screenshots/btn_start.png",
+          "match_score": 1.0
+        }
+      },
+      "action": {
+        "type": "ClickRecognitionResult",
+        "target_center_720p": [
+          640,
+          635
+        ],
+        "device_tap_coordinate": [
+          960,
+          953
+        ]
+      },
+      "result_state": "B",
+      "timing": {
+        "action_to_first_change_s": 0.15,
+        "action_to_settled_s": 1.5
+      },
+      "notes": "消耗 1 卷轴，怒气温度计会递增"
+    },
+    {
+      "state": "B",
+      "name": "贝壳选择页",
+      "screenshot": "screenshots/B_001.png",
+      "resolution": [
+        1280,
+        720
+      ],
+      "recognition": {
+        "type": "OCR",
+        "expected": "打开贝壳",
+        "observed": "打开贝壳",
+        "bbox": [
+          505,
+          615,
+          270,
+          65
+        ],
+        "recommended_roi": [
+          450,
+          570,
+          380,
+          130
+        ],
+        "template_fallback": {
+          "file": "screenshots/btn_open_shell.png",
+          "match_score": 1.0
+        }
+      },
+      "action": {
+        "type": "ClickRecognitionResult",
+        "target_center_720p": [
+          640,
+          647
+        ],
+        "device_tap_coordinate": [
+          960,
+          970
+        ]
+      },
+      "result_state": "C",
+      "timing": {
+        "action_to_first_change_s": 0.15,
+        "animation_duration_s": 2.5,
+        "action_to_settled_s": 3.5
+      },
+      "notes": "聚光灯照在当前待开贝壳上，点击后播放开贝壳动画"
+    },
+    {
+      "state": "C",
+      "name": "普通开贝壳结果页",
+      "screenshots": [
+        "screenshots/C_001.png",
+        "screenshots/C_002.png"
+      ],
+      "resolution": [
+        1280,
+        720
+      ],
+      "recognition": {
+        "type": "OCR",
+        "expected": "继续开贝壳",
+        "observed": "继续开贝壳",
+        "bbox": [
+          720,
+          620,
+          270,
+          65
+        ],
+        "recommended_roi": [
+          650,
+          570,
+          380,
+          130
+        ],
+        "template_fallback": {
+          "file": "screenshots/btn_continue_shell.png",
+          "match_score": 1.0
+        }
+      },
+      "action": {
+        "type": "ClickRecognitionResult",
+        "target_center_720p": [
+          856,
+          653
+        ],
+        "device_tap_coordinate": [
+          1284,
+          980
+        ]
+      },
+      "result_state": "C / D",
+      "timing": {
+        "action_to_first_change_s": 0.14,
+        "action_to_settled_s": 3.5
+      },
+      "notes": "左侧为拿走所有奖励，右侧为继续开贝壳。自动化固定点击右侧。"
+    },
+    {
+      "state": "D",
+      "name": "遇到章鱼干扰页",
+      "screenshot": "screenshots/D_001.png",
+      "resolution": [
+        1280,
+        720
+      ],
+      "recognition": {
+        "type": "OCR",
+        "expected": "保留一个随机奖品",
+        "observed": "保留一个随机奖品",
+        "bbox": [
+          310,
+          620,
+          270,
+          65
+        ],
+        "recommended_roi": [
+          250,
+          570,
+          380,
+          130
+        ],
+        "template_fallback": {
+          "file": "screenshots/btn_keep_random.png",
+          "match_score": 1.0
+        }
+      },
+      "action": {
+        "type": "ClickRecognitionResult",
+        "target_center_720p": [
+          446,
+          653
+        ],
+        "device_tap_coordinate": [
+          669,
+          980
+        ]
+      },
+      "result_state": "E",
+      "timing": {
+        "action_to_first_change_s": 0.15,
+        "action_to_settled_s": 2.5
+      },
+      "notes": "关键发现：界面实际为奖品（非奖励）。右侧为X 3 继续，固定点击左侧"
+    },
+    {
+      "state": "E",
+      "name": "最终结算页",
+      "screenshot": "screenshots/E_001.png",
+      "resolution": [
+        1280,
+        720
+      ],
+      "recognition": {
+        "type": "OCR",
+        "expected": "太好了",
+        "observed": "太好了",
+        "bbox": [
+          505,
+          615,
+          270,
+          65
+        ],
+        "recommended_roi": [
+          400,
+          550,
+          650,
+          160
+        ],
+        "template_fallback": {
+          "file": "screenshots/btn_so_great.png",
+          "match_score": 1.0
+        }
+      },
+      "action": {
+        "type": "ClickRecognitionResult",
+        "target_center_720p": [
+          640,
+          647
+        ],
+        "device_tap_coordinate": [
+          960,
+          970
+        ]
+      },
+      "result_state": "A",
+      "timing": {
+        "action_to_first_change_s": 0.15,
+        "action_to_settled_s": 2.5
+      },
+      "notes": "支持两种布局变体：居中单按钮(章鱼后结算)与偏右双按钮含分享(自然开完5贝壳后结算)。统一使用 ROI [400, 550, 650, 160] 自动覆盖。",
+      "variants": [
+        {
+          "name": "single_button_center",
+          "screenshot": "screenshots/E_001.png",
+          "bbox": [
+            505,
+            615,
+            270,
+            65
+          ],
+          "click_target_720p": [
+            640,
+            647
+          ]
+        },
+        {
+          "name": "share_and_finish_right",
+          "screenshot": "screenshots/E_002_share.png",
+          "bbox": [
+            720,
+            620,
+            270,
+            65
+          ],
+          "click_target_720p": [
+            856,
+            653
+          ]
+        }
+      ]
+    },
+    {
+      "state": "A_return",
+      "name": "初始活动页闭环验证",
+      "screenshot": "screenshots/A_return_001.png",
+      "resolution": [
+        1280,
+        720
+      ],
+      "recognition": {
+        "type": "OCR / TemplateMatch",
+        "expected": "立即开始",
+        "observed": "x1 立即开始",
+        "template_match_score": 1.0,
+        "loc": [
+          500,
+          600
+        ]
+      },
+      "notes": "闭环验证完全通过，卷轴从 508 变 507，温度计从 12% 增加至 13%"
+    }
+  ]
+}

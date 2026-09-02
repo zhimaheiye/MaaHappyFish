@@ -33,6 +33,12 @@ screen_stall_state = {
     "last_change_time": 0.0,
 }
 
+open_shell_loop_state = {
+    "task_id": None,
+    "completed": 0,
+    "target": 1,
+}
+
 
 def _make_screen_sample(image: np.ndarray, sample_step: int) -> np.ndarray:
     if image is None or image.size == 0:
@@ -395,3 +401,47 @@ class CheckDutyCycleReco(CustomRecognition):
                         pass
                 time.sleep(2)
                 return (0, 0, 10, 10)
+
+
+@AgentServer.custom_recognition("CheckOpenShellLoopReco")
+class CheckOpenShellLoopReco(CustomRecognition):
+
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        global open_shell_loop_state
+
+        param = argv.custom_recognition_param
+        if isinstance(param, str) and param:
+            try:
+                param = json.loads(param)
+            except Exception:
+                param = {}
+        elif not isinstance(param, dict):
+            param = {}
+
+        try:
+            target_count = max(1, int(param.get("target_count", 1)))
+        except (TypeError, ValueError):
+            target_count = 1
+
+        task_id = argv.task_detail.task_id
+        if open_shell_loop_state["task_id"] != task_id:
+            open_shell_loop_state = {
+                "task_id": task_id,
+                "completed": 0,
+                "target": target_count,
+            }
+
+        open_shell_loop_state["target"] = target_count
+        open_shell_loop_state["completed"] += 1
+        completed = open_shell_loop_state["completed"]
+
+        if completed < target_count:
+            print(f"[开贝壳] 已完成 {completed}/{target_count} 轮，继续下一轮", flush=True)
+            return (0, 0, 10, 10)
+        else:
+            print(f"[开贝壳] 已完成 {completed}/{target_count} 轮，任务完成", flush=True)
+            return None

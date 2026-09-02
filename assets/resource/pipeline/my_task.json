@@ -1,4 +1,4 @@
-﻿{
+{
     "StartAppTask": {
         "action": "StartApp",
         "package": "com.happyelements.happyfishandroidcns/com.happyelements.happyfish.MainActivity",
@@ -39,6 +39,132 @@
         "action": "DoNothing"
     },
     "DailySignTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
+    },
+    "OpenShellTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "OpenShellRoundStart"
+        ]
+    },
+    "OpenShellRoundStart": {
+        "recognition": "OCR",
+        "expected": "立即开始",
+        "roi": [
+            450,
+            560,
+            380,
+            130
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "OpenShellOpenFirst"
+        ]
+    },
+    "OpenShellOpenFirst": {
+        "recognition": "OCR",
+        "expected": "打开贝壳",
+        "roi": [
+            450,
+            570,
+            380,
+            130
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "OpenShellResultRouter"
+        ]
+    },
+    "OpenShellResultRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "OpenShellOctopus",
+            "OpenShellFinish",
+            "OpenShellContinue"
+        ]
+    },
+    "OpenShellContinue": {
+        "recognition": "OCR",
+        "expected": "继续开贝壳",
+        "roi": [
+            650,
+            570,
+            380,
+            130
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "OpenShellResultRouter"
+        ]
+    },
+    "OpenShellOctopus": {
+        "recognition": "OCR",
+        "expected": "随机奖品",
+        "roi": [
+            250,
+            570,
+            380,
+            130
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "OpenShellFinish"
+        ]
+    },
+    "OpenShellFinish": {
+        "recognition": "OCR",
+        "expected": "太好了",
+        "roi": [
+            400,
+            550,
+            650,
+            160
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "OpenShellConfirmReturn"
+        ]
+    },
+    "OpenShellConfirmReturn": {
+        "recognition": "OCR",
+        "expected": "立即开始",
+        "roi": [
+            450,
+            560,
+            380,
+            130
+        ],
+        "action": "DoNothing",
+        "post_delay": 200,
+        "next": [
+            "OpenShellLoopRouter"
+        ]
+    },
+    "OpenShellLoopRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "OpenShellShouldContinue",
+            "OpenShellDone"
+        ]
+    },
+    "OpenShellShouldContinue": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckOpenShellLoopReco",
+        "action": "DoNothing",
+        "next": [
+            "OpenShellRoundStart"
+        ]
+    },
+    "OpenShellDone": {
         "recognition": "DirectHit",
         "action": "DoNothing"
     }

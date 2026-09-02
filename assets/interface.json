@@ -54,6 +54,15 @@
             "description": "自动完成每日签到与领奖"
         },
         {
+            "name": "开贝壳",
+            "entry": "OpenShellTask",
+            "default_check": false,
+            "description": "自动连续开贝壳，普通奖励始终继续，遇章鱼固定保留一个随机奖品（请在大章鱼活动主界面开始任务）",
+            "option": [
+                "开贝壳次数"
+            ]
+        },
+        {
             "name": "收鱼产物",
             "entry": "CollectFishTask",
             "default_check": true,
@@ -72,6 +81,27 @@
         }
     ],
     "option": {
+        "开贝壳次数": {
+            "type": "input",
+            "label": "开贝壳次数",
+            "description": "完整执行多少轮开贝壳；每轮从大章鱼活动主界面的“立即开始”到结算并返回活动页计为1次",
+            "inputs": [
+                {
+                    "name": "次数",
+                    "label": "次数",
+                    "default": "1",
+                    "pipeline_type": "int",
+                    "verify": "^[1-9]\\d*$"
+                }
+            ],
+            "pipeline_override": {
+                "OpenShellShouldContinue": {
+                    "custom_recognition_param": {
+                        "target_count": "{次数}"
+                    }
+                }
+            }
+        },
         "挂机鱼食计算": {
             "type": "input",
             "label": "挂机鱼食预算计算",
