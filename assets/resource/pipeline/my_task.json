@@ -167,5 +167,136 @@
     "OpenShellDone": {
         "recognition": "DirectHit",
         "action": "DoNothing"
+    },
+    "FriendGemTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "InitFriendGemStateAction",
+        "next": [
+            "FriendGemEnterFirstFriend"
+        ]
+    },
+    "FriendGemEnterFirstFriend": {
+        "recognition": "DirectHit",
+        "action": "Click",
+        "target": [
+            120,
+            320,
+            60,
+            60
+        ],
+        "post_delay": 1500,
+        "next": [
+            "FriendGemFriendRouter"
+        ]
+    },
+    "FriendGemFriendRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FriendGemAddFriendPage",
+            "FriendGemWelcomePopup",
+            "FriendGemExhausted",
+            "FriendGemAttemptLimitReached",
+            "FriendGemCollectBubble",
+            "FriendGemNextFriend"
+        ]
+    },
+    "FriendGemAddFriendPage": {
+        "recognition": "OCR",
+        "expected": "全部添加",
+        "roi": [
+            750,
+            330,
+            160,
+            70
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FriendGemDone"
+        ]
+    },
+    "FriendGemWelcomePopup": {
+        "recognition": "OCR",
+        "expected": "欢迎来到",
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "FriendGemFriendRouter"
+        ]
+    },
+    "FriendGemExhausted": {
+        "recognition": "OCR",
+        "expected": "刷新体力",
+        "roi": [
+            60,
+            220,
+            260,
+            120
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FriendGemNextFriend"
+        ]
+    },
+    "FriendGemAttemptLimitReached": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckFriendGemLimitReco",
+        "action": "DoNothing",
+        "next": [
+            "FriendGemNextFriend"
+        ]
+    },
+    "FriendGemCollectBubble": {
+        "recognition": "TemplateMatch",
+        "template": "金币气泡.png",
+        "threshold": 0.75,
+        "roi": [
+            230,
+            140,
+            820,
+            470
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "FriendGemRecordAttempt"
+        ]
+    },
+    "FriendGemRecordAttempt": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "RecordFriendGemAttemptAction",
+        "next": [
+            "FriendGemFriendRouter"
+        ]
+    },
+    "FriendGemNextFriend": {
+        "recognition": "TemplateMatch",
+        "template": "好友_下一位.png",
+        "roi": [
+            1140,
+            50,
+            130,
+            80
+        ],
+        "threshold": 0.70,
+        "action": "Click",
+        "post_delay": 1200,
+        "next": [
+            "FriendGemResetAttempts"
+        ]
+    },
+    "FriendGemResetAttempts": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "ResetFriendGemAttemptsAction",
+        "next": [
+            "FriendGemFriendRouter"
+        ]
+    },
+    "FriendGemDone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
     }
 }

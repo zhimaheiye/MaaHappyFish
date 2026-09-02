@@ -6,6 +6,11 @@ from maa.agent.agent_server import AgentServer
 from maa.custom_action import CustomAction
 from maa.context import Context
 
+try:
+    from runtime_state import friend_gem_state
+except ImportError:
+    from agent.runtime_state import friend_gem_state
+
 
 @AgentServer.custom_action("CalcFishingFoodAction")
 class CalcFishingFoodAction(CustomAction):
@@ -74,4 +79,31 @@ class CalcFishingFoodAction(CustomAction):
         except Exception as e:
             print(f"[鱼食预算] 计算异常: {e}", flush=True)
 
+        return True
+
+
+@AgentServer.custom_action("InitFriendGemStateAction")
+class InitFriendGemStateAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        friend_gem_state["attempts"] = 0
+        friend_gem_state["current_friend_index"] = 1
+        friend_gem_state["max_attempts"] = 12
+        print("[好友摸宝] 任务初始化完成：好友序号重置为 1，气泡点击上限为 12", flush=True)
+        return True
+
+
+@AgentServer.custom_action("RecordFriendGemAttemptAction")
+class RecordFriendGemAttemptAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        friend_gem_state["attempts"] += 1
+        print(f"[好友摸宝] 已执行气泡点击 ({friend_gem_state['attempts']}/{friend_gem_state['max_attempts']})", flush=True)
+        return True
+
+
+@AgentServer.custom_action("ResetFriendGemAttemptsAction")
+class ResetFriendGemAttemptsAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        friend_gem_state["attempts"] = 0
+        friend_gem_state["current_friend_index"] += 1
+        print(f"[好友摸宝] 已切换至第 {friend_gem_state['current_friend_index']} 位好友，计数重置", flush=True)
         return True

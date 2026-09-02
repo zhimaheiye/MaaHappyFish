@@ -63,6 +63,12 @@
             ]
         },
         {
+            "name": "好友摸宝",
+            "entry": "FriendGemTask",
+            "default_check": false,
+            "description": "自动巡访好友鱼缸收取金币产物，单好友上限12次，体力耗尽自动跳过（请在好友列表主界面开始任务）"
+        },
+        {
             "name": "收鱼产物",
             "entry": "CollectFishTask",
             "default_check": true,

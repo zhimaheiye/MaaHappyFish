@@ -10,6 +10,11 @@ from maa.custom_recognition import CustomRecognition
 from maa.context import Context
 from maa.define import RectType
 
+try:
+    from runtime_state import friend_gem_state
+except ImportError:
+    from agent.runtime_state import friend_gem_state
+
 timer_state = {
     "task_id": None,
     "last_feed_time": 0.0,
@@ -445,3 +450,20 @@ class CheckOpenShellLoopReco(CustomRecognition):
         else:
             print(f"[开贝壳] 已完成 {completed}/{target_count} 轮，任务完成", flush=True)
             return None
+
+
+@AgentServer.custom_recognition("CheckFriendGemLimitReco")
+class CheckFriendGemLimitReco(CustomRecognition):
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        if friend_gem_state["attempts"] >= friend_gem_state["max_attempts"]:
+            print(
+                f"[好友摸宝] 当前好友尝试已达上限 "
+                f"({friend_gem_state['attempts']}/{friend_gem_state['max_attempts']})，准备切换下一位",
+                flush=True,
+            )
+            return (0, 0, 10, 10)
+        return None
