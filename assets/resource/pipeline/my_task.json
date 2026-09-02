@@ -247,11 +247,12 @@
         "expected": "刷新体力",
         "roi": [
             60,
-            220,
-            260,
-            120
+            210,
+            400,
+            140
         ],
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "LogFriendGemExhaustedAction",
         "next": [
             "FriendGemNextFriend"
         ]

@@ -107,3 +107,11 @@ class ResetFriendGemAttemptsAction(CustomAction):
         friend_gem_state["current_friend_index"] += 1
         print(f"[好友摸宝] 已切换至第 {friend_gem_state['current_friend_index']} 位好友，计数重置", flush=True)
         return True
+
+
+@AgentServer.custom_action("LogFriendGemExhaustedAction")
+class LogFriendGemExhaustedAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        print(f"[好友摸宝] 当前好友（第 {friend_gem_state['current_friend_index']} 位）体力已耗尽，跳过气泡采集", flush=True)
+        return True
+
