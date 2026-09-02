@@ -196,6 +196,7 @@
         "next": [
             "FriendGemAddFriendPage",
             "FriendGemWelcomePopup",
+            "FriendGemSpecialPopup",
             "FriendGemExhausted",
             "FriendGemAttemptLimitReached",
             "FriendGemCollectBubble",
@@ -219,6 +220,22 @@
     "FriendGemWelcomePopup": {
         "recognition": "OCR",
         "expected": "欢迎来到",
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "FriendGemFriendRouter"
+        ]
+    },
+    "FriendGemSpecialPopup": {
+        "recognition": "TemplateMatch",
+        "template": "绿色勾选按钮.png",
+        "roi": [
+            760,
+            420,
+            120,
+            120
+        ],
+        "threshold": 0.8,
         "action": "Click",
         "post_delay": 500,
         "next": [
