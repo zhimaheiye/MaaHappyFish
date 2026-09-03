@@ -84,6 +84,15 @@
             "entry": "FeedStarfishStandalone",
             "default_check": false,
             "description": "单独执行一次：打开设置 -> 识别海星 -> 补充鱼食 -> 返回鱼缸"
+        },
+        {
+            "name": "钓鱼达人",
+            "entry": "FishingTask",
+            "default_check": false,
+            "description": "从自己的鱼缸进入钓鱼达人并前往指定钓鱼地点；自动钓鱼逻辑仍在开发中（请在自身鱼缸主界面开始任务）",
+            "option": [
+                "钓鱼地点"
+            ]
         }
     ],
     "option": {
@@ -314,6 +323,74 @@
                             "custom_recognition_param": {
                                 "interval": -1
                             }
+                        }
+                    }
+                }
+            ]
+        },
+        "钓鱼地点": {
+            "type": "select",
+            "label": "目标钓鱼地点",
+            "description": "选择需要前往的钓鱼场景地点",
+            "default_case": "星河",
+            "cases": [
+                {
+                    "name": "星河",
+                    "pipeline_override": {
+                        "FishingLocationRouter": {
+                            "next": [
+                                "FishingSelectLocation_Xinghe"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "冰川",
+                    "pipeline_override": {
+                        "FishingLocationRouter": {
+                            "next": [
+                                "FishingSelectLocation_Bingchuan"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "宫殿温泉",
+                    "pipeline_override": {
+                        "FishingLocationRouter": {
+                            "next": [
+                                "FishingSelectLocation_Gongdian"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "魔法塔楼",
+                    "pipeline_override": {
+                        "FishingLocationRouter": {
+                            "next": [
+                                "FishingSelectLocation_Mofa"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "大戏台",
+                    "pipeline_override": {
+                        "FishingLocationRouter": {
+                            "next": [
+                                "FishingSelectLocation_Daxitai"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "星空湖",
+                    "pipeline_override": {
+                        "FishingLocationRouter": {
+                            "next": [
+                                "FishingSelectLocation_Xingkonghu"
+                            ]
                         }
                     }
                 }

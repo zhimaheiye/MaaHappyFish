@@ -18,6 +18,7 @@
 | 维护“鱼食预算”计算逻辑 | `docs/features/fish-food-budget.md` |
 | 维护“开贝壳”活动自动化 | `docs/features/open-shell.md` |
 | 维护“好友摸宝”巡访与采集 | `docs/features/friend-gem.md` |
+| 维护“钓鱼达人”导航与活动 | `docs/features/fishing.md` |
 
 ## 核心文件速查表
 | 文件路径 | 模块说明 | 关键注意点 |
