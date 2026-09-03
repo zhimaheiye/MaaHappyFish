@@ -29,3 +29,19 @@
 | `assets/interface.json` | 任务选项配置 | 修改后需手动同步至 `client_avalonia/` 和 `client/`。 |
 | `assets/resource/pipeline/my_task.json` | 启动与活动任务流水线 | 包含 `OpenShellTask` 状态机。开贝壳任务需在大章鱼主界面启动。 |
 | `assets/resource/pipeline/collect_fish.json` | 任务主干流水线 | `client_avalonia/resource` 通过 junction 链接至此，修改一处即可生效。 |
+
+## 开发与架构硬规则 (Hard Architectural Rules)
+
+### 步骤可恢复导航架构 (Step-resumable Navigation)
+对于存在连续多步 GUI 流程的任务（`Step 1 -> Step 2 -> Step 3 -> ...`）：
+- **禁止硬编码单一起点**：任务入口不得假定用户必然处于 `Step 1`，禁止为了满足线性脚本结构强行退回第一步；
+- **状态驱动恢复**：每次任务启动或重启时，必须基于当前真实截屏判定用户处于哪个已支持阶段；
+- **真实页面原则**：`Current UI State > historical progress`，严禁使用外部变量或上次记录猜测阶段；
+- **最深阶段优先（Deepest-First）**：
+  ```text
+  Task -> StartRouter
+            ├─ DeepestKnownStage (如已在终态/场景内)
+            ├─ IntermediateKnownStage (如已在中间地图/面板)
+            └─ EarliestKnownStage (如还在初始主界面)
+  ```
+- **契约明确**：任务支持的中途启动阶段必须在任务文档与说明（Start Contract）中明确记录。除业务明确要求或中间状态不可安全识别外，一律提供步骤可恢复兼容。

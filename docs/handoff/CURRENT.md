@@ -68,3 +68,4 @@
 - `interface.json` 改动后，**务必**手动分发覆盖 `assets/`、`client_avalonia/` 和 `client/`，junction link 仅覆盖了 `resource` 文件夹。
 - 调试遇到 Agent 无故终止时，第一时间检查是否有新引入的代码打印了 UTF-8 特殊字符（如 Emoji）。
 - MFA UI 日志面板的内容来源是 Pipeline `focus` 字段触发的框架回调，**不是** Python `print()`。如需在 UI 显示动态消息，应在 Python Agent 中调用 `context.override_pipeline()` 注入目标节点的 `focus` 内容。
+- **步骤可恢复导航规范（Step-resumable Navigation）**：存在多步流程的任务必须在启动时通过 StartRouter（最深已知阶段优先）自适应识别用户当前停留在流程的哪一步，直接就地向下恢复，严禁默认退回第一步重新开始。各阶段契约需在任务文档中明确。

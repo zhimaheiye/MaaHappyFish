@@ -390,10 +390,63 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
-            "FishingNavOwnTank"
+            "FishingStartRouter"
         ]
     },
-    "FishingNavOwnTank": {
+    "FishingStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FishingStartAtScene",
+            "FishingStartAtLocationMap",
+            "FishingStartAtActivityGrid",
+            "FishingStartAtOwnTank"
+        ]
+    },
+    "FishingStartAtScene": {
+        "recognition": "OCR",
+        "expected": "甩杆",
+        "roi": [
+            1050,
+            520,
+            160,
+            100
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingSceneReady"
+        ]
+    },
+    "FishingStartAtLocationMap": {
+        "recognition": "OCR",
+        "expected": "钓鱼达人",
+        "roi": [
+            25,
+            30,
+            160,
+            55
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingLocationRouter"
+        ]
+    },
+    "FishingStartAtActivityGrid": {
+        "recognition": "TemplateMatch",
+        "template": "钓鱼达人入口.png",
+        "roi": [
+            200,
+            410,
+            100,
+            100
+        ],
+        "threshold": 0.70,
+        "action": "DoNothing",
+        "next": [
+            "FishingNavActivityGrid"
+        ]
+    },
+    "FishingStartAtOwnTank": {
         "recognition": "TemplateMatch",
         "template": "主界面特征.png",
         "roi": [
@@ -467,14 +520,7 @@
         ]
     },
     "FishingSelectLocation_Xinghe": {
-        "recognition": "OCR",
-        "expected": "星河",
-        "roi": [
-            500,
-            70,
-            140,
-            70
-        ],
+        "recognition": "DirectHit",
         "action": "Click",
         "target": [
             566,
@@ -488,14 +534,7 @@
         ]
     },
     "FishingSelectLocation_Bingchuan": {
-        "recognition": "OCR",
-        "expected": "冰川",
-        "roi": [
-            250,
-            210,
-            140,
-            70
-        ],
+        "recognition": "DirectHit",
         "action": "Click",
         "target": [
             315,
@@ -509,14 +548,7 @@
         ]
     },
     "FishingSelectLocation_Gongdian": {
-        "recognition": "OCR",
-        "expected": "宫殿温泉",
-        "roi": [
-            820,
-            40,
-            160,
-            60
-        ],
+        "recognition": "DirectHit",
         "action": "Click",
         "target": [
             905,
@@ -530,14 +562,7 @@
         ]
     },
     "FishingSelectLocation_Mofa": {
-        "recognition": "OCR",
-        "expected": "魔法塔楼",
-        "roi": [
-            760,
-            230,
-            160,
-            60
-        ],
+        "recognition": "DirectHit",
         "action": "Click",
         "target": [
             848,
@@ -551,14 +576,7 @@
         ]
     },
     "FishingSelectLocation_Daxitai": {
-        "recognition": "OCR",
-        "expected": "大戏台",
-        "roi": [
-            380,
-            430,
-            140,
-            60
-        ],
+        "recognition": "DirectHit",
         "action": "Click",
         "target": [
             443,
@@ -572,14 +590,7 @@
         ]
     },
     "FishingSelectLocation_Xingkonghu": {
-        "recognition": "OCR",
-        "expected": "星空湖",
-        "roi": [
-            1080,
-            420,
-            140,
-            60
-        ],
+        "recognition": "DirectHit",
         "action": "Click",
         "target": [
             1143,

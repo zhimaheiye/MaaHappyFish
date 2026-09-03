@@ -1,11 +1,14 @@
 # 钓鱼达人功能设计与状态机规范 (FishingTask)
 
-## 1. 业务目标与边界约束
+## 1. 业务目标与启动契约 (Start Contract)
 
-- **功能概述**：自动从自身水族箱主界面进入游乐园，开启钓鱼达人活动并前往指定钓鱼地点。
-- **允许起点（Start Contract）**：
-  - 仅支持从“用户自身水族箱主界面”启动；
-  - 不支持从好友鱼缸、活动子页面或其它非主界面启动。
+- **功能概述**：自动从自身水族箱主界面（或任意中途阶段）进入游乐园，开启钓鱼达人活动并前往指定钓鱼地点。
+- **步骤可恢复启动契约（Step-resumable Start Contract）**：
+  任务具备自适应中途启动恢复能力，支持从以下 4 个已知阶段中的任意一个阶段直接启动或重启：
+  1. **钓鱼场景（未甩杆）**：直接识别「甩杆」按钮（`FishingStartAtScene`），判定任务已就绪并优雅完成，不发生额外跳转，0 鱼饵消耗；
+  2. **钓鱼地点选择大地图**：直接识别「钓鱼达人」标题（`FishingStartAtLocationMap`），直接选取配置地点进入，无需倒退回主界面；
+  3. **2×6 游乐园活动弹窗**：直接识别第一排第二格钓鱼达人图标（`FishingStartAtActivityGrid`），点击进入大地图并选点；
+  4. **自身水族箱主界面**：识别公主任务标志（`FishingStartAtOwnTank`），点击游乐园摩天轮入口，完整执行全流程。
 - **阶段红线约束（Phase 1）**：
   - **严禁点击甩杆**；
   - **严禁消耗任何鱼饵**；
@@ -18,39 +21,41 @@
 ```text
 FishingTask (入口)
     ↓
-FishingNavOwnTank (模板匹配「主界面特征.png」确认自身水族箱)
-    ↓
-FishingNavOpenAmusement (模板匹配左下角「游乐园入口.png」，点击进入)
-    ↓
-FishingNavActivityGrid (模板匹配第一排第二格「钓鱼达人入口.png」，点击进入)
-    ↓
-FishingLocationRouter (OCR 识别大地图标题「钓鱼达人」)
-    ├─ 目标地点: 星河 ────> FishingSelectLocation_Xinghe (OCR点击「星河」) ────────┐
-    ├─ 目标地点: 冰川 ────> FishingSelectLocation_Bingchuan (OCR点击「冰川」) ────┤
-    ├─ 目标地点: 宫殿温泉 ──> FishingSelectLocation_Gongdian (OCR点击「宫殿温泉」) ┤
-    ├─ 目标地点: 魔法塔楼 ──> FishingSelectLocation_Mofa (OCR点击「魔法塔楼」) ─┤
-    ├─ 目标地点: 大戏台 ──> FishingSelectLocation_Daxitai (OCR点击「大戏台」) ───┤
-    └─ 目标地点: 星空湖 ──> FishingSelectLocation_Xingkonghu (OCR点击「星空湖」) ─┤
-                                                                                 │
-                                                                                 ▼
-                                                                       FishingSceneReady
-                                                     (OCR 识别「甩杆」，DoNothing 结束)
+FishingStartRouter (最深已知阶段优先路由)
+    ├─ 1. [最深] 已在钓鱼场景 ──> FishingStartAtScene (OCR "甩杆") ───> FishingSceneReady (完成)
+    ├─ 2. 已在地点选择大地图 ──> FishingStartAtLocationMap (OCR "钓鱼达人") ──> FishingLocationRouter ──┐
+    ├─ 3. 已打开 2x6 活动面板 ──> FishingStartAtActivityGrid (模板匹配鱼竿) ──> FishingNavActivityGrid ─┤
+    └─ 4. [最浅] 还在自身水族箱 ──> FishingStartAtOwnTank (模板匹配主界面) ────> FishingNavOpenAmusement ┘
+                                                                                      │
+                                                                                      ▼
+                                                                            FishingLocationRouter
+                                                                         (根据选项 DirectHit 点击地点)
+                                                                            ├─ 星河 (566, 109)
+                                                                            ├─ 冰川 (315, 251)
+                                                                            ├─ 宫殿温泉 (905, 67)
+                                                                            ├─ 魔法塔楼 (848, 262)
+                                                                            ├─ 大戏台 (443, 461)
+                                                                            └─ 星空湖 (1143, 454)
+                                                                                      │
+                                                                                      ▼
+                                                                            FishingSceneReady
+                                                          (OCR 校验「甩杆」，DoNothing 优雅停止)
 ```
 
 ---
 
 ## 3. 地点配置与选项映射
 
-通过 `assets/interface.json` 中的 `钓鱼地点` 单选配置，利用 `pipeline_override` 将 `FishingLocationRouter.next` 重定向至对应地点的选择节点：
+通过 `assets/interface.json` 中的 `钓鱼地点` 单选配置，利用 `pipeline_override` 将 `FishingLocationRouter.next` 重定向至对应地点的选择节点。各地点在大地图上的相对布局固定，节点采用 `DirectHit` 定位点击并由 `FishingSceneReady` 严格闭环校验，避免艺术字 OCR 识别分词或字符杂质（如 `宫m殿温泉`）：
 
-| 地点名称 | 解锁状态 | OCR 匹配文本 | 推荐 ROI | 点击 Target |
+| 地点名称 | 解锁状态 | 识别方式 | 点击 Target 坐标 | 场景校验 |
 | :--- | :--- | :--- | :--- | :--- |
-| **星河** | 已解锁 | `星河` | `[500, 70, 140, 70]` | `[566, 109, 30, 20]` |
-| **冰川** | 已解锁 | `冰川` | `[250, 210, 140, 70]` | `[315, 251, 30, 20]` |
-| **宫殿温泉** | 已解锁 | `宫殿温泉` | `[820, 40, 160, 60]` | `[905, 67, 30, 20]` |
-| **魔法塔楼** | 已解锁 | `魔法塔楼` | `[760, 230, 160, 60]` | `[848, 262, 30, 20]` |
-| **大戏台** | 已解锁 | `大戏台` | `[380, 430, 140, 60]` | `[443, 461, 30, 20]` |
-| **星空湖** | 已解锁 | `星空湖` | `[1080, 420, 140, 60]` | `[1143, 454, 30, 20]` |
+| **星河** | 已解锁 | `DirectHit` | `[566, 109, 30, 20]` | OCR 验证 `甩杆` |
+| **冰川** | 已解锁 | `DirectHit` | `[315, 251, 30, 20]` | OCR 验证 `甩杆` |
+| **宫殿温泉** | 已解锁 | `DirectHit` | `[905, 67, 30, 20]` | OCR 验证 `甩杆` |
+| **魔法塔楼** | 已解锁 | `DirectHit` | `[848, 262, 30, 20]` | OCR 验证 `甩杆` |
+| **大戏台** | 已解锁 | `DirectHit` | `[443, 461, 30, 20]` | OCR 验证 `甩杆` |
+| **星空湖** | 已解锁 | `DirectHit` | `[1143, 454, 30, 20]` | OCR 验证 `甩杆` |
 
 ---
 
