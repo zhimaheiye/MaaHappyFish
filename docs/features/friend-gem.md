@@ -20,6 +20,7 @@ FriendGemFriendRouter (直通路由器)
     ├─ 到达末尾 ──> FriendGemAddFriendPage (OCR「全部添加」/ 无状态栏) ──> FriendGemDone (结束)
     ├─ 欢迎弹窗 ──> FriendGemWelcomePopup (OCR「欢迎来到」点击关闭) ────┐
     ├─ 系统弹窗 ──> FriendGemSpecialPopup (匹配「绿色勾选按钮.png」) ───┤
+    ├─ 鱼宝乐园 ──> FriendGemFishBabyPark (OCR「鱼宝|乐园」点击右上X) ──┤
     │                                                                   │
     ├─ 体力耗尽 ──> FriendGemExhausted (OCR「刷新体力」/ 灰电) ────────┐  │
     ├─ 次数已满 ──> FriendGemAttemptLimitReached (CheckFriendGemLimit) │  │
@@ -81,6 +82,12 @@ FriendGemResetAttempts (attempts 清零，friend_index + 1)
 ### 7. 弹窗分层与长尾样本捕获
 - **系统提示弹窗（`FriendGemSpecialPopup`，已实机验证）**：在 44 分钟长链路 E2E 测试至第 200 位水族箱时捕获真实弹窗现场（“进化鱼特效已被关闭”提示），通过匹配特征模版 `assets/resource/image/绿色勾选按钮.png` 并在 `ROI: [760, 420, 120, 120]` 内点击确定，自动消除弹窗。
 - **欢迎弹窗（`FriendGemWelcomePopup`，骨架待覆盖）**：针对首访好友可能弹出的“欢迎来到”提示，保留为未覆盖样本节点，避免混淆。
+
+### 8. 误入鱼宝乐园自愈（`FriendGemFishBabyPark`）
+- **误入场景**：在好友鱼缸采集气泡过程中，偶尔可能点击到底部右侧珊瑚/生物装饰，误进入好友的“鱼宝乐园”。
+- **识别设计**：顶部标题艺术字检测，OCR `expected: "鱼宝|乐园"`，检测区域 `ROI: [380, 0, 520, 150]`（覆盖率 100%，正常水族箱零误报）。
+- **恢复操作**：点击右上角固定黄色关闭按钮 `target: [1175, 25, 65, 60]`，延迟 1000ms 平滑返回原好友水族箱。
+- **状态维护**：不重置 attempts，不增加 friend_index，不切好友，直通回到 `FriendGemFriendRouter` 继续摸宝。
 
 ---
 
