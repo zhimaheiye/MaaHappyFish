@@ -7,4 +7,6 @@ friend_gem_state = {
     "attempts": 0,
     "max_attempts": 12,
     "current_friend_index": 1,
+    "bubble_miss_count": 0,
+    "max_bubble_misses": 8,
 }

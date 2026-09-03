@@ -173,11 +173,26 @@
         "action": "Custom",
         "custom_action": "InitFriendGemStateAction",
         "next": [
-            "FriendGemEnterFirstFriend"
+            "FriendGemStartRouter"
         ]
     },
-    "FriendGemEnterFirstFriend": {
+    "FriendGemStartRouter": {
         "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FriendGemStartFromFriendList",
+            "FriendGemStartInFriendTank"
+        ]
+    },
+    "FriendGemStartFromFriendList": {
+        "recognition": "OCR",
+        "expected": "星级好友",
+        "roi": [
+            110,
+            100,
+            200,
+            55
+        ],
         "action": "Click",
         "target": [
             120,
@@ -186,6 +201,20 @@
             60
         ],
         "post_delay": 1500,
+        "next": [
+            "FriendGemFriendRouter"
+        ]
+    },
+    "FriendGemStartInFriendTank": {
+        "recognition": "OCR",
+        "expected": "剩余|刷新体力",
+        "roi": [
+            60,
+            210,
+            400,
+            140
+        ],
+        "action": "DoNothing",
         "next": [
             "FriendGemFriendRouter"
         ]
@@ -201,7 +230,8 @@
             "FriendGemExhausted",
             "FriendGemAttemptLimitReached",
             "FriendGemCollectBubble",
-            "FriendGemNextFriend"
+            "FriendGemBubbleMissLimitReached",
+            "FriendGemWaitForBubble"
         ]
     },
     "FriendGemAddFriendPage": {
@@ -307,6 +337,23 @@
         "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "RecordFriendGemAttemptAction",
+        "next": [
+            "FriendGemFriendRouter"
+        ]
+    },
+    "FriendGemBubbleMissLimitReached": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckFriendGemBubbleMissLimitReco",
+        "action": "DoNothing",
+        "next": [
+            "FriendGemNextFriend"
+        ]
+    },
+    "FriendGemWaitForBubble": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "RecordFriendGemBubbleMissAction",
+        "post_delay": 600,
         "next": [
             "FriendGemFriendRouter"
         ]

@@ -467,3 +467,21 @@ class CheckFriendGemLimitReco(CustomRecognition):
             )
             return (0, 0, 10, 10)
         return None
+
+
+@AgentServer.custom_recognition("CheckFriendGemBubbleMissLimitReco")
+class CheckFriendGemBubbleMissLimitReco(CustomRecognition):
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        max_misses = friend_gem_state.get("max_bubble_misses", 8)
+        if friend_gem_state.get("bubble_miss_count", 0) >= max_misses:
+            print(
+                f"[好友摸宝] 当前好友连续 {friend_gem_state['bubble_miss_count']} 次未发现气泡，判定无可收目标，切换下一位",
+                flush=True,
+            )
+            return (0, 0, 10, 10)
+        return None
+

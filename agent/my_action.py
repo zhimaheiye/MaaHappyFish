@@ -88,7 +88,8 @@ class InitFriendGemStateAction(CustomAction):
         friend_gem_state["attempts"] = 0
         friend_gem_state["current_friend_index"] = 1
         friend_gem_state["max_attempts"] = 12
-        print("[好友摸宝] 任务初始化完成：好友序号重置为 1，气泡点击上限为 12", flush=True)
+        friend_gem_state["bubble_miss_count"] = 0
+        print("[好友摸宝] 任务初始化完成：当前好友序号设为 1（从启动位置起算），气泡点击上限为 12", flush=True)
         return True
 
 
@@ -96,6 +97,7 @@ class InitFriendGemStateAction(CustomAction):
 class RecordFriendGemAttemptAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         friend_gem_state["attempts"] += 1
+        friend_gem_state["bubble_miss_count"] = 0
         print(f"[好友摸宝] 已执行气泡点击 ({friend_gem_state['attempts']}/{friend_gem_state['max_attempts']})", flush=True)
         return True
 
@@ -104,14 +106,24 @@ class RecordFriendGemAttemptAction(CustomAction):
 class ResetFriendGemAttemptsAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         friend_gem_state["attempts"] = 0
+        friend_gem_state["bubble_miss_count"] = 0
         friend_gem_state["current_friend_index"] += 1
-        print(f"[好友摸宝] 已切换至第 {friend_gem_state['current_friend_index']} 位好友，计数重置", flush=True)
+        print(f"[好友摸宝] 已切换至本轮第 {friend_gem_state['current_friend_index']} 位好友，计数重置", flush=True)
         return True
 
 
 @AgentServer.custom_action("LogFriendGemExhaustedAction")
 class LogFriendGemExhaustedAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
-        print(f"[好友摸宝] 当前好友（第 {friend_gem_state['current_friend_index']} 位）体力已耗尽，跳过气泡采集", flush=True)
+        print(f"[好友摸宝] 当前好友（本轮第 {friend_gem_state['current_friend_index']} 位）体力已耗尽，跳过气泡采集", flush=True)
+        return True
+
+
+@AgentServer.custom_action("RecordFriendGemBubbleMissAction")
+class RecordFriendGemBubbleMissAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        friend_gem_state["bubble_miss_count"] += 1
+        max_misses = friend_gem_state.get("max_bubble_misses", 8)
+        print(f"[好友摸宝] 暂未发现气泡 ({friend_gem_state['bubble_miss_count']}/{max_misses})", flush=True)
         return True
 

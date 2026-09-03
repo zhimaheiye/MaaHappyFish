@@ -14,8 +14,11 @@
 ```text
 FriendGemTask (入口，InitFriendGemStateAction 初始化状态)
     ↓
-FriendGemEnterFirstFriend (点击首个好友卡片，进入水族箱)
-    ↓
+FriendGemStartRouter (启动环境自适应路由器)
+    ├─ 位于好友列表 ──> FriendGemStartFromFriendList (OCR「星级好友」) ──> 点击首卡 ─┐
+    └─ 位于好友鱼缸 ──> FriendGemStartInFriendTank (OCR「剩余|刷新体力」) ─> DoNothing ──┤
+                                                                                        │
+                                                                                        ▼
 FriendGemFriendRouter (直通路由器)
     ├─ 到达末尾 ──> FriendGemAddFriendPage (OCR「全部添加」/ 无状态栏) ──> FriendGemDone (结束)
     ├─ 欢迎弹窗 ──> FriendGemWelcomePopup (OCR「欢迎来到」点击关闭) ────┐
@@ -25,18 +28,24 @@ FriendGemFriendRouter (直通路由器)
     ├─ 体力耗尽 ──> FriendGemExhausted (OCR「刷新体力」/ 灰电) ────────┐  │
     ├─ 次数已满 ──> FriendGemAttemptLimitReached (CheckFriendGemLimit) │  │
     │                                                                   │  │
-    └─ 金币气泡 ──> FriendGemCollectBubble (安全 ROI 模板匹配)          │  │
-            ↓                                                           │  │
-        FriendGemRecordAttempt (attempts + 1)                           │  │
+    ├─ 发现气泡 ──> FriendGemCollectBubble (安全 ROI 模板匹配)          │  │
+    │       ↓                                                           │  │
+    │   FriendGemRecordAttempt (attempts + 1, miss_count 归零)          │  │
+    │       │                                                           │  │
+    │       └───────────────────────────────────────────────────────────┤  │
+    │                                                                   │  │
+    ├─ 连续无气泡兜底 ─> FriendGemBubbleMissLimitReached (miss >= 8) ───┤  │
+    │                                                                   │  │
+    └─ 单帧未发现气泡 ─> FriendGemWaitForBubble (miss + 1, delay 600ms) │  │
             │                                                           │  │
             └───────────────────────────────────────────────────────────┤  │
                                                                         ▼  ▼
                                                               FriendGemFriendRouter
-    (当 Exhausted 或 LimitReached 时)
+    (仅当 Exhausted、AttemptLimitReached 或 BubbleMissLimitReached 时)
     ↓
 FriendGemNextFriend (模板匹配右上角「>」药丸按钮，点击切下一位)
     ↓
-FriendGemResetAttempts (attempts 清零，friend_index + 1)
+FriendGemResetAttempts (attempts 清零，miss_count 清零，friend_index + 1)
     ↓
 回到 FriendGemFriendRouter (巡访下一位好友)
 ```
@@ -88,6 +97,21 @@ FriendGemResetAttempts (attempts 清零，friend_index + 1)
 - **识别设计**：顶部标题艺术字检测，OCR `expected: "鱼宝|乐园"`，检测区域 `ROI: [380, 0, 520, 150]`（覆盖率 100%，正常水族箱零误报）。
 - **恢复操作**：点击右上角固定黄色关闭按钮 `target: [1175, 25, 65, 60]`，延迟 1000ms 平滑返回原好友水族箱。
 - **状态维护**：不重置 attempts，不增加 friend_index，不切好友，直通回到 `FriendGemFriendRouter` 继续摸宝。
+
+### 9. 连续无气泡有界等待机制（`Bounded Miss Wait`）
+- **根因缺陷修复**：原 `FriendGemFriendRouter` 末尾将 `FriendGemNextFriend` 作为默认 fallback。因右上方「>」按钮始终存在，一旦某帧产物气泡因游动遮挡暂时未被命中，即误切离开当前好友（引发“剩9体力就跳下一位”现象）。
+- **有界等待架构**：
+  - 彻底从 `FriendGemFriendRouter.next` 中剔除 `FriendGemNextFriend`。
+  - 新增运行时计数器 `bubble_miss_count`（上限 `max_bubble_misses = 8`）。
+  - 单帧漏检进入 `FriendGemWaitForBubble`：`bubble_miss_count += 1`，等待 600ms 后重返 Router 重新检测气泡。
+  - 只要任意一帧成功点击气泡（`RecordFriendGemAttemptAction`）或切好友（`ResetFriendGemAttemptsAction`），立即归零 `bubble_miss_count = 0`。
+  - 仅当连续 8 次（约 4.8 秒）均无可用气泡时，命中 `FriendGemBubbleMissLimitReached`，才受控切下一位好友。
+
+### 10. 双启动入口自适应（`FriendGemStartRouter`）
+- **双启动支持需求**：
+  - **入口 A（好友列表主界面）**：识别顶部 `ROI: [110, 100, 200, 55]` 标题 `星级好友`，点击首卡进入第 1 位好友。
+  - **入口 B（任意好友水族箱）**：识别左侧状态区 `ROI: [60, 210, 400, 140]` 状态文字 `剩余|刷新体力`，动作 `DoNothing` 直通 Router，直接把当前鱼缸作为巡访起点，绝不返回列表，绝不在鱼缸内误点首卡区域 `[120, 320]`，绝不提前跳号。
+- **巡访序号语义澄清**：`current_friend_index` 明确代表“本次任务从启动点算起的巡访序号”（在任意好友水族箱启动时，该鱼缸即为本轮第 1 位好友），不再假定为好友列表的绝对全局排名。
 
 ---
 
