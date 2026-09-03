@@ -388,7 +388,8 @@
     },
     "FishingTask": {
         "recognition": "DirectHit",
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "ResetFishingStateAction",
         "next": [
             "FishingStartRouter"
         ]
@@ -397,24 +398,90 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
-            "FishingStartAtScene",
+            "FishingStartAtPurchasePopup",
+            "FishingStartAtCatchResult",
+            "FishingStartAtWaitingForBite",
+            "FishingStartAtReadyWithBait",
+            "FishingStartAtNeedBait",
             "FishingStartAtLocationMap",
             "FishingStartAtActivityGrid",
             "FishingStartAtOwnTank"
         ]
     },
-    "FishingStartAtScene": {
+    "FishingStartAtPurchasePopup": {
+        "recognition": "TemplateMatch",
+        "template": "鱼饵购买弹窗_关闭.png",
+        "roi": [
+            950,
+            100,
+            150,
+            150
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "FishingBaitRouter"
+        ]
+    },
+    "FishingStartAtCatchResult": {
         "recognition": "OCR",
-        "expected": "甩杆",
+        "expected": "恭喜您获得",
+        "roi": [
+            450,
+            75,
+            350,
+            60
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingCatchSuccess"
+        ]
+    },
+    "FishingStartAtWaitingForBite": {
+        "recognition": "OCR",
+        "expected": "收杆",
         "roi": [
             1050,
             520,
             160,
             100
         ],
+        "action": "Custom",
+        "custom_action": "FishingWatchBiteOnlyAction",
+        "next": [
+            "FishingPostRoundRouter"
+        ],
+        "on_error": [
+            "FishingSafeAbort"
+        ]
+    },
+    "FishingStartAtReadyWithBait": {
+        "recognition": "OCR",
+        "expected": "更换鱼饵",
+        "roi": [
+            40,
+            580,
+            200,
+            130
+        ],
         "action": "DoNothing",
         "next": [
-            "FishingSceneReady"
+            "FishingRound"
+        ]
+    },
+    "FishingStartAtNeedBait": {
+        "recognition": "OCR",
+        "expected": "选择鱼饵",
+        "roi": [
+            40,
+            580,
+            200,
+            130
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingBaitRouter"
         ]
     },
     "FishingStartAtLocationMap": {
@@ -530,7 +597,7 @@
         ],
         "post_delay": 3000,
         "next": [
-            "FishingSceneReady"
+            "FishingBaitRouter"
         ]
     },
     "FishingSelectLocation_Bingchuan": {
@@ -544,7 +611,7 @@
         ],
         "post_delay": 3000,
         "next": [
-            "FishingSceneReady"
+            "FishingBaitRouter"
         ]
     },
     "FishingSelectLocation_Gongdian": {
@@ -558,7 +625,7 @@
         ],
         "post_delay": 3000,
         "next": [
-            "FishingSceneReady"
+            "FishingBaitRouter"
         ]
     },
     "FishingSelectLocation_Mofa": {
@@ -572,7 +639,7 @@
         ],
         "post_delay": 3000,
         "next": [
-            "FishingSceneReady"
+            "FishingBaitRouter"
         ]
     },
     "FishingSelectLocation_Daxitai": {
@@ -586,7 +653,7 @@
         ],
         "post_delay": 3000,
         "next": [
-            "FishingSceneReady"
+            "FishingBaitRouter"
         ]
     },
     "FishingSelectLocation_Xingkonghu": {
@@ -600,10 +667,101 @@
         ],
         "post_delay": 3000,
         "next": [
-            "FishingSceneReady"
+            "FishingBaitRouter"
         ]
     },
-    "FishingSceneReady": {
+    "FishingBaitRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FishingBaitPurchasePopup",
+            "FishingBaitAlreadySelected",
+            "FishingBaitNeedSelect",
+            "FishingDone"
+        ]
+    },
+    "FishingBaitPurchasePopup": {
+        "recognition": "TemplateMatch",
+        "template": "鱼饵购买弹窗_关闭.png",
+        "roi": [
+            950,
+            100,
+            150,
+            150
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "FishingBaitRouter"
+        ]
+    },
+    "FishingBaitAlreadySelected": {
+        "recognition": "OCR",
+        "expected": "更换鱼饵",
+        "roi": [
+            40,
+            580,
+            200,
+            130
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingRound"
+        ]
+    },
+    "FishingBaitNeedSelect": {
+        "recognition": "OCR",
+        "expected": "选择鱼饵",
+        "roi": [
+            40,
+            580,
+            200,
+            130
+        ],
+        "action": "Click",
+        "target": [
+            125,
+            640,
+            20,
+            20
+        ],
+        "post_delay": 1500,
+        "next": [
+            "FishingSelectCheeseBait"
+        ]
+    },
+    "FishingSelectCheeseBait": {
+        "recognition": "TemplateMatch",
+        "template": "普通饵食_黄色奶酪.png",
+        "roi": [
+            50,
+            380,
+            120,
+            100
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "FishingBaitVerifyReady"
+        ]
+    },
+    "FishingBaitVerifyReady": {
+        "recognition": "OCR",
+        "expected": "更换鱼饵",
+        "roi": [
+            40,
+            580,
+            200,
+            130
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingRound"
+        ]
+    },
+    "FishingRound": {
         "recognition": "OCR",
         "expected": "甩杆",
         "roi": [
@@ -612,6 +770,120 @@
             160,
             100
         ],
+        "action": "Custom",
+        "custom_action": "FishingCastAndBiteQTEAction",
+        "next": [
+            "FishingPostRoundRouter"
+        ],
+        "on_error": [
+            "FishingSafeAbort"
+        ]
+    },
+    "FishingSafeAbort": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
+    },
+    "FishingPostRoundRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FishingCatchSuccess",
+            "FishingPostRoundCheckReady",
+            "FishingPostRoundWait"
+        ]
+    },
+    "FishingCatchSuccess": {
+        "recognition": "OCR",
+        "expected": "恭喜您获得",
+        "roi": [
+            450,
+            75,
+            350,
+            60
+        ],
+        "action": "Click",
+        "target": [
+            642,
+            584,
+            40,
+            20
+        ],
+        "post_delay": 2000,
+        "next": [
+            "FishingLoopRouter"
+        ]
+    },
+    "FishingPostRoundCheckReady": {
+        "recognition": "OCR",
+        "expected": "甩杆",
+        "roi": [
+            1050,
+            520,
+            160,
+            100
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingLoopRouter"
+        ]
+    },
+    "FishingPostRoundWait": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 1000,
+        "next": [
+            "FishingPostRoundRouter"
+        ]
+    },
+    "FishingLoopRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FishingLoopCheckLimit",
+            "FishingLoopHasBait",
+            "FishingLoopNeedBait",
+            "FishingDone"
+        ]
+    },
+    "FishingLoopCheckLimit": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckFishingCastLimitReco",
+        "action": "DoNothing",
+        "next": [
+            "FishingDone"
+        ]
+    },
+    "FishingLoopHasBait": {
+        "recognition": "OCR",
+        "expected": "更换鱼饵",
+        "roi": [
+            40,
+            580,
+            200,
+            130
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingRound"
+        ]
+    },
+    "FishingLoopNeedBait": {
+        "recognition": "OCR",
+        "expected": "选择鱼饵",
+        "roi": [
+            40,
+            580,
+            200,
+            130
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishingBaitRouter"
+        ]
+    },
+    "FishingDone": {
+        "recognition": "DirectHit",
         "action": "DoNothing"
     }
 }
+

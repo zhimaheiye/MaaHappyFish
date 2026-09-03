@@ -1,4 +1,8 @@
 import json
+try:
+    from param_utils import parse_dict_param, safe_float, safe_int
+except ImportError:
+    from agent.param_utils import parse_dict_param, safe_float, safe_int
 import math
 import time
 from datetime import datetime, timedelta
@@ -74,14 +78,7 @@ class CheckScreenStallReco(CustomRecognition):
     ) -> Optional[RectType]:
         global screen_stall_state
 
-        param = argv.custom_recognition_param
-        if isinstance(param, str) and param:
-            try:
-                param = json.loads(param)
-            except Exception:
-                param = {}
-        elif not isinstance(param, dict):
-            param = {}
+        param = parse_dict_param(argv.custom_recognition_param)
 
         static_seconds = max(5.0, float(param.get("static_seconds", 30)))
         difference_threshold = max(0.0, float(param.get("difference_threshold", 0.5)))
@@ -123,14 +120,7 @@ class CalcFishingFoodReco(CustomRecognition):
         context: Context,
         argv: CustomRecognition.AnalyzeArg,
     ) -> Optional[RectType]:
-        param = argv.custom_recognition_param
-        if isinstance(param, str):
-            try:
-                param = json.loads(param)
-            except Exception:
-                param = {}
-        elif not isinstance(param, dict):
-            param = {}
+        param = parse_dict_param(argv.custom_recognition_param)
 
         try:
             capacity = float(param.get("capacity", 100))
@@ -418,14 +408,7 @@ class CheckOpenShellLoopReco(CustomRecognition):
     ) -> Optional[RectType]:
         global open_shell_loop_state
 
-        param = argv.custom_recognition_param
-        if isinstance(param, str) and param:
-            try:
-                param = json.loads(param)
-            except Exception:
-                param = {}
-        elif not isinstance(param, dict):
-            param = {}
+        param = parse_dict_param(argv.custom_recognition_param)
 
         try:
             target_count = max(1, int(param.get("target_count", 1)))
@@ -484,4 +467,27 @@ class CheckFriendGemBubbleMissLimitReco(CustomRecognition):
             )
             return (0, 0, 10, 10)
         return None
+
+
+try:
+    from my_action import fishing_state
+except ImportError:
+    from agent.my_action import fishing_state
+
+
+@AgentServer.custom_recognition("CheckFishingCastLimitReco")
+class CheckFishingCastLimitReco(CustomRecognition):
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        if fishing_state.get("cast_count", 0) >= fishing_state.get("max_casts", 5):
+            print(
+                f"[钓鱼达人] 判定已达最大安全甩杆上限 ({fishing_state['cast_count']}/{fishing_state['max_casts']})，安全停止任务",
+                flush=True,
+            )
+            return (0, 0, 10, 10)
+        return None
+
 
