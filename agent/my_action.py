@@ -107,6 +107,7 @@ class RecordFriendGemAttemptAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             friend_gem_state["attempts"] = int(friend_gem_state.get("attempts", 0)) + 1
+            friend_gem_state["bubble_miss_count"] = 0
             attempts = friend_gem_state["attempts"]
             max_att = friend_gem_state.get("max_attempts", 12)
             cur_idx = friend_gem_state.get("current_friend_index", 1)
@@ -145,6 +146,21 @@ class ResetFriendGemAttemptsAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[好友摸宝] 重置尝试异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("RecordFriendGemBubbleMissAction")
+class RecordFriendGemBubbleMissAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            friend_gem_state["bubble_miss_count"] = int(friend_gem_state.get("bubble_miss_count", 0)) + 1
+            miss = friend_gem_state["bubble_miss_count"]
+            max_misses = friend_gem_state.get("max_bubble_misses", 8)
+            print(f"[好友摸宝] 暂未发现气泡 ({miss}/{max_misses})", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[好友摸宝] 记录气泡漏检异常: {e}", flush=True)
             return False
 
 

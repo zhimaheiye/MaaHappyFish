@@ -69,7 +69,10 @@ FriendGemResetAttempts (attempts 清零，miss_count 清零，friend_index + 1)
 - **好友体力（Friend-local Quota）**：实测确认好友头顶的 `X 剩余` 为单好友可摸上限（通常为 10 或 12），不是每日全局上限。
 - **耗尽标识（Exhausted）**：当某好友今日已被摸完，会显示 `0(0点刷新体力)` 或 `0(12点刷新体力)` 并伴随灰色闪电。
   - **ROI 扩大**：检测区域定为 `[60, 210, 400, 140]`（覆盖 $x=60 \sim 460$），防止旧版因右边界 $x=320$ 将字符串末尾的“力”字符截断导致漏防。
-  - **显式日志与直通**：命中后执行 `LogFriendGemExhaustedAction` 在控制台输出跳过日志，随后直通 `FriendGemNextFriend`，实现 0 点击快速跳过。
+  - **直通下一位（DoNothing 与稳定性经验）**：耗尽的业务判断已完全由 OCR 识别“刷新体力”承担，动作采用 `DoNothing` 直通 `FriendGemNextFriend`。**核心经验**：观测/日志逻辑不应成为关键业务流的必经 CustomAction，除非该 Action 本身承担必要状态变更；避免日志回调异常阻断核心导航。
+  - **统一切好友状态链**：所有切好友分支（`FriendGemExhausted`、`FriendGemAttemptLimitReached`、`FriendGemBubbleMissLimitReached`）统一汇聚至：
+    $$\text{FriendGemNextFriend} \rightarrow \text{FriendGemStepIndex (StepFriendGemIndexAction)} \rightarrow \text{FriendGemResetAttempts (ResetFriendGemAttemptsAction)} \rightarrow \text{FriendGemFriendRouter}$$
+    实现序号前进（`current_friend_index += 1`）与计数清零（`attempts = 0, bubble_miss_count = 0`）职责严格解耦。
 
 ### 3. 水族箱安全 ROI 防误触保护
 - 水族箱内存在浮动 UI：左侧体力条与金币数、右侧菜单、底部状态。

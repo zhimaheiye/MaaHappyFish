@@ -36,7 +36,8 @@
 ### 好友摸宝 (`FriendGemTask`)
 - [x] 星级好友巡访与金币气泡采集（44 分钟 E2E 实测验证，200 位好友，+597K 金币）
 - [x] 双启动入口自适应（好友列表首页 / 任意好友鱼缸就地启动）
-- [x] 体力耗尽识别与直通跳过（"刷新体力" OCR，0 点击）
+- [x] 体力耗尽识别与直通跳过（"刷新体力" OCR $\rightarrow$ `DoNothing` 直通，解耦非必要日志 Action，防止阻断关键导航）
+- [x] 统一切好友状态链（`FriendGemNextFriend` $\rightarrow$ `StepFriendGemIndexAction` $\rightarrow$ `ResetFriendGemAttemptsAction`，序号与清零解耦）
 - [x] 单帧气泡漏检有界等待机制（`bubble_miss_count`，8 次连续漏检才切好友）
 - [x] 误入鱼宝乐园自愈（识别"鱼宝|乐园"，点 X 返回）
 - [x] 系统弹窗自动消除（`FriendGemSpecialPopup`，绿色勾选按钮）
@@ -61,6 +62,7 @@
 - [x] `agent/requirements-release.txt` 发布依赖清单
 - [x] CI `verify (win, x86_64)` 实机 import 冒烟测试硬门禁
 - [x] Maa Pipeline 正则静态双层校验（`dev/test_pipeline_regex.py`）
+- [x] Pipeline 与 Agent 引用完整性静态门禁（`dev/test_agent_registration_refs.py`）
 
 ---
 

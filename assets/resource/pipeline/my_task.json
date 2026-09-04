@@ -303,8 +303,7 @@
             400,
             140
         ],
-        "action": "Custom",
-        "custom_action": "LogFriendGemExhaustedAction",
+        "action": "DoNothing",
         "next": [
             "FriendGemNextFriend"
         ]
@@ -370,6 +369,14 @@
         "threshold": 0.70,
         "action": "Click",
         "post_delay": 1200,
+        "next": [
+            "FriendGemStepIndex"
+        ]
+    },
+    "FriendGemStepIndex": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "StepFriendGemIndexAction",
         "next": [
             "FriendGemResetAttempts"
         ]
