@@ -2,7 +2,18 @@
 
 > MaaHappyFish 仍处于早期测试阶段。
 
-## v0.4.2 更新内容
+## v0.4.3 更新内容
+
+- **修复 Windows x64 独立发行包 Agent 启动崩溃问题**：
+  - **补齐 Python 视觉依赖**：在 Windows x64 嵌入式 Python 打包流程中增补 `opencv-python-headless`，彻底解决脱离开发机环境后 Agent 启动首行 `import cv2` 报 `ModuleNotFoundError` 导致的无法 LinkStart 故障；
+  - **建立发布依赖清单规范**：新增 `agent/requirements-release.txt`，规范沉淀嵌入式运行环境核心依赖（`maafw`、`opencv-python-headless`、`numpy`）；
+  - **建立 CI 终态实机硬门禁（Hard Gate）**：新增独立 CI 验证 Job `verify (win, x86_64)` 与冒烟脚本 `dev/test_release_agent_imports.py`，直接在 GitHub Actions 真实 Windows 环境下拉起打包产物内部的 `python.exe` 亲自执行 `maa`、`numpy`、`cv2` 及全部 Agent 模块完整导入校验，失败直接熔断阻断 Release 发布；
+  - **补充第三方依赖许可证**：在 `THIRD_PARTY_NOTICES.md` 及自动打包发行包中补充 OpenCV Apache-2.0 许可证与项目声明。
+- **分发说明**：Windows x64 Release 继续内置 Python 3.13 与 MaaFw，开箱即用。
+
+## 历史版本更新
+
+### v0.4.2 更新内容
 
 - **新增「海獭摸宝」自动化巡检与特定宝石采集 (`SeaOtterGemTask`)**：
   - **支持双启动入口与断点续跑**：严格契合「步骤可恢复导航架构」，支持从「好友水族箱寻宝」列表首页一键进入首位好友，或直接在任意好友鱼缸就地启动断点恢复；
