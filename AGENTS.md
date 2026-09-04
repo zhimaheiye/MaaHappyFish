@@ -36,6 +36,7 @@
 | `dev/test_pipeline_regex.py` | Pipeline 正则双层校验 | 修改 Pipeline 后**必须**运行，防止 `std::regex` 加载失败。 |
 | `dev/test_agent_registration_refs.py` | Pipeline 引用一致性校验 | 静态确保 Pipeline 引用的所有 custom_action/reco 均在 Agent 中注册。 |
 | `dev/test_release_agent_imports.py` | 发布包 import 冒烟测试 | 在 embedded Python 环境下验证所有依赖可正常导入。 |
+| `dev/test_update_contract.py` | 自动更新契约静态门禁 | 静态校验 interface.json、github 字段、SemVer、资产命名匹配与包排他性。 |
 
 ---
 
@@ -139,3 +140,20 @@ Step 1 探索（截图/OCR/路径）
 - 所有新增 Action/Reco 均需统一走 `param_utils` 工具函数，防御 null、空字符串、类型错误等边界情况。
 - **引用完整性门禁**：修改 Pipeline 或 Agent 后**必须**运行 `python dev/test_agent_registration_refs.py`，保证 Pipeline 中所有引用的 `custom_action` / `custom_recognition` 均在 Agent 中存在对应注册，禁止悬空引用。
 - **观测与日志非阻断原则**：观测/日志逻辑不应成为关键业务流的必经 CustomAction，除非该 Action 本身承担必要状态变更。避免因日志动作未注册或回调异常而阻断核心导航。
+
+### GitHub In-App Auto-Update Contract (程序内原生自动更新契约)
+
+MaaHappyFish 采用 MFAAvalonia 原生支持的二合一整包（UI + MaaFW + Agent + Python + Resource）程序内自动更新机制：
+
+1. **配置格式契约**：
+   - `interface.json` 中的 `github` 字段必须为纯文本 URL（如 `"github": "https://github.com/zhimaheiye/MaaHappyFish"`），严禁末尾斜杠，严禁写成 markdown 链接格式 `[https://...]`。
+   - 三份 `interface.json`（`assets/`、`client/`、`client_avalonia/`）必须保持版本号与内容字节级完全一致。
+2. **整包原子覆盖契约（Full Package Update）**：
+   - 发行包包含根目录核心应用文件（`MFAAvalonia.exe`、`MaaFramework.dll` 等），触发 MFA 的二合一整包覆盖机制（`ContainsCoreApplicationFiles`）。
+   - 第一阶段清理旧 `resource/` 与 `agent/` 并覆盖至数据目录；第二阶段覆盖安装目录中的所有程序与 `python/` 环境文件。
+   - 运行中的 `MFAAvalonia.exe` 通过热替换重命名为 `.backupMFA` 并自动重启生效。
+3. **用户配置非破坏性契约（Non-Destructive User Config）**：
+   - 用户的本地设置（`config/`、`logs/`、`debug/`、设备连接与绑定状态）受保护，更新流程绝不覆盖或擦除。
+4. **CI 门禁与发布防线**：
+   - 静态校验脚本 `dev/test_update_contract.py` 纳入本地与 CI 硬门禁，发版前必须 100% 通过校验。
+   - 资产匹配确保兼容 `\b(?:win|windows)-(?:x64|x86_64)\b` 规则，发布资产命名保持 `MaaHappyFish-win-x86_64-v*.zip`。

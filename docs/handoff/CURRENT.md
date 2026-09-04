@@ -8,13 +8,12 @@
 
 | 项目 | 信息 |
 | :--- | :--- |
-| **Current version** | `0.4.3` |
-| **Latest release** | [`v0.4.3`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.4.3)（已正式发布） |
-| **Latest main commit** | `a2bda27` (`chore(release): bump version to v0.4.3`) |
-| **CI hard gate** | `verify (win, x86_64)` PASS（实机 embedded Python import 冒烟测试通过） |
-| **Release health** | 🟢 **Healthy** — 8 平台构建全部成功，Windows x64 实机验证通过，Release 资产已发布 |
+| **Current version** | `0.4.4` |
+| **Latest release** | [`v0.4.4`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.4.4)（准备发布） |
+| **CI hard gate** | `verify (win, x86_64)` PASS（实机 embedded Python 冒烟 + 更新契约门禁） |
+| **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新 |
 
-**重要 patch 背景**：v0.4.2 Windows x64 发行包存在 Agent 启动时 `import cv2` 失败导致无法 LinkStart 的严重故障（根因：发行包 embedded Python 缺少 `opencv-python-headless`）。v0.4.3 已彻底修复并建立 CI 实机硬门禁。
+**自动更新说明**：v0.4.4 正式引入 `"github": "https://github.com/zhimaheiye/MaaHappyFish"` 字段，为后续程序内原生更新建立 Bootstrap 基础。已安装 v0.4.4 的客户端未来均可直接在 MFA 程序内一键检测并整包升级至最新 Release，无需再次手动解压覆盖。
 
 ---
 
@@ -63,6 +62,7 @@
 - [x] CI `verify (win, x86_64)` 实机 import 冒烟测试硬门禁
 - [x] Maa Pipeline 正则静态双层校验（`dev/test_pipeline_regex.py`）
 - [x] Pipeline 与 Agent 引用完整性静态门禁（`dev/test_agent_registration_refs.py`）
+- [x] GitHub 程序内原生整包自动更新（`interface.json` `github` 字段 + `dev/test_update_contract.py` CI 硬门禁）
 
 ---
 

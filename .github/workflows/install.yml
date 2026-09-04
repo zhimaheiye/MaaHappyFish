@@ -226,9 +226,10 @@ jobs:
           $pythonExe = "bundle/python/python.exe"
           if (-not (Test-Path $pythonExe)) { throw "python.exe not found in bundle: $pythonExe" }
           & $pythonExe -c "import sys; import maa; import numpy; import cv2; print(sys.version); print('Core imports OK: maa, numpy, cv2')"
-          if ($LASTEXITCODE -ne 0) { throw "Core dependencies import failed in embedded Python." }
           & $pythonExe dev/test_release_agent_imports.py --agent-dir bundle/agent
           if ($LASTEXITCODE -ne 0) { throw "Agent smoke test failed on embedded Python." }
+          python dev/test_update_contract.py
+          if ($LASTEXITCODE -ne 0) { throw "Update contract verification failed." }
 
   changelog:
     name: Generate changelog
