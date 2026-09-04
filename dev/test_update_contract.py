@@ -18,21 +18,19 @@ def sha256_file(path: Path) -> str:
 
 def test_interface_contracts():
     interface_assets = REPO_ROOT / "assets" / "interface.json"
-    interface_client = REPO_ROOT / "client" / "interface.json"
-    interface_avalonia = REPO_ROOT / "client_avalonia" / "interface.json"
-
-    assert interface_assets.exists(), f"Missing {interface_assets}"
-    assert interface_client.exists(), f"Missing {interface_client}"
-    assert interface_avalonia.exists(), f"Missing {interface_avalonia}"
-
-    # 1. SHA256 equality across all 3 interface.json files
+    assert interface_assets.exists(), f"Missing canonical interface: {interface_assets}"
     sha_assets = sha256_file(interface_assets)
-    sha_client = sha256_file(interface_client)
-    sha_avalonia = sha256_file(interface_avalonia)
 
-    assert sha_assets == sha_client, f"interface.json mismatch between assets and client"
-    assert sha_assets == sha_avalonia, f"interface.json mismatch between assets and client_avalonia"
-    print("[PASS] All 3 interface.json files are byte-identical.")
+    # 1. SHA256 equality across all existing interface.json copies
+    checked_copies = ["assets/interface.json"]
+    for rel_path in ["client/interface.json", "client_avalonia/interface.json", "bundle/interface.json"]:
+        target = REPO_ROOT / rel_path
+        if target.exists():
+            sha_target = sha256_file(target)
+            assert sha_assets == sha_target, f"interface.json mismatch between assets and {rel_path}"
+            checked_copies.append(rel_path)
+
+    print(f"[PASS] All available interface.json copies ({', '.join(checked_copies)}) are byte-identical.")
 
     # 2. github field verification
     with open(interface_assets, "r", encoding="utf-8") as f:

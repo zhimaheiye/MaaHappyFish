@@ -228,7 +228,7 @@ jobs:
           & $pythonExe -c "import sys; import maa; import numpy; import cv2; print(sys.version); print('Core imports OK: maa, numpy, cv2')"
           & $pythonExe dev/test_release_agent_imports.py --agent-dir bundle/agent
           if ($LASTEXITCODE -ne 0) { throw "Agent smoke test failed on embedded Python." }
-          python dev/test_update_contract.py
+          & $pythonExe dev/test_update_contract.py
           if ($LASTEXITCODE -ne 0) { throw "Update contract verification failed." }
 
   changelog:
