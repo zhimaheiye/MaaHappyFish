@@ -174,13 +174,14 @@ jobs:
           python -m pip install --isolated --ignore-installed --upgrade `
             --index-url https://pypi.org/simple --only-binary=:all: `
             --platform win_amd64 --implementation cp --python-version $pythonMinor --abi $pythonAbi `
-            --target "$pythonDir/Lib/site-packages" maafw
-          if ($LASTEXITCODE -ne 0) { throw "Failed to install MaaFw into embedded Python." }
+            --target "$pythonDir/Lib/site-packages" maafw opencv-python-headless
+          if ($LASTEXITCODE -ne 0) { throw "Failed to install dependencies into embedded Python." }
 
           $required = @(
             "$pythonDir/python.exe",
             "$pythonDir/Lib/site-packages/maa/__init__.py",
             "$pythonDir/Lib/site-packages/numpy/__init__.py",
+            "$pythonDir/Lib/site-packages/cv2/__init__.py",
             "$env:GITHUB_WORKSPACE/install/agent/my_action.py",
             "$env:GITHUB_WORKSPACE/install/agent/my_reco.py"
           )
@@ -202,11 +203,32 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/MaaXYZ/MaaFramework/main/LICENSE.md -o install/licenses/MaaFramework-LGPL-3.0.md
           curl -fsSL https://raw.githubusercontent.com/MaaXYZ/MFAAvalonia/master/LICENSE -o install/licenses/MFAAvalonia-GPL-3.0.txt
           curl -fsSL https://raw.githubusercontent.com/python/cpython/v${PYTHON_VERSION}/LICENSE -o install/licenses/CPython-LICENSE.txt
+          curl -fsSL https://raw.githubusercontent.com/opencv/opencv/4.x/LICENSE -o install/licenses/OpenCV-Apache-2.0.txt
 
       - uses: actions/upload-artifact@v4
         with:
           name: MaaHappyFish-${{ matrix.os }}-${{ matrix.arch }}
           path: "install"
+
+  test-windows-bundle:
+    name: verify (win, x86_64)
+    needs: [meta, install]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: MaaHappyFish-win-x86_64
+          path: bundle
+      - name: Verify Windows x64 Embedded Python and Agent Smoke Test
+        shell: pwsh
+        run: |
+          $pythonExe = "bundle/python/python.exe"
+          if (-not (Test-Path $pythonExe)) { throw "python.exe not found in bundle: $pythonExe" }
+          & $pythonExe -c "import sys; import maa; import numpy; import cv2; print(sys.version); print('Core imports OK: maa, numpy, cv2')"
+          if ($LASTEXITCODE -ne 0) { throw "Core dependencies import failed in embedded Python." }
+          & $pythonExe dev/test_release_agent_imports.py --agent-dir bundle/agent
+          if ($LASTEXITCODE -ne 0) { throw "Agent smoke test failed on embedded Python." }
 
   changelog:
     name: Generate changelog
@@ -248,7 +270,7 @@ jobs:
 
   release:
     if: ${{ needs.meta.outputs.is_release == 'true' }}
-    needs: [meta, install, changelog]
+    needs: [meta, install, test-windows-bundle, changelog]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

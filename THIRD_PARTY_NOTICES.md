@@ -8,5 +8,6 @@ MaaHappyFish 的发行包会下载并组合以下第三方组件。它们不因�
 | MFAAvalonia                         | 通用桌面界面            | [GPL-3.0](https://github.com/MaaXYZ/MFAAvalonia/blob/master/LICENSE) · [源码](https://github.com/MaaXYZ/MFAAvalonia)      |
 | MaaCommonAssets                     | OCR 与通用资源          | [许可证](https://github.com/MaaXYZ/MaaCommonAssets/blob/main/LICENSE) · [源码](https://github.com/MaaXYZ/MaaCommonAssets) |
 | CPython                             | Windows 嵌入式 Python   | [PSF License](https://docs.python.org/3/license.html) · [源码](https://github.com/python/cpython)                         |
+| OpenCV (`opencv-python-headless`)   | 自动化图像分析与 QTE 算法 | [Apache-2.0](https://github.com/opencv/opencv/blob/4.x/LICENSE) · [源码](https://github.com/opencv/opencv-python)          |
 
 Python 包携带的其他传递依赖保留其 wheel 中的许可证与元数据。发布或再分发前，请同时遵守发行包中各组件附带的许可证文件。

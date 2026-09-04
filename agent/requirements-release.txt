@@ -1,0 +1,5 @@
+# MaaHappyFish Windows Release Embedded Python Dependencies
+# These wheels are downloaded and bundled into install/python/Lib/site-packages
+maafw>=5.12.3
+opencv-python-headless>=4.10.0
+numpy>=2.0.0
