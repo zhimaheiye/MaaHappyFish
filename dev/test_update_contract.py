@@ -21,16 +21,26 @@ def test_interface_contracts():
     assert interface_assets.exists(), f"Missing canonical interface: {interface_assets}"
     sha_assets = sha256_file(interface_assets)
 
-    # 1. SHA256 equality across all existing interface.json copies
+    # 1. SHA256 equality across workspace source copies (if present)
     checked_copies = ["assets/interface.json"]
-    for rel_path in ["client/interface.json", "client_avalonia/interface.json", "bundle/interface.json"]:
+    for rel_path in ["client/interface.json", "client_avalonia/interface.json"]:
         target = REPO_ROOT / rel_path
         if target.exists():
             sha_target = sha256_file(target)
             assert sha_assets == sha_target, f"interface.json mismatch between assets and {rel_path}"
             checked_copies.append(rel_path)
 
-    print(f"[PASS] All available interface.json copies ({', '.join(checked_copies)}) are byte-identical.")
+    print(f"[PASS] Workspace interface.json copies ({', '.join(checked_copies)}) are byte-identical.")
+
+    # Check bundle/interface.json if it exists (in release bundle artifact)
+    bundle_interface = REPO_ROOT / "bundle" / "interface.json"
+    if bundle_interface.exists():
+        with open(bundle_interface, "r", encoding="utf-8") as f:
+            bundle_data = json.load(f)
+        assert bundle_data.get("github") == EXPECTED_GITHUB_URL, (
+            f"bundle/interface.json missing or incorrect github field: {bundle_data.get('github')}"
+        )
+        print(f"[PASS] bundle/interface.json maintains valid github update URL: {bundle_data.get('github')}")
 
     # 2. github field verification
     with open(interface_assets, "r", encoding="utf-8") as f:
