@@ -15,9 +15,9 @@ from maa.context import Context
 from maa.define import RectType
 
 try:
-    from runtime_state import friend_gem_state
+    from runtime_state import friend_gem_state, sea_otter_gem_state
 except ImportError:
-    from agent.runtime_state import friend_gem_state
+    from agent.runtime_state import friend_gem_state, sea_otter_gem_state
 
 timer_state = {
     "task_id": None,
@@ -489,5 +489,28 @@ class CheckFishingCastLimitReco(CustomRecognition):
             )
             return (0, 0, 10, 10)
         return None
+
+
+@AgentServer.custom_recognition("CheckSeaOtterLimitReco")
+class CheckSeaOtterLimitReco(CustomRecognition):
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        cur = sea_otter_gem_state.get("total_harvests", 0)
+        limit = sea_otter_gem_state.get("max_harvests", 200)
+        if cur >= limit:
+            print(f"[海獭摸宝] 达到摸宝上限安全保护 ({cur}/{limit})，任务安全停止 (Safety Limit Triggered)", flush=True)
+            return (0, 0, 10, 10)
+
+        consec = sea_otter_gem_state.get("consecutive_exhausted", 0)
+        max_consec = sea_otter_gem_state.get("max_consecutive_exhausted", 30)
+        if consec >= max_consec:
+            print(f"[海獭摸宝] 连续检测到 {consec} 位好友体力耗尽，达到防死循环上限，任务安全停止 (Safety Limit Triggered)", flush=True)
+            return (0, 0, 10, 10)
+
+        return None
+
 
 

@@ -12,9 +12,9 @@ from maa.custom_action import CustomAction
 from maa.context import Context
 
 try:
-    from runtime_state import friend_gem_state
+    from runtime_state import friend_gem_state, sea_otter_gem_state
 except ImportError:
-    from agent.runtime_state import friend_gem_state
+    from agent.runtime_state import friend_gem_state, sea_otter_gem_state
 
 try:
     from param_utils import parse_dict_param, safe_float, safe_int
@@ -379,3 +379,102 @@ class ResetFishingStateAction(CustomAction):
             traceback.print_exc()
             print(f"[钓鱼达人] 重置状态异常: {e}", flush=True)
             return False
+
+
+@AgentServer.custom_action("InitSeaOtterStateAction")
+class InitSeaOtterStateAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            task_detail = getattr(argv, "task_detail", None)
+            task_id = int(task_detail.task_id) if task_detail and hasattr(task_detail, "task_id") else None
+            sea_otter_gem_state["current_task_id"] = task_id
+            sea_otter_gem_state["current_side"] = "left"
+            sea_otter_gem_state["total_harvests"] = 0
+            sea_otter_gem_state["consecutive_exhausted"] = 0
+            print(f"[海獭摸宝] 状态已重置: side=LEFT, harvests=0 (task_id: {task_id})", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海獭摸宝] 重置状态异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SeaOtterHarvestAction")
+class SeaOtterHarvestAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[海獭摸宝] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            side = sea_otter_gem_state.get("current_side", "left")
+
+            # 1. 点击左下角海獭安全本体 (85, 565)
+            ctrl.post_touch_down(85, 565).wait()
+            time.sleep(0.08)
+            ctrl.post_touch_up(0).wait()
+
+            sea_otter_gem_state["total_harvests"] += 1
+            sea_otter_gem_state["consecutive_exhausted"] = 0
+            cur = sea_otter_gem_state["total_harvests"]
+            limit = sea_otter_gem_state["max_harvests"]
+
+            time.sleep(0.8)
+
+            # 2. 依据当前 side 决定下一步导航
+            if side == "left":
+                print(f"[SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT (累计摸宝: {cur}/{limit})", flush=True)
+                ctrl.post_click(1205, 68).wait()
+                sea_otter_gem_state["current_side"] = "right"
+            else:
+                print(f"[SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV (累计摸宝: {cur}/{limit})", flush=True)
+                ctrl.post_click(1085, 68).wait()
+                sea_otter_gem_state["current_side"] = "left"
+
+            time.sleep(2.0)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海獭摸宝] 摸宝动作异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SeaOtterAdvancePairAction")
+class SeaOtterAdvancePairAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[海獭摸宝] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            side = sea_otter_gem_state.get("current_side", "left")
+
+            if side == "left":
+                # LEFT + Exhausted -> 不摸 -> Next -> side = LEFT (新好友被视作新 LEFT)
+                sea_otter_gem_state["consecutive_exhausted"] += 1
+                consec = sea_otter_gem_state["consecutive_exhausted"]
+                print(f"[SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT (连续耗尽: {consec})", flush=True)
+                ctrl.post_click(1205, 68).wait()
+                sea_otter_gem_state["current_side"] = "left"
+            else:
+                # RIGHT + Exhausted -> 不摸 -> Prev -> side = LEFT (跳板返回 LEFT 重新进入)
+                print(f"[SeaOtter] side=RIGHT ui=EXHAUSTED action=PREV_AS_REFRESH_BRIDGE", flush=True)
+                ctrl.post_click(1085, 68).wait()
+                sea_otter_gem_state["current_side"] = "left"
+
+            time.sleep(2.0)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海獭摸宝] 耗尽处理异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SeaOtterSwitchPairAction")
+class SeaOtterSwitchPairAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        # 已合流至 SeaOtterHarvestAction，保持幂等兼容
+        return True
+

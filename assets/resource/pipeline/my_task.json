@@ -884,6 +884,148 @@
     "FishingDone": {
         "recognition": "DirectHit",
         "action": "DoNothing"
+    },
+    "SeaOtterGemTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "InitSeaOtterStateAction",
+        "next": [
+            "SeaOtterStartRouter"
+        ]
+    },
+    "SeaOtterStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "SeaOtterAddFriendPage",
+            "SeaOtterStartAtFriendTank",
+            "SeaOtterStartFromFriendList"
+        ]
+    },
+    "SeaOtterStartFromFriendList": {
+        "recognition": "OCR",
+        "expected": "星级好友",
+        "roi": [
+            100,
+            90,
+            200,
+            60
+        ],
+        "action": "Click",
+        "target": [
+            165,
+            370,
+            50,
+            50
+        ],
+        "post_delay": 2000,
+        "next": [
+            "SeaOtterFriendRouter"
+        ]
+    },
+    "SeaOtterStartAtFriendTank": {
+        "recognition": "OCR",
+        "expected": [
+            "剩余",
+            "刷新体力"
+        ],
+        "roi": [
+            60,
+            210,
+            350,
+            170
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaOtterFriendRouter"
+        ]
+    },
+    "SeaOtterFriendRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "SeaOtterLimitReached",
+            "SeaOtterAddFriendPage",
+            "SeaOtterExhausted",
+            "SeaOtterHarvestable",
+            "SeaOtterWaitScreen"
+        ]
+    },
+    "SeaOtterLimitReached": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckSeaOtterLimitReco",
+        "action": "DoNothing",
+        "next": [
+            "SeaOtterDone"
+        ]
+    },
+    "SeaOtterAddFriendPage": {
+        "recognition": "OCR",
+        "expected": [
+            "全部添加",
+            "推荐好友"
+        ],
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaOtterDone"
+        ]
+    },
+    "SeaOtterExhausted": {
+        "recognition": "OCR",
+        "expected": "刷新体力",
+        "roi": [
+            60,
+            210,
+            350,
+            170
+        ],
+        "action": "Custom",
+        "custom_action": "SeaOtterAdvancePairAction",
+        "next": [
+            "SeaOtterFriendRouter"
+        ]
+    },
+    "SeaOtterHarvestable": {
+        "recognition": "TemplateMatch",
+        "template": "海獭_摸宝.png",
+        "roi": [
+            30,
+            460,
+            180,
+            180
+        ],
+        "threshold": 0.70,
+        "action": "Custom",
+        "custom_action": "SeaOtterHarvestAction",
+        "next": [
+            "SeaOtterFriendRouter"
+        ]
+    },
+    "SeaOtterSwitchPair": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "SeaOtterSwitchPairAction",
+        "next": [
+            "SeaOtterFriendRouter"
+        ]
+    },
+    "SeaOtterWaitScreen": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 1000,
+        "next": [
+            "SeaOtterFriendRouter"
+        ]
+    },
+    "SeaOtterDone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
     }
 }
 

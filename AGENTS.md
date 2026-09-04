@@ -19,6 +19,7 @@
 | 维护“开贝壳”活动自动化 | `docs/features/open-shell.md` |
 | 维护“好友摸宝”巡访与采集 | `docs/features/friend-gem.md` |
 | 维护“钓鱼达人”导航与活动 | `docs/features/fishing.md` |
+| 维护“海獭摸宝”特定宝石寻宝与采集 | `docs/features/sea-otter-gem.md` |
 
 ## 核心文件速查表
 | 文件路径 | 模块说明 | 关键注意点 |
@@ -45,3 +46,8 @@
             └─ EarliestKnownStage (如还在初始主界面)
   ```
 - **契约明确**：任务支持的中途启动阶段必须在任务文档与说明（Start Contract）中明确记录。除业务明确要求或中间状态不可安全识别外，一律提供步骤可恢复兼容。
+
+### Maa Pipeline 正则规则 (Maa OCR Regex Rules)
+- **Maa OCR expected 字段按正则表达式解析**：任何出现在 `expected` 字段中的文本均会被 MaaFramework 底层作为 `std::regex` 编译校验。
+- **括号与特殊字符约束**：若匹配内容含有正则特殊字符（如 `()`, `[]`, `{}`, `.`, `+`, `*`, `?`, `^`, `$`, `|`），必须在 JSON 中进行双反斜杠转义（如 `\\(`），或优先选取不含特殊字符的稳定中文语义关键词（例如优先匹配“刷新体力”而非“0(0点刷新体力)”）。
+- **静态强校验约束**：单个节点的正则语法错误会导致整份 Pipeline 加载校验（`PipelineChecker::check_all_regex`）失败，直接引发客户端“资源加载失败”。修改 pipeline 后务必运行 `python dev/test_pipeline_regex.py` 执行双层校验。

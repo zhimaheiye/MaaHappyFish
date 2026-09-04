@@ -10,3 +10,12 @@ friend_gem_state = {
     "bubble_miss_count": 0,
     "max_bubble_misses": 8,
 }
+
+sea_otter_gem_state = {
+    "current_side": "left",
+    "total_harvests": 0,
+    "max_harvests": 200,
+    "consecutive_exhausted": 0,
+    "max_consecutive_exhausted": 30,
+    "current_task_id": None,
+}
