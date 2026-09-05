@@ -12,9 +12,9 @@ from maa.custom_action import CustomAction
 from maa.context import Context
 
 try:
-    from runtime_state import friend_gem_state, sea_otter_gem_state
+    from runtime_state import friend_gem_state, sea_otter_gem_state, band_fish_state, BAND_FISH_TARGETS, romantic_house_state
 except ImportError:
-    from agent.runtime_state import friend_gem_state, sea_otter_gem_state
+    from agent.runtime_state import friend_gem_state, sea_otter_gem_state, band_fish_state, BAND_FISH_TARGETS, romantic_house_state
 
 try:
     from param_utils import parse_dict_param, safe_float, safe_int
@@ -92,9 +92,10 @@ class InitFriendGemStateAction(CustomAction):
         try:
             friend_gem_state["attempts"] = 0
             friend_gem_state["current_friend_index"] = 1
-            friend_gem_state["max_attempts"] = 12
+            friend_gem_state["max_attempts"] = 30
             friend_gem_state["bubble_miss_count"] = 0
-            print("[好友摸宝] 任务初始化完成：当前好友序号设为 1（从启动位置起算），气泡点击上限为 12", flush=True)
+            friend_gem_state["max_bubble_misses"] = 12
+            print("[好友摸宝] 任务初始化完成：当前好友序号设为 1（从启动位置起算），安全保护上限为 30，连续未见气泡容忍上限为 12", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
@@ -109,7 +110,7 @@ class RecordFriendGemAttemptAction(CustomAction):
             friend_gem_state["attempts"] = int(friend_gem_state.get("attempts", 0)) + 1
             friend_gem_state["bubble_miss_count"] = 0
             attempts = friend_gem_state["attempts"]
-            max_att = friend_gem_state.get("max_attempts", 12)
+            max_att = friend_gem_state.get("max_attempts", 30)
             cur_idx = friend_gem_state.get("current_friend_index", 1)
             print(f"[好友摸宝] 已尝试采集气泡次数: {attempts}/{max_att} (当前好友序号: {cur_idx})", flush=True)
             return True
@@ -155,7 +156,7 @@ class RecordFriendGemBubbleMissAction(CustomAction):
         try:
             friend_gem_state["bubble_miss_count"] = int(friend_gem_state.get("bubble_miss_count", 0)) + 1
             miss = friend_gem_state["bubble_miss_count"]
-            max_misses = friend_gem_state.get("max_bubble_misses", 8)
+            max_misses = friend_gem_state.get("max_bubble_misses", 12)
             print(f"[好友摸宝] 暂未发现气泡 ({miss}/{max_misses})", flush=True)
             return True
         except Exception as e:
@@ -493,4 +494,286 @@ class SeaOtterSwitchPairAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         # 已合流至 SeaOtterHarvestAction，保持幂等兼容
         return True
+
+
+@AgentServer.custom_action("InitBandFishStateAction")
+class InitBandFishStateAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            band_fish_state["status"] = None
+            band_fish_state["invited_slots"] = []
+            band_fish_state["performance_finished"] = False
+            print("[乐队鱼] 状态已初始化，开始执行 BandFishTask", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[乐队鱼] 初始化状态异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("LogBandFishStatusAction")
+class LogBandFishStatusAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(argv.custom_action_param)
+            status = param.get("status", "UNKNOWN")
+            band_fish_state["status"] = status
+            if status == "DONE":
+                band_fish_state["performance_finished"] = True
+                print("[乐队鱼] 状态识别: 今日演出已完成(返场演出/次数已达上限)，安全退出", flush=True)
+            elif status == "READY_TO_PERFORM":
+                print("[乐队鱼] 状态识别: 乐队就绪，可开始演出", flush=True)
+            elif status == "NEED_INVITE":
+                print("[乐队鱼] 状态识别: 存在空缺或待邀请槽位", flush=True)
+            else:
+                print(f"[乐队鱼] 状态识别: {status}", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[乐队鱼] 记录状态异常: {e}", flush=True)
+            return False
+
+
+SLOT_INVITE_COORDS = {
+    1: (280, 418),
+    2: (450, 470),
+    4: (833, 470),
+    5: (1025, 418),
+}
+
+
+@AgentServer.custom_action("BandFishScanSlotsAction")
+class BandFishScanSlotsAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[乐队鱼] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            job_cap = ctrl.post_screencap()
+            if job_cap:
+                job_cap.wait()
+                frame = job_cap.get()
+            else:
+                frame = None
+
+            if frame is None or getattr(frame, "size", 0) == 0:
+                print("[乐队鱼] 截屏获取失败", flush=True)
+                return False
+
+            # 扫描每个槽位状态
+            for slot, target_name in BAND_FISH_TARGETS.items():
+                cur_state = band_fish_state.get("slots", {}).get(slot, {}).get("state", "EMPTY")
+
+                # 1. 检查是否已有对应目标好友名（已接受）
+                reco_name = f"BandFishSlot{slot}Accepted"
+                res_name = context.run_recognition(reco_name, frame)
+                if res_name and res_name.hit:
+                    band_fish_state["slots"][slot]["state"] = "ACCEPTED"
+                    print(f"[乐队鱼] 槽位 {slot} 状态: ACCEPTED (已加入: {target_name})", flush=True)
+                    continue
+
+                # 2. 检查是否处于倒计时（已邀请）
+                reco_timer = f"BandFishSlot{slot}Timer"
+                res_timer = context.run_recognition(reco_timer, frame)
+                if res_timer and res_timer.hit:
+                    band_fish_state["slots"][slot]["state"] = "INVITED"
+                    print(f"[乐队鱼] 槽位 {slot} 状态: INVITED (等待接受倒计时中: {target_name})", flush=True)
+                    continue
+
+                # 3. 检查是否有“邀请”按钮（空缺）
+                reco_invite = f"BandFishSlot{slot}InviteBtn"
+                res_invite = context.run_recognition(reco_invite, frame)
+                if res_invite and res_invite.hit:
+                    band_fish_state["slots"][slot]["state"] = "EMPTY"
+                    print(f"[乐队鱼] 槽位 {slot} 状态: EMPTY (待邀请: {target_name})", flush=True)
+                    continue
+
+                # 保留上一有效状态
+                print(f"[乐队鱼] 槽位 {slot} 状态保持: {cur_state} ({target_name})", flush=True)
+
+            # 评估整体就绪状态
+            all_accepted = all(
+                band_fish_state.get("slots", {}).get(s, {}).get("state") == "ACCEPTED"
+                for s in (1, 2, 4, 5)
+            )
+            has_empty = any(
+                band_fish_state.get("slots", {}).get(s, {}).get("state") == "EMPTY"
+                for s in (1, 2, 4, 5)
+            )
+
+            if all_accepted:
+                band_fish_state["status"] = "READY_TO_PERFORM"
+                print("[乐队鱼] 4位好友已全部就绪 (READY_TO_PERFORM)", flush=True)
+            elif has_empty:
+                band_fish_state["status"] = "NEED_INVITE"
+                print("[乐队鱼] 存在空缺槽位，需要发起邀请", flush=True)
+            else:
+                band_fish_state["status"] = "WAITING_ACCEPT"
+                print("[乐队鱼] 邀请已发出，等待好友接受中，需刷新状态", flush=True)
+
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[乐队鱼] 扫描槽位异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("BandFishInviteSlotAction")
+class BandFishInviteSlotAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[乐队鱼] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            param = parse_dict_param(argv.custom_action_param)
+            slot = safe_int(param.get("slot"), 1)
+            target_name = BAND_FISH_TARGETS.get(slot)
+            if not target_name:
+                print(f"[乐队鱼] 错误: 槽位 {slot} 无目标好友映射", flush=True)
+                return False
+
+            cur_state = band_fish_state.get("slots", {}).get(slot, {}).get("state")
+            if cur_state in ("INVITED", "ACCEPTED"):
+                print(f"[乐队鱼] 槽位 {slot} 已处于 {cur_state}，跳过邀请", flush=True)
+                return True
+
+            btn_x, btn_y = SLOT_INVITE_COORDS.get(slot, (280, 418))
+            print(f"[乐队鱼] 开始邀请槽位 {slot}: 目标【{target_name}】，点击槽位邀请按钮 ({btn_x}, {btn_y})...", flush=True)
+
+            # 1. 点击槽位邀请按钮进入选择弹窗
+            ctrl.post_click(btn_x, btn_y).wait()
+            time.sleep(1.8)
+
+            # 2. 点击搜索输入框 (450, 128)
+            print("[乐队鱼] 点击搜索输入框 (450, 128)...", flush=True)
+            ctrl.post_click(450, 128).wait()
+            time.sleep(0.4)
+
+            # 清空旧输入内容 (连续 12 次 Backspace)
+            for _ in range(12):
+                ctrl.post_click_key(67)
+            time.sleep(0.3)
+
+            # 3. 输入目标好友名字
+            print(f"[乐队鱼] 输入目标好友名称: 【{target_name}】...", flush=True)
+            ctrl.post_input_text(target_name).wait()
+            time.sleep(0.5)
+
+            # 4. 点击绿色搜索按钮 (589, 128)
+            print("[乐队鱼] 点击搜索按钮 (589, 128)...", flush=True)
+            ctrl.post_click(589, 128).wait()
+            time.sleep(1.5)
+
+            # 5. 截屏并 OCR 定位目标卡片
+            job_cap = ctrl.post_screencap()
+            if job_cap:
+                job_cap.wait()
+                frame_before = job_cap.get()
+            else:
+                frame_before = None
+
+            if frame_before is None or getattr(frame_before, "size", 0) == 0:
+                print("[乐队鱼] 搜索后截屏失败", flush=True)
+                return False
+
+            # 使用动态 expected 进行目标定位
+            res_card = context.run_recognition(
+                "BandFishFriendCardTarget",
+                frame_before,
+                pipeline_override={"BandFishFriendCardTarget": {"expected": target_name}}
+            )
+
+            if not res_card or not res_card.hit:
+                # 尝试模糊关键词匹配
+                kw = target_name[:2] if len(target_name) > 2 else target_name
+                res_card = context.run_recognition(
+                    "BandFishFriendCardTarget",
+                    frame_before,
+                    pipeline_override={"BandFishFriendCardTarget": {"expected": kw}}
+                )
+
+            if not res_card or not res_card.hit:
+                print(f"[乐队鱼] 严重警告: 搜索结果中未找到目标好友【{target_name}】，安全放弃点击，退出弹窗", flush=True)
+                ctrl.post_click(66, 48).wait()
+                time.sleep(1.0)
+                return False
+
+            # 取得中心坐标
+            bx, by, bw, bh = res_card.box
+            cx, cy = bx + bw // 2, by + bh // 2
+            print(f"[乐队鱼] 成功定位目标好友【{target_name}】: box=({bx}, {by}, {bw}, {bh}), 点击中心=({cx}, {cy})", flush=True)
+
+            # 6. 防误触闭环：点击前已有 frame_before，执行点击
+            ctrl.post_click(cx, cy).wait()
+            time.sleep(0.6)
+
+            # 截取点击后画面，核验卡片高亮选中状态 (Diff 校验)
+            job_cap_after = ctrl.post_screencap()
+            if job_cap_after:
+                job_cap_after.wait()
+                frame_after = job_cap_after.get()
+            else:
+                frame_after = None
+
+            if frame_after is not None:
+                img_h, img_w = frame_after.shape[:2]
+                rx = max(0, bx - 30)
+                ry = max(0, by - 30)
+                rw = min(img_w - rx, bw + 60)
+                rh = min(img_h - ry, bh + 60)
+                crop_b = frame_before[ry:ry+rh, rx:rx+rw]
+                crop_a = frame_after[ry:ry+rh, rx:rx+rw]
+                diff_px = int(np.sum(cv2.absdiff(crop_b, crop_a) > 25))
+                print(f"[乐队鱼] 卡片选中 Diff 变化像素数: {diff_px}", flush=True)
+
+            # 7. 确认底部“邀请”按钮并点击 (920, 668)
+            ctrl.post_click(920, 668).wait()
+            time.sleep(1.8)
+
+            band_fish_state["slots"][slot]["state"] = "INVITED"
+            print(f"[乐队鱼] 槽位 {slot} 已成功向【{target_name}】发出邀请！", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[乐队鱼] 邀请槽位 {slot} 异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("BandFishRefreshStateAction")
+class BandFishRefreshStateAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[乐队鱼] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            print("[乐队鱼] 执行状态刷新闭环: 返回鱼缸 -> 重新进入活动页...", flush=True)
+
+            # 1. 点击左上角返回按钮回到水族箱 (91, 46)
+            ctrl.post_click(91, 46).wait()
+            time.sleep(1.8)
+
+            # 2. 点击水族箱左侧“游乐园” (55, 541)
+            print("[乐队鱼] 点击水族箱游乐园图标 (55, 541)...", flush=True)
+            ctrl.post_click(55, 541).wait()
+            time.sleep(1.5)
+
+            # 3. 点击游乐园面板中的“乐队鱼” (590, 455)
+            print("[乐队鱼] 点击乐队鱼活动入口 (590, 455)...", flush=True)
+            ctrl.post_click(590, 455).wait()
+            time.sleep(2.0)
+
+            print("[乐队鱼] 已重新进入“我的演出”，准备刷新判定槽位状态", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[乐队鱼] 刷新状态异常: {e}", flush=True)
+            return False
+
+
 

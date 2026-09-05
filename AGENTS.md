@@ -20,6 +20,8 @@
 | 维护"好友摸宝"巡访与采集 | `docs/features/friend-gem.md` |
 | 维护"钓鱼达人"导航与活动 | `docs/features/fishing.md` |
 | 维护"海獭摸宝"特定宝石寻宝与采集 | `docs/features/sea-otter-gem.md` |
+| 维护"乐队鱼演出"邀请与演出活动 | `docs/features/band-fish.md` |
+| 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
 
 ## 核心文件速查表
 | 文件路径 | 模块说明 | 关键注意点 |
@@ -157,3 +159,23 @@ MaaHappyFish 采用 MFAAvalonia 原生支持的二合一整包（UI + MaaFW + Ag
 4. **CI 门禁与发布防线**：
    - 静态校验脚本 `dev/test_update_contract.py` 纳入本地与 CI 硬门禁，发版前必须 100% 通过校验。
    - 资产匹配确保兼容 `\b(?:win|windows)-(?:x64|x86_64)\b` 规则，发布资产命名保持 `MaaHappyFish-win-x86_64-v*.zip`。
+
+### Tool Boundaries & Environment Protection (工具职责边界与环境保护硬规则)
+
+在执行复合型自动化与协同任务时，必须严格区分工具的物理定位与控制边界，**严禁跨界越权操作**：
+
+1. **FastCTX（命令行环境辅助）**：
+   - 任务涉及查看代码、执行终端命令、编译、测试、Git 操作或环境检查时，**优先考虑使用 FastCTX**；
+   - 避免大量零散命令导致上下文丢失；若连续出现命令失败，必须立即停下重新检查工具选择，严禁盲目重复重试。
+2. **maa-mcp（Android 模拟器与游戏客户端专控）**：
+   - 唯一职责是操作 Android 模拟器 / 游戏客户端（截图、点击、输入、滑动、OCR、MaaFramework 调试）；
+   - **严禁使用 maa-mcp 或 ADB 窥探/控制 Windows 物理窗口、枚举 Windows 应用、操作浏览器或桌面软件**；
+   - **ADB 绝不等于 Windows 窗口管理工具**，严禁使用 ADB 查询电脑窗口或查找浏览器。
+3. **Kimi 插件（GPT 协作通信通道）**：
+   - 用户提供目标浏览器窗口与 GPT 对话链接时，**必须且只能新建 Agent 专用浏览器页面**（`navigate` with `newTab: true`, `group_title: agent:...`）；
+   - 必须核验返回的专属标识（`tabId` 与 `agent:` 标签组），确认工作上下文与用户页面物理隔离；
+   - **严禁使用 `active: true` 借用用户当前活跃标签**，绝不切换用户正在看的页面，绝不修改用户网页状态；
+   - 未检测到 Agent 专属标识时，严禁将当前页面当作工作页面，必须重新建立或向用户汇报。
+4. **用户环境保护原则（电脑非纯测试机）**：
+   - 任何操作前执行“三确认”：确认操作对象、确认当前窗口、确认当前设备；
+   - 发现连续失败、环境不确定或工具异常时，立即触发熔断，停止执行，向 GPT/用户汇报后依规恢复。

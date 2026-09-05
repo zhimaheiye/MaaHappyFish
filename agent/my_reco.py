@@ -15,9 +15,9 @@ from maa.context import Context
 from maa.define import RectType
 
 try:
-    from runtime_state import friend_gem_state, sea_otter_gem_state
+    from runtime_state import friend_gem_state, sea_otter_gem_state, band_fish_state
 except ImportError:
-    from agent.runtime_state import friend_gem_state, sea_otter_gem_state
+    from agent.runtime_state import friend_gem_state, sea_otter_gem_state, band_fish_state
 
 timer_state = {
     "task_id": None,
@@ -442,10 +442,11 @@ class CheckFriendGemLimitReco(CustomRecognition):
         context: Context,
         argv: CustomRecognition.AnalyzeArg,
     ) -> Optional[RectType]:
-        if friend_gem_state["attempts"] >= friend_gem_state["max_attempts"]:
+        max_att = friend_gem_state.get("max_attempts", 30)
+        if friend_gem_state["attempts"] >= max_att:
             print(
-                f"[好友摸宝] 当前好友尝试已达上限 "
-                f"({friend_gem_state['attempts']}/{friend_gem_state['max_attempts']})，准备切换下一位",
+                f"[好友摸宝] 【安全兜底】当前好友尝试已达安全上限 "
+                f"({friend_gem_state['attempts']}/{max_att})，触发防死锁兜底，准备切换下一位",
                 flush=True,
             )
             return (0, 0, 10, 10)
@@ -459,10 +460,10 @@ class CheckFriendGemBubbleMissLimitReco(CustomRecognition):
         context: Context,
         argv: CustomRecognition.AnalyzeArg,
     ) -> Optional[RectType]:
-        max_misses = friend_gem_state.get("max_bubble_misses", 8)
+        max_misses = friend_gem_state.get("max_bubble_misses", 12)
         if friend_gem_state.get("bubble_miss_count", 0) >= max_misses:
             print(
-                f"[好友摸宝] 当前好友连续 {friend_gem_state['bubble_miss_count']} 次未发现气泡，判定无可收目标，切换下一位",
+                f"[好友摸宝] 当前好友连续 {friend_gem_state.get('bubble_miss_count', 0)} 次未发现气泡，判定水面无可收气泡，切换下一位",
                 flush=True,
             )
             return (0, 0, 10, 10)
@@ -511,6 +512,58 @@ class CheckSeaOtterLimitReco(CustomRecognition):
             return (0, 0, 10, 10)
 
         return None
+
+
+@AgentServer.custom_recognition("CheckBandFishReadyReco")
+class CheckBandFishReadyReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if band_fish_state.get("status") == "READY_TO_PERFORM":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishNeedSlot1Reco")
+class CheckBandFishNeedSlot1Reco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if band_fish_state.get("slots", {}).get(1, {}).get("state") == "EMPTY":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishNeedSlot2Reco")
+class CheckBandFishNeedSlot2Reco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if band_fish_state.get("slots", {}).get(2, {}).get("state") == "EMPTY":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishNeedSlot4Reco")
+class CheckBandFishNeedSlot4Reco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if band_fish_state.get("slots", {}).get(4, {}).get("state") == "EMPTY":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishNeedSlot5Reco")
+class CheckBandFishNeedSlot5Reco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if band_fish_state.get("slots", {}).get(5, {}).get("state") == "EMPTY":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishNeedRefreshReco")
+class CheckBandFishNeedRefreshReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        slots = band_fish_state.get("slots", {})
+        has_empty = any(slots.get(s, {}).get("state") == "EMPTY" for s in (1, 2, 4, 5))
+        all_accepted = all(slots.get(s, {}).get("state") == "ACCEPTED" for s in (1, 2, 4, 5))
+        if not has_empty and not all_accepted:
+            return (0, 0, 10, 10)
+        return None
+
 
 
 

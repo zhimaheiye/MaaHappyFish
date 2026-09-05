@@ -56,6 +56,15 @@
 - [x] 连续耗尽自动跳过（防死循环 Safety Limit：30 次连续耗尽触发退出）
 - [x] 4 大业务场景 Mock 验证脚本（`dev/test_sea_otter_scenarios.py`）
 
+### 浪漫满屋 (`RomanticHouseTask`)
+- [x] 全链路步骤可恢复导航（主鱼缸珊瑚 ➔ 亲吻鱼气泡 ➔ 浪漫满屋主页 ➔ 热恋时刻舞台）
+- [x] 动态亲吻鱼气泡识别与 6000ms 鱼群游动遮挡防御等待机制
+- [x] 数值状态驱动（点赞值 `10/10` 为唯一完成条件，严禁硬编码情侣鱼名称）
+- [x] 已祝福状态检测与右箭头顺次切换
+- [x] 双级安全退出（`0.55` 容错阈值匹配关闭小叉号，舞台 ➔ 主页 ➔ 主鱼缸）
+- [x] 详细设计文档（`docs/features/romantic-house.md`）
+
+
 ### 发布基础设施
 - [x] Windows x64 embedded Python 补齐 `opencv-python-headless`（v0.4.3 patch）
 - [x] `agent/requirements-release.txt` 发布依赖清单
@@ -74,34 +83,39 @@
 
 ---
 
-## 暂停中的工作 (Paused / Next Planned)
+## 进行中的工作 (In Progress)
 
-### 🔴 BandFishPerformanceTask（乐队鱼演出）
+### 🟡 BandFishTask（乐队鱼演出）
 
-**状态**: 需求已确认，**开发尚未开始（0 行代码）**。本地无任何 BandFish 实现文件。
+**状态**: Phase 1（导航与状态识别）与 Phase 2（槽位扫描、好友搜索定位、防误触高亮选中校验、重进刷新状态机）全量代码落地并 100% 通过全部静态/动态门禁。
 
-**暂停原因**: 开发进行到一半时，优先处理了 v0.4.2 发行包 cv2 故障（v0.4.3 修复），完成后统一文档收口。
+**已完成里程碑**：
+1. **实机探索取证（Step 1 ~ Step 7）**：
+   - 5 槽位映射：槽位 1 不想上课、槽位 2 一只胖梨、槽位 3 麦克（自身）、槽位 4 扶摇、槽位 5 游来游去；
+   - 文字 bbox 中心锚点防误邀机制（实测 100% 准确率）；
+   - 退出重进自动刷新接受状态（倒计时转为正式名，激活黄色“开始演出”）；
+   - 乐章动态探底（向下循环滑动至 diff=0，选取末端最大 Y 坐标，不硬编码曲名）；
+   - 25 秒原生水族箱演出（全时段 365 帧 OCR 证实无“跳过”按钮，演出不可跳过）；
+   - 自动结算到账（+10,000 金币、+1,500 鱼食）；
+   - 体力耗尽防线：结算后原按钮被替换为“12💎返场演出”（0/2），识别此特征立即安全退出。
+2. **Phase 1 代码落地与门禁验证**：
+   - `assets/resource/pipeline/my_task.json`：新增 `BandFishTask`、`BandFishStartRouter`（Deepest-first 步骤可恢复：已在我的演出 / 在游乐园面板 / 在鱼缸主界面）及 `BandFishStatusRouter`；
+   - `agent/runtime_state.py`：新增 `band_fish_state` 与 `BAND_FISH_TARGETS`；
+   - `agent/my_action.py`：新增 `InitBandFishStateAction`、`LogBandFishStatusAction`；
+   - `assets/resource/image/乐队鱼_图标.png`：添加 60×60 模板图标；
+   - `interface.json`：三份完全同步并通过 `test_update_contract.py`；
+   - `test_pipeline_regex.py`、`test_agent_registration_refs.py` 静态门禁 100% 通过；
+   - 实机动态多阶段启动测试 100% 通过。
+3. **Phase 2 邀请与防误触闭环全量落地**：
+   - `agent/runtime_state.py`：槽位 1、2、4、5 状态跟踪器就绪；
+   - `agent/my_reco.py`：`CheckBandFishReadyReco`、4 槽位 `CheckBandFishNeedSlot*Reco`、`CheckBandFishNeedRefreshReco` 就绪；
+   - `agent/my_action.py`：`BandFishScanSlotsAction`（Native OCR 槽位多模态识别）、`BandFishInviteSlotAction`（搜索框输入、文字中心锚点定位、Diff 选中校验防误触、底栏邀请点击）、`BandFishRefreshStateAction`（退出重进触发 Bot 接受刷新）；
+   - `assets/resource/pipeline/my_task.json`：挂接 `BandFishScanSlots`、`BandFishInviteLoopRouter`、4 槽位邀请分支、刷新桥梁与辅助识别节点；
+   - 全套门禁（Regex、Refs、Update Contract、Embedded Imports、Reco 单元测试）100% PASS。
 
-**已知业务流程**（用户描述，未实机验证）：
+**后续规划（Phase 3）**：
+- 动态遍历乐章列表到底部选取最新乐曲并确认开启演出（需在每日体力充足且准备消耗时实机测试）。
 
-1. 自身鱼缸 → 游乐园（摩天轮）
-2. 2×6 活动面板 → **第一排第 6 个入口**（乐队鱼）
-3. 乐队鱼准备页
-4. 邀请固定 4 个官方好友（不想上课 / 一只胖梨 / 扶摇 / 游来游去）
-5. 等待好友异步同意（需退出/重新进入循环检查）
-6. 出现「开始演出」按钮 → 点击
-7. 乐谱列表滑动到最下方 → 选择目标乐谱 → 开始演出
-8. 演出中点击「跳过」
-9. 完成
-
-**关键红线**：
-- "麦克"是用户自己，**绝对不要邀请**
-- "返场演出"按钮不属于当前功能，**绝对不要点击**
-- 每天只有 1 次演出体力，在点击「开始演出」时消耗，**属于稀缺资源**
-
-**正式开发必须按稀缺资源分阶段模式进行**（参见 AGENTS.md 相关规则）。
-
-**当前断点**: Step 0 — 尚未开始任何 Step 1 探索。
 
 ---
 

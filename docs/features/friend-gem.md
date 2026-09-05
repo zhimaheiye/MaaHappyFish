@@ -1,11 +1,12 @@
 # 好友摸宝自动化 (docs/features/friend-gem.md)
 
 ## 功能定位
-开心水族箱好友巡访与金币产物收取自动化助手（`FriendGemTask`）。自动从星级好友列表第一位开始，依次进入好友水族箱采集金币气泡；单好友最多尝试 12 次点击，体力耗尽（灰电/0点刷新体力）自动跳过，支持遇到加好友/陌生人推荐页面时平滑收敛结束。
+开心水族箱好友巡访与金币产物收取自动化助手（`FriendGemTask`）。从星级好友列表或好友鱼缸自适应启动，依次进入好友水族箱采集金币气泡；采用**状态确认完成（UI 状态驱动）**机制，以左侧体力栏出现「刷新体力」（灰电/0体力）作为该好友彻底清空的唯一准则，彻底解决固定 10/12 次计数导致的漏清问题。支持周末特殊好友【海牛先生】双层安全过滤跳过，杜绝误触水面及付费刷新陷阱，遇到加好友推荐页时平滑收敛结束。
 
 ## ⚠️ 任务启动前置条件（重要）
-- **必须在「我的星级好友」列表页面顶部开始任务**（顶部第 3 个 Tab，确保第 1 排好友卡片可见）。
-- 脚本自动点击首位好友卡片进入，并在好友之间通过右上角「下一位 (`>`)」药丸按钮连续巡访。
+- **推荐入口 A**：位于「我的星级好友」列表页面顶部开始任务（顶部第 3 个 Tab，确保第 1 排好友卡片可见）。
+- **推荐入口 B**：位于任意好友水族箱内部开始任务（支持海牛先生鱼缸）。
+- 脚本自适应启动进入，并在好友之间通过右上角「下一位 (`>`)」药丸按钮连续巡访。
 
 ---
 
@@ -15,8 +16,10 @@
 FriendGemTask (入口，InitFriendGemStateAction 初始化状态)
     ↓
 FriendGemStartRouter (启动环境自适应路由器)
-    ├─ 位于好友列表 ──> FriendGemStartFromFriendList (OCR「星级好友」) ──> 点击首卡 ─┐
-    └─ 位于好友鱼缸 ──> FriendGemStartInFriendTank (OCR「剩余|刷新体力」) ─> DoNothing ──┤
+    ├─ 列表首卡为海牛 ─> FriendGemStartCheckCard1Manatee (OCR「海牛」) ──> 点击第2张卡 ─┐
+    ├─ 正常好友列表 ──> FriendGemStartFromFriendList (OCR「星级好友」) ──> 点击第1张卡 ─┤
+    ├─ 误起在海牛鱼缸 ─> FriendGemStartManateeTank (OCR「海牛」) ────────> 直通 Router ──┤
+    └─ 位于普通好友缸 ─> FriendGemStartInFriendTank (OCR「剩余|刷新体力」) ─> 直通 Router ──┤
                                                                                         │
                                                                                         ▼
 FriendGemFriendRouter (直通路由器)
@@ -25,8 +28,9 @@ FriendGemFriendRouter (直通路由器)
     ├─ 系统弹窗 ──> FriendGemSpecialPopup (匹配「绿色勾选按钮.png」) ───┤
     ├─ 鱼宝乐园 ──> FriendGemFishBabyPark (OCR「鱼宝|乐园」点击右上X) ──┤
     │                                                                   │
-    ├─ 体力耗尽 ──> FriendGemExhausted (OCR「刷新体力」/ 灰电) ────────┐  │
-    ├─ 次数已满 ──> FriendGemAttemptLimitReached (CheckFriendGemLimit) │  │
+    ├─ 遭遇海牛 ──> FriendGemCheckManatee (OCR「海牛」直接跳下一位) ─────┼──┐
+    │                                                                   │  │
+    ├─ 体力耗尽 ──> FriendGemExhausted (OCR「刷新体力」/ 灰电) ────────┼──┤ (优先判断)
     │                                                                   │  │
     ├─ 发现气泡 ──> FriendGemCollectBubble (安全 ROI 模板匹配)          │  │
     │       ↓                                                           │  │
@@ -34,18 +38,20 @@ FriendGemFriendRouter (直通路由器)
     │       │                                                           │  │
     │       └───────────────────────────────────────────────────────────┤  │
     │                                                                   │  │
-    ├─ 连续无气泡兜底 ─> FriendGemBubbleMissLimitReached (miss >= 8) ───┤  │
+    ├─ 连续无气泡 ─> FriendGemBubbleMissLimitReached (miss >= 12, ~7.2s) ┼──┤
     │                                                                   │  │
-    └─ 单帧未发现气泡 ─> FriendGemWaitForBubble (miss + 1, delay 600ms) │  │
-            │                                                           │  │
-            └───────────────────────────────────────────────────────────┤  │
-                                                                        ▼  ▼
-                                                              FriendGemFriendRouter
-    (仅当 Exhausted、AttemptLimitReached 或 BubbleMissLimitReached 时)
+    ├─ 防死锁兜底 ─> FriendGemAttemptLimitReached (attempts >= 30 守护) ─┼──┤
+    │                                                                   │  │
+    └─ 单帧未见气泡 ─> FriendGemWaitForBubble (miss + 1, delay 600ms) ───┘  │
+            │                                                              │
+            └──────────────────────────────────────────────────────────────┘
+    (当 CheckManatee、Exhausted、BubbleMissLimit 或 AttemptLimit 触发时)
     ↓
 FriendGemNextFriend (模板匹配右上角「>」药丸按钮，点击切下一位)
     ↓
-FriendGemResetAttempts (attempts 清零，miss_count 清零，friend_index + 1)
+FriendGemStepIndex (friend_index + 1, miss_count 归零)
+    ↓
+FriendGemResetAttempts (attempts 清零，miss_count 清零)
     ↓
 回到 FriendGemFriendRouter (巡访下一位好友)
 ```
@@ -59,18 +65,22 @@ FriendGemResetAttempts (attempts 清零，miss_count 清零，friend_index + 1)
   ```python
   friend_gem_state = {
       "attempts": 0,
-      "max_attempts": 12,
+      "max_attempts": 30,  # 仅作极端防死锁安全兜底，不作为正常切好友条件
       "current_friend_index": 1,
+      "bubble_miss_count": 0,
+      "max_bubble_misses": 12,  # 允许连续未见气泡次数（约 7.2 秒），留足鱼群慢游缓冲
   }
   ```
-- 保证 `CheckFriendGemLimitReco` 仅做纯判断（返回 `(0, 0, 10, 10)` 或 `None`），不产生自增副作用；自增由动作节点 `RecordFriendGemAttemptAction` 显式驱动。
+- 保证 `CheckFriendGemLimitReco` 仅作为防死锁安全看门狗（达到 30 次才触发），日常完成判断 100% 由 UI 状态 `FriendGemExhausted` 驱动。
 
-### 2. 局部体力与全局终态解耦
-- **好友体力（Friend-local Quota）**：实测确认好友头顶的 `X 剩余` 为单好友可摸上限（通常为 10 或 12），不是每日全局上限。
-- **耗尽标识（Exhausted）**：当某好友今日已被摸完，会显示 `0(0点刷新体力)` 或 `0(12点刷新体力)` 并伴随灰色闪电。
-  - **ROI 扩大**：检测区域定为 `[60, 210, 400, 140]`（覆盖 $x=60 \sim 460$），防止旧版因右边界 $x=320$ 将字符串末尾的“力”字符截断导致漏防。
-  - **直通下一位（DoNothing 与稳定性经验）**：耗尽的业务判断已完全由 OCR 识别“刷新体力”承担，动作采用 `DoNothing` 直通 `FriendGemNextFriend`。**核心经验**：观测/日志逻辑不应成为关键业务流的必经 CustomAction，除非该 Action 本身承担必要状态变更；避免日志回调异常阻断核心导航。
-  - **统一切好友状态链**：所有切好友分支（`FriendGemExhausted`、`FriendGemAttemptLimitReached`、`FriendGemBubbleMissLimitReached`）统一汇聚至：
+### 2. 状态驱动完成准则（State-Confirmed Completion）
+- **核心原则**：绝不依赖点击次数判断好友是否摸完，彻底废除“点击满 12 次早退切人”的缺陷逻辑。
+- **好友体力与耗尽标识（Exhausted）**：
+  - 未清空状态：左侧显示黄色闪电和 `X 剩余`（如 `10 剩余`、`4 剩余`）；
+  - 已清空状态：左侧显示灰色闪电和 `0(12点刷新体力)` 或 `0(0点刷新体力)`，包含稳定关键词 **`刷新体力`**；
+  - **终态优先机制**：在 `FriendGemFriendRouter` 中，`FriendGemExhausted` 优先级高于气泡匹配；一旦出现 `刷新体力`，即使水中仍有残留小鱼气泡，也立即停止点击并安全切往下一位，零浪费操作。
+  - **ROI 覆盖扩大**：检测区域定为 `[60, 200, 400, 160]`（$y=200 \sim 360$），完整兼容不同好友由于个人简介行数不同造成的文字垂直漂移。
+  - **统一切好友状态链**：所有切好友分支（`FriendGemExhausted`、`FriendGemCheckManatee`、`FriendGemBubbleMissLimitReached`、`FriendGemAttemptLimitReached`）统一汇聚至：
     $$\text{FriendGemNextFriend} \rightarrow \text{FriendGemStepIndex (StepFriendGemIndexAction)} \rightarrow \text{FriendGemResetAttempts (ResetFriendGemAttemptsAction)} \rightarrow \text{FriendGemFriendRouter}$$
     实现序号前进（`current_friend_index += 1`）与计数清零（`attempts = 0, bubble_miss_count = 0`）职责严格解耦。
 
@@ -102,19 +112,24 @@ FriendGemResetAttempts (attempts 清零，miss_count 清零，friend_index + 1)
 - **状态维护**：不重置 attempts，不增加 friend_index，不切好友，直通回到 `FriendGemFriendRouter` 继续摸宝。
 
 ### 9. 连续无气泡有界等待机制（`Bounded Miss Wait`）
-- **根因缺陷修复**：原 `FriendGemFriendRouter` 末尾将 `FriendGemNextFriend` 作为默认 fallback。因右上方「>」按钮始终存在，一旦某帧产物气泡因游动遮挡暂时未被命中，即误切离开当前好友（引发“剩9体力就跳下一位”现象）。
 - **有界等待架构**：
-  - 彻底从 `FriendGemFriendRouter.next` 中剔除 `FriendGemNextFriend`。
-  - 新增运行时计数器 `bubble_miss_count`（上限 `max_bubble_misses = 8`）。
+  - 运行时计数器 `bubble_miss_count` 上限提升至 `max_bubble_misses = 12`（约 7.2 秒）。
   - 单帧漏检进入 `FriendGemWaitForBubble`：`bubble_miss_count += 1`，等待 600ms 后重返 Router 重新检测气泡。
   - 只要任意一帧成功点击气泡（`RecordFriendGemAttemptAction`）或切好友（`ResetFriendGemAttemptsAction`），立即归零 `bubble_miss_count = 0`。
-  - 仅当连续 8 次（约 4.8 秒）均无可用气泡时，命中 `FriendGemBubbleMissLimitReached`，才受控切下一位好友。
+  - 仅当连续 12 次（约 7.2 秒）均无可用气泡时，命中 `FriendGemBubbleMissLimitReached`，才切下一位好友。为游动较慢的大型鱼或偏门鱼种预留充裕缓冲。
 
-### 10. 双启动入口自适应（`FriendGemStartRouter`）
-- **双启动支持需求**：
-  - **入口 A（好友列表主界面）**：识别顶部 `ROI: [110, 100, 200, 55]` 标题 `星级好友`，点击首卡进入第 1 位好友。
-  - **入口 B（任意好友水族箱）**：识别左侧状态区 `ROI: [60, 210, 400, 140]` 状态文字 `剩余|刷新体力`，动作 `DoNothing` 直通 Router，直接把当前鱼缸作为巡访起点，绝不返回列表，绝不在鱼缸内误点首卡区域 `[120, 320]`，绝不提前跳号。
-- **巡访序号语义澄清**：`current_friend_index` 明确代表“本次任务从启动点算起的巡访序号”（在任意好友水族箱启动时，该鱼缸即为本轮第 1 位好友），不再假定为好友列表的绝对全局排名。
+### 10. 多启动入口自适应（`FriendGemStartRouter`）
+- **多入口支持**：
+  - **入口 A1（好友列表首卡为海牛）**：`FriendGemStartCheckCard1Manatee` 检测到首卡含「海牛」，自动点击第 2 张卡片进入，跳过海牛。
+  - **入口 A2（好友列表首卡正常）**：`FriendGemStartFromFriendList` 识别 `星级好友`，点击首卡进入。
+  - **入口 B1（直接在海牛鱼缸启动）**：`FriendGemStartManateeTank` 识别顶部「海牛」，直通 Router 并立即通过 `FriendGemCheckManatee` 切走。
+  - **入口 B2（普通好友水族箱启动）**：`FriendGemStartInFriendTank` 识别 `剩余|刷新体力`，直通 Router。
+
+### 11. 周末特殊好友【海牛先生】极速安全穿透
+- **危险点**：海牛先生水缸内无常规金币气泡，但下方存在绿色付费按钮 `x20 立即刷新`（消耗 20 元宝/钻石）。若在其缸内盲目等待或误触水面，存在极高误付费风险。
+- **双层防御策略**：
+  1. **好友列表层**：首卡为海牛先生时自动点击第 2 卡跳过；
+  2. **巡访路由层**：在 `FriendGemFriendRouter` 首位配置 `FriendGemCheckManatee`（ROI: `[300, 40, 350, 80]`，expected: `海牛`），一旦切入其水族箱，0 延时直通 `FriendGemNextFriend` 点击右上角 `>` 药丸切走，用时 < 1 秒，绝不触碰水面任何区域，绝不触发付费按钮。
 
 ---
 

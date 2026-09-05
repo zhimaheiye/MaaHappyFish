@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -100,8 +100,21 @@
             "entry": "SeaOtterGemTask",
             "default_check": false,
             "description": "从海獭寻宝好友列表或好友水族箱开始，在相邻好友间往复切换并自动摸取目标宝石，好友体力耗尽自动向后滑动窗口，陌生人边界安全退出。"
+        },
+        {
+            "name": "乐队鱼演出",
+            "entry": "BandFishTask",
+            "default_check": false,
+            "description": "前往游乐园乐队鱼演出活动，检查并邀请指定好友，完成每日乐章演出（支持在水族箱主界面、游乐园面板或活动界面直接启动）。"
+        },
+        {
+            "name": "浪漫满屋",
+            "entry": "RomanticHouseTask",
+            "default_check": false,
+            "description": "自动进入浪漫满屋进行情侣鱼祝福，直至本日点赞值达到10/10满额（支持在主鱼缸、浪漫满屋主页或热恋时刻舞台直接启动）。"
         }
     ],
+
     "option": {
         "开贝壳次数": {
             "type": "input",
