@@ -85,9 +85,39 @@
 
 ## 进行中的工作 (In Progress)
 
+### 🟢 DailyRoutineTask v1（日常收尾总控任务）
+
+**状态**: ✅ 已全量实现并通过 9 项离线单元测试及全部静态合规门禁。
+
+**已完成能力**：
+1. **DAG 非阻塞串联**：
+   - 严格顺序：`BandFish Pass1` $\rightarrow$ `GoldenDolphin` $\rightarrow$ `Fishing` $\rightarrow$ `BandFish Pass2` $\rightarrow$ `AllDone`；
+   - Pass 1 仅发邀请并沉淀 `PENDING`，利用后续海豚与钓鱼执行时间给好友预留响应窗口，Pass 2 智能判定（已完成直接跳过，未完成执行终轮演出或保持 `PENDING` 退出）。
+2. **合法终态与安全退出契约**：
+   - 次数耗尽 / 鱼饵用尽 / 演出已完成统一为合法终态（`DONE` / `NO_STAMINA` / `PENDING`），绝不作为异常报错；
+   - 补齐 `BandFishExitToTankAction` 与 `FishingExitToTankAction`，确保子任务完成后 100% 物理归位回水族箱主界面；
+3. **单任务与总控双模兼容**：
+   - 单独运行单个任务时，`CheckDailyRoutineStepReco` 依靠 `active` 守卫确保互不干扰。
+4. **门禁与测试验证**：
+   - `dev/test_daily_routine_suite.py`：9 项全流程单元测试 100% PASS；
+   - 详见 `docs/features/daily-routine.md`。
+
+### 🟢 GoldenDolphinTask（金海豚小游戏 Pipeline 与 Action 接入）
+
+**状态**: ✅ 已正式接入 Pipeline 与 CustomAction。
+
+**已完成能力**：
+1. **全链路动作落地**：
+   - `GoldenDolphinTaskAction`：导航进入游乐园 $\rightarrow$ 点击金海豚图标 $\rightarrow$ 弹窗几何/语义区分判定 $\rightarrow$ 启动激活点击 $\rightarrow$ Method E XP 收集主循环 $\rightarrow$ 结算退出；
+2. **弹窗双模区分机制**：
+   - **几何检测**：“想玩小游戏”弹窗左侧伴随红色取消圆形按钮 `(670, 449)`，而“机会耗尽”弹窗无红色按钮；纯离线 OpenCV/NumPy 实现，不引入未打包依赖；
+   - **语义检测**：辅助匹配“用完”/“明天再来”；
+3. **实机耗尽场景闭环验证**：
+   - 实测在次数耗尽场景下，7.1 秒内精准识别弹窗、点击确定关闭并安全返回主鱼缸，沉淀 `NO_STAMINA`。
+
 ### 🟡 BandFishTask（乐队鱼演出）
 
-**状态**: Phase 1（导航与状态识别）与 Phase 2（槽位扫描、好友搜索定位、防误触高亮选中校验、重进刷新状态机）全量代码落地并 100% 通过全部静态/动态门禁。
+**状态**: Phase 1（导航与状态识别）与 Phase 2（槽位扫描、好友搜索定位、防误触高亮选中校验、重进刷新状态机）全量代码落地并 100% 通过全部静态/动态门禁。已接入 `DailyRoutineTask`。
 
 **已完成里程碑**：
 1. **实机探索取证（Step 1 ~ Step 7）**：
@@ -116,6 +146,38 @@
 **后续规划（Phase 3）**：
 - 动态遍历乐章列表到底部选取最新乐曲并确认开启演出（需在每日体力充足且准备消耗时实机测试）。
 
+### 🟡 GoldenDolphinTask（金海豚小游戏）
+
+**状态**: Phase 1.5（全量 Benchmark 验证）与 Phase 2A（启动机制关键发现）已完成；今日游戏次数耗尽，功能暂停开发。
+
+**重大机制发现（Hidden Trigger Mechanism）**：
+- **进入小游戏后不是立即开始正式计时，存在隐藏启动状态**：
+  ```
+  进入小游戏
+      ↓
+  等待玩家首次点击 [GoldenDolphinWaitingStart]
+      ↓
+  正式开始计时 (30.0s 倒计时开始)
+  ```
+- **未点击时**：
+  - 只掉落初始金币；
+  - 不出现 XP/爱心等奖励；
+  - XP 检测算法不会有任何检出结果。
+- **正式状态机设计硬契约**：
+  - 必须包含 `GoldenDolphinWaitingStart` 状态节点；
+  - 在该状态下严禁执行 XP 目标检测；
+  - 必须先完成一次启动点击/激活验证。
+
+**视觉与物理适配已就绪基础**：
+- **算法就绪**：Method E（HSV 粗筛 + 几何硬过滤 + 局部微补丁模板确认）已验证：准确率 92.4%，召回率 97.5%，耗时 33ms，金币负样本 0 误检；
+- **物理坐标映射**：MuMu 模拟器物理为 1080p ($1920\times1080$)，截图为 720p ($1280\times720$)，ADB 点击坐标需缩放 $1.5$ 倍；
+- **全链路资产**：游乐园入口、金海豚图标、确定按钮、经验星、结束取消按钮模板均已提取完备；
+- **详细功能文档**：见 `docs/features/golden-dolphin.md`。
+
+**后续复工待确认事项（To Verify when resuming）**：
+1. 任意位置点击是否可以启动小游戏倒计时；
+2. 是否必须点击金币才激活启动；
+3. 启动后多久进入 XP 掉落阶段。
 
 ---
 

@@ -22,6 +22,8 @@
 | 维护"海獭摸宝"特定宝石寻宝与采集 | `docs/features/sea-otter-gem.md` |
 | 维护"乐队鱼演出"邀请与演出活动 | `docs/features/band-fish.md` |
 | 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
+| 维护"金海豚小游戏"活动自动化 | `docs/features/golden-dolphin.md` |
+| 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
 
 ## 核心文件速查表
 | 文件路径 | 模块说明 | 关键注意点 |

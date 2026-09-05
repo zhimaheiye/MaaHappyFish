@@ -486,7 +486,7 @@
         "action": "Click",
         "post_delay": 1500,
         "next": [
-            "FishingBaitRouter"
+            "FishingDone"
         ]
     },
     "FishingStartAtCatchResult": {
@@ -758,7 +758,7 @@
         "action": "Click",
         "post_delay": 1500,
         "next": [
-            "FishingBaitRouter"
+            "FishingDone"
         ]
     },
     "FishingBaitAlreadySelected": {
@@ -948,7 +948,11 @@
     },
     "FishingDone": {
         "recognition": "DirectHit",
-        "action": "DoNothing"
+        "action": "Custom",
+        "custom_action": "FishingExitToTankAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
     },
     "SeaOtterGemTask": {
         "recognition": "DirectHit",
@@ -1450,7 +1454,11 @@
     },
     "BandFishDone": {
         "recognition": "DirectHit",
-        "action": "DoNothing"
+        "action": "Custom",
+        "custom_action": "BandFishExitToTankAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
     },
     "RomanticHouseTask": {
         "action": "DoNothing",
@@ -1607,6 +1615,104 @@
     "RomanticHouseDone": {
         "recognition": "DirectHit",
         "action": "DoNothing"
+    },
+    "GoldenDolphinTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "GoldenDolphinTaskAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
+    },
+    "DailyRoutineTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "InitDailyRoutineAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
+    },
+    "DailyRoutineDispatcher": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "DailyRoutineStepBandFishPass1",
+            "DailyRoutineStepGoldenDolphin",
+            "DailyRoutineStepFishing",
+            "DailyRoutineStepBandFishPass2",
+            "DailyRoutineStepAllDone"
+        ]
+    },
+    "DailyRoutineStepBandFishPass1": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "BAND_FISH_PASS1"
+        },
+        "action": "DoNothing",
+        "next": [
+            "BandFishStartRouter"
+        ]
+    },
+    "DailyRoutineStepGoldenDolphin": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "GOLDEN_DOLPHIN"
+        },
+        "action": "DoNothing",
+        "next": [
+            "GoldenDolphinTask"
+        ]
+    },
+    "DailyRoutineStepFishing": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "FISHING"
+        },
+        "action": "DoNothing",
+        "next": [
+            "FishingTask"
+        ]
+    },
+    "DailyRoutineStepBandFishPass2": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "BAND_FISH_PASS2"
+        },
+        "action": "DoNothing",
+        "next": [
+            "DailyRoutineBandFishPass2CheckSkip",
+            "DailyRoutineBandFishPass2Run"
+        ]
+    },
+    "DailyRoutineBandFishPass2CheckSkip": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishPass2SkipReco",
+        "action": "Custom",
+        "custom_action": "DailyRoutineSkipBandFishPass2Action",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
+    },
+    "DailyRoutineBandFishPass2Run": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishPass2NeededReco",
+        "action": "DoNothing",
+        "next": [
+            "BandFishStartRouter"
+        ]
+    },
+    "DailyRoutineStepAllDone": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "ALL_DONE"
+        },
+        "action": "Custom",
+        "custom_action": "DailyRoutineFinishAction"
     }
 }
 

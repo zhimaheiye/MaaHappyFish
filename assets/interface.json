@@ -112,6 +112,18 @@
             "entry": "RomanticHouseTask",
             "default_check": false,
             "description": "自动进入浪漫满屋进行情侣鱼祝福，直至本日点赞值达到10/10满额（支持在主鱼缸、浪漫满屋主页或热恋时刻舞台直接启动）。"
+        },
+        {
+            "name": "日常收尾",
+            "entry": "DailyRoutineTask",
+            "default_check": false,
+            "description": "每日收尾总控任务：按序自动执行乐队鱼首轮邀请、金海豚经验小游戏、钓鱼达人每日垂钓以及乐队鱼终轮演出判定。"
+        },
+        {
+            "name": "金海豚小游戏",
+            "entry": "GoldenDolphinTask",
+            "default_check": false,
+            "description": "自动进入游乐园金海豚小游戏，高频抓帧检测并点击掉落的XP经验星奖励，次数耗尽或结束后安全返回鱼缸。"
         }
     ],
 

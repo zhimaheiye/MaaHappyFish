@@ -15,9 +15,23 @@ from maa.context import Context
 from maa.define import RectType
 
 try:
-    from runtime_state import friend_gem_state, sea_otter_gem_state, band_fish_state
+    from runtime_state import (
+        friend_gem_state,
+        sea_otter_gem_state,
+        band_fish_state,
+        daily_routine_state,
+        fishing_state,
+        golden_dolphin_state,
+    )
 except ImportError:
-    from agent.runtime_state import friend_gem_state, sea_otter_gem_state, band_fish_state
+    from agent.runtime_state import (
+        friend_gem_state,
+        sea_otter_gem_state,
+        band_fish_state,
+        daily_routine_state,
+        fishing_state,
+        golden_dolphin_state,
+    )
 
 timer_state = {
     "task_id": None,
@@ -470,11 +484,6 @@ class CheckFriendGemBubbleMissLimitReco(CustomRecognition):
         return None
 
 
-try:
-    from my_action import fishing_state
-except ImportError:
-    from agent.my_action import fishing_state
-
 
 @AgentServer.custom_recognition("CheckFishingCastLimitReco")
 class CheckFishingCastLimitReco(CustomRecognition):
@@ -563,6 +572,41 @@ class CheckBandFishNeedRefreshReco(CustomRecognition):
         if not has_empty and not all_accepted:
             return (0, 0, 10, 10)
         return None
+
+
+@AgentServer.custom_recognition("CheckDailyRoutineStepReco")
+class CheckDailyRoutineStepReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if not daily_routine_state.get("active"):
+            return None
+        param = parse_dict_param(argv.custom_recognition_param)
+        expected = param.get("expected_step")
+        if daily_routine_state.get("step") == expected:
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishPass2NeededReco")
+class CheckBandFishPass2NeededReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if not daily_routine_state.get("active"):
+            return None
+        bf_status = daily_routine_state.get("tasks", {}).get("BandFish", {}).get("status")
+        if bf_status == "PENDING":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishPass2SkipReco")
+class CheckBandFishPass2SkipReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if not daily_routine_state.get("active"):
+            return None
+        bf_status = daily_routine_state.get("tasks", {}).get("BandFish", {}).get("status")
+        if bf_status != "PENDING":
+            return (0, 0, 10, 10)
+        return None
+
 
 
 

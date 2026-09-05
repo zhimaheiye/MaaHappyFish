@@ -44,3 +44,25 @@ romantic_house_state = {
     "max_likes": 10,
     "status": "IDLE",
 }
+
+daily_routine_state = {
+    "active": False,
+    "step": "INIT",  # "BAND_FISH_PASS1" | "GOLDEN_DOLPHIN" | "FISHING" | "BAND_FISH_PASS2" | "ALL_DONE"
+    "tasks": {
+        "BandFish": {"status": "IDLE", "stage": "PASS1"},
+        "GoldenDolphin": {"status": "IDLE"},
+        "Fishing": {"status": "IDLE"},
+    },
+}
+
+fishing_state = {
+    "current_task_id": None,
+    "cast_count": 0,
+    "max_casts": 5,
+    "fish_caught": 0,
+    "status": "IDLE",  # "DONE" | "NO_STAMINA"
+}
+
+golden_dolphin_state = {
+    "status": "IDLE",  # "DONE" | "NO_STAMINA"
+}

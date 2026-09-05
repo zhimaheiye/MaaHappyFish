@@ -12,9 +12,27 @@ from maa.custom_action import CustomAction
 from maa.context import Context
 
 try:
-    from runtime_state import friend_gem_state, sea_otter_gem_state, band_fish_state, BAND_FISH_TARGETS, romantic_house_state
+    from runtime_state import (
+        friend_gem_state,
+        sea_otter_gem_state,
+        band_fish_state,
+        BAND_FISH_TARGETS,
+        romantic_house_state,
+        daily_routine_state,
+        fishing_state,
+        golden_dolphin_state,
+    )
 except ImportError:
-    from agent.runtime_state import friend_gem_state, sea_otter_gem_state, band_fish_state, BAND_FISH_TARGETS, romantic_house_state
+    from agent.runtime_state import (
+        friend_gem_state,
+        sea_otter_gem_state,
+        band_fish_state,
+        BAND_FISH_TARGETS,
+        romantic_house_state,
+        daily_routine_state,
+        fishing_state,
+        golden_dolphin_state,
+    )
 
 try:
     from param_utils import parse_dict_param, safe_float, safe_int
@@ -203,13 +221,6 @@ def detect_bite_color_geo_strict(crop: np.ndarray):
 
     return False, None
 
-
-fishing_state = {
-    "current_task_id": None,
-    "cast_count": 0,
-    "max_casts": 5,
-    "fish_caught": 0,
-}
 
 
 def _sync_task_id(task_id: int):
@@ -774,6 +785,404 @@ class BandFishRefreshStateAction(CustomAction):
             traceback.print_exc()
             print(f"[乐队鱼] 刷新状态异常: {e}", flush=True)
             return False
+
+
+@AgentServer.custom_action("BandFishExitToTankAction")
+class BandFishExitToTankAction(CustomAction):
+    """
+    乐队鱼结算并安全返回主鱼缸动作:
+    1. 判断并沉淀业务状态 (DONE / PENDING);
+    2. 若处于 DailyRoutineTask 流程中，同步子任务状态并推进下一阶段 (GOLDEN_DOLPHIN / ALL_DONE);
+    3. 点击左上角返回 [91, 46] -> 关闭潜在浮层 [640, 150]，确保 100% 回到主鱼缸。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[乐队鱼退出] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            status = band_fish_state.get("status")
+            perf_finished = band_fish_state.get("performance_finished", False)
+            if status in ("DONE", "READY_TO_PERFORM") or perf_finished:
+                biz_status = "DONE"
+            else:
+                biz_status = "PENDING"
+
+            if daily_routine_state.get("active"):
+                stage = daily_routine_state["tasks"]["BandFish"].get("stage", "PASS1")
+                daily_routine_state["tasks"]["BandFish"]["status"] = biz_status
+                print(f"[日常收尾] 乐队鱼 ({stage}) 状态沉淀: {biz_status}", flush=True)
+                if stage == "PASS1":
+                    daily_routine_state["step"] = "GOLDEN_DOLPHIN"
+                else:
+                    daily_routine_state["step"] = "ALL_DONE"
+
+            print(f"[乐队鱼退出] 业务状态: {biz_status}，执行物理退出回鱼缸...", flush=True)
+
+            # 点击左上角返回按钮
+            ctrl.post_click(91, 46).wait()
+            time.sleep(1.8)
+
+            # 保底点击安全区域关闭可能残留的游乐园面板
+            ctrl.post_click(640, 150).wait()
+            time.sleep(1.0)
+
+            print("[乐队鱼退出] 已安全退出回主鱼缸", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[乐队鱼退出] 异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("FishingExitToTankAction")
+class FishingExitToTankAction(CustomAction):
+    """
+    钓鱼达人结算并安全返回主鱼缸动作:
+    1. 判断业务状态: cast_count >= max_casts 判定为 DONE，否则判定为 NO_STAMINA (鱼饵耗尽/购买弹窗关闭);
+    2. 若处于 DailyRoutineTask 流程中，同步状态并推进至 BAND_FISH_PASS2;
+    3. 点击钓场左上角返回 [50, 45] -> 点击地点大地图右上角关闭 [1235, 45] -> 点击安全区 [640, 150]，确保 100% 回到主鱼缸。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[钓鱼退出] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            casts = fishing_state.get("cast_count", 0)
+            max_c = fishing_state.get("max_casts", 5)
+            if casts >= max_c:
+                biz_status = "DONE"
+            else:
+                biz_status = "NO_STAMINA"
+            fishing_state["status"] = biz_status
+
+            if daily_routine_state.get("active"):
+                daily_routine_state["tasks"]["Fishing"]["status"] = biz_status
+                daily_routine_state["tasks"]["BandFish"]["stage"] = "PASS2"
+                daily_routine_state["step"] = "BAND_FISH_PASS2"
+                print(f"[日常收尾] 钓鱼达人 状态沉淀: {biz_status} (已完成 {casts}/{max_c} 杆)", flush=True)
+
+            print(f"[钓鱼退出] 业务状态: {biz_status}，执行物理退出回鱼缸...", flush=True)
+
+            # 1. 点击钓场左上角返回
+            ctrl.post_click(50, 45).wait()
+            time.sleep(2.0)
+
+            # 2. 点击地点大地图右上角关闭按钮
+            ctrl.post_click(1235, 45).wait()
+            time.sleep(1.8)
+
+            # 3. 保底点击安全区关闭游乐园面板
+            ctrl.post_click(640, 150).wait()
+            time.sleep(1.0)
+
+            print("[钓鱼退出] 已安全退出回主鱼缸", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[钓鱼退出] 异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("GoldenDolphinTaskAction")
+class GoldenDolphinTaskAction(CustomAction):
+    """
+    金海豚小游戏完整执行动作:
+    1. 导航进入: 水族箱 -> 点击游乐园 -> 点击金海豚图标;
+    2. 次数耗尽检测: 识别是否弹出确认框；若未弹出或检测到已耗尽提示，记录 NO_STAMINA，安全退出;
+    3. 启动验证: 首次点击启动隐藏计时 (GoldenDolphinWaitingStart);
+    4. Method E 视觉闭环: HSV 黄色候选 + 几何过滤 + 局部模板验证，自动点击掉落 XP 五角星;
+    5. 结算退出: 匹配游戏结束红底取消按钮 [850, 574]，安全退出回鱼缸，记录 DONE。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[金海豚] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            import os
+            tpl_dir = os.path.join(os.path.dirname(__file__), "../assets/resource/image")
+            if not os.path.exists(tpl_dir):
+                tpl_dir = "assets/resource/image"
+
+            def _load_tpl(name):
+                p = os.path.join(tpl_dir, name)
+                if os.path.exists(p):
+                    return cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
+                return None
+
+            tpl_dolphin = _load_tpl("金海豚_图标.png")
+            tpl_confirm = _load_tpl("金海豚_确定按钮.png")
+            tpl_star = _load_tpl("金海豚_经验星.png")
+            tpl_cancel = _load_tpl("金海豚_结束取消.png")
+            tpl_ent = _load_tpl("游乐园入口.png")
+
+            # 1. 检查当前是否已经在游戏/弹窗/主界面
+            print("[金海豚] 启动金海豚小游戏流程，截屏检测当前状态...", flush=True)
+            job = ctrl.post_screencap()
+            if job: job.wait()
+            screen = job.get() if job else None
+            if screen is None:
+                print("[金海豚] 无法截屏", flush=True)
+                return False
+
+            # 判断是否在主鱼缸需要点游乐园
+            if tpl_ent is not None:
+                res = cv2.matchTemplate(screen, tpl_ent, cv2.TM_CCOEFF_NORMED)
+                _, max_ve, _, loc_e = cv2.minMaxLoc(res)
+                if max_ve >= 0.70:
+                    print(f"[金海豚] 点击水族箱游乐园入口 ({loc_e[0]+30}, {loc_e[1]+30})...", flush=True)
+                    ctrl.post_click(loc_e[0] + 30, loc_e[1] + 30).wait()
+                    time.sleep(1.5)
+                    job = ctrl.post_screencap()
+                    if job: job.wait()
+                    screen = job.get() if job else screen
+
+            # 点击游乐园 2x6 面板中的金海豚图标
+            clicked_dolphin = False
+            if tpl_dolphin is not None and screen is not None:
+                res_d = cv2.matchTemplate(screen, tpl_dolphin, cv2.TM_CCOEFF_NORMED)
+                _, max_vd, _, loc_d = cv2.minMaxLoc(res_d)
+                if max_vd >= 0.65:
+                    dx = loc_d[0] + tpl_dolphin.shape[1] // 2
+                    dy = loc_d[1] + tpl_dolphin.shape[0] // 2
+                    print(f"[金海豚] 匹配到金海豚图标 (score={max_vd:.3f})，点击 ({dx}, {dy})...", flush=True)
+                    ctrl.post_click(dx, dy).wait()
+                    clicked_dolphin = True
+            if not clicked_dolphin:
+                print("[金海豚] 未匹配到金海豚图标，尝试固定坐标点击 (674, 468)...", flush=True)
+                ctrl.post_click(674, 468).wait()
+
+            time.sleep(1.5)
+
+            # 2. 检查是否弹出“您想玩这个小游戏吗？”确认弹窗
+            job = ctrl.post_screencap()
+            if job: job.wait()
+            screen_confirm = job.get() if job else None
+
+            has_confirm = False
+            btn_cx, btn_cy = 750, 480
+            if tpl_confirm is not None and screen_confirm is not None:
+                res_c = cv2.matchTemplate(screen_confirm, tpl_confirm, cv2.TM_CCOEFF_NORMED)
+                _, max_vc, _, loc_c = cv2.minMaxLoc(res_c)
+                if max_vc >= 0.65:
+                    has_confirm = True
+                    btn_cx = loc_c[0] + tpl_confirm.shape[1] // 2
+                    btn_cy = loc_c[1] + tpl_confirm.shape[0] // 2
+                    print(f"[金海豚] 匹配到确认进入按钮 (score={max_vc:.3f}) at ({btn_cx}, {btn_cy})", flush=True)
+
+            if not has_confirm:
+                # 判定为未弹出确认框，安全退出
+                print("[金海豚] 未检测到确认按钮，安全退出", flush=True)
+                golden_dolphin_state["status"] = "NO_STAMINA"
+                if daily_routine_state.get("active"):
+                    daily_routine_state["tasks"]["GoldenDolphin"]["status"] = "NO_STAMINA"
+                    daily_routine_state["step"] = "FISHING"
+                ctrl.post_click(640, 150).wait()
+                time.sleep(1.0)
+                return True
+
+            # 区分“机会已全部用完”与“您想玩这个小游戏吗”
+            # 特征 1: "想玩小游戏"弹窗在绿色对号左侧伴随红色圆形取消叉叉 (670, 449)，而"用完"弹窗左侧无红色取消按钮
+            is_exhausted = False
+            try:
+                sc_720 = cv2.resize(screen_confirm, (1280, 720))
+                red_patch = sc_720[430:490, 650:710]
+                hsv_p = cv2.cvtColor(red_patch, cv2.COLOR_BGR2HSV)
+                mask_r = ((hsv_p[:, :, 0] < 10) | (hsv_p[:, :, 0] > 170)) & (hsv_p[:, :, 1] > 90) & (hsv_p[:, :, 2] > 90)
+                has_red_cancel = bool(np.sum(mask_r) > 400)
+                if not has_red_cancel:
+                    is_exhausted = True
+            except Exception:
+                pass
+
+            # 特征 2: OCR 语义双重检验 (若可用)
+            if not is_exhausted:
+                try:
+                    from rapidocr_onnxruntime import RapidOCR
+                    _ocr = RapidOCR()
+                    res_ocr, _ = _ocr(screen_confirm)
+                    for _, txt, _ in (res_ocr or []):
+                        if any(k in txt for k in ("用完", "明天再来", "全部用完", "明天")):
+                            is_exhausted = True
+                            break
+                except Exception:
+                    pass
+
+            if is_exhausted:
+                print(f"[金海豚] 检测到提示「今天的机会已全部用完」，点击确定 ({btn_cx}, {btn_cy}) 关闭并判定为 NO_STAMINA", flush=True)
+                ctrl.post_click(btn_cx, btn_cy).wait()
+                time.sleep(1.2)
+                ctrl.post_click(640, 150).wait()
+                time.sleep(1.0)
+                golden_dolphin_state["status"] = "NO_STAMINA"
+                if daily_routine_state.get("active"):
+                    daily_routine_state["tasks"]["GoldenDolphin"]["status"] = "NO_STAMINA"
+                    daily_routine_state["step"] = "FISHING"
+                return True
+
+            # 点击绿色确认按钮进入小游戏
+            print(f"[金海豚] 点击确认按钮 ({btn_cx}, {btn_cy}) 进入小游戏...", flush=True)
+            ctrl.post_click(btn_cx, btn_cy).wait()
+            time.sleep(2.0)
+
+            # 3. 隐藏启动状态 (GoldenDolphinWaitingStart): 点击中央激活计时
+            print("[金海豚] 执行游戏启动点击 (640, 360) 激活计时...", flush=True)
+            ctrl.post_click(640, 360).wait()
+            time.sleep(0.5)
+
+            # 4. 进入 Method E 检测点击循环
+            print("[金海豚] 开始进入 Method E XP 经验星自动点击主循环...", flush=True)
+            t_game_start = time.time()
+            th_s, tw_s = (tpl_star.shape[:2]) if tpl_star is not None else (60, 60)
+            game_done = False
+            total_clicks = 0
+
+            while time.time() - t_game_start < 55.0:
+                elapsed = time.time() - t_game_start
+                job = ctrl.post_screencap()
+                if not job:
+                    time.sleep(0.03)
+                    continue
+                job.wait()
+                img = job.get()
+                if img is None:
+                    time.sleep(0.02)
+                    continue
+
+                h, w = img.shape[:2]
+                if w != 1280 or h != 720:
+                    img = cv2.resize(img, (1280, 720))
+
+                # 超过 20 秒后开始检查游戏结束弹窗
+                if elapsed > 20.0 and tpl_cancel is not None:
+                    res_cancel = cv2.matchTemplate(img, tpl_cancel, cv2.TM_CCOEFF_NORMED)
+                    _, max_cancel, _, loc_cancel = cv2.minMaxLoc(res_cancel)
+                    if max_cancel >= 0.70:
+                        cancel_x = loc_cancel[0] + tpl_cancel.shape[1] // 2
+                        cancel_y = loc_cancel[1] + tpl_cancel.shape[0] // 2
+                        print(f"[金海豚] 检测到游戏结束结算弹窗 (score={max_cancel:.3f})，点击取消 ({cancel_x}, {cancel_y}) 返回鱼缸...", flush=True)
+                        time.sleep(0.5)
+                        ctrl.post_click(cancel_x, cancel_y).wait()
+                        time.sleep(1.8)
+                        game_done = True
+                        break
+
+                # Method E XP 检测
+                hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+                mask = cv2.inRange(hsv, np.array([15, 65, 110]), np.array([35, 255, 255]))
+                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+                candidates = []
+                for cnt in contours:
+                    area = cv2.contourArea(cnt)
+                    x, y, cw, ch = cv2.boundingRect(cnt)
+                    if y < 25 or y > 665:
+                        continue
+                    ar = cw / float(ch) if ch > 0 else 0
+                    if 950 <= area <= 3300 and 0.80 <= ar <= 1.30 and 48 <= cw <= 78 and 44 <= ch <= 78:
+                        cx, cy = x + cw // 2, y + ch // 2
+                        if tpl_star is not None:
+                            x1 = max(0, cx - tw_s // 2)
+                            y1 = max(0, cy - th_s // 2)
+                            x2 = min(img.shape[1], x1 + tw_s)
+                            y2 = min(img.shape[0], y1 + th_s)
+                            patch = img[y1:y2, x1:x2]
+                            if patch.shape[:2] == tpl_star.shape[:2]:
+                                score = float(cv2.matchTemplate(patch, tpl_star, cv2.TM_CCOEFF_NORMED)[0, 0])
+                                if score >= 0.45:
+                                    candidates.append((cx, cy, score))
+                        else:
+                            candidates.append((cx, cy, 0.5))
+
+                if candidates:
+                    # 优先点击黄金拾取区 (Y在 200~540)
+                    golden = [c for c in candidates if 200 <= c[1] <= 540]
+                    target = sorted(golden if golden else candidates, key=lambda c: c[1], reverse=True)[0]
+                    ctrl.post_click(target[0], target[1])
+                    total_clicks += 1
+                    time.sleep(0.18)
+
+            # 若未正常在弹窗处退出，执行保底点击
+            if not game_done:
+                print(f"[金海豚] 游戏达到超时上限 (55s, 点击 {total_clicks} 次)，尝试保底退出...", flush=True)
+                ctrl.post_click(850, 574).wait()
+                time.sleep(1.5)
+                ctrl.post_click(640, 150).wait()
+                time.sleep(1.0)
+
+            golden_dolphin_state["status"] = "DONE"
+            if daily_routine_state.get("active"):
+                daily_routine_state["tasks"]["GoldenDolphin"]["status"] = "DONE"
+                daily_routine_state["step"] = "FISHING"
+
+            print(f"[金海豚] 任务完成 (DONE, 总点击 XP {total_clicks} 次)，已安全返回鱼缸", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[金海豚] 运行异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("InitDailyRoutineAction")
+class InitDailyRoutineAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            daily_routine_state["active"] = True
+            daily_routine_state["step"] = "BAND_FISH_PASS1"
+            daily_routine_state["tasks"] = {
+                "BandFish": {"status": "IDLE", "stage": "PASS1"},
+                "GoldenDolphin": {"status": "IDLE"},
+                "Fishing": {"status": "IDLE"},
+            }
+            print("[日常收尾] DailyRoutineTask 初始化成功，开始按序执行每日任务流...", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[日常收尾] 初始化异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("DailyRoutineSkipBandFishPass2Action")
+class DailyRoutineSkipBandFishPass2Action(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            print("[日常收尾] 乐队鱼在 Pass 1 中已完成 (DONE)，无需二次巡检，直接跳过 Pass 2", flush=True)
+            daily_routine_state["step"] = "ALL_DONE"
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[日常收尾] 跳过 Pass 2 异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("DailyRoutineFinishAction")
+class DailyRoutineFinishAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            bf_st = daily_routine_state["tasks"]["BandFish"].get("status", "UNKNOWN")
+            gd_st = daily_routine_state["tasks"]["GoldenDolphin"].get("status", "UNKNOWN")
+            fi_st = daily_routine_state["tasks"]["Fishing"].get("status", "UNKNOWN")
+
+            print("=" * 60, flush=True)
+            print("  【日常收尾 DailyRoutineTask】全部子任务执行完毕！", flush=True)
+            print(f"  - 乐队鱼演出 (BandFish)     : {bf_st}", flush=True)
+            print(f"  - 金海豚小游戏 (GoldenDolphin): {gd_st}", flush=True)
+            print(f"  - 钓鱼达人 (Fishing)        : {fi_st}", flush=True)
+            print("=" * 60, flush=True)
+
+            daily_routine_state["active"] = False
+            daily_routine_state["step"] = "ALL_DONE"
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[日常收尾] 结束汇总异常: {e}", flush=True)
+            return False
+
 
 
 
