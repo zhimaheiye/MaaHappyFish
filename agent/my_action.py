@@ -552,6 +552,238 @@ SLOT_INVITE_COORDS = {
     5: (1025, 418),
 }
 
+SLOT_INVITE_INFO = {
+    1: {"roi": (200, 385, 160, 65), "click": (280, 418)},
+    2: {"roi": (380, 440, 150, 65), "click": (450, 470)},
+    4: {"roi": (760, 440, 150, 65), "click": (833, 470)},
+    5: {"roi": (950, 385, 160, 65), "click": (1025, 418)},
+}
+
+
+
+@AgentServer.custom_action("BandFishInviteLoopAction")
+class BandFishInviteLoopAction(CustomAction):
+    """
+    乐队鱼动态全槽位邀请闭环动作 (基于纯列表 OCR 方案，严格绑定指定人机好友并执行名字识别与防误触核验):
+    1. 动态扫描所有槽位 (1, 2, 4, 5)，检测是否存在绿色“邀请”按钮;
+    2. 若存在空缺槽位 target_slot，获取对应指定人机好友名字 target_name:
+       - 槽位 1 -> 不想上课
+       - 槽位 2 -> 一只胖梨
+       - 槽位 4 -> 扶摇
+       - 槽位 5 -> 游来游去
+    3. 点击对应槽位的“邀请”按钮，进入好友选择弹窗;
+    4. 动态等待好友选择弹窗打开;
+    5. 纯列表 OCR 匹配目标好友:
+       a. 对当前页面执行 OCR，提取好友卡片名字，与 target_name 进行精确匹配;
+       b. 若当前屏未检出，向上滑动列表继续检索 (最多滑动 2 次，严禁使用搜索框);
+       c. 熔断防线: 若列表 OCR 遍历后仍未匹配到目标好友，立即安全熔断，点击左上角返回 (91, 46) 放弃，绝不误触/随机选择任何非目标好友！
+    6. 点击目标好友卡片文字中心 (cx, cy);
+    7. 选中与安全门禁核验:
+       - 动态等待底部确认邀请按钮变为绿色 (is_confirm_green);
+       - 若未变绿或选中异常，点击返回安全退出;
+    8. 门禁通过后，点击底部绿色确认邀请按钮 (921, 664);
+    9. 动态等待返回“我的演出”舞台且该槽位绿色邀请按钮消失;
+    10. 重新进入下一轮扫描，直到舞台上所有绿色邀请按钮消失;
+    11. 状态沉淀为 PENDING 并返回 True。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[乐队鱼邀请] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            print("[乐队鱼邀请] 开始执行动态全槽位邀请循环 (严格绑定指定人机好友)...", flush=True)
+            t_start = time.time()
+            max_loop_duration = 120.0
+
+            def detect_slot_green_btn(img, slot_id):
+                roi = SLOT_INVITE_INFO[slot_id]["roi"]
+                x, y, w, h = roi
+                crop = img[y:y+h, x:x+w]
+                if crop.size == 0:
+                    return False
+                hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+                mask = cv2.inRange(hsv, np.array([35, 80, 80]), np.array([85, 255, 255]))
+                return int(np.sum(mask > 0)) >= 300
+
+            def is_friend_dialog_open(img):
+                h, w = img.shape[:2]
+                if w != 1280 or h != 720:
+                    img = cv2.resize(img, (1280, 720))
+                crop = img[100:160, 500:700]
+                hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+                mask = cv2.inRange(hsv, np.array([35, 80, 80]), np.array([85, 255, 255]))
+                return int(np.sum(mask > 0)) >= 500
+
+            def is_confirm_green(img):
+                h, w = img.shape[:2]
+                if w != 1280 or h != 720:
+                    img = cv2.resize(img, (1280, 720))
+                crop = img[640:695, 800:1040]
+                hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+                mask = cv2.inRange(hsv, np.array([35, 80, 80]), np.array([85, 255, 255]))
+                return int(np.sum(mask > 0)) >= 800
+
+            def is_on_stage(img):
+                h, w = img.shape[:2]
+                if w != 1280 or h != 720:
+                    img = cv2.resize(img, (1280, 720))
+                crop = img[400:550, 400:880]
+                hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+                mask = cv2.inRange(hsv, np.array([20, 100, 150]), np.array([35, 255, 255]))
+                return int(np.sum(mask > 0)) >= 5000
+
+            def capture_frame():
+                job = ctrl.post_screencap()
+                if not job:
+                    return None
+                job.wait()
+                f = job.get()
+                if f is not None:
+                    fh, fw = f.shape[:2]
+                    if fw != 1280 or fh != 720:
+                        f = cv2.resize(f, (1280, 720))
+                return f
+
+            def locate_target_card(img, name):
+                if not hasattr(context, "run_recognition"):
+                    return None
+                # 1. 尝试全名匹配
+                res = context.run_recognition(
+                    "BandFishFriendCardTarget",
+                    img,
+                    pipeline_override={"BandFishFriendCardTarget": {"expected": name}}
+                )
+                if res and res.hit:
+                    return res.box
+                # 2. 尝试前缀模糊匹配 (若名字长度 >= 2)
+                kw = name[:2] if len(name) >= 2 else name
+                res_kw = context.run_recognition(
+                    "BandFishFriendCardTarget",
+                    img,
+                    pipeline_override={"BandFishFriendCardTarget": {"expected": kw}}
+                )
+                if res_kw and res_kw.hit:
+                    return res_kw.box
+                return None
+
+            round_count = 0
+            while time.time() - t_start < max_loop_duration:
+                round_count += 1
+                frame = capture_frame()
+                if frame is None:
+                    time.sleep(0.5)
+                    continue
+
+                empty_slots = []
+                for s in (1, 2, 4, 5):
+                    if detect_slot_green_btn(frame, s):
+                        empty_slots.append(s)
+
+                print(f"[乐队鱼邀请] [轮次 {round_count}] 扫描舞台槽位，当前待邀请空槽: {empty_slots}", flush=True)
+
+                if not empty_slots:
+                    print("[乐队鱼邀请] 舞台上已无任何绿色邀请按钮，所有槽位邀请完毕！", flush=True)
+                    break
+
+                target_slot = empty_slots[0]
+                target_name = BAND_FISH_TARGETS.get(target_slot)
+                if not target_name:
+                    print(f"[乐队鱼邀请] 错误: 槽位 {target_slot} 未配置目标好友，跳过", flush=True)
+                    break
+
+                btn_x, btn_y = SLOT_INVITE_INFO[target_slot]["click"]
+                print(f"[乐队鱼邀请] 准备处理槽位 {target_slot} (目标【{target_name}】)，点击邀请按钮 ({btn_x}, {btn_y})...", flush=True)
+                ctrl.post_click(btn_x, btn_y).wait()
+
+                # 1. 动态等待好友选择弹窗打开
+                dialog_opened = False
+                t_open = time.time()
+                while time.time() - t_open < 4.5:
+                    time.sleep(0.3)
+                    f_diag = capture_frame()
+                    if f_diag is not None and is_friend_dialog_open(f_diag):
+                        dialog_opened = True
+                        break
+
+                if not dialog_opened:
+                    print(f"[乐队鱼邀请] 点击槽位 {target_slot} 后未检测到好友选择弹窗打开，重试...", flush=True)
+                    continue
+
+                print(f"[乐队鱼邀请] 好友选择弹窗已打开，正在对当前列表进行 OCR 匹配指定人机好友【{target_name}】...", flush=True)
+
+                # 2. 对当前页面执行纯列表 OCR 匹配目标好友
+                card_box = locate_target_card(f_diag, target_name)
+
+                # 3. 若当前屏未匹配到，向上滑动卡片列表寻找（严禁使用搜索框）
+                scroll_count = 0
+                f_cur = f_diag
+                while card_box is None and scroll_count < 2:
+                    scroll_count += 1
+                    print(f"[乐队鱼邀请] 当前页面未检出【{target_name}】，向上滑动列表检索更多卡片 (第 {scroll_count}/2 次)...", flush=True)
+                    ctrl.post_swipe(640, 520, 640, 260, 400).wait()
+                    time.sleep(1.0)
+                    f_cur = capture_frame()
+                    if f_cur is not None:
+                        card_box = locate_target_card(f_cur, target_name)
+
+                # 4. 严苛防线：若列表 OCR 遍历后仍未定位到目标好友，立即安全熔断退出，绝不点击任何其他好友！
+                if card_box is None:
+                    print(f"[乐队鱼邀请] 严重警告: 列表 OCR 遍历后未匹配到指定人机好友【{target_name}】！触发安全熔断，放弃邀请以防误触！", flush=True)
+                    ctrl.post_click(91, 46).wait()
+                    time.sleep(1.2)
+                    continue
+
+                # 5. 命中目标好友，点击文字中心 (cx, cy)
+                bx, by, bw, bh = card_box
+                cx, cy = bx + bw // 2, by + bh // 2
+                print(f"[乐队鱼邀请] 列表 OCR 命中目标好友【{target_name}】: bbox=({bx}, {by}, {bw}, {bh})，点击中心 ({cx}, {cy})...", flush=True)
+                ctrl.post_click(cx, cy).wait()
+                time.sleep(0.6)
+
+                # 6. 核验选中状态（底部确认按钮必须变绿）
+                f_check = capture_frame()
+                if f_check is None or not is_confirm_green(f_check):
+                    print(f"[乐队鱼邀请] 警告: 点击【{target_name}】后底部确认按钮未变绿，核验失败！点击返回退出", flush=True)
+                    ctrl.post_click(91, 46).wait()
+                    time.sleep(1.0)
+                    continue
+
+                print(f"[乐队鱼邀请] 目标好友【{target_name}】选定核验通过，底部确认按钮已变绿！", flush=True)
+
+                # 7. 点击底部绿色“邀请”确认按钮 (921, 664)
+                print("[乐队鱼邀请] 点击底部绿色确认按钮 (921, 664) 发出邀请...", flush=True)
+                ctrl.post_click(921, 664).wait()
+
+                # 8. 动态等待：弹窗关闭 + 回到舞台 + 该槽位绿色邀请按钮消失
+                t_close = time.time()
+                slot_finished = False
+                while time.time() - t_close < 6.0:
+                    time.sleep(0.4)
+                    f_ret = capture_frame()
+                    if f_ret is None:
+                        continue
+                    if not is_friend_dialog_open(f_ret) and is_on_stage(f_ret):
+                        if not detect_slot_green_btn(f_ret, target_slot):
+                            print(f"[乐队鱼邀请] 槽位 {target_slot} (【{target_name}】) 邀请确认成功！绿色邀请按钮已消失，进入下一槽位", flush=True)
+                            slot_finished = True
+                            break
+
+                if not slot_finished:
+                    print(f"[乐队鱼邀请] 槽位 {target_slot} 等待状态刷新超时，继续循环观察...", flush=True)
+
+                time.sleep(0.5)
+
+            band_fish_state["status"] = "PENDING"
+            print("[乐队鱼邀请] 动态邀请循环全部执行完毕，业务状态沉淀为 PENDING", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[乐队鱼邀请] 运行异常: {e}", flush=True)
+            return False
+
+
 
 @AgentServer.custom_action("BandFishScanSlotsAction")
 class BandFishScanSlotsAction(CustomAction):
@@ -659,64 +891,54 @@ class BandFishInviteSlotAction(CustomAction):
             ctrl.post_click(btn_x, btn_y).wait()
             time.sleep(1.8)
 
-            # 2. 点击搜索输入框 (450, 128)
-            print("[乐队鱼] 点击搜索输入框 (450, 128)...", flush=True)
-            ctrl.post_click(450, 128).wait()
-            time.sleep(0.4)
+            # 2. 纯列表 OCR 定位目标人机好友（严禁使用搜索框）
+            print(f"[乐队鱼] 好友弹窗已打开，正在对当前列表进行 OCR 寻找指定人机好友【{target_name}】...", flush=True)
 
-            # 清空旧输入内容 (连续 12 次 Backspace)
-            for _ in range(12):
-                ctrl.post_click_key(67)
-            time.sleep(0.3)
-
-            # 3. 输入目标好友名字
-            print(f"[乐队鱼] 输入目标好友名称: 【{target_name}】...", flush=True)
-            ctrl.post_input_text(target_name).wait()
-            time.sleep(0.5)
-
-            # 4. 点击绿色搜索按钮 (589, 128)
-            print("[乐队鱼] 点击搜索按钮 (589, 128)...", flush=True)
-            ctrl.post_click(589, 128).wait()
-            time.sleep(1.5)
-
-            # 5. 截屏并 OCR 定位目标卡片
-            job_cap = ctrl.post_screencap()
-            if job_cap:
-                job_cap.wait()
-                frame_before = job_cap.get()
-            else:
-                frame_before = None
-
-            if frame_before is None or getattr(frame_before, "size", 0) == 0:
-                print("[乐队鱼] 搜索后截屏失败", flush=True)
-                return False
-
-            # 使用动态 expected 进行目标定位
-            res_card = context.run_recognition(
-                "BandFishFriendCardTarget",
-                frame_before,
-                pipeline_override={"BandFishFriendCardTarget": {"expected": target_name}}
-            )
-
-            if not res_card or not res_card.hit:
-                # 尝试模糊关键词匹配
-                kw = target_name[:2] if len(target_name) > 2 else target_name
-                res_card = context.run_recognition(
+            def locate_in_frame(f):
+                if not hasattr(context, "run_recognition"):
+                    return None
+                res = context.run_recognition(
                     "BandFishFriendCardTarget",
-                    frame_before,
+                    f,
+                    pipeline_override={"BandFishFriendCardTarget": {"expected": target_name}}
+                )
+                if res and res.hit:
+                    return res.box
+                kw = target_name[:2] if len(target_name) >= 2 else target_name
+                res_kw = context.run_recognition(
+                    "BandFishFriendCardTarget",
+                    f,
                     pipeline_override={"BandFishFriendCardTarget": {"expected": kw}}
                 )
+                if res_kw and res_kw.hit:
+                    return res_kw.box
+                return None
 
-            if not res_card or not res_card.hit:
-                print(f"[乐队鱼] 严重警告: 搜索结果中未找到目标好友【{target_name}】，安全放弃点击，退出弹窗", flush=True)
-                ctrl.post_click(66, 48).wait()
+            job_cap = ctrl.post_screencap()
+            frame_before = job_cap.wait().get() if job_cap else None
+            card_box = locate_in_frame(frame_before) if frame_before is not None else None
+
+            # 3. 若首屏未检出，向上滑动列表检索（严禁使用搜索框）
+            scroll_count = 0
+            while card_box is None and scroll_count < 2:
+                scroll_count += 1
+                print(f"[乐队鱼] 首屏未见【{target_name}】，向上滑动列表寻找 (第 {scroll_count}/2 次)...", flush=True)
+                ctrl.post_swipe(640, 520, 640, 260, 400).wait()
+                time.sleep(1.0)
+                job_s = ctrl.post_screencap()
+                frame_before = job_s.wait().get() if job_s else None
+                if frame_before is not None:
+                    card_box = locate_in_frame(frame_before)
+
+            if card_box is None:
+                print(f"[乐队鱼] 严重警告: 列表 OCR 遍历后未找到目标好友【{target_name}】，安全放弃点击，退出弹窗以防误触！", flush=True)
+                ctrl.post_click(91, 46).wait()
                 time.sleep(1.0)
                 return False
 
-            # 取得中心坐标
-            bx, by, bw, bh = res_card.box
+            bx, by, bw, bh = card_box
             cx, cy = bx + bw // 2, by + bh // 2
-            print(f"[乐队鱼] 成功定位目标好友【{target_name}】: box=({bx}, {by}, {bw}, {bh}), 点击中心=({cx}, {cy})", flush=True)
+            print(f"[乐队鱼] 列表 OCR 成功定位目标好友【{target_name}】: bbox=({bx}, {by}, {bw}, {bh}), 点击中心=({cx}, {cy})", flush=True)
 
             # 6. 防误触闭环：点击前已有 frame_before，执行点击
             ctrl.post_click(cx, cy).wait()

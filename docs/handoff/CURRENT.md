@@ -60,8 +60,10 @@
 - [x] 全链路步骤可恢复导航（主鱼缸珊瑚 ➔ 亲吻鱼气泡 ➔ 浪漫满屋主页 ➔ 热恋时刻舞台）
 - [x] 动态亲吻鱼气泡识别与 6000ms 鱼群游动遮挡防御等待机制
 - [x] 数值状态驱动（点赞值 `10/10` 为唯一完成条件，严禁硬编码情侣鱼名称）
+- [x] BlessLoop 拓扑纠正（移除 `on_error` 假分支，建立 CheckDone -> TryBless -> NextCouple 原生回退序列）
+- [x] 舞台断点恢复支持（StartRouter 深度优先匹配舞台）与 25 次切对防死循环熔断
 - [x] 已祝福状态检测与右箭头顺次切换
-- [x] 双级安全退出（`0.55` 容错阈值匹配关闭小叉号，舞台 ➔ 主页 ➔ 主鱼缸）
+- [x] 双级状态驱动安全退出（重制心形关闭模板中心 1197, 57，0.85 阈值，ExitStage ➔ CheckInHome ➔ ExitHome ➔ CheckInFishTank ➔ Done，彻底杜绝 DirectHit 假完成）
 - [x] 详细设计文档（`docs/features/romantic-house.md`）
 
 
@@ -142,6 +144,9 @@
    - `agent/my_action.py`：`BandFishScanSlotsAction`（Native OCR 槽位多模态识别）、`BandFishInviteSlotAction`（搜索框输入、文字中心锚点定位、Diff 选中校验防误触、底栏邀请点击）、`BandFishRefreshStateAction`（退出重进触发 Bot 接受刷新）；
    - `assets/resource/pipeline/my_task.json`：挂接 `BandFishScanSlots`、`BandFishInviteLoopRouter`、4 槽位邀请分支、刷新桥梁与辅助识别节点；
    - 全套门禁（Regex、Refs、Update Contract、Embedded Imports、Reco 单元测试）100% PASS。
+4. **⚠️ 2026-09-06 业务事故与重大纠偏（必须执行）**：
+   - **事故**: 动态全槽位邀请重构中，误将“解耦硬编码坐标”延伸为“移除目标好友名字校验，遍历首项卡片直接邀请”，导致对非人机好友发出了邀请。
+   - **纠偏规范（纯列表 OCR 方案）**: 4 位人机好友（`不想上课`、`一只胖梨`、`扶摇`、`游来游去`）具备秒级接受特性，是自动化闭环的基石，硬编码好友名字是业务刚需。必须严格执行纯列表 OCR 方案：打开好友页面 -> 列表 OCR 提取名字 -> 与 `BAND_FISH_TARGETS` 精确匹配 -> 命中中心点击 -> 选中核验（高亮+底栏变绿） -> 确认提交。**彻底删除搜索栏方案，严禁使用搜索框，严禁点击列表首项，严禁根据排序猜测，严禁根据坐标固定绑定好友**。
 
 **后续规划（Phase 3）**：
 - 动态遍历乐章列表到底部选取最新乐曲并确认开启演出（需在每日体力充足且准备消耗时实机测试）。

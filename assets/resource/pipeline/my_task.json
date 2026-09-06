@@ -1229,9 +1229,9 @@
             80
         ],
         "action": "Custom",
-        "custom_action": "BandFishScanSlotsAction",
+        "custom_action": "BandFishInviteLoopAction",
         "next": [
-            "BandFishInviteLoopRouter"
+            "BandFishDone"
         ]
     },
     "BandFishInviteLoopRouter": {
@@ -1247,6 +1247,7 @@
         ]
     },
     "BandFishInviteBranchSlot1": {
+        "recognition": "Custom",
         "custom_recognition": "CheckBandFishNeedSlot1Reco",
         "action": "Custom",
         "custom_action": "BandFishInviteSlotAction",
@@ -1258,6 +1259,7 @@
         ]
     },
     "BandFishInviteBranchSlot2": {
+        "recognition": "Custom",
         "custom_recognition": "CheckBandFishNeedSlot2Reco",
         "action": "Custom",
         "custom_action": "BandFishInviteSlotAction",
@@ -1269,6 +1271,7 @@
         ]
     },
     "BandFishInviteBranchSlot4": {
+        "recognition": "Custom",
         "custom_recognition": "CheckBandFishNeedSlot4Reco",
         "action": "Custom",
         "custom_action": "BandFishInviteSlotAction",
@@ -1280,6 +1283,7 @@
         ]
     },
     "BandFishInviteBranchSlot5": {
+        "recognition": "Custom",
         "custom_recognition": "CheckBandFishNeedSlot5Reco",
         "action": "Custom",
         "custom_action": "BandFishInviteSlotAction",
@@ -1291,6 +1295,7 @@
         ]
     },
     "BandFishInviteBranchRefresh": {
+        "recognition": "Custom",
         "custom_recognition": "CheckBandFishNeedRefreshReco",
         "action": "Custom",
         "custom_action": "BandFishRefreshStateAction",
@@ -1434,10 +1439,10 @@
         "recognition": "OCR",
         "expected": "好友",
         "roi": [
-            150,
-            180,
-            980,
-            420
+            100,
+            160,
+            1050,
+            480
         ],
         "action": "DoNothing"
     },
@@ -1470,6 +1475,8 @@
         "action": "DoNothing",
         "next": [
             "RomanticHouseCheckDone",
+            "RomanticHouseTryBless",
+            "RomanticHouseNextCouple",
             "RomanticHouseInHomePage",
             "RomanticHouseInFishTank"
         ]
@@ -1523,7 +1530,9 @@
         "action": "Click",
         "post_delay": 1800,
         "next": [
-            "RomanticHouseCheckDone"
+            "RomanticHouseCheckDone",
+            "RomanticHouseTryBless",
+            "RomanticHouseNextCouple"
         ]
     },
     "RomanticHouseCheckDone": {
@@ -1538,10 +1547,6 @@
         "action": "DoNothing",
         "next": [
             "RomanticHouseExitStage"
-        ],
-        "on_error": [
-            "RomanticHouseTryBless",
-            "RomanticHouseNextCouple"
         ]
     },
     "RomanticHouseTryBless": {
@@ -1573,6 +1578,10 @@
         "threshold": 0.7,
         "action": "Click",
         "post_delay": 1000,
+        "max_retry": 25,
+        "on_error": [
+            "RomanticHouseExitStage"
+        ],
         "next": [
             "RomanticHouseCheckDone",
             "RomanticHouseTryBless",
@@ -1583,37 +1592,61 @@
         "recognition": "TemplateMatch",
         "template": "浪漫满屋_关闭.png",
         "roi": [
-            1180,
-            30,
-            90,
+            1150,
+            15,
+            100,
             90
         ],
-        "threshold": 0.55,
+        "threshold": 0.85,
         "action": "Click",
         "post_delay": 1500,
         "next": [
-            "RomanticHouseExitHome",
-            "RomanticHouseDone"
+            "RomanticHouseCheckInHome",
+            "RomanticHouseExitStage"
+        ]
+    },
+    "RomanticHouseCheckInHome": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_热恋时刻.png",
+        "roi": [
+            50,
+            300,
+            200,
+            100
+        ],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "next": [
+            "RomanticHouseExitHome"
         ]
     },
     "RomanticHouseExitHome": {
         "recognition": "TemplateMatch",
-        "template": "浪漫满屋_关闭.png",
+        "template": "浪漫满屋_主页关闭.png",
         "roi": [
-            1180,
-            30,
-            90,
+            1150,
+            15,
+            100,
             90
         ],
-        "threshold": 0.55,
+        "threshold": 0.85,
         "action": "Click",
         "post_delay": 1500,
         "next": [
-            "RomanticHouseDone"
+            "RomanticHouseDone",
+            "RomanticHouseExitHome"
         ]
     },
     "RomanticHouseDone": {
-        "recognition": "DirectHit",
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_珊瑚.png",
+        "roi": [
+            700,
+            450,
+            450,
+            250
+        ],
+        "threshold": 0.65,
         "action": "DoNothing"
     },
     "GoldenDolphinTask": {
