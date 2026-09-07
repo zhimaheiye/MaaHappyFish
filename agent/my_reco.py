@@ -608,6 +608,33 @@ class CheckBandFishPass2SkipReco(CustomRecognition):
         return None
 
 
+@AgentServer.custom_recognition("CheckBandFishDailyRoutineReco")
+class CheckBandFishDailyRoutineReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if daily_routine_state.get("active"):
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishStandalonePendingReco")
+class CheckBandFishStandalonePendingReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if not daily_routine_state.get("active") and band_fish_state.get("status") == "PENDING":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckBandFishStandaloneDoneReco")
+class CheckBandFishStandaloneDoneReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if not daily_routine_state.get("active") and (
+            band_fish_state.get("status") == "DONE"
+            or band_fish_state.get("performance_finished", False)
+        ):
+            return (0, 0, 10, 10)
+        return None
+
+
 @AgentServer.custom_recognition("CheckGoldenDolphinCanPlayReco")
 class CheckGoldenDolphinCanPlayReco(CustomRecognition):
     """

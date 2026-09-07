@@ -4,6 +4,8 @@
         "action": "Custom",
         "custom_action": "InitSeaOtterStateAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterStartRouter"
         ]
     },
@@ -11,6 +13,8 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterAddFriendPage",
             "SeaOtterStartAtFriendTank",
             "SeaOtterStartFromFriendList"
@@ -34,6 +38,8 @@
         ],
         "post_delay": 2000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -51,6 +57,8 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -58,6 +66,8 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterLimitReached",
             "SeaOtterAddFriendPage",
             "SeaOtterExhausted",
@@ -70,6 +80,8 @@
         "custom_recognition": "CheckSeaOtterLimitReco",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterDone"
         ]
     },
@@ -87,6 +99,8 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterDone"
         ]
     },
@@ -102,6 +116,8 @@
         "action": "Custom",
         "custom_action": "SeaOtterAdvancePairAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -118,6 +134,8 @@
         "action": "Custom",
         "custom_action": "SeaOtterHarvestAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -126,6 +144,8 @@
         "action": "Custom",
         "custom_action": "SeaOtterSwitchPairAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -134,6 +154,8 @@
         "action": "DoNothing",
         "post_delay": 1000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterFriendRouter"
         ]
     },

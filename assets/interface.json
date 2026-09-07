@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.4.6",
+    "version": "0.4.7",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -87,6 +87,15 @@
             "description": "单独执行一次：打开设置 -> 识别海星 -> 补充鱼食 -> 返回鱼缸"
         },
         {
+            "name": "购买鱼食",
+            "entry": "BuyFishFoodTask",
+            "default_check": false,
+            "description": "使用金币购买指定袋数的廉价鱼食；支持从鱼缸、选择喂食弹窗、商品列表或廉价鱼食详情页安全启动。",
+            "option": [
+                "购买廉价鱼食袋数"
+            ]
+        },
+        {
             "name": "钓鱼达人",
             "entry": "FishingTask",
             "default_check": false,
@@ -105,15 +114,20 @@
             "name": "乐队鱼演出",
             "entry": "BandFishTask",
             "default_check": false,
-            "description": "前往游乐园乐队鱼演出活动，检查并邀请指定好友，完成每日乐章演出（支持在水族箱主界面、游乐园面板或活动界面直接启动）。"
+            "description": "前往游乐园乐队鱼演出活动，检查并邀请指定好友，完成每日乐章演出（支持在水族箱主界面、游乐园面板或活动界面直接启动）。",
+            "option": [
+                "乐队鱼乐章"
+            ]
         },
         {
             "name": "日常收尾",
             "entry": "DailyRoutineTask",
             "default_check": false,
-            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（乐队鱼、金海豚、钓鱼达人、浪漫满屋），每个子任务结束后均安全返回主鱼缸。",
+            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（每日免费礼包、驯鹿鱼送收礼物、乐队鱼、金海豚、钓鱼达人、浪漫满屋），每个子任务结束后均安全返回主鱼缸。",
             "option": [
-                "日常收尾任务"
+                "日常收尾任务",
+                "乐队鱼乐章",
+                "钓鱼地点"
             ]
         },
         {
@@ -179,6 +193,32 @@
                         "capacity": "{海星容量}",
                         "current_duration": "{当前可用时长}",
                         "target_hour": "{目标整点}"
+                    }
+                }
+            }
+        },
+        "购买廉价鱼食袋数": {
+            "type": "input",
+            "label": "购买廉价鱼食",
+            "description": "每袋含 30 粒鱼食、消耗 400 金币；流程只会购买廉价鱼食",
+            "inputs": [
+                {
+                    "name": "袋数",
+                    "label": "购买袋数",
+                    "default": "1",
+                    "pipeline_type": "int",
+                    "verify": "^[1-9]\\d{0,2}$"
+                }
+            ],
+            "pipeline_override": {
+                "BuyFishFoodStartAtDetail": {
+                    "custom_action_param": {
+                        "bags": "{袋数}"
+                    }
+                },
+                "BuyFishFoodPurchaseOnDetail": {
+                    "custom_action_param": {
+                        "bags": "{袋数}"
                     }
                 }
             }
@@ -425,6 +465,35 @@
                 }
             ]
         },
+        "乐队鱼乐章": {
+            "type": "select",
+            "label": "演奏乐章",
+            "description": "选择滑动到列表底部的最新乐章，或指定演奏欢乐颂；确认选中态后才会消耗演出体力",
+            "default_case": "最新乐章",
+            "cases": [
+                {
+                    "name": "最新乐章",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "latest"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "欢乐颂",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "欢乐颂"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
         "日常收尾任务": {
             "type": "checkbox",
             "label": "日常收尾任务",
@@ -436,6 +505,22 @@
                 "浪漫满屋"
             ],
             "cases": [
+                {
+                    "name": "每日免费礼包",
+                    "pipeline_override": {
+                        "DailyRoutineEnableFreeGift": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "驯鹿鱼送收礼物",
+                    "pipeline_override": {
+                        "DailyRoutineEnableReindeerFish": {
+                            "enabled": true
+                        }
+                    }
+                },
                 {
                     "name": "乐队鱼",
                     "pipeline_override": {

@@ -10,6 +10,9 @@ import os
 import sys
 import json
 
+import cv2
+import numpy as np
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent.runtime_state import golden_dolphin_state, daily_routine_state
@@ -20,6 +23,10 @@ from agent.my_action import (
     GoldenDolphinExitAction,
     GoldenDolphinDoneAction,
     advance_daily_routine_step,
+    _find_golden_dolphin_coin,
+    _find_golden_dolphin_xp,
+    _get_golden_dolphin_templates,
+    _select_golden_dolphin_frame_targets,
 )
 
 
@@ -42,16 +49,17 @@ def run_tests():
     ]
     for n in expected_nodes:
         assert n in pipe, f'Missing node: {n}'
-    assert pipe['GoldenDolphinTask']['next'] == ['GoldenDolphinNavigation']
-    assert pipe['GoldenDolphinNavigation']['next'] == ['GoldenDolphinPlayGame', 'GoldenDolphinDone']
+    business_next = lambda node: [name for name in pipe[node]['next'] if not name.startswith('[JumpBack]Global')]
+    assert business_next('GoldenDolphinTask') == ['GoldenDolphinNavigation']
+    assert business_next('GoldenDolphinNavigation') == ['GoldenDolphinPlayGame', 'GoldenDolphinDone']
     assert pipe['GoldenDolphinNavigation']['custom_action'] == 'GoldenDolphinNavigationAction'
     assert pipe['GoldenDolphinPlayGame']['custom_recognition'] == 'CheckGoldenDolphinCanPlayReco'
     assert pipe['GoldenDolphinPlayGame']['custom_action'] == 'GoldenDolphinPlayGameAction'
-    assert pipe['GoldenDolphinPlayGame']['next'] == ['GoldenDolphinExit']
+    assert business_next('GoldenDolphinPlayGame') == ['GoldenDolphinExit']
     assert pipe['GoldenDolphinExit']['custom_action'] == 'GoldenDolphinExitAction'
-    assert pipe['GoldenDolphinExit']['next'] == ['GoldenDolphinDone']
+    assert business_next('GoldenDolphinExit') == ['GoldenDolphinDone']
     assert pipe['GoldenDolphinDone']['custom_action'] == 'GoldenDolphinDoneAction'
-    assert pipe['GoldenDolphinDone']['next'] == ['DailyRoutineDispatcher']
+    assert business_next('GoldenDolphinDone') == ['DailyRoutineDispatcher']
     print('[PASS] Check 1: Pipeline JSON 拓扑节点与路由完全合规！')
 
     print("\n--- Test 2: CheckGoldenDolphinCanPlayReco 状态分支裁决 ---")
@@ -74,7 +82,52 @@ def run_tests():
     assert res_idle is None, f'IDLE should not match: {res_idle}'
     print('[PASS] Check 2: CheckGoldenDolphinCanPlayReco 4 种状态分支判定 100% 正确！')
 
-    print("\n--- Test 3: GoldenDolphinDoneAction 调度分离与独立保护 ---")
+    print("\n--- Test 3: 贝币持续点击与经验阶段切换 ---")
+    coin = _get_golden_dolphin_templates()["coin"]
+    assert coin is not None and coin.size > 0, "金海豚_贝币.png must load"
+    coin_h, coin_w = coin.shape[:2]
+    canvas = np.zeros((720, 1280, 3), dtype=np.uint8)
+    left, top = 320, 260
+    canvas[top:top + coin_h, left:left + coin_w] = coin
+    match = _find_golden_dolphin_coin(canvas, coin)
+    assert match is not None
+    assert match[:2] == (left + coin_w // 2, top + coin_h // 2)
+
+    stars = _get_golden_dolphin_templates()["stars"]
+    assert len(stars) == 2, "金海豚_经验星1.png and 金海豚_经验星2.png must both load"
+    phase_1, targets_1 = _select_golden_dolphin_frame_targets(canvas, coin, stars, False)
+    phase_2, targets_2 = _select_golden_dolphin_frame_targets(canvas, coin, stars, False)
+    assert phase_1 == phase_2 == "coin"
+    assert targets_1[0][:2] == targets_2[0][:2] == match[:2]
+
+    phase_after_xp, targets_after_xp = _select_golden_dolphin_frame_targets(canvas, coin, stars, True)
+    assert phase_after_xp == "wait" and targets_after_xp == []
+    assert _find_golden_dolphin_coin(np.zeros_like(canvas), coin) is None
+    top_bar = np.zeros_like(canvas)
+    top_bar[10:10 + coin_h, left:left + coin_w] = coin
+    assert _find_golden_dolphin_coin(top_bar, coin) is None
+    print('[PASS] Check 3: XP 出现前可逐帧重复选择贝币；进入 XP 阶段后不再选择贝币！')
+
+    print("\n--- Test 4: 经验区域检测回归 ---")
+    recorded = cv2.imread("dev/exploration/golden_dolphin/03_middle_falling_dense.png")
+    candidates = _find_golden_dolphin_xp(recorded, stars)
+    assert candidates, "recorded XP frame should contain at least one candidate"
+    phase_xp, selected_xp = _select_golden_dolphin_frame_targets(recorded, coin, stars, False)
+    assert phase_xp == "xp" and 1 <= len(selected_xp) <= 4
+    source_x, source_y, _ = candidates[0]
+    for target_y in (100, 620):
+        shifted = cv2.warpAffine(
+            recorded,
+            np.float32([[1, 0, 0], [0, 1, target_y - source_y]]),
+            (1280, 720),
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=0,
+        )
+        shifted_candidates = _find_golden_dolphin_xp(shifted, stars)
+        assert any(abs(x - source_x) <= 2 and abs(y - target_y) <= 2 for x, y, _ in shifted_candidates)
+    print(f'[PASS] Check 4: 经验星在完整 1280×720 画面内不受纵向 ROI 限制！')
+
+    print("\n--- Test 5: GoldenDolphinDoneAction 调度分离与独立保护 ---")
     # 3.1 独立运行 (active=False)
     daily_routine_state['active'] = False
     daily_routine_state['queue'] = []

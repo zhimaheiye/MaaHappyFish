@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-日常收尾 DailyRoutineTask v2 状态机与组件离线全量单测套件
+日常收尾 DailyRoutineTask v3 状态机与组件离线全量单测套件
 覆盖:
 1. 共享运行时状态定义与生命周期
 2. InitDailyRoutineAction 初始化逻辑
@@ -65,7 +65,7 @@ class DummyArg:
 
 def run_tests():
     print("=" * 70)
-    print("=== [DailyRoutineTask v2] 离线全量单测套件开始运行 ===")
+    print("=== [DailyRoutineTask v3] 离线全量单测套件开始运行 ===")
     print("=" * 70)
 
     # -------------------------------------------------------------
@@ -245,76 +245,21 @@ def run_tests():
     print("  >>> PASS: 金海豚几何特征纯离线双向判定 100% 精准！")
 
     # -------------------------------------------------------------
-    # Test 10: BandFishPerformAction 闭环与跳过状态机测试
+    # Test 10: BandFishPerformAction 选曲安全门禁与跳过状态机
     # -------------------------------------------------------------
-    print("\n[Test 10] 验证 BandFishPerformAction 演出闭环与 4 阶段状态机")
-    perform_action = registered_actions.get("BandFishPerformAction")
-    assert perform_action is not None, "BandFishPerformAction 必须在 Agent 中注册"
+    print("\n[Test 10] 验证 BandFishPerformAction 选曲安全门禁与跳过状态机")
+    assert registered_actions.get("BandFishPerformAction") is not None
+    assert hasattr(my_action, "check_band_fish_skip_button")
+    assert hasattr(my_action, "load_band_fish_skip_template")
+    assert my_action.check_band_fish_skip_button(None) is None
+    assert my_action.load_band_fish_skip_template() is not None
 
-    # 10.1 验证预留跳过接口契约与安全空实现
-    assert hasattr(my_action, "check_band_fish_skip_button"), "必须暴露 check_band_fish_skip_button 接口"
-    assert hasattr(my_action, "load_band_fish_skip_template"), "必须暴露 load_band_fish_skip_template 接口"
-    assert my_action.check_band_fish_skip_button(None) is None, "None 帧必须安全返回 None"
-    dummy_frame = np.zeros((720, 1280, 3), dtype=np.uint8)
-    assert my_action.check_band_fish_skip_button(dummy_frame) is None, "未采集模板时必须返回 None，绝不盲点"
-    assert my_action.load_band_fish_skip_template() is None, "未提供图片文件时模板加载必须安全返回 None"
-    print("  >>> PASS: 10.1 跳过按钮接口契约与无盲点保底验证 100% 通过！")
-
-    class MockPerformCtrl:
-        def __init__(self):
-            self.clicks = []
-        def post_click(self, x, y):
-            self.clicks.append((x, y))
-            class Job:
-                def wait(self): pass
-            return Job()
-        def post_screencap(self):
-            class Job:
-                def wait(self): return self
-                def get(self):
-                    frame = np.zeros((720, 1280, 3), dtype=np.uint8)
-                    # 模拟选曲弹窗右上角确定按钮绿色特征
-                    frame[335:385, 980:1060] = (0, 255, 0)
-                    # 模拟结算弹窗中央确定按钮绿色特征
-                    frame[650:700, 595:685] = (0, 255, 0)
-                    return frame
-            return Job()
-
-    # 10.2 默认执行流 (check_band_fish_skip_button 默认返回 None，行为 100% 保持既有一致)
-    ctx_p = DummyContext()
-    ctx_p.tasker.controller = MockPerformCtrl()
-    runtime_state.band_fish_state["status"] = "READY_TO_PERFORM"
-    runtime_state.band_fish_state["performance_finished"] = False
-
-    p_ok = perform_action.run(ctx_p, DummyArg())
-    assert p_ok is True
-    assert runtime_state.band_fish_state["status"] == "DONE"
-    assert runtime_state.band_fish_state["performance_finished"] is True
-    assert ctx_p.tasker.controller.clicks == [(637, 630), (1023, 359), (639, 680)], f"默认点击序列不符: {ctx_p.tasker.controller.clicks}"
-    print(f"  >>> PASS: 10.2 默认无跳过闭环成功执行并置 DONE: 点击序列 {ctx_p.tasker.controller.clicks}")
-
-    # 10.3 Mock 跳过按钮触发 (验证 4 阶段状态机 PLAYING -> WAIT_SKIP_BUTTON -> CLICK_SKIP -> WAIT_RESULT)
-    ctx_mock = DummyContext()
-    ctx_mock.tasker.controller = MockPerformCtrl()
-    runtime_state.band_fish_state["status"] = "READY_TO_PERFORM"
-    runtime_state.band_fish_state["performance_finished"] = False
-
-    orig_skip_check = my_action.check_band_fish_skip_button
-    try:
-        # Mock 识别到跳过按钮位于 (1180, 45)
-        my_action.check_band_fish_skip_button = lambda frame: (1180, 45)
-        p_mock_ok = perform_action.run(ctx_mock, DummyArg())
-        assert p_mock_ok is True
-        assert runtime_state.band_fish_state["status"] == "DONE"
-        assert runtime_state.band_fish_state["performance_finished"] is True
-        # 必须包含: 开始演出 (637, 630) -> 确定乐章 (1023, 359) -> 点击跳过 (1180, 45) -> 领取结算 (639, 680)
-        assert ctx_mock.tasker.controller.clicks == [(637, 630), (1023, 359), (1180, 45), (639, 680)], f"Mock跳过点击序列不符: {ctx_mock.tasker.controller.clicks}"
-        print(f"  >>> PASS: 10.3 Mock 跳过按钮流转成功执行，完整触发跳过点击: {ctx_mock.tasker.controller.clicks}")
-    finally:
-        my_action.check_band_fish_skip_button = orig_skip_check
+    from test_band_fish_score_selection import main as run_band_fish_score_tests
+    assert run_band_fish_score_tests() == 0
+    print("  >>> PASS: 选曲安全门禁、最新/欢乐颂与 Mock 跳过分支验证通过！")
 
     print("\n" + "=" * 70)
-    print("=== [ALL PASS] DailyRoutineTask v2 全部 10 大离线测试用例 100% 通过！ ===")
+    print("=== [ALL PASS] DailyRoutineTask v3 全部 10 大离线测试用例 100% 通过！ ===")
     print("=" * 70)
     return True
 

@@ -1,7 +1,7 @@
 # 乐队鱼演出自动化 (docs/features/band-fish.md)
 
-**最后更新**: 2026-09-05  
-**状态**: Phase 1（导航与三大状态识别路由）与 Phase 2（4 位指定好友槽位邀请、防误触闭环与刷新状态机）全量实现完毕，并通过全套静态门禁与单元验证。
+**最后更新**: 2026-09-08
+**状态**: 导航与邀请流程已实现；“最新乐章”已确认能够滑动到最末乐曲，体力耗尽分支已确认可正常退出；体力可用时的完整演奏闭环与“欢乐颂”仍待 MFA 实测。用户提供的跳过模板与 ROI EX 已接入，尚待有体力时实测。
 
 
 ---
@@ -9,13 +9,13 @@
 ## 一、功能定位与背景
 
 开心水族箱游乐园「乐队鱼演出」自动化功能（`BandFishTask`）。  
-通过自动化流程进入乐队鱼演出界面，将 4 位预设好友按槽位邀请入队，凑齐 5 位音乐家后触发演出，动态选择最新乐谱并完成每日演出产出。
+通过自动化流程进入乐队鱼演出界面，将 4 位预设好友按槽位邀请入队，凑齐 5 位音乐家后触发演出，可选择最新乐章或指定《欢乐颂》，并完成每日演出产出。
 
 ### 稀缺资源与核心约束
 - **每日仅有 1 次演出体力**：点击最终的演出确认键会立即消耗体力，且全天无法重置，属于极度稀缺资源；
 - **防误邀机制**：必须严格匹配 4 位指定好友，绝不能邀请错人，严禁触发付费“雇佣”；
 - **真实页面原则**：基于每次实机的实时截屏与 OCR bbox 进行动作决策，严禁硬编码卡片行列或经验偏移；
-- **防钻石误触**：演出结束后界面变为“12💎返场演出”，状态机必须优先检测“返场演出”并安全退出，严禁点击付费返场。
+- **防钻石误触**：演出结束后界面变为“12💎返场演出”，状态机必须优先检测“返场演出”并安全退出，严禁点击付费返场；未确认目标乐章黄色选中态时，同样严禁点击消耗每日体力的“确定”。
 
 ---
 
@@ -65,11 +65,15 @@ stateDiagram-v2
     RefreshStatus --> BandFishStatusRouter
 
     CheckReady --> OpenScoreDialog : 点击黄色“开始演出” [572, 608]
-    OpenScoreDialog --> ScrollToBottom : 循环向下滑动直到 diff=0 (动态遍历)
-    ScrollToBottom --> SelectLatestScore : 选取 Y 坐标最大的末端乐章 (如《小星星》)
-    SelectLatestScore --> ConfirmPerform : 点击右上角“确定” [990, 341] (消耗体力)
-    ConfirmPerform --> WatchPerformance : 25秒水族箱演奏动画 (不可跳过)
-    WatchPerformance --> ClaimSettlement : 弹出“我的乐章” -> 点击“确定” [608, 661]
+    OpenScoreDialog --> SelectMode : 读取“最新乐章 / 欢乐颂”配置
+    SelectMode --> ScrollToBottom : 最新乐章：循环向下滑动直到列表稳定
+    SelectMode --> FindNamedScore : 欢乐颂：OCR 定位目标文本
+    ScrollToBottom --> SelectLatestScore : OCR 选取底部最下方完整乐章
+    FindNamedScore --> VerifySelected : 点击 OCR 文本中心
+    SelectLatestScore --> VerifySelected : 点击 OCR 文本中心
+    VerifySelected --> ConfirmPerform : 验证黄色选中箭头后点击 OCR“确定” (消耗体力)
+    ConfirmPerform --> WatchPerformance : 在指定 ROI 内模板识别“跳过”按钮
+    WatchPerformance --> ClaimSettlement : 模板识别“跳过”后点击；再识别结算弹窗
     ClaimSettlement --> VerifyDone : 自动结算奖励 (+10,000金币, +1,500鱼食)
     VerifyDone --> BandFishDone : 再次进入确认变为“返场演出” -> 任务完成
     BandFishDone --> [*]
@@ -155,6 +159,15 @@ stateDiagram-v2
   - 弹窗右上角的绿色【确定】按钮：`[990, 341, 67, 36]`，中心 `(1023, 359)`
   - **点击此按钮将正式开启演出并扣除今日唯一体力**。
 
+### 乐章选项与确认前门禁（2026-09-07）
+
+- MFA 选项提供“最新乐章”（默认）和“欢乐颂”两种模式；独立乐队鱼任务与日常收尾共用该选项。
+- “最新乐章”：在已确认的选曲弹窗内向下滑动，直到乐章列表画面稳定，再通过列表 OCR 选择最下方完整乐章；无法确认到底时安全停止。
+- “欢乐颂”：OCR 定位“欢乐颂”文字并点击其识别框中心；当前画面找不到时，只在已确认的乐章列表内向顶部回退查找。
+- 两种模式点击乐章后都必须检测卡片右侧的黄色选中箭头，并再次确认弹窗标题和“确定”按钮；任一门禁失败时直接返回 `False`，不点击消耗体力的“确定”。
+- 代码级离线回归覆盖：从底部恢复选择“欢乐颂”、下滑选择最新乐章、黄色选中态缺失时禁止确认。
+- MFA 实测状态：“最新乐章”已确认能够自动滑动到列表底部并定位最末乐曲；由于测试时体力已经用完，没有进入演奏与结算，因此不能记为完整演出通过。“欢乐颂”尚未实测。
+
 ---
 
 ## 七、Pass 2 演出闭环与调度机制实现 (2026-09-06)
@@ -164,21 +177,29 @@ stateDiagram-v2
    - OCR 检测到底部绿色【开始演出】按钮后，触发 `BandFishPerformAction`；
 2. **演出动作 5 大职责分工与 4 阶段状态机 (`BandFishPerformAction`)**：
    - **职责 1: 开始演出**：点击“开始演出” `(637, 630)`；
-   - **职责 2: 选曲确认**：动态等待选曲弹窗（“请选择您要演奏的乐章”），点击右上角绿色【确定】按钮 `(1023, 359)` 消耗体力开始演出；
+   - **职责 2: 选曲确认**：动态等待选曲弹窗，按配置 OCR 选择最新乐章或《欢乐颂》，验证黄色选中态后才点击 OCR 识别到的【确定】按钮消耗体力；
    - **职责 3: 演出与跳过检测 (4 阶段状态机)**：
      - `PLAYING`：进入演出动画阶段；
-     - `WAIT_SKIP_BUTTON`：在 6 秒前置探测窗口内调用 `check_band_fish_skip_button(f_cur)` 检测跳过按钮；
+     - `WAIT_SKIP_BUTTON`：在 6 秒前置探测窗口内调用 `check_band_fish_skip_button(f_cur)`，只在用户给定 ROI EX `[1010, 575, 155, 139]` 内匹配 `乐队鱼_跳过.png`；
      - `CLICK_SKIP`：若检测到有效坐标则点击跳过，平滑转入结算等待；
-     - `WAIT_RESULT`：若未检出跳过（当前默认返回 `None`）或已点击跳过，转入结算轮询等待；
+     - `WAIT_RESULT`：若探测窗口内未检出跳过，或点击跳过后，转入结算轮询等待；未识别到结算状态时禁止盲点点击；
    - **职责 4: 结算等待与领取**：检测“我的乐章”结算弹窗底部【确定】按钮 `(639, 680)` 或“返场演出”页面，点击领取结算奖励；
    - **职责 5: 状态沉淀**：标记 `band_fish_state["status"] = "DONE"` 与 `band_fish_state["performance_finished"] = True`；
-3. **跳过按钮预留接口规范 (`check_band_fish_skip_button`)**：
-   - `load_band_fish_skip_template()`: 加载 `assets/resource/image/乐队鱼_跳过.png`，不存在时安全返回 `None`；
-   - `check_band_fish_skip_button(frame)`: 当前空实现安全返回 `None`，严禁猜测固定坐标或盲点，待未来采集样本后接入 OpenCV 模板匹配；
+3. **跳过按钮识别接口 (`check_band_fish_skip_button`)**：
+   - `load_band_fish_skip_template()`: 兼容开发目录与发行包目录加载 `乐队鱼_跳过.png`，不存在或读取失败时安全返回 `None`；
+   - `check_band_fish_skip_button(frame)`: 在 ROI EX `[1010, 575, 155, 139]` 内执行模板匹配，阈值 `0.85`；只有识别成功才点击模板中心；
 4. **日常收尾 Pass 2 调度闭环**：
    - 勾选乐队鱼时，`InitDailyRoutineAction` 在末尾追加 `"BAND_FISH_PASS2"`；
-   - 排队流转：`BAND_FISH_PASS1 -> GOLDEN_DOLPHIN -> FISHING -> ROMANTIC_HOUSE -> BAND_FISH_PASS2 -> ALL_DONE`；
+   - 排队流转：`BAND_FISH_PASS1 -> 其他已勾选日常任务 -> BAND_FISH_PASS2 -> ALL_DONE`；乐队鱼 Pass 1 固定最先执行，利用其他任务耗时等待人机好友接受；
    - Pass 2 到达时：若状态为 `PENDING`，触发回访进入演出；若已为 `DONE`，直接跳过。
+
+---
+
+### 2026-09-08 实测与待测边界
+
+- 已实测：独立任务能够从鱼缸进入并完成四个指定人机好友邀请；“最新乐章”模式能够成功滑动到列表底部并定位最末乐曲；体力已经用完时能够识别不可演出状态并正常退出。
+- 本次修复：邀请完成后的独立任务不再错误进入未激活的 `DailyRoutineDispatcher`，而是退出鱼缸并通过既有 `BandFishStartRouter` 重新识别“游乐园”和乐队鱼入口，再确认邀请状态。
+- 尚待 MFA 实测：体力可用时的“选择最末乐曲 → 确认消耗体力 → 跳过/等待演奏 → 领取结算”完整演奏流程；单次独立任务内完整的“邀请 → 退出重进 → 自动演出”连续闭环；日常收尾“Pass 1 最先邀请 → 其他任务 → Pass 2 回访演出”异步闭环；跳过按钮真实匹配与点击；指定《欢乐颂》演出。
 
 ---
 

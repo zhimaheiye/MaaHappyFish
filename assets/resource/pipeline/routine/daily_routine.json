@@ -1,4 +1,14 @@
 {
+    "DailyRoutineEnableFreeGift": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableReindeerFish": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineEnableBandFish": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -24,6 +34,8 @@
         "action": "Custom",
         "custom_action": "InitDailyRoutineAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"
         ]
     },
@@ -31,12 +43,42 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "DailyRoutineStepFreeGift",
+            "DailyRoutineStepReindeerFish",
             "DailyRoutineStepBandFishPass1",
             "DailyRoutineStepGoldenDolphin",
             "DailyRoutineStepFishing",
             "DailyRoutineStepRomanticHouse",
             "DailyRoutineStepBandFishPass2",
             "DailyRoutineStepAllDone"
+        ]
+    },
+    "DailyRoutineStepFreeGift": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "FREE_GIFT"
+        },
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "DailyFreeGiftTask"
+        ]
+    },
+    "DailyRoutineStepReindeerFish": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "REINDEER_FISH"
+        },
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishGiftTask"
         ]
     },
     "DailyRoutineStepBandFishPass1": {
@@ -47,6 +89,8 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStartRouter"
         ]
     },
@@ -58,6 +102,8 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinTask"
         ]
     },
@@ -69,6 +115,8 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "FishingTask"
         ]
     },
@@ -80,6 +128,8 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseStartRouter"
         ]
     },
@@ -91,6 +141,8 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineBandFishPass2CheckSkip",
             "DailyRoutineBandFishPass2Run"
         ]
@@ -101,6 +153,8 @@
         "action": "Custom",
         "custom_action": "DailyRoutineSkipBandFishPass2Action",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"
         ]
     },
@@ -109,6 +163,8 @@
         "custom_recognition": "CheckBandFishPass2NeededReco",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStartRouter"
         ]
     },

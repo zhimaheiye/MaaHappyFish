@@ -12,6 +12,7 @@ import numpy as np
 from maa.agent.agent_server import AgentServer
 from maa.custom_action import CustomAction
 from maa.context import Context
+from maa.pipeline import JActionType, JLongPress
 
 try:
     from runtime_state import (
@@ -40,6 +41,55 @@ try:
     from param_utils import parse_dict_param, safe_float, safe_int
 except ImportError:
     from agent.param_utils import parse_dict_param, safe_float, safe_int
+
+
+def _capture_720p(controller):
+    job = controller.post_screencap()
+    if not job:
+        return None
+    job.wait()
+    frame = job.get()
+    if frame is None:
+        return None
+    height, width = frame.shape[:2]
+    if width != 1280 or height != 720:
+        frame = cv2.resize(frame, (1280, 720))
+    return frame
+
+
+def _recognition_box(context: Context, node_name: str, frame):
+    if frame is None or not hasattr(context, "run_recognition"):
+        return None
+    result = context.run_recognition(node_name, frame)
+    if not result or not result.hit:
+        return None
+    return tuple(int(value) for value in result.box)
+
+
+def _box_center(box):
+    x, y, width, height = box
+    return x + width // 2, y + height // 2
+
+
+def _task_cancelled(context: Context) -> bool:
+    try:
+        return bool(context.tasker.stopping) or not bool(context.tasker.running)
+    except Exception:
+        return True
+
+
+def _recognition_number(context: Context, node_name: str, frame):
+    if frame is None or not hasattr(context, "run_recognition"):
+        return None
+    result = context.run_recognition(node_name, frame)
+    best = getattr(result, "best_result", None) if result and result.hit else None
+    text = getattr(best, "text", "").strip()
+    # Maa OCR 在这个白底数量框里会把单独的“1”稳定识别成右括号笔画。
+    # 该兼容只作用于数量专用 ROI，避免把同形字符扩散到其他 OCR 节点。
+    if node_name == "BuyFishFoodQuantity" and text == "」":
+        text = "1"
+    digits = "".join(char for char in text if char.isdigit())
+    return int(digits) if digits else None
 
 
 @AgentServer.custom_action("CalcFishingFoodAction")
@@ -103,6 +153,212 @@ class CalcFishingFoodAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[鱼食预算] 计算异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("FindCheapFishFoodAction")
+class FindCheapFishFoodAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            controller = context.tasker.controller
+            if not controller:
+                print("[购买鱼食] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            param = parse_dict_param(argv.custom_action_param)
+            max_scrolls = safe_int(param.get("max_scrolls"), 4, min_val=0, max_val=8)
+
+            for scroll_index in range(max_scrolls + 1):
+                if _task_cancelled(context):
+                    print("[购买鱼食] 已收到停止请求，终止查找", flush=True)
+                    return False
+                frame = _capture_720p(controller)
+                store_box = _recognition_box(context, "BuyFishFoodStoreIdentity", frame)
+                item_box = _recognition_box(context, "BuyFishFoodStoreItemIdentity", frame)
+                if store_box is None or item_box is None:
+                    print("[购买鱼食] 当前页面不是已确认的商品列表，停止查找", flush=True)
+                    return False
+
+                target_box = _recognition_box(context, "BuyFishFoodTargetCard", frame)
+                if target_box is not None:
+                    if _task_cancelled(context):
+                        print("[购买鱼食] 已收到停止请求，未点击商品", flush=True)
+                        return False
+                    target_x, target_y = _box_center(target_box)
+                    print(f"[购买鱼食] OCR 命中廉价鱼食，点击识别框中心 ({target_x}, {target_y})", flush=True)
+                    controller.post_click(target_x, target_y).wait()
+                    time.sleep(1.0)
+                    detail_frame = _capture_720p(controller)
+                    if _recognition_box(context, "BuyFishFoodDetailIdentity", detail_frame) is not None:
+                        return True
+                    print("[购买鱼食] 点击后未进入廉价鱼食详情页，停止操作", flush=True)
+                    return False
+
+                if scroll_index == max_scrolls:
+                    break
+
+                print(f"[购买鱼食] 当前屏未找到廉价鱼食，向下查找 ({scroll_index + 1}/{max_scrolls})", flush=True)
+                # 已由 StoreIdentity + StoreItemIdentity 双重确认商品列表，滑动轨迹只作用于商品区域。
+                if _task_cancelled(context):
+                    print("[购买鱼食] 已收到停止请求，未继续滑动", flush=True)
+                    return False
+                controller.post_swipe(640, 580, 640, 240, 400).wait()
+                time.sleep(0.8)
+
+            print("[购买鱼食] 有限次滑动后仍未找到廉价鱼食，安全停止", flush=True)
+            return False
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[购买鱼食] 查找廉价鱼食异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("BuyCheapFishFoodAction")
+class BuyCheapFishFoodAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            controller = context.tasker.controller
+            if not controller:
+                print("[购买鱼食] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            param = parse_dict_param(argv.custom_action_param)
+            bags = safe_int(param.get("bags"), 1, min_val=1, max_val=999)
+
+            if _task_cancelled(context):
+                print("[购买鱼食] 已收到停止请求，未开始购买", flush=True)
+                return False
+
+            frame = _capture_720p(controller)
+            required_nodes = (
+                "BuyFishFoodDetailIdentity",
+                "BuyFishFoodUnitPrice",
+                "BuyFishFoodPlusButton",
+                "BuyFishFoodPurchaseButton",
+            )
+            if any(_recognition_box(context, node, frame) is None for node in required_nodes):
+                print("[购买鱼食] 廉价鱼食详情页门禁不完整，未执行购买", flush=True)
+                return False
+
+            current_quantity = _recognition_number(context, "BuyFishFoodQuantity", frame)
+            if current_quantity is None or current_quantity < 1 or current_quantity > bags:
+                print("[购买鱼食] 当前购买数量无法安全确认，未执行购买", flush=True)
+                return False
+
+            print(f"[购买鱼食] 已确认廉价鱼食单价 400 金币，计划购买 {bags} 袋", flush=True)
+            last_hold_delta = None
+            while bags - current_quantity >= (20 if last_hold_delta is None else last_hold_delta + 3):
+                if _task_cancelled(context):
+                    print("[购买鱼食] 已收到停止请求，终止长按", flush=True)
+                    return False
+                current_frame = _capture_720p(controller)
+                detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", current_frame)
+                plus_box = _recognition_box(context, "BuyFishFoodPlusButton", current_frame)
+                if detail_box is None or plus_box is None:
+                    print("[购买鱼食] 长按前页面或加号识别失败，停止操作", flush=True)
+                    return False
+
+                hold_ms = 1000 if last_hold_delta is None else min(
+                    5000,
+                    max(1000, int((bags - current_quantity - 3) * 1000 / last_hold_delta)),
+                )
+                print(f"[购买鱼食] 剩余 {bags - current_quantity} 袋，长按加号 {hold_ms}ms", flush=True)
+                action_detail = context.run_action_direct(
+                    JActionType.LongPress,
+                    JLongPress(duration=hold_ms),
+                    box=plus_box,
+                )
+                if _task_cancelled(context):
+                    print("[购买鱼食] 长按期间收到停止请求，终止购买", flush=True)
+                    return False
+                if not action_detail or not action_detail.success:
+                    print("[购买鱼食] 长按动作失败，停止操作", flush=True)
+                    return False
+
+                quantity_frame = _capture_720p(controller)
+                new_quantity = _recognition_number(context, "BuyFishFoodQuantity", quantity_frame)
+                if new_quantity is None or new_quantity <= current_quantity:
+                    print("[购买鱼食] 长按后数量未可靠增加，停止操作", flush=True)
+                    return False
+                last_hold_delta = new_quantity - current_quantity
+                current_quantity = new_quantity
+
+            if current_quantity > bags + 2:
+                print("[购买鱼食] 长按后的数量超过允许误差，未提交购买", flush=True)
+                return False
+
+            for index in range(max(0, bags - current_quantity)):
+                if _task_cancelled(context):
+                    print("[购买鱼食] 已收到停止请求，终止增加数量", flush=True)
+                    return False
+                current_frame = _capture_720p(controller)
+                detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", current_frame)
+                plus_box = _recognition_box(context, "BuyFishFoodPlusButton", current_frame)
+                if detail_box is None or plus_box is None:
+                    print(f"[购买鱼食] 第 {index + 2} 袋前页面或加号识别失败，停止操作", flush=True)
+                    return False
+                plus_x, plus_y = _box_center(plus_box)
+                controller.post_click(plus_x, plus_y).wait()
+                if _task_cancelled(context):
+                    print("[购买鱼食] 点击后收到停止请求，未继续操作", flush=True)
+                    return False
+                time.sleep(0.15)
+
+            if _task_cancelled(context):
+                print("[购买鱼食] 已收到停止请求，未提交购买", flush=True)
+                return False
+            final_frame = _capture_720p(controller)
+            detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", final_frame)
+            price_box = _recognition_box(context, "BuyFishFoodUnitPrice", final_frame)
+            purchase_box = _recognition_box(context, "BuyFishFoodPurchaseButton", final_frame)
+            if detail_box is None or price_box is None or purchase_box is None:
+                print("[购买鱼食] 点击购买前最终门禁失败，未提交购买", flush=True)
+                return False
+
+            purchase_x, purchase_y = _box_center(purchase_box)
+            print(f"[购买鱼食] 点击识别到的购买按钮中心 ({purchase_x}, {purchase_y})", flush=True)
+            controller.post_click(purchase_x, purchase_y).wait()
+
+            store_frame = None
+            store_back_box = None
+            for _ in range(10):
+                if _task_cancelled(context):
+                    print("[购买鱼食] 已收到停止请求，终止购买后导航", flush=True)
+                    return False
+                time.sleep(0.3)
+                candidate = _capture_720p(controller)
+                candidate_back = _recognition_box(context, "BuyFishFoodStoreIdentity", candidate)
+                candidate_item = _recognition_box(context, "BuyFishFoodStoreItemIdentity", candidate)
+                if candidate_back is not None and candidate_item is not None:
+                    store_frame = candidate
+                    store_back_box = candidate_back
+                    break
+            if store_frame is None or store_back_box is None:
+                print("[购买鱼食] 购买后未确认返回商品列表，停止操作", flush=True)
+                return False
+
+            back_x, back_y = _box_center(store_back_box)
+            print(f"[购买鱼食] 商品列表已确认，点击 OCR 返回按钮中心 ({back_x}, {back_y})", flush=True)
+            if _task_cancelled(context):
+                print("[购买鱼食] 已收到停止请求，未点击返回", flush=True)
+                return False
+            controller.post_click(back_x, back_y).wait()
+
+            for _ in range(10):
+                if _task_cancelled(context):
+                    print("[购买鱼食] 已收到停止请求，终止返回确认", flush=True)
+                    return False
+                time.sleep(0.3)
+                tank_frame = _capture_720p(controller)
+                if _recognition_box(context, "BuyFishFoodTankIdentity", tank_frame) is not None:
+                    print("[购买鱼食] 购买流程完成，已确认返回鱼缸", flush=True)
+                    return True
+
+            print("[购买鱼食] 返回后未识别到鱼缸，停止操作", flush=True)
+            return False
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[购买鱼食] 购买异常: {e}", flush=True)
             return False
 
 
@@ -185,10 +441,9 @@ class RecordFriendGemBubbleMissAction(CustomAction):
             return False
 
 
-def detect_bite_color_geo_strict(crop: np.ndarray):
+def detect_bite_color_geo_strict(crop: np.ndarray, early: bool = False):
     """
-    钓鱼感叹号强几何特征检测器:
-    基于 HSV 高饱和鲜红 + 上半竖条/下半方点双连通域垂直对齐约束
+    钓鱼感叹号几何特征检测器：默认识别完整形态；early=True 时兼容渐入早期的小尺寸形态。
     """
     if crop is None or getattr(crop, "size", 0) == 0:
         return False, None
@@ -208,9 +463,13 @@ def detect_bite_color_geo_strict(crop: np.ndarray):
         if area < 20:
             continue
         aspect = h / float(w)
-        if 30 <= h <= 95 and 8 <= w <= 40 and 1.6 <= aspect <= 5.5:
+        if early and 12 <= h <= 95 and 5 <= w <= 40 and 1.5 <= aspect <= 5.5:
             bars.append((x, y, w, h, area))
-        elif 10 <= h <= 45 and 8 <= w <= 40 and 0.5 <= aspect <= 1.8:
+        elif not early and 30 <= h <= 95 and 8 <= w <= 40 and 1.6 <= aspect <= 5.5:
+            bars.append((x, y, w, h, area))
+        elif early and 4 <= h <= 45 and 5 <= w <= 40 and 0.45 <= aspect <= 1.8:
+            dots.append((x, y, w, h, area))
+        elif not early and 10 <= h <= 45 and 8 <= w <= 40 and 0.5 <= aspect <= 1.8:
             dots.append((x, y, w, h, area))
 
     for bx, by, bw, bh, barea in bars:
@@ -232,7 +491,7 @@ def _sync_task_id(task_id: int):
         fishing_state["cast_count"] = 0
 
 
-def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start) -> bool:
+def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start, early_after_sec=3.0) -> bool:
     """
     通用咬钩高速监听与收杆触控内核:
     支持 Controller 容错、异常捕获、帧越界裁剪与安全退出。
@@ -240,15 +499,19 @@ def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start) -> bool:
     time_limit = time.perf_counter() + timeout_sec
     hit_found = False
     frames_count = 0
+    capture_seconds = 0.0
+    detection_seconds = 0.0
 
     while time.perf_counter() < time_limit:
         try:
+            capture_start = time.perf_counter()
             job_cap = ctrl.post_screencap()
             if not job_cap:
                 print("[钓鱼达人QTE] 错误: post_screencap 返回空任务", flush=True)
                 return False
             job_cap.wait()
             frame = job_cap.get()
+            capture_seconds += time.perf_counter() - capture_start
         except Exception as e:
             print(f"[钓鱼达人QTE] 截屏异常: {e}", flush=True)
             return False
@@ -268,7 +531,13 @@ def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start) -> bool:
         crop = frame[ry:ry+rh, rx:rx+rw]
 
         try:
+            detection_start = time.perf_counter()
             hit, _ = detect_bite_color_geo_strict(crop)
+            detection_stage = "完整形态"
+            if not hit and time.perf_counter() - t_start >= early_after_sec:
+                hit, _ = detect_bite_color_geo_strict(crop, early=True)
+                detection_stage = "渐入早期形态"
+            detection_seconds += time.perf_counter() - detection_start
         except Exception as e:
             print(f"[钓鱼达人QTE] 检测异常: {e}", flush=True)
             return False
@@ -276,7 +545,11 @@ def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start) -> bool:
         if hit and not hit_found:
             t_hit = time.perf_counter()
             hit_found = True
-            print(f"[钓鱼达人QTE] 检测到咬钩感叹号！等待时长: {(t_hit - t_start):.3f}s，立即收杆！", flush=True)
+            print(
+                f"[钓鱼达人QTE] 检测到咬钩感叹号（{detection_stage}）！"
+                f"等待时长: {(t_hit - t_start):.3f}s，立即收杆！",
+                flush=True,
+            )
             try:
                 job_down = ctrl.post_touch_down(btn_x, btn_y)
                 if job_down: job_down.wait()
@@ -292,7 +565,13 @@ def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start) -> bool:
             time_limit = min(time_limit, time.perf_counter() + 1.2)
 
     if hit_found:
-        print(f"[钓鱼达人QTE] 动作成功完成 (共抓帧 {frames_count} 帧)，交回 Pipeline 确认结算页面", flush=True)
+        elapsed = max(time.perf_counter() - t_start, 0.001)
+        print(
+            f"[钓鱼达人QTE] 动作成功完成 (共抓帧 {frames_count} 帧/{frames_count / elapsed:.1f} FPS，"
+            f"平均截图 {capture_seconds / max(frames_count, 1) * 1000:.1f}ms，"
+            f"平均检测 {detection_seconds / max(frames_count, 1) * 1000:.2f}ms)，交回 Pipeline 确认结算页面",
+            flush=True,
+        )
         return True
     else:
         print(f"[钓鱼达人QTE] 等待超时 ({timeout_sec:.1f}s 未检出咬钩)，安全退出", flush=True)
@@ -387,7 +666,9 @@ class FishingWatchBiteOnlyAction(CustomAction):
                 return False
 
             print(f"[钓鱼达人中途恢复] 检测到画面已在等待咬钩中（收杆状态），不重复甩杆，直接进入高速抓帧监听...", flush=True)
-            return _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, time.perf_counter())
+            return _watch_bite_and_reel(
+                ctrl, roi, btn_x, btn_y, timeout_sec, time.perf_counter(), early_after_sec=0.0
+            )
         except Exception as e:
             traceback.print_exc()
             print(f"[钓鱼达人中途恢复] 运行异常: {e}", flush=True)
@@ -509,13 +790,19 @@ class SeaOtterSwitchPairAction(CustomAction):
         return True
 
 
+def _reset_band_fish_state():
+    band_fish_state["status"] = None
+    band_fish_state["invited_slots"] = []
+    band_fish_state["performance_finished"] = False
+    for slot in (1, 2, 4, 5):
+        band_fish_state.setdefault("slots", {}).setdefault(slot, {})["state"] = "UNKNOWN"
+
+
 @AgentServer.custom_action("InitBandFishStateAction")
 class InitBandFishStateAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
-            band_fish_state["status"] = None
-            band_fish_state["invited_slots"] = []
-            band_fish_state["performance_finished"] = False
+            _reset_band_fish_state()
             print("[乐队鱼] 状态已初始化，开始执行 BandFishTask", flush=True)
             return True
         except Exception as e:
@@ -547,15 +834,32 @@ class LogBandFishStatusAction(CustomAction):
             return False
 
 
+_BAND_FISH_SKIP_ROI = (1010, 575, 155, 139)
+_BAND_FISH_SKIP_THRESHOLD = 0.85
+
+
 def load_band_fish_skip_template() -> Optional[np.ndarray]:
     """
     加载乐队鱼“跳过”按钮模板图片。
-    预留模板加载接口：若文件不存在或未配置，安全返回 None，绝不抛出异常。
+    同时兼容开发目录与发行包目录；若文件不存在或读取失败则安全返回 None。
     """
     try:
-        template_path = os.path.join("assets", "resource", "image", "乐队鱼_跳过.png")
-        if os.path.exists(template_path):
-            return cv2.imread(template_path)
+        agent_dir = os.path.dirname(os.path.abspath(__file__))
+        candidate_dirs = [
+            os.path.join(agent_dir, "../resource/image"),
+            os.path.join(agent_dir, "../assets/resource/image"),
+            os.path.join(agent_dir, "../../assets/resource/image"),
+            os.path.abspath("assets/resource/image"),
+            os.path.abspath("client_avalonia/resource/image"),
+            os.path.abspath("resource/image"),
+        ]
+        for directory in candidate_dirs:
+            template_path = os.path.abspath(os.path.join(directory, "乐队鱼_跳过.png"))
+            if not os.path.isfile(template_path):
+                continue
+            template = cv2.imdecode(np.fromfile(template_path, dtype=np.uint8), cv2.IMREAD_COLOR)
+            if template is not None and template.size > 0:
+                return template
     except Exception as e:
         print(f"[乐队鱼演出] 加载跳过模板异常: {e}", flush=True)
     return None
@@ -564,25 +868,91 @@ def load_band_fish_skip_template() -> Optional[np.ndarray]:
 def check_band_fish_skip_button(frame: Optional[np.ndarray]) -> Optional[Tuple[int, int]]:
     """
     检测乐队鱼演出界面的“跳过”按钮中心坐标 (x, y)。
-    预留跳过按钮识别接口：若未识别到或模板不存在，安全返回 None。
-    遵守动作前置状态确认与无盲点规则，严禁在未识别到模板时猜测固定坐标或盲点。
+    只在用户提供的 ROI EX [1010, 575, 155, 139] 内进行模板匹配。
+    未识别到模板时安全返回 None，严禁猜测固定坐标或盲点。
     """
     if frame is None:
         return None
     try:
+        height, width = frame.shape[:2]
+        if width != 1280 or height != 720:
+            frame = cv2.resize(frame, (1280, 720))
+
         template = load_band_fish_skip_template()
         if template is None:
             return None
 
-        # 预留模板匹配逻辑 (待后续实机采集 乐队鱼_跳过.png 样本后启用)
-        # res = cv2.matchTemplate(frame, template, cv2.TM_CCOEFF_NORMED)
-        # min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-        # if max_val >= 0.85:
-        #     th, tw = template.shape[:2]
-        #     return max_loc[0] + tw // 2, max_loc[1] + th // 2
+        roi_x, roi_y, roi_w, roi_h = _BAND_FISH_SKIP_ROI
+        search = frame[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
+        template_h, template_w = template.shape[:2]
+        if search.size == 0 or template_w > search.shape[1] or template_h > search.shape[0]:
+            return None
+
+        result = cv2.matchTemplate(search, template, cv2.TM_CCOEFF_NORMED)
+        _, max_score, _, max_loc = cv2.minMaxLoc(result)
+        if max_score >= _BAND_FISH_SKIP_THRESHOLD:
+            return (
+                roi_x + max_loc[0] + template_w // 2,
+                roi_y + max_loc[1] + template_h // 2,
+            )
     except Exception as e:
         print(f"[乐队鱼演出] 识别跳过按钮异常: {e}", flush=True)
     return None
+
+
+def _band_fish_score_candidates(context: Context, frame, expected: str = ".+"):
+    """读取选曲列表中的 OCR 结果，返回 [(name, box), ...]。"""
+    if frame is None or not hasattr(context, "run_recognition"):
+        return []
+    result = context.run_recognition(
+        "BandFishScoreName",
+        frame,
+        pipeline_override={"BandFishScoreName": {"expected": expected}},
+    )
+    if not result:
+        return []
+
+    items = getattr(result, "filtered_results", None) or []
+    candidates = []
+    for item in items:
+        text = str(getattr(item, "text", "")).strip()
+        box = getattr(item, "box", None)
+        if not text or box is None:
+            continue
+        try:
+            x, y, width, height = (int(value) for value in box)
+        except (TypeError, ValueError):
+            continue
+        center_x = x + width // 2
+        center_y = y + height // 2
+        if 650 <= center_x <= 870 and 180 <= center_y <= 650:
+            candidates.append((text, (x, y, width, height)))
+    return candidates
+
+
+def _band_fish_score_is_selected(frame, score_box) -> bool:
+    """检测乐章卡片右侧的黄色选中箭头，确认选曲点击确实生效。"""
+    if frame is None or score_box is None:
+        return False
+    _, y, _, _ = score_box
+    height, width = frame.shape[:2]
+    x1, x2 = max(0, 835), min(width, 868)
+    y1, y2 = max(0, y - 85), min(height, y - 25)
+    if x2 <= x1 or y2 <= y1:
+        return False
+    hsv = cv2.cvtColor(frame[y1:y2, x1:x2], cv2.COLOR_BGR2HSV)
+    yellow = cv2.inRange(hsv, np.array([10, 120, 140]), np.array([45, 255, 255]))
+    return int(np.count_nonzero(yellow)) >= 200
+
+
+def _band_fish_score_view_difference(before, after) -> float:
+    if before is None or after is None:
+        return float("inf")
+    before_roi = before[180:650, 650:870]
+    after_roi = after[180:650, 650:870]
+    if before_roi.shape != after_roi.shape or before_roi.size == 0:
+        return float("inf")
+    return float(np.mean(cv2.absdiff(before_roi, after_roi)))
 
 
 @AgentServer.custom_action("BandFishPerformAction")
@@ -590,8 +960,8 @@ class BandFishPerformAction(CustomAction):
     """
     乐队鱼核心演出闭环动作 (Pass 2):
     职责分工:
-    1. 开始演出: 识别或默认点击底部绿色“开始演出”按钮 (637, 630);
-    2. 选曲确认: 动态等待“请选择您要演奏的乐章”选曲弹窗并点击右上角绿色【确定】(1023, 359) 消耗体力;
+    1. 开始演出: 识别底部绿色“开始演出”按钮后点击;
+    2. 选曲确认: 选择最新乐章或指定乐章，验证黄色选中态后才点击【确定】消耗体力;
     3. 演出与跳过检测: 4 阶段状态机 (PLAYING -> WAIT_SKIP_BUTTON -> CLICK_SKIP -> WAIT_RESULT);
     4. 结算等待与领取: 等待“我的乐章”结算弹窗并点击【确定】按钮 (639, 680) 领取结算奖励;
     5. 状态沉淀: band_fish_state["status"] = "DONE", band_fish_state["performance_finished"] = True.
@@ -603,7 +973,15 @@ class BandFishPerformAction(CustomAction):
                 print("[乐队鱼演出] 错误: 未获取到 Controller", flush=True)
                 return False
 
-            print("[乐队鱼演出] 检测到全员就绪，开始执行演出闭环流程...", flush=True)
+            param = parse_dict_param(argv.custom_action_param)
+            score_mode = str(param.get("score_mode", "latest")).strip().lower()
+            score_name = str(param.get("score_name", "欢乐颂")).strip()
+            if score_mode not in ("latest", "named") or (score_mode == "named" and not score_name):
+                print("[乐队鱼演出] 错误: 乐章配置无效，未开始演出", flush=True)
+                return False
+
+            score_label = "最新乐章" if score_mode == "latest" else f"指定乐章【{score_name}】"
+            print(f"[乐队鱼演出] 检测到全员就绪，准备选择{score_label}...", flush=True)
 
             def capture_frame():
                 job = ctrl.post_screencap()
@@ -617,45 +995,120 @@ class BandFishPerformAction(CustomAction):
                         f = cv2.resize(f, (1280, 720))
                 return f
 
-            # 职责 1: 验证当前处于“开始演出”状态并点击
+            # 职责 1: 验证当前处于“开始演出”状态并点击，识别失败绝不盲点。
             f_init = capture_frame()
-            btn_x, btn_y = 637, 630
-            if f_init is not None and hasattr(context, "run_recognition"):
-                res_ready = context.run_recognition("BandFishCheckReady", f_init)
-                if res_ready and res_ready.hit:
-                    bx, by, bw, bh = res_ready.box
-                    btn_x, btn_y = bx + bw // 2, by + bh // 2
-                    print(f"[乐队鱼演出] 识别到“开始演出”按钮中心: ({btn_x}, {btn_y})", flush=True)
+            ready_box = _recognition_box(context, "BandFishCheckReady", f_init)
+            if ready_box is None:
+                print("[乐队鱼演出] 错误: 未确认当前页面的“开始演出”按钮，安全停止", flush=True)
+                return False
+            btn_x, btn_y = _box_center(ready_box)
+            print(f"[乐队鱼演出] 识别到“开始演出”按钮中心: ({btn_x}, {btn_y})", flush=True)
 
             print(f"[乐队鱼演出] 点击【开始演出】按钮 ({btn_x}, {btn_y})...", flush=True)
             ctrl.post_click(btn_x, btn_y).wait()
             time.sleep(1.8)
 
-            # 职责 2: 动态等待选曲弹窗打开并点击确定
+            # 职责 2: 必须同时识别弹窗标题和确定按钮，才允许在列表内操作。
             t_dlg = time.time()
-            dlg_opened = False
+            f_dlg = None
+            confirm_box = None
             while time.time() - t_dlg < 5.0:
-                f_dlg = capture_frame()
-                if f_dlg is None:
+                candidate = capture_frame()
+                if candidate is None:
                     time.sleep(0.3)
                     continue
-                # 弹窗右上角“确定”按钮坐标约 (1023, 359)
-                crop_ok = f_dlg[335:385, 980:1060]
-                if crop_ok.size > 0:
-                    hsv = cv2.cvtColor(crop_ok, cv2.COLOR_BGR2HSV)
-                    mask = cv2.inRange(hsv, np.array([35, 80, 80]), np.array([85, 255, 255]))
-                    if int(np.sum(mask > 0)) >= 100:
-                        dlg_opened = True
-                        break
+                title_box = _recognition_box(context, "BandFishScoreDialogTitle", candidate)
+                candidate_confirm = _recognition_box(context, "BandFishScoreConfirm", candidate)
+                if title_box is not None and candidate_confirm is not None:
+                    f_dlg = candidate
+                    confirm_box = candidate_confirm
+                    break
                 time.sleep(0.4)
 
-            if dlg_opened:
-                print("[乐队鱼演出] 选曲弹窗已打开，右上角【确定】按钮就绪", flush=True)
-            else:
-                print("[乐队鱼演出] 提示: 未检测到明显选曲弹窗绿色确定按钮，继续执行默认确定点击", flush=True)
+            if f_dlg is None or confirm_box is None:
+                print("[乐队鱼演出] 错误: 未同时识别选曲弹窗标题与“确定”按钮，未消耗体力", flush=True)
+                return False
 
-            print("[乐队鱼演出] 点击乐章弹窗【确定】按钮 (1023, 359) 消耗体力开始演出...", flush=True)
-            ctrl.post_click(1023, 359).wait()
+            target_name = score_name
+            target_box = None
+
+            if score_mode == "latest":
+                # 已确认选曲弹窗后，手势被限制在乐章列表内；滑到底部后选择最下方完整乐章。
+                previous = f_dlg
+                bottom_confirmed = False
+                for swipe_index in range(8):
+                    if _task_cancelled(context):
+                        print("[乐队鱼演出] 已收到停止请求，未继续选曲", flush=True)
+                        return False
+                    ctrl.post_swipe(750, 590, 750, 250, 450).wait()
+                    time.sleep(0.7)
+                    current = capture_frame()
+                    if (
+                        _recognition_box(context, "BandFishScoreDialogTitle", current) is None
+                        or _recognition_box(context, "BandFishScoreConfirm", current) is None
+                    ):
+                        print("[乐队鱼演出] 错误: 下滑后选曲弹窗门禁丢失，未消耗体力", flush=True)
+                        return False
+                    diff = _band_fish_score_view_difference(previous, current)
+                    print(f"[乐队鱼演出] 下滑查找最新乐章 {swipe_index + 1}/8，列表变化={diff:.2f}", flush=True)
+                    f_dlg = current
+                    if diff <= 1.0:
+                        bottom_confirmed = True
+                        break
+                    previous = current
+
+                candidates = _band_fish_score_candidates(context, f_dlg)
+                if not bottom_confirmed or not candidates:
+                    print("[乐队鱼演出] 错误: 未确认已到达乐章列表底部，未消耗体力", flush=True)
+                    return False
+                target_name, target_box = max(candidates, key=lambda item: item[1][1])
+                if target_box[1] + target_box[3] > 560:
+                    print("[乐队鱼演出] 错误: 列表底部仍有被截断的乐章，拒绝猜测最新乐章", flush=True)
+                    return False
+            else:
+                # 指定乐章先从当前画面查找；找不到时向列表顶部回退，最多 6 次。
+                for scroll_index in range(7):
+                    candidates = _band_fish_score_candidates(context, f_dlg, score_name)
+                    if candidates:
+                        target_name, target_box = candidates[0]
+                        break
+                    if scroll_index == 6:
+                        break
+                    ctrl.post_swipe(750, 250, 750, 590, 450).wait()
+                    time.sleep(0.7)
+                    f_dlg = capture_frame()
+                    if _recognition_box(context, "BandFishScoreDialogTitle", f_dlg) is None:
+                        print("[乐队鱼演出] 错误: 查找指定乐章时弹窗门禁丢失，未消耗体力", flush=True)
+                        return False
+
+            if target_box is None:
+                print(f"[乐队鱼演出] 错误: OCR 未找到{score_label}，未消耗体力", flush=True)
+                return False
+
+            target_x, target_y = _box_center(target_box)
+            print(f"[乐队鱼演出] OCR 定位乐章【{target_name}】于 ({target_x}, {target_y})，执行选择", flush=True)
+            ctrl.post_click(target_x, target_y).wait()
+            time.sleep(0.6)
+
+            selected_frame = capture_frame()
+            selected_candidates = _band_fish_score_candidates(context, selected_frame, target_name)
+            selected_box = selected_candidates[0][1] if selected_candidates else None
+            if not _band_fish_score_is_selected(selected_frame, selected_box):
+                print(f"[乐队鱼演出] 错误: 未确认【{target_name}】黄色选中态，未点击确定、未消耗体力", flush=True)
+                return False
+            if (
+                _recognition_box(context, "BandFishScoreDialogTitle", selected_frame) is None
+                or _recognition_box(context, "BandFishScoreConfirm", selected_frame) is None
+            ):
+                print("[乐队鱼演出] 错误: 选中后弹窗门禁不完整，未消耗体力", flush=True)
+                return False
+            if _task_cancelled(context):
+                print("[乐队鱼演出] 已收到停止请求，未点击消耗体力的确定按钮", flush=True)
+                return False
+
+            confirm_x, confirm_y = _box_center(confirm_box)
+            print(f"[乐队鱼演出] 已确认选中【{target_name}】，点击识别到的【确定】按钮 ({confirm_x}, {confirm_y}) 开始演出...", flush=True)
+            ctrl.post_click(confirm_x, confirm_y).wait()
             time.sleep(2.0)
 
             # 职责 3 & 4: 演出与跳过检测 (4 阶段状态机: PLAYING -> WAIT_SKIP_BUTTON -> CLICK_SKIP -> WAIT_RESULT)
@@ -746,10 +1199,9 @@ class BandFishPerformAction(CustomAction):
                 print(f"[乐队鱼演出] 点击结算弹窗【确定】按钮 ({confirm_settle_x}, {confirm_settle_y}) 领取奖励...", flush=True)
                 ctrl.post_click(confirm_settle_x, confirm_settle_y).wait()
                 time.sleep(2.0)
-            else:
-                print("[乐队鱼演出] 演奏动画周期结束，保底点击中央结算区域并等待刷新...", flush=True)
-                ctrl.post_click(639, 680).wait()
-                time.sleep(1.5)
+            elif not settlement_detected:
+                print("[乐队鱼演出] 错误: 未识别到结算弹窗或返场状态，拒绝盲点结算区域", flush=True)
+                return False
 
             # 职责 5: 沉淀完成状态
             band_fish_state["status"] = "DONE"
@@ -1373,14 +1825,112 @@ def _get_golden_dolphin_templates():
             return None
         return cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
 
+    star_templates = tuple(
+        template
+        for template in (_load_tpl("金海豚_经验星1.png"), _load_tpl("金海豚_经验星2.png"))
+        if template is not None and template.size > 0
+    )
     return {
         "tpl_dir": tpl_dir,
         "entrance": _load_tpl("游乐园入口.png"),
         "dolphin": _load_tpl("金海豚_图标.png"),
         "confirm": _load_tpl("金海豚_确定按钮.png"),
-        "star": _load_tpl("金海豚_经验星.png"),
+        "coin": _load_tpl("金海豚_贝币.png"),
+        "stars": star_templates,
         "cancel": _load_tpl("金海豚_结束取消.png"),
     }
+
+
+def _find_golden_dolphin_coin(frame, template, threshold: float = 0.70):
+    """返回模板识别到的贝币中心与置信度；未命中时不猜坐标。"""
+    if frame is None or template is None or template.size == 0:
+        return None
+    if frame.shape[:2] != (720, 1280):
+        frame = cv2.resize(frame, (1280, 720))
+    roi_top, roi_bottom = 120, 650
+    search = frame[roi_top:roi_bottom]
+    template_h, template_w = template.shape[:2]
+    if template_h > search.shape[0] or template_w > search.shape[1]:
+        return None
+    result = cv2.matchTemplate(search, template, cv2.TM_CCOEFF_NORMED)
+    _, score, _, location = cv2.minMaxLoc(result)
+    if score < threshold:
+        return None
+    return (
+        location[0] + template_w // 2,
+        roi_top + location[1] + template_h // 2,
+        float(score),
+    )
+
+
+def _find_golden_dolphin_xp(frame, templates):
+    """使用任一经验星模板识别候选，按接近底部优先且不重复点击。"""
+    if isinstance(templates, np.ndarray):
+        templates = (templates,)
+    templates = tuple(
+        template for template in (templates or ())
+        if template is not None and template.size > 0
+    )
+    if frame is None or not templates:
+        return []
+    if frame.shape[:2] != (720, 1280):
+        frame = cv2.resize(frame, (1280, 720))
+
+    playfield = frame
+    hsv = cv2.cvtColor(playfield, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, np.array([15, 65, 110]), np.array([35, 255, 255]))
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    template_sizes = [(template, *template.shape[:2]) for template in templates]
+    min_width = max(20, int(min(width for _, _, width in template_sizes) * 0.65))
+    max_width = max(78, int(max(width for _, _, width in template_sizes) * 1.25))
+    min_height = max(20, int(min(height for _, height, _ in template_sizes) * 0.65))
+    max_height = max(78, int(max(height for _, height, _ in template_sizes) * 1.25))
+    min_area = min(950, int(min(height * width for _, height, width in template_sizes) * 0.20))
+    max_area = max(3300, int(max(height * width for _, height, width in template_sizes) * 0.90))
+    candidates = []
+
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        x, y_local, width, height = cv2.boundingRect(contour)
+        aspect_ratio = width / float(height) if height > 0 else 0
+        if not (
+            min_area <= area <= max_area
+            and 0.75 <= aspect_ratio <= 1.35
+            and min_width <= width <= max_width
+            and min_height <= height <= max_height
+        ):
+            continue
+
+        center_x = x + width // 2
+        center_y = y_local + height // 2
+
+        best_score = 0.0
+        for template, template_h, template_w in template_sizes:
+            left = center_x - template_w // 2
+            top = center_y - template_h // 2
+            right = left + template_w
+            bottom = top + template_h
+            if left < 0 or top < 0 or right > frame.shape[1] or bottom > frame.shape[0]:
+                continue
+            patch = frame[top:bottom, left:right]
+            score = float(cv2.matchTemplate(patch, template, cv2.TM_CCOEFF_NORMED)[0, 0])
+            best_score = max(best_score, score)
+        if best_score >= 0.45:
+            candidates.append((center_x, center_y, best_score))
+
+    return sorted(candidates, key=lambda candidate: (candidate[1], candidate[2]), reverse=True)
+
+
+def _select_golden_dolphin_frame_targets(frame, coin_template, star_templates, xp_started: bool):
+    """经验优先；经验尚未出现时，只返回模板识别到的贝币。"""
+    xp_candidates = _find_golden_dolphin_xp(frame, star_templates)
+    if xp_candidates:
+        return "xp", xp_candidates[:4]
+    if not xp_started:
+        coin = _find_golden_dolphin_coin(frame, coin_template)
+        if coin is not None:
+            return "coin", [coin]
+    return "wait", []
 
 
 def _find_green_check(img):
@@ -1619,8 +2169,8 @@ class GoldenDolphinPlayGameAction(CustomAction):
     """
     金海豚小游戏拾取动作 (职责 2):
     仅负责游戏画面内的微观交互:
-    1. 点击激活计时 (640, 360)
-    2. 55s 高频抓帧与 Method E 黄色经验星拾取
+    1. 经验星出现前持续识别并点击贝币
+    2. 首次识别到经验星后执行高频批量拾取
     3. 游戏结束弹窗监听
     不包含：游乐园导航、返回鱼缸归位
     """
@@ -1632,39 +2182,38 @@ class GoldenDolphinPlayGameAction(CustomAction):
                 return False
 
             tpls = _get_golden_dolphin_templates()
-            tpl_star = tpls.get("star")
+            tpl_coin = tpls.get("coin")
+            tpl_stars = tpls.get("stars", ())
             tpl_cancel = tpls.get("cancel")
 
-            # 1. 点击中央激活计时
-            print("[金海豚游戏] 执行游戏启动点击 (640, 360) 激活计时...", flush=True)
-            ctrl.post_click(640, 360).wait()
-            time.sleep(0.5)
+            if tpl_coin is None or tpl_coin.size == 0:
+                print("[金海豚游戏] ERROR: 缺少金海豚_贝币.png，安全终止任务", flush=True)
+                return False
+            if len(tpl_stars) < 2:
+                print("[金海豚游戏] ERROR: 金海豚_经验星1.png / 经验星2.png 未完整加载，安全终止任务", flush=True)
+                return False
 
-            # 2. 进入 Method E 检测点击循环
-            print("[金海豚游戏] 开始进入 Method E XP 经验星自动点击主循环...", flush=True)
-            t_game_start = time.time()
-            th_s, tw_s = (tpl_star.shape[:2]) if tpl_star is not None else (60, 60)
+            print("[金海豚游戏] 当前策略：经验星出现前持续点击识别到的贝币；出现后只点击经验星", flush=True)
+            t_game_start = time.monotonic()
             game_done = False
-            total_clicks = 0
+            coin_clicks = 0
+            xp_clicks = 0
+            loop_count = 0
+            xp_started = False
 
-            while time.time() - t_game_start < 55.0:
-                elapsed = time.time() - t_game_start
-                job = ctrl.post_screencap()
-                if not job:
-                    time.sleep(0.03)
-                    continue
-                job.wait()
-                img = job.get()
+            while time.monotonic() - t_game_start < 55.0:
+                if _task_cancelled(context):
+                    print("[金海豚游戏] 收到停止请求，立即停止经验点击", flush=True)
+                    return False
+                elapsed = time.monotonic() - t_game_start
+                img = _capture_720p(ctrl)
                 if img is None:
                     time.sleep(0.02)
                     continue
+                loop_count += 1
 
-                h, w = img.shape[:2]
-                if w != 1280 or h != 720:
-                    img = cv2.resize(img, (1280, 720))
-
-                # 超过 20 秒后开始检查游戏结束弹窗
-                if elapsed > 20.0 and tpl_cancel is not None:
+                # 结算模板只需降频轮询，避免它阻塞每一帧经验检测。
+                if elapsed > 20.0 and loop_count % 5 == 0 and tpl_cancel is not None:
                     res_cancel = cv2.matchTemplate(img, tpl_cancel, cv2.TM_CCOEFF_NORMED)
                     _, max_cancel, _, loc_cancel = cv2.minMaxLoc(res_cancel)
                     if max_cancel >= 0.70:
@@ -1672,41 +2221,45 @@ class GoldenDolphinPlayGameAction(CustomAction):
                         game_done = True
                         break
 
-                # Method E XP 检测
-                hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-                mask = cv2.inRange(hsv, np.array([15, 65, 110]), np.array([35, 255, 255]))
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                phase, candidates = _select_golden_dolphin_frame_targets(
+                    img, tpl_coin, tpl_stars, xp_started
+                )
+                if phase == "xp":
+                    if not xp_started:
+                        xp_started = True
+                        print(
+                            f"[金海豚游戏] 首次识别到经验星，停止点击贝币并切换为高频经验收集；"
+                            f"此前点击贝币 {coin_clicks} 次",
+                            flush=True,
+                        )
+                    for target_x, target_y, _ in candidates:
+                        if _task_cancelled(context):
+                            print("[金海豚游戏] 收到停止请求，立即停止经验点击", flush=True)
+                            return False
+                        ctrl.post_click(target_x, target_y)
+                        xp_clicks += 1
+                    time.sleep(0.01)
+                elif phase == "coin":
+                    coin_x, coin_y, score = candidates[0]
+                    job = ctrl.post_click(coin_x, coin_y)
+                    if job:
+                        job.wait()
+                    coin_clicks += 1
+                    if coin_clicks == 1 or coin_clicks % 10 == 0:
+                        print(
+                            f"[金海豚游戏] 经验星尚未出现，持续点击识别到的贝币 "
+                            f"(第 {coin_clicks} 次, score={score:.3f})",
+                            flush=True,
+                        )
+                    time.sleep(0.02)
 
-                candidates = []
-                for cnt in contours:
-                    area = cv2.contourArea(cnt)
-                    x, y, cw, ch = cv2.boundingRect(cnt)
-                    if y < 25 or y > 665:
-                        continue
-                    ar = cw / float(ch) if ch > 0 else 0
-                    if 950 <= area <= 3300 and 0.80 <= ar <= 1.30 and 48 <= cw <= 78 and 44 <= ch <= 78:
-                        cx, cy = x + cw // 2, y + ch // 2
-                        if tpl_star is not None:
-                            x1 = max(0, cx - tw_s // 2)
-                            y1 = max(0, cy - th_s // 2)
-                            x2 = min(img.shape[1], x1 + tw_s)
-                            y2 = min(img.shape[0], y1 + th_s)
-                            patch = img[y1:y2, x1:x2]
-                            if patch.shape[:2] == tpl_star.shape[:2]:
-                                score = float(cv2.matchTemplate(patch, tpl_star, cv2.TM_CCOEFF_NORMED)[0, 0])
-                                if score >= 0.45:
-                                    candidates.append((cx, cy, score))
-                        else:
-                            candidates.append((cx, cy, 0.5))
-
-                if candidates:
-                    golden = [c for c in candidates if 200 <= c[1] <= 540]
-                    target = sorted(golden if golden else candidates, key=lambda c: c[1], reverse=True)[0]
-                    ctrl.post_click(target[0], target[1])
-                    total_clicks += 1
-                    time.sleep(0.18)
-
-            print(f"[金海豚游戏] 小游戏循环完成 (耗时 {time.time() - t_game_start:.1f}s, 总点击 XP {total_clicks} 次, 弹窗就绪={game_done})", flush=True)
+            duration = time.monotonic() - t_game_start
+            average_fps = loop_count / duration if duration > 0 else 0.0
+            print(
+                f"[金海豚游戏] 小游戏循环完成 (耗时 {duration:.1f}s, 检测 {loop_count} 帧/{average_fps:.1f} FPS, "
+                f"点击贝币 {coin_clicks} 次, 点击 XP {xp_clicks} 次, XP阶段={xp_started}, 弹窗就绪={game_done})",
+                flush=True,
+            )
             return True
         except Exception as e:
             traceback.print_exc()
@@ -1838,6 +2391,8 @@ class InitDailyRoutineAction(CustomAction):
         try:
             daily_routine_state["active"] = True
             daily_routine_state["tasks"] = {
+                "FreeGift": {"status": "IDLE"},
+                "ReindeerFish": {"status": "IDLE"},
                 "BandFish": {"status": "IDLE", "stage": "PASS1"},
                 "GoldenDolphin": {"status": "IDLE"},
                 "Fishing": {"status": "IDLE"},
@@ -1846,9 +2401,11 @@ class InitDailyRoutineAction(CustomAction):
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("band_fish", "golden_dolphin", "fishing", "romantic_house"))
+            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "band_fish", "golden_dolphin", "fishing", "romantic_house"))
 
             if has_param:
+                enable_fg = bool(param.get("free_gift", False))
+                enable_rf = bool(param.get("reindeer_fish", False))
                 enable_bf = bool(param.get("band_fish", False))
                 enable_gd = bool(param.get("golden_dolphin", False))
                 enable_fi = bool(param.get("fishing", False))
@@ -1862,15 +2419,22 @@ class InitDailyRoutineAction(CustomAction):
                     except Exception:
                         return False
 
+                enable_fg = _is_node_enabled("DailyRoutineEnableFreeGift")
+                enable_rf = _is_node_enabled("DailyRoutineEnableReindeerFish")
                 enable_bf = _is_node_enabled("DailyRoutineEnableBandFish")
                 enable_gd = _is_node_enabled("DailyRoutineEnableGoldenDolphin")
                 enable_fi = _is_node_enabled("DailyRoutineEnableFishing")
                 enable_rh = _is_node_enabled("DailyRoutineEnableRomanticHouse")
 
-            # 3. 按固定安全顺序构建待执行队列: 1. 乐队鱼 -> 2. 金海豚 -> 3. 钓鱼达人 -> 4. 浪漫满屋 -> 5. 乐队鱼二次巡检
+            # 3. 按固定安全顺序构建待执行队列。
             queue = []
             if enable_bf:
+                _reset_band_fish_state()
                 queue.append("BAND_FISH_PASS1")
+            if enable_fg:
+                queue.append("FREE_GIFT")
+            if enable_rf:
+                queue.append("REINDEER_FISH")
             if enable_gd:
                 queue.append("GOLDEN_DOLPHIN")
             if enable_fi:
@@ -1882,6 +2446,8 @@ class InitDailyRoutineAction(CustomAction):
 
             print("=" * 60, flush=True)
             print("[日常收尾] DailyRoutineTask 初始化成功，勾选子任务配置:", flush=True)
+            print(f"  - 每日免费礼包 : {'[ON]' if enable_fg else '[OFF]'}", flush=True)
+            print(f"  - 驯鹿鱼送收礼 : {'[ON]' if enable_rf else '[OFF]'}", flush=True)
             print(f"  - 乐队鱼演出   : {'[ON]' if enable_bf else '[OFF]'}", flush=True)
             print(f"  - 金海豚小游戏 : {'[ON]' if enable_gd else '[OFF]'}", flush=True)
             print(f"  - 钓鱼达人     : {'[ON]' if enable_fi else '[OFF]'}", flush=True)
@@ -1902,6 +2468,32 @@ class InitDailyRoutineAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[日常收尾] 初始化异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("DailyFreeGiftDoneAction")
+class DailyFreeGiftDoneAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            print("[每日免费礼包] 已确认返回鱼缸，继续日常收尾", flush=True)
+            advance_daily_routine_step("FreeGift", "DONE")
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[每日免费礼包] 完成状态写入异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("ReindeerFishDoneAction")
+class ReindeerFishDoneAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            print("[驯鹿鱼送收礼] 已确认返回鱼缸，继续日常收尾", flush=True)
+            advance_daily_routine_step("ReindeerFish", "DONE")
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[驯鹿鱼送收礼] 完成状态写入异常: {e}", flush=True)
             return False
 
 
@@ -1944,6 +2536,8 @@ class DailyRoutineFinishAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             tasks = daily_routine_state.get("tasks", {})
+            fg_st = tasks.get("FreeGift", {}).get("status", "SKIPPED")
+            rf_st = tasks.get("ReindeerFish", {}).get("status", "SKIPPED")
             bf_st = tasks.get("BandFish", {}).get("status", "SKIPPED")
             gd_st = tasks.get("GoldenDolphin", {}).get("status", "SKIPPED")
             fi_st = tasks.get("Fishing", {}).get("status", "SKIPPED")
@@ -1951,6 +2545,8 @@ class DailyRoutineFinishAction(CustomAction):
 
             print("=" * 60, flush=True)
             print("  【日常收尾 DailyRoutineTask】全部勾选子任务执行完毕！", flush=True)
+            print(f"  - 每日免费礼包 (FreeGift)     : {fg_st}", flush=True)
+            print(f"  - 驯鹿鱼送收礼 (ReindeerFish) : {rf_st}", flush=True)
             print(f"  - 乐队鱼演出 (BandFish)       : {bf_st}", flush=True)
             print(f"  - 金海豚小游戏 (GoldenDolphin) : {gd_st}", flush=True)
             print(f"  - 钓鱼达人 (Fishing)          : {fi_st}", flush=True)
@@ -1965,7 +2561,3 @@ class DailyRoutineFinishAction(CustomAction):
             traceback.print_exc()
             print(f"[日常收尾] 结束汇总异常: {e}", flush=True)
             return False
-
-
-
-

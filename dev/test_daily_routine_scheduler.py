@@ -2,7 +2,7 @@
 """
 日常收尾 (DailyRoutineTask) 串行容器多任务组合调度测试
 验证:
-1. 组合1: 四个全部勾选 (BAND_FISH_PASS1 -> GOLDEN_DOLPHIN -> FISHING -> ROMANTIC_HOUSE -> ALL_DONE)
+1. 组合1: 五个全部勾选 (BAND_FISH_PASS1 -> FREE_GIFT -> GOLDEN_DOLPHIN -> FISHING -> ROMANTIC_HOUSE -> BAND_FISH_PASS2 -> ALL_DONE)
 2. 组合2: 只勾选浪漫满屋 (ROMANTIC_HOUSE -> ALL_DONE)
 3. 组合3: 只勾选金海豚 (GOLDEN_DOLPHIN -> ALL_DONE)
 4. 组合4: 浪漫满屋 + 钓鱼达人 (FISHING -> ROMANTIC_HOUSE -> ALL_DONE)
@@ -21,10 +21,26 @@ from agent.runtime_state import daily_routine_state
 from agent.my_action import (
     InitDailyRoutineAction,
     advance_daily_routine_step,
+    DailyFreeGiftDoneAction,
+    ReindeerFishDoneAction,
     DailyRoutineFinishAction,
     RomanticHouseExitToTankAction,
 )
-from agent.my_reco import CheckDailyRoutineStepReco
+from agent.my_reco import (
+    CheckDailyRoutineStepReco,
+    CheckBandFishDailyRoutineReco,
+    CheckBandFishStandalonePendingReco,
+    CheckBandFishStandaloneDoneReco,
+)
+
+GLOBAL_POPUP_HANDLERS = {
+    "[JumpBack]GlobalDailySignPopup",
+    "[JumpBack]GlobalSpecialOfferPopup",
+}
+
+
+def business_next(node):
+    return [name for name in node.get("next", []) if name not in GLOBAL_POPUP_HANDLERS]
 
 
 class MockArg:
@@ -49,8 +65,10 @@ def test_pipeline_topology():
         with open(pf, "r", encoding="utf-8") as f:
             pdata.update(json.load(f))
 
-    # 1. 验证 4 个 Enable 节点存在
+    # 1. 验证 6 个 Enable 节点存在
     for en in [
+        "DailyRoutineEnableFreeGift",
+        "DailyRoutineEnableReindeerFish",
         "DailyRoutineEnableBandFish",
         "DailyRoutineEnableGoldenDolphin",
         "DailyRoutineEnableFishing",
@@ -58,12 +76,14 @@ def test_pipeline_topology():
     ]:
         assert en in pdata, f"Missing enable node: {en}"
         assert pdata[en].get("enabled") is False, f"{en} default should be enabled: false"
-    print("[PASS] 4 个 DailyRoutineEnable* 节点配置正确 (默认 enabled: false)")
+    print("[PASS] 6 个 DailyRoutineEnable* 节点配置正确 (默认 enabled: false)")
 
     # 2. 验证 Dispatcher 候选
     disp = pdata.get("DailyRoutineDispatcher", {})
-    candidates = disp.get("next", [])
+    candidates = business_next(disp)
     expected_order = [
+        "DailyRoutineStepFreeGift",
+        "DailyRoutineStepReindeerFish",
         "DailyRoutineStepBandFishPass1",
         "DailyRoutineStepGoldenDolphin",
         "DailyRoutineStepFishing",
@@ -78,8 +98,82 @@ def test_pipeline_topology():
     rh_done = pdata.get("RomanticHouseDone", {})
     assert rh_done.get("action") == "Custom"
     assert rh_done.get("custom_action") == "RomanticHouseExitToTankAction"
-    assert rh_done.get("next") == ["DailyRoutineDispatcher"]
+    assert business_next(rh_done) == ["DailyRoutineDispatcher"]
     print("[PASS] RomanticHouseDone 正确配置为 RomanticHouseExitToTankAction 并接入 Dispatcher")
+
+    # 4. 免费礼包必须是二选一分支；领取成功后不再检查“已售罄”。
+    assert business_next(pdata["DailyFreeGiftAvailabilityRouter"]) == [
+        "DailyFreeGiftAlreadySoldOut",
+        "DailyFreeGiftClaimable",
+    ]
+    # 实机日志中标题可能被 OCR 成“售罄”或“已售罄”；短语匹配必须兼容两者，
+    # 否则灰色禁用按钮仍会被识别成“免费领取”，导致误入领取分支。
+    assert pdata["DailyFreeGiftAlreadySoldOut"]["expected"] == "售罄"
+    assert business_next(pdata["DailyFreeGiftClaimable"]) == ["DailyFreeGiftRewardReturn"]
+    assert business_next(pdata["DailyFreeGiftRewardReturn"]) == ["DailyFreeGiftExitRecharge"]
+    assert business_next(pdata["DailyFreeGiftAlreadySoldOut"]) == ["DailyFreeGiftExitRecharge"]
+    assert pdata["DailyFreeGiftTankEntry"]["roi"] == [455, 0, 140, 115]
+    assert "target" not in pdata["DailyFreeGiftTankEntry"]
+    assert business_next(pdata["DailyFreeGiftVerifyTank"]) == ["DailyRoutineDispatcher"]
+    print("[PASS] 免费领取/已售罄分支独立，并在识别返回鱼缸后汇合")
+
+    # 5. 乐队鱼退出后必须按运行模式分流，独立任务不能跌入未激活的日常调度器。
+    assert business_next(pdata["BandFishDone"]) == ["BandFishAfterExitRouter"]
+    assert business_next(pdata["BandFishAfterExitRouter"]) == [
+        "BandFishAfterExitDailyRoutine",
+        "BandFishAfterExitStandalonePending",
+        "BandFishAfterExitStandaloneDone",
+    ]
+    assert business_next(pdata["BandFishAfterExitDailyRoutine"]) == ["DailyRoutineDispatcher"]
+    assert business_next(pdata["BandFishAfterExitStandalonePending"]) == ["BandFishStartRouter"]
+    assert "next" not in pdata["BandFishAfterExitStandaloneDone"]
+    print("[PASS] 乐队鱼退出后的日常/独立回访/独立完成三路分流正确")
+
+    # 6. 独立钓鱼与日常收尾必须复用同一个钓场选项，并保持三份配置同步。
+    interface_paths = [
+        os.path.join("assets", "interface.json"),
+        os.path.join("client", "interface.json"),
+        os.path.join("client_avalonia", "interface.json"),
+    ]
+    raw_interfaces = [open(path, "rb").read() for path in interface_paths]
+    assert raw_interfaces[0] == raw_interfaces[1] == raw_interfaces[2]
+    interface = json.loads(raw_interfaces[0].decode("utf-8"))
+    tasks = {task["entry"]: task for task in interface["task"]}
+    assert "钓鱼地点" in tasks["FishingTask"]["option"]
+    assert "钓鱼地点" in tasks["DailyRoutineTask"]["option"]
+    routine_cases = {
+        case["name"] for case in interface["option"]["日常收尾任务"]["cases"]
+    }
+    assert "驯鹿鱼送收礼物" in routine_cases
+    print("[PASS] 独立钓鱼与日常收尾共享钓鱼地点选项，三份 interface.json 同步")
+
+    # 7. 驯鹿鱼已知分支必须全部基于识别结果点击，并使用统一返回 OCR 范围。
+    assert business_next(pdata["ReindeerFishStartRouter"]) == [
+        "ReindeerFishRewardReturn",
+        "ReindeerFishDirectGift",
+        "ReindeerFishCollectAll",
+        "ReindeerFishReplyAll",
+        "ReindeerFishStartAtGrid",
+        "ReindeerFishStartAtTank",
+    ]
+    assert pdata["ReindeerFishCollectAll"]["expected"] == "一键收取"
+    assert pdata["ReindeerFishCollectAll"]["roi"] == [672, 558, 245, 150]
+    assert pdata["ReindeerFishReplyAll"]["expected"] == "一键回礼"
+    assert pdata["ReindeerFishReplyAll"]["roi"] == [480, 562, 232, 143]
+    assert pdata["ReindeerFishDirectGift"]["expected"] == "直接赠送"
+    assert "roi" not in pdata["ReindeerFishDirectGift"]
+    assert pdata["ReindeerFishCommonBack"]["expected"] == "返回"
+    assert pdata["ReindeerFishCommonBack"]["roi"] == [1, 0, 189, 119]
+    for node_name in (
+        "ReindeerFishCollectAll",
+        "ReindeerFishReplyAll",
+        "ReindeerFishDirectGift",
+        "ReindeerFishRewardReturn",
+        "ReindeerFishCommonBack",
+    ):
+        assert pdata[node_name]["action"] == "Click"
+        assert "target" not in pdata[node_name]
+    print("[PASS] 驯鹿鱼收取/回礼/直接赠送分支与通用返回均为识别点击，无坐标兜底")
 
 
 def simulate_flow(config_param):
@@ -98,6 +192,7 @@ def simulate_flow(config_param):
     loops = 0
     step_mapping = {
         "BAND_FISH_PASS1": ("BandFish", "PENDING"),
+        "REINDEER_FISH": ("ReindeerFish", "DONE"),
         "GOLDEN_DOLPHIN": ("GoldenDolphin", "DONE"),
         "FISHING": ("Fishing", "DONE"),
         "ROMANTIC_HOUSE": ("RomanticHouse", "DONE"),
@@ -117,6 +212,16 @@ def simulate_flow(config_param):
             finish_action.run(ctx, arg)
             break
 
+        if cur_step == "FREE_GIFT":
+            assert DailyFreeGiftDoneAction().run(ctx, arg) is True
+            loops += 1
+            continue
+
+        if cur_step == "REINDEER_FISH":
+            assert ReindeerFishDoneAction().run(ctx, arg) is True
+            loops += 1
+            continue
+
         task_name, biz_st = step_mapping[cur_step]
         advance_daily_routine_step(task_name, biz_st)
         loops += 1
@@ -127,9 +232,9 @@ def simulate_flow(config_param):
 
 def test_combination_1():
     print("--- [Check 2: 组合 1 - 全部勾选] ---")
-    config = {"band_fish": True, "golden_dolphin": True, "fishing": True, "romantic_house": True}
+    config = {"free_gift": True, "reindeer_fish": True, "band_fish": True, "golden_dolphin": True, "fishing": True, "romantic_house": True}
     steps = simulate_flow(config)
-    expected = ["BAND_FISH_PASS1", "GOLDEN_DOLPHIN", "FISHING", "ROMANTIC_HOUSE", "BAND_FISH_PASS2", "ALL_DONE"]
+    expected = ["BAND_FISH_PASS1", "FREE_GIFT", "REINDEER_FISH", "GOLDEN_DOLPHIN", "FISHING", "ROMANTIC_HOUSE", "BAND_FISH_PASS2", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 组合 1 完整顺序验证通过: {' -> '.join(steps)}")
 
@@ -141,6 +246,22 @@ def test_combination_2():
     expected = ["ROMANTIC_HOUSE", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 组合 2 仅浪漫满屋验证通过: {' -> '.join(steps)}")
+
+
+def test_free_gift_only():
+    print("--- [Check 3A: 仅每日免费礼包] ---")
+    steps = simulate_flow({"free_gift": True})
+    expected = ["FREE_GIFT", "ALL_DONE"]
+    assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
+    print(f"[PASS] 每日免费礼包可独立启用并正常结束: {' -> '.join(steps)}")
+
+
+def test_reindeer_fish_only():
+    print("--- [Check 3B: 仅驯鹿鱼送收礼物] ---")
+    steps = simulate_flow({"reindeer_fish": True})
+    expected = ["REINDEER_FISH", "ALL_DONE"]
+    assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
+    print(f"[PASS] 驯鹿鱼送收礼物可独立启用并正常推进: {' -> '.join(steps)}")
 
 
 def test_combination_3():
@@ -182,6 +303,8 @@ def test_combination_band_fish_only():
 def test_node_override_mode():
     print("--- [Check 8: UI Pipeline Override 节点模式读取] ---")
     mock_pipeline = {
+        "DailyRoutineEnableFreeGift": {"enabled": True},
+        "DailyRoutineEnableReindeerFish": {"enabled": True},
         "DailyRoutineEnableBandFish": {"enabled": False},
         "DailyRoutineEnableGoldenDolphin": {"enabled": True},
         "DailyRoutineEnableFishing": {"enabled": False},
@@ -192,8 +315,14 @@ def test_node_override_mode():
     arg = MockArg("null")
     init_action.run(ctx, arg)
 
+    assert daily_routine_state["step"] == "FREE_GIFT"
+    assert daily_routine_state["queue"] == ["REINDEER_FISH", "GOLDEN_DOLPHIN", "ROMANTIC_HOUSE"]
+
+    advance_daily_routine_step("FreeGift", "DONE")
+    assert daily_routine_state["step"] == "REINDEER_FISH"
+
+    advance_daily_routine_step("ReindeerFish", "DONE")
     assert daily_routine_state["step"] == "GOLDEN_DOLPHIN"
-    assert daily_routine_state["queue"] == ["ROMANTIC_HOUSE"]
 
     advance_daily_routine_step("GoldenDolphin", "DONE")
     assert daily_routine_state["step"] == "ROMANTIC_HOUSE"
@@ -224,6 +353,34 @@ def test_standalone_non_active():
     print("[PASS] 独立执行保护验证通过，未激活日常收尾时各子任务互不干扰!")
 
 
+def test_band_fish_after_exit_modes():
+    print("--- [Check 10: 乐队鱼退出后的运行模式分流] ---")
+    ctx = MockContext()
+    arg = MockArg("null")
+    daily_reco = CheckBandFishDailyRoutineReco()
+    pending_reco = CheckBandFishStandalonePendingReco()
+    done_reco = CheckBandFishStandaloneDoneReco()
+
+    daily_routine_state["active"] = True
+    from agent.runtime_state import band_fish_state
+    band_fish_state["status"] = "PENDING"
+    band_fish_state["performance_finished"] = False
+    assert daily_reco.analyze(ctx, arg) is not None
+    assert pending_reco.analyze(ctx, arg) is None
+    assert done_reco.analyze(ctx, arg) is None
+
+    daily_routine_state["active"] = False
+    assert daily_reco.analyze(ctx, arg) is None
+    assert pending_reco.analyze(ctx, arg) is not None
+    assert done_reco.analyze(ctx, arg) is None
+
+    band_fish_state["status"] = "DONE"
+    band_fish_state["performance_finished"] = True
+    assert pending_reco.analyze(ctx, arg) is None
+    assert done_reco.analyze(ctx, arg) is not None
+    print("[PASS] 独立待接受会重进，独立完成会正常结束，日常模式会回调度器")
+
+
 def main():
     print("=" * 70)
     print("  MaaHappyFish 日常收尾 Phase 2 调度器测试套件")
@@ -231,14 +388,17 @@ def main():
     test_pipeline_topology()
     test_combination_1()
     test_combination_2()
+    test_free_gift_only()
+    test_reindeer_fish_only()
     test_combination_3()
     test_combination_4()
     test_combination_5_empty()
     test_combination_band_fish_only()
     test_node_override_mode()
     test_standalone_non_active()
+    test_band_fish_after_exit_modes()
     print("=" * 70)
-    print("  [PASS] 调度器全部 9 项测试用例 100% 验证通过!")
+    print("  [PASS] 调度器全部 12 项测试用例 100% 验证通过!")
     print("=" * 70)
     return 0
 

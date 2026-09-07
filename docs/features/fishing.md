@@ -46,8 +46,8 @@ FishingBaitRouter
 
 FishingRound
     ↓ (执行单次甩杆，触控保持 60ms 确保必触发，cast_count += 1)
-FishingCastAndBiteQTEAction (高速抓帧 ~46~58 FPS + ColorGeometry 检测 1ms)
-    ↓ (首次检出感叹号即刻下发触控收杆，时延仅 41ms)
+FishingCastAndBiteQTEAction (EmulatorExtras 高频抓帧 + 双阶段 ColorGeometry 检测)
+    ↓ (完整形态优先；3 秒后同时允许渐入早期形态，首次命中立即收杆)
 FishingPostRoundRouter
     ├─ CatchSuccess (OCR "恭喜您获得") ──> 点击「领取」 (642, 584) ──> post_delay ──> FishingLoopRouter
     ├─ ReadyAgain (失败/未中自然恢复，OCR "甩杆") ──> FishingLoopRouter
@@ -94,3 +94,16 @@ FishingLoopRouter
 | **实战战报结果** | **成功捕获「巨蛇座 x1」** | 成功弹出结算界面，秒级命中咬钩有效窗口 |
 | **自然咬钩最大逃跑窗口**| **【仍未知】** | 触控在 145.6ms 时已生效，收杆动画打断了咬钩过程，未有脱钩自然时序 |
 | **成型期识别率 (Recall)**| **83.3% (5/6 帧)** | 严格过滤水纹与手柄干扰，零误报 |
+
+## 6. 2026-09-08 命中率反馈与时效优化记录
+
+- 用户实测 5 次机会中仅 2 次成功、3 次空杆。对应日志显示五杆均检测到感叹号并完成收杆触控，因此问题不像是“完全漏截图”，更可能是严格检测到完整形态时已经偏晚。
+- 本次实际控制器已使用 `EmulatorExtras`；连接测试截图约 45ms，五轮动作日志折算约 25～30 FPS。Maa 当前版本将 `EmulatorExtras` 标为 Very Fast；`RawByNetcat` 为 Fast 且兼容性低，`RawWithGzip` 为 Medium，`Encode` 为 Slow。当前不建议为了该问题从 `EmulatorExtras` 切换到后三者。
+- 离线逐帧回放中，旧严格检测首命中为第 436 帧；放宽后的渐入早期形态检测可在第 432 帧命中，提前约 84ms，同时现有钓场与甩杆前负样本仍保持零误报。
+- 正常甩杆前三秒仍只允许严格形态，避开甩杆动画；三秒后启用早期形态。中途恢复已经由页面状态确认处于等待咬钩阶段，因此立即允许早期形态。
+- 新日志会输出实际 FPS、平均截图耗时、平均检测耗时与命中阶段，供下一次机会判断瓶颈是否仍在截图。
+- **实机状态：尚未复测。** 当前只确认离线样本提前命中，不能据此宣布成功率已经改善；用户之后测试性能变好或仍有空杆时继续更新本节。
+
+## 7. 日常收尾参数兼容
+
+`DailyRoutineTask` 已增加“钓鱼地点”选项，复用独立 `FishingTask` 的星河、冰川、宫殿温泉、魔法塔楼、大戏台和星空湖六个选项；只有勾选钓鱼达人时该选择才会被实际使用。

@@ -4,6 +4,8 @@
         "package": "com.happyelements.happyfishandroidcns/com.happyelements.happyfish.MainActivity",
         "post_delay": 2000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "CloseAnnouncement",
             "ClickEnterGame",
             "ConfirmMainScreen"
@@ -16,6 +18,8 @@
         "action": "Click",
         "post_delay": 300,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "CloseAnnouncement",
             "ClickEnterGame",
             "ConfirmMainScreen"
@@ -28,6 +32,8 @@
         "action": "Click",
         "post_delay": 800,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "CloseAnnouncement",
             "ConfirmMainScreen"
         ]
@@ -39,6 +45,65 @@
         "action": "DoNothing"
     },
     "DailySignTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "DailySignNoPopup"
+        ]
+    },
+    "GlobalDailySignPopup": {
+        "recognition": "TemplateMatch",
+        "template": "签到_识别.png",
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "next": [
+            "GlobalDailySignClaim"
+        ]
+    },
+    "GlobalDailySignClaim": {
+        "recognition": "TemplateMatch",
+        "template": "签到_点击.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "GlobalDailySignClose",
+            "GlobalDailySignAutoClosed"
+        ]
+    },
+    "GlobalDailySignClose": {
+        "recognition": "TemplateMatch",
+        "template": "签到_关闭.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 500
+    },
+    "GlobalDailySignAutoClosed": {
+        "recognition": "TemplateMatch",
+        "template": "签到_识别.png",
+        "threshold": 0.8,
+        "inverse": true,
+        "action": "DoNothing"
+    },
+    "GlobalSpecialOfferPopup": {
+        "recognition": "TemplateMatch",
+        "template": "特惠礼包_识别.png",
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "next": [
+            "GlobalSpecialOfferClose"
+        ]
+    },
+    "GlobalSpecialOfferClose": {
+        "recognition": "TemplateMatch",
+        "template": "特惠礼包_关闭.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 500
+    },
+    "DailySignNoPopup": {
         "recognition": "DirectHit",
         "action": "DoNothing"
     }

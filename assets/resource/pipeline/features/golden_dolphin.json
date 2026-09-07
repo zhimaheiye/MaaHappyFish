@@ -3,6 +3,8 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinNavigation"
         ]
     },
@@ -11,6 +13,8 @@
         "action": "Custom",
         "custom_action": "GoldenDolphinNavigationAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinPlayGame",
             "GoldenDolphinDone"
         ]
@@ -21,6 +25,8 @@
         "action": "Custom",
         "custom_action": "GoldenDolphinPlayGameAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinExit"
         ]
     },
@@ -29,6 +35,8 @@
         "action": "Custom",
         "custom_action": "GoldenDolphinExitAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinDone"
         ]
     },
@@ -37,6 +45,8 @@
         "action": "Custom",
         "custom_action": "GoldenDolphinDoneAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"
         ]
     }

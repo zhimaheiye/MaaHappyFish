@@ -61,6 +61,8 @@ def match_node(node_name, img):
 
 def evaluate_candidates(candidate_nodes, img):
     for node in candidate_nodes:
+        if node.startswith("[JumpBack]Global"):
+            continue
         matched, detail = match_node(node, img)
         if matched:
             return node, detail

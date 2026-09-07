@@ -16,6 +16,8 @@
 | 维护"收鱼产物"或"巡检收宝"功能 | `docs/features/collect-fish.md` |
 | 维护"海星喂食"定时机制 | `docs/features/starfish-feeding.md` |
 | 维护"鱼食预算"计算逻辑 | `docs/features/fish-food-budget.md` |
+| 维护"购买鱼食"独立模块 | `docs/features/buy-fish-food.md` |
+| 维护"每日签到/特惠礼包"全局弹窗处理 | `docs/features/daily-sign.md` |
 | 维护"开贝壳"活动自动化 | `docs/features/open-shell.md` |
 | 维护"好友摸宝"巡访与采集 | `docs/features/friend-gem.md` |
 | 维护"钓鱼达人"导航与活动 | `docs/features/fishing.md` |
@@ -23,7 +25,9 @@
 | 维护"乐队鱼演出"邀请与演出活动 | `docs/features/band-fish.md` |
 | 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
 | 维护"金海豚小游戏"活动自动化 | `docs/features/golden-dolphin.md` |
+| 维护"驯鹿鱼送收礼物"日常子任务 | `docs/features/reindeer-fish.md` |
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
+| 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 
 ## 核心文件速查表
 | 文件路径 | 模块说明 | 关键注意点 |
@@ -65,6 +69,16 @@
 - **严禁跨层盲点**：绝对禁止在上一阶段（如主鱼缸）未确认转换成功时，直接向下一阶段（如游乐园面板）的固定坐标盲目下发点击；
 - **禁止失败跌入固定坐标**：当视觉模板或 OCR 未识别到目标时，坚决杜绝“盲点固定坐标保底”（如金海豚盲点 `(674, 468)` 导致点中鱼缸鱼，或乐队鱼未确认选中好友就盲点邀请按钮）；
 - **门禁未达直接熔断**：前置状态未达成或关键模板缺失时，必须记录显式 `ERROR` 日志并安全终止/返回重试，宁可安全停机，绝不引发未预期的破坏性误触。
+
+### 模板资产复核规则 (Template Asset Review Rule)
+
+任何由 AGY、脚本或人工截图生成、将用于 `TemplateMatch` 的模板，在进入正式 Pipeline 前必须由主 Agent 完成以下复核：
+
+1. 同时查看模板图与其来源完整截图，确认目标在真实页面中的上下文；
+2. 区分固定 UI 元素与随机/动态内容（游动的鱼、粒子、数字、倒计时、背景动画、活动装饰等）；
+3. 模板应紧密裁剪到固定且可复现的目标本体，尽量排除圆框外背景、邻近控件和动态元素；
+4. 亲自打开最终 PNG 检查裁剪结果，不能只依据 AGY 的文字说明或坐标报告；
+5. 若无法可靠判断某个像素区域是否固定、可复现，立即停止采用该模板并请用户判断，禁止带着不确定性继续接入流程。
 
 ### Maa Pipeline 正则规则 (Maa OCR Regex Rules)
 - **Maa OCR expected 字段按正则表达式解析**：任何出现在 `expected` 字段中的文本均会被 MaaFramework 底层作为 `std::regex` 编译校验。

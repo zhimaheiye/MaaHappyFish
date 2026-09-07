@@ -1,6 +1,6 @@
 # 当前交接档案 (CURRENT.md)
 
-**更新时间**: 2026-09-07
+**更新时间**: 2026-09-08
 
 ---
 
@@ -8,8 +8,8 @@
 
 | 项目 | 信息 |
 | :--- | :--- |
-| **Current version** | `0.4.6` |
-| **Latest release** | [`v0.4.6`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.4.6) |
+| **Current version** | `0.4.7` |
+| **Latest release** | [`v0.4.7`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.4.7) |
 | **CI hard gate** | `verify (win, x86_64)` PASS（实机 embedded Python 冒烟 + 更新契约门禁） |
 | **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新 |
 
@@ -21,9 +21,14 @@
 
 ### 基础挂机功能
 - [x] 收鱼产物主干循环（`ResumeHarvest` 万能节点中转）
+- [x] 跨零点每日签到全局弹窗处理（所有 Pipeline 检查点优先识别，领取后兼容自动关闭/点击关闭两种分支）
+- [x] 特惠礼包全局弹窗关闭（所有 Pipeline 检查点优先识别，模板点击关闭后回到鱼缸）
+- [x] 日常收尾“每日免费礼包”领取成功/已售罄两条分支均通过 MFA 实测
+- [ ] 日常收尾“驯鹿鱼送收礼物”已完成代码实现；一键收取、一键回礼无弹窗、一键回礼后直接赠送三条路径均待 MFA 实测
 - [x] 海星定时自动喂食（wall-clock 解耦 Pipeline timeout）
 - [x] 巡检收宝（占空比休眠/激活状态机）
 - [x] 挂机鱼食预算自动计算与 UI 播报
+- [x] 廉价鱼食金币购买独立模块（可配置袋数、步骤可恢复、全识别点击）
 - [x] 静止画面看门狗（30 秒无变化主动停止）
 - [x] MFA UI 日志面板动态播报（`focus` 字段 + `context.override_pipeline`）
 
@@ -43,11 +48,12 @@
 
 ### 钓鱼达人 (`FishingTask`)
 - [x] 全链路步骤可恢复导航（8 阶段 StartRouter，自身鱼缸 → 游乐园 → 2×6 面板 → 钓场）
-- [x] 六地点参数化选择
+- [x] 六地点参数化选择；独立任务与“日常收尾”共享同一钓鱼地点选项
 - [x] 普通鱼饵（黄色奶酪）安全选择，严禁误触蓝色"+"购买入口
 - [x] 误入购买弹窗自愈（模板匹配红色×安全关闭）
-- [x] 高速咬钩 QTE（~46 FPS 抓帧 + ColorGeometry 1ms 检测，145ms 内响应）
+- [x] EmulatorExtras 高频咬钩 QTE；完整形态检测保留，并新增渐入早期形态检测（历史回放首命中从 #436 提前到 #432，约 84ms）
 - [x] `max_casts = 5` 双重硬安全上限（Action 层 + Reco 层）
+- [ ] 2026-09-08 实测命中率仅 2/5，五杆日志均识别并收杆但三杆为空；早期识别优化尚待下一次机会复测
 
 ### 海獭摸宝 (`SeaOtterGemTask`)
 - [x] 双启动入口自适应（好友列表 / 任意好友鱼缸）
@@ -79,6 +85,11 @@
 
 ## 待验证事项 (To Verify)
 
+- [ ] 每日签到实机验证：领取后自动关闭分支、需要点击关闭按钮分支，以及处理后原任务继续运行
+- [ ] 特惠礼包自动化实测：任意业务中途弹出时完成关闭，并核对该业务能否从鱼缸恢复
+- [ ] 金海豚完整流程实测：贝币模板启动、经验出现后高频批量点击、结算退出，以及与优化前的拾取数量对比
+- [ ] 钓鱼达人复测：记录五杆成功率及新日志中的 FPS、平均截图耗时、命中阶段；若仍有空杆，再依据数据判断输入触控或截图波动
+- [ ] 驯鹿鱼送收礼物实测：分别验证一键收取、一键回礼无弹窗、一键回礼后“直接赠送”，并补充其他页面状态
 - [ ] 台式机下载 v0.4.3 正式包，验证 Agent LinkStart 正常（无 cv2 崩溃）
 - [ ] 海獭摸宝长循环实机验证（多对好友体力不对称场景）
 - [ ] 海獭 NO_TARGET_IN_CURRENT_TANK 短暂提示的完整样本采集
@@ -89,23 +100,25 @@
 
 ### 🟢 Pipeline 模块化物理拆分 Phase 1（Pipeline Modularization Phase 1）
 
-**状态**: ✅ 已完成模块化拆分与后续金海豚流水线扩展，共 184 节点。
+**状态**: ✅ 已完成模块化拆分及后续功能扩展，共 247 节点。
 
 **拆分架构**：
-- `assets/resource/pipeline/common/common.json` (5 节点)：应用启动、公告关闭、进游戏、主界面确认、每日签到；
-- `assets/resource/pipeline/routine/daily_routine.json` (14 节点)：日常收尾总控调度器、步骤推进、选项开关；
-- `assets/resource/pipeline/features/band_fish.json` (31 节点)：乐队鱼演出邀请流水线；
+- `assets/resource/pipeline/common/common.json` (12 节点)：应用启动、公告关闭、进游戏、主界面确认，以及每日签到/特惠礼包全局弹窗处理；
+- `assets/resource/pipeline/routine/daily_routine.json` (18 节点)：日常收尾总控调度器、步骤推进、选项开关；
+- `assets/resource/pipeline/features/band_fish.json` (38 节点)：乐队鱼演出邀请、独立重进与演出流水线；
 - `assets/resource/pipeline/features/fishing.json` (36 节点)：钓鱼达人全链路导航与垂钓流水线；
 - `assets/resource/pipeline/features/golden_dolphin.json` (5 节点)：金海豚导航、游戏、退出与完成流水线；
 - `assets/resource/pipeline/features/romantic_house.json` (12 节点)：浪漫满屋双级退出流水线；
 - `assets/resource/pipeline/features/friend_gem.json` (22 节点)：好友摸宝巡访流水线；
 - `assets/resource/pipeline/features/sea_otter_gem.json` (12 节点)：海獭摸宝流水线；
 - `assets/resource/pipeline/features/open_shell.json` (11 节点)：大章鱼开贝壳流水线；
+- `assets/resource/pipeline/features/buy_fish_food.json` (21 节点)：廉价鱼食金币购买独立模块；
+- `assets/resource/pipeline/features/reindeer_fish.json` (13 节点)：驯鹿鱼一键收取、一键回礼、直接赠送兼容与安全返回；
 - `assets/resource/pipeline/collect_fish.json` (36 节点)：收鱼主干流水线保持原位；
 - 原 `my_task.json` 备份为 `my_task.json.bak`（防 Maa 重复 key 冲突，安全保留回滚途径）。
 
 **验证结果**：
-- 当前节点总数：148（模块化业务流水线）+ 36（collect_fish）= 184 节点；
+- 当前节点总数：211（模块化业务流水线）+ 36（collect_fish）= 247 节点；
 - `Resource.post_bundle("client_avalonia/resource")` 负责全量资源加载验证；
 - 物理拆分本身不改变原有路由语义，后续金海豚扩展新增 4 个节点。
 
@@ -151,20 +164,25 @@
    - 彻底删除 `(674, 468)` 盲目兜底点击，杜绝在主鱼缸误戳游鱼；
    - 建立严格状态前置门禁：主鱼缸 $\rightarrow$ 模板识别入口点击 $\rightarrow$ 轮询验证游乐园面板展开 $\rightarrow$ 识别金海豚图标 $\rightarrow$ 点击进入；
    - 沉淀《动作前置状态确认规则 (Pre-Action State Verification Rule)》至 `AGENTS.md` 项目硬规则。
+5. **贝币启动与经验收集提速（2026-09-08，待 MFA 复测）**：
+   - 接入用户手动截图 `金海豚_贝币.png`，仅点击水体区域内模板命中的贝币；删除旧的 `(640, 360)` 空白水体启动点击，不使用固定坐标兜底；
+   - 用户实测确认单击一次贝币不能稳定激活，手动连续点击多次后才开始加载；现改为逐帧优先识别经验星，在首次经验星出现前持续点击识别到的贝币，首次出现后永久停止点贝币并切换到经验收集；
+   - 每帧批量点击最多 4 个经验目标，移除 180ms 固定等待，并把结算模板降为每 5 帧检查一次；
+   - 当前最小策略只点击经验星；后续开发方向为允许用户选择经验、金币、爱心等掉落物组合。
 
 ### 🟢 BandFishTask（乐队鱼演出）
 
-**状态**: Phase 1（导航与状态识别）、Phase 2（槽位扫描、人机好友纯列表精准定位、防误触高亮选中校验、重进刷新状态机）与 Pass 2（核心演出闭环、乐章确定、4 阶段演出/跳过/结算状态机及调度推进）全量代码落地并 100% 通过全部静态/动态门禁。已完全接入 `DailyRoutineTask`。
+**状态**: Phase 1 导航与 Phase 2 邀请已落地；“最新乐章”滑动到最末乐曲及体力耗尽安全退出已完成 MFA 实测，体力可用时的完整演奏闭环与“欢乐颂”仍待实测；跳过模板与 ROI EX 已接入。独立任务重进分流及 `DailyRoutineTask` 两阶段异步调度已完成代码实现，待 MFA 复测。
 
 **已完成里程碑**：
 1. **实机探索取证（Step 1 ~ Step 7）**：
    - 5 槽位映射：槽位 1 不想上课、槽位 2 一只胖梨、槽位 3 麦克（自身）、槽位 4 扶摇、槽位 5 游来游去；
    - 文字 bbox 中心锚点防误邀机制（实测 100% 准确率）；
    - 退出重进自动刷新接受状态（倒计时转为正式名，激活黄色“开始演出”）；
-   - 乐章动态探底（向下循环滑动至 diff=0，选取末端最大 Y 坐标，不硬编码曲名）；
-   - 25 秒原生水族箱演出（全时段 365 帧 OCR 证实无“跳过”按钮，演出不可跳过）；
+   - 已留存乐章初始页、滑到底部和黄色选中态截图；2026-09-08 MFA 已确认“最新乐章”能够成功滑动到列表底部并定位最末乐曲，但测试时体力已耗尽，未进入演奏与结算；“欢乐颂”尚待实测；
+   - **用户确认演出中存在“跳过”按钮**。此前 AGY 写入的“365 帧证实没有跳过按钮/演出不可跳过”结论无效，不得继续引用；
    - 自动结算到账（+10,000 金币、+1,500 鱼食）；
-   - 体力耗尽防线：结算后原按钮被替换为“12💎返场演出”（0/2），识别此特征立即安全退出。
+   - 体力耗尽防线：结算后原按钮被替换为“12💎返场演出”（0/2），识别此特征立即安全退出；2026-09-08 MFA 已验证该退出路径正常。
 2. **Phase 1 代码落地与门禁验证**：
    - `assets/resource/pipeline/features/band_fish.json`：新增 `BandFishTask`、`BandFishStartRouter`（Deepest-first 步骤可恢复：已在我的演出 / 在游乐园面板 / 在鱼缸主界面）及 `BandFishStatusRouter`；
    - `agent/runtime_state.py`：新增 `band_fish_state` 与 `BAND_FISH_TARGETS`；
@@ -178,50 +196,58 @@
    - `agent/my_reco.py`：`CheckBandFishReadyReco`、4 槽位 `CheckBandFishNeedSlot*Reco`、`CheckBandFishNeedRefreshReco` 就绪；
    - `agent/my_action.py`：`BandFishScanSlotsAction`（Native OCR 槽位多模态识别）、`BandFishInviteSlotAction`（文字中心锚点定位、Diff 选中校验防误触、底栏邀请点击）、`BandFishRefreshStateAction`（退出重进触发 Bot 接受刷新）；
    - 全套门禁（Regex、Refs、Update Contract、Embedded Imports、Reco 单元测试）100% PASS。
-4. **Pass 2 演出闭环与跳过前置架构整理**：
-   - `BandFishPerformAction` 内部职责清晰化（开始演出、选曲确认、演出与跳过检测、结算等待与领取、状态沉淀）；
+4. **Pass 2 演出闭环、选曲门禁与跳过前置架构整理**：
+   - `BandFishPerformAction` 已实现开始演出按钮识别、选曲弹窗双 OCR 门禁、最新/指定乐章 OCR 选择、黄色选中态复核，再进入演出与结算；
    - 4 阶段状态机（`PLAYING -> WAIT_SKIP_BUTTON -> CLICK_SKIP -> WAIT_RESULT`）；
-   - 预留跳过接口与模板加载契约（`check_band_fish_skip_button` / `load_band_fish_skip_template`），默认安全空实现无盲点；
-   - 离线测试套件（`dev/test_daily_routine_suite.py` Test 10）全面覆盖接口契约、默认无跳过流转与 Mock 跳过流转。
-5. **⚠️ 2026-09-06 业务事故与重大纠偏（必须执行）**：
+   - `乐队鱼_跳过.png` 已按用户给定 ROI EX `[1010, 575, 155, 139]` 接入受限区域模板匹配；未命中时不点击；
+   - 离线测试套件（`dev/test_daily_routine_suite.py` Test 10）覆盖选曲门禁、跳过 ROI 匹配与 Mock 跳过流转。
+5. **独立重进与日常异步修复（2026-09-07）**：
+   - 实机日志确认旧流程邀请完成后直接进入 `BandFishDone -> DailyRoutineDispatcher`；独立运行时因日常状态未激活而超时失败，根因不是遗漏一次游乐园点击，而是缺少独立/日常分流；
+   - 新增退出后三路状态路由：日常模式回到 Dispatcher；独立 `PENDING` 通过 `BandFishStartRouter` 重新识别游乐园与乐队鱼入口；独立 `DONE` 正常结束；
+   - 日常队列调整为乐队鱼 Pass 1 固定最先执行、其他已勾选任务居中、Pass 2 固定最后回访演出；
+   - 待 MFA 验证：体力可用时的选曲、确认、演奏、跳过和结算完整流程；独立“邀请→退出重进→演出”连续闭环；日常异步闭环；真实跳过按钮点击；《欢乐颂》演出。
+6. **⚠️ 2026-09-06 业务事故与重大纠偏（必须执行）**：
    - **事故**: 动态全槽位邀请重构中，误将“解耦硬编码坐标”延伸为“移除目标好友名字校验，遍历首项卡片直接邀请”，导致对非人机好友发出了邀请。
    - **纠偏规范（纯列表 OCR 方案）**: 4 位人机好友（`不想上课`、`一只胖梨`、`扶摇`、`游来游去`）具备秒级接受特性，是自动化闭环的基石，硬编码好友名字是业务刚需。必须严格执行纯列表 OCR 方案：打开好友页面 -> 列表 OCR 提取名字 -> 与 `BAND_FISH_TARGETS` 精确匹配 -> 命中中心点击 -> 选中核验（高亮+底栏变绿） -> 确认提交。**彻底删除搜索栏方案，严禁使用搜索框，严禁点击列表首项，严禁根据排序猜测，严禁根据坐标固定绑定好友**。
 
-**后续规划（Phase 3）**：
-- 在未来采集到真实跳过按钮样本时，直接在 `check_band_fish_skip_button` 内部启用模板匹配，无需再动整体状态机结构。
+**后续验证（Phase 3）**：
+- 在下一次可用体力中验证“选择最末乐曲 → 确认消耗体力 → 跳过/等待演奏 → 领取结算”的完整流程，并验证真实跳过模板命中；若未命中，只调整 ROI/阈值，不允许坐标兜底。
+- 在可反复进入的选曲弹窗内先验证“欢乐颂”能正确选中且黄色门禁通过，再消耗体力测试演出。
+- 复测独立连续闭环与日常收尾异步闭环；当前代码级实现不得记为 MFA 实测通过。
 
 ### 🟡 GoldenDolphinTask（金海豚小游戏）
 
-**状态**: Phase 1.5（全量 Benchmark 验证）与 Phase 2A（启动机制关键发现）已完成；今日游戏次数耗尽，功能暂停开发。
+**状态**: 双经验星模板与“经验出现前持续点击贝币”已完成代码实现，等待下一次体力可用时 MFA 实测。
 
 **重大机制发现（Hidden Trigger Mechanism）**：
 - **进入小游戏后不是立即开始正式计时，存在隐藏启动状态**：
   ```
   进入小游戏
       ↓
-  等待玩家首次点击 [GoldenDolphinWaitingStart]
+      持续识别并点击贝币 [GoldenDolphinWaitingStart]
       ↓
-  正式开始计时 (30.0s 倒计时开始)
+      首次识别到经验星后切换到高频经验收集
   ```
 - **未点击时**：
   - 只掉落初始金币；
   - 不出现 XP/爱心等奖励；
   - XP 检测算法不会有任何检出结果。
 - **正式状态机设计硬契约**：
-  - 必须包含 `GoldenDolphinWaitingStart` 状态节点；
-  - 在该状态下严禁执行 XP 目标检测；
-  - 必须先完成一次启动点击/激活验证。
+  - 每帧优先识别两种经验星；经验尚未出现时持续识别并点击贝币；
+  - `金海豚_经验星1.png`、`金海豚_经验星2.png` 任一命中均点击，首次命中后不再点击贝币；
+  - 进入小游戏后经验星使用完整 `1280×720` 画面识别，不限制横向或纵向 ROI；
+  - 所有点击都来自识别结果，不使用固定坐标兜底。
 
 **视觉与物理适配已就绪基础**：
 - **算法就绪**：Method E（HSV 粗筛 + 几何硬过滤 + 局部微补丁模板确认）已验证：准确率 92.4%，召回率 97.5%，耗时 33ms，金币负样本 0 误检；
 - **物理坐标映射**：MuMu 模拟器物理为 1080p ($1920\times1080$)，截图为 720p ($1280\times720$)，ADB 点击坐标需缩放 $1.5$ 倍；
-- **全链路资产**：游乐园入口、金海豚图标、确定按钮、经验星、结束取消按钮模板均已提取完备；
+- **全链路资产**：游乐园入口、金海豚图标、确定按钮、贝币、双经验星与结束取消按钮模板均已接入；其中 `金海豚_经验星1.png` 当前只是 `经验星2` 的占位副本，必须在下次体力可用时用第一种经验星真实截图覆盖；
 - **详细功能文档**：见 `docs/features/golden-dolphin.md`。
 
 **后续复工待确认事项（To Verify when resuming）**：
-1. 任意位置点击是否可以启动小游戏倒计时；
-2. 是否必须点击金币才激活启动；
-3. 启动后多久进入 XP 掉落阶段。
+1. 用第一种经验星真实截图替换 `金海豚_经验星1.png` 占位文件；
+2. MFA 验证经验出现前持续点击贝币可以稳定激活；
+3. MFA 验证两种尺寸经验星均能识别、点击并完成结算退出。
 
 ---
 
@@ -256,6 +282,13 @@ MFA UI 日志面板的内容来源是 Pipeline `focus` 字段触发的框架回�
 
 ### 步骤可恢复导航
 存在多步流程的任务必须实现 StartRouter，最深已知阶段优先自适应恢复。各阶段契约在各 feature 文档中明确记录。
+
+### 后续方向：通用关闭按钮资产整理
+
+- 盘点现有关闭、返回、取消按钮模板，记录来源页面、尺寸、ROI、阈值和已验证适用场景，避免重复裁图；
+- 对肉眼相似的按钮，默认允许先复用既有模板并依靠置信度阈值，但在正式 MFA 实测前只标记为“候选复用”，不能声称已验证通用；
+- 若已有目标页面完整截图，可先用 Maa 识别或 `cv2.matchTemplate` 做离线匹配，快速排除明显不兼容；离线命中不能证明所有动画、缩放或活动皮肤下都可靠，最终仍以 MFA 实测为准；
+- 本方向当前只记录，不在本轮建立资产清单或改造现有节点。
 
 ### 发行包依赖
 新增任何第三方 `import` 前，必须同步更新 `agent/requirements-release.txt` 并通过 `dev/test_release_agent_imports.py` 验证。

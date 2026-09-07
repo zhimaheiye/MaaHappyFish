@@ -4,6 +4,8 @@
         "action": "Custom",
         "custom_action": "InitBandFishStateAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStartRouter"
         ]
     },
@@ -11,6 +13,8 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStartAtMyPerformance",
             "BandFishStartAtAmusementGrid",
             "BandFishStartAtTank"
@@ -27,6 +31,8 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStatusRouter"
         ]
     },
@@ -43,6 +49,8 @@
         "action": "Click",
         "post_delay": 2000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStatusRouter"
         ]
     },
@@ -58,6 +66,8 @@
         "action": "Click",
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishEnterFromGrid"
         ]
     },
@@ -74,6 +84,8 @@
         "action": "Click",
         "post_delay": 2000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStatusRouter"
         ]
     },
@@ -81,6 +93,8 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishCheckDone",
             "BandFishCheckReady",
             "BandFishCheckInvite"
@@ -101,6 +115,8 @@
             "status": "DONE"
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishDone"
         ]
     },
@@ -116,6 +132,8 @@
         "action": "Custom",
         "custom_action": "BandFishPerformAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishDone"
         ]
     },
@@ -131,6 +149,8 @@
         "action": "Custom",
         "custom_action": "BandFishInviteLoopAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishDone"
         ]
     },
@@ -138,6 +158,8 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishInviteBranchSlot1",
             "BandFishInviteBranchSlot2",
             "BandFishInviteBranchSlot4",
@@ -155,6 +177,8 @@
             "slot": 1
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishCheckInvite"
         ]
     },
@@ -167,6 +191,8 @@
             "slot": 2
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishCheckInvite"
         ]
     },
@@ -179,6 +205,8 @@
             "slot": 4
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishCheckInvite"
         ]
     },
@@ -191,6 +219,8 @@
             "slot": 5
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishCheckInvite"
         ]
     },
@@ -200,6 +230,8 @@
         "action": "Custom",
         "custom_action": "BandFishRefreshStateAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStatusRouter"
         ]
     },
@@ -357,12 +389,84 @@
         ],
         "action": "DoNothing"
     },
+    "BandFishScoreDialogTitle": {
+        "recognition": "OCR",
+        "expected": "请选择您要演奏的乐章",
+        "roi": [
+            250,
+            310,
+            450,
+            100
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishScoreName": {
+        "recognition": "OCR",
+        "expected": ".+",
+        "roi": [
+            650,
+            180,
+            220,
+            470
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishScoreConfirm": {
+        "recognition": "OCR",
+        "expected": "确定",
+        "roi": [
+            950,
+            315,
+            130,
+            100
+        ],
+        "action": "DoNothing"
+    },
     "BandFishDone": {
         "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "BandFishExitToTankAction",
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "BandFishAfterExitRouter"
+        ]
+    },
+    "BandFishAfterExitRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "BandFishAfterExitDailyRoutine",
+            "BandFishAfterExitStandalonePending",
+            "BandFishAfterExitStandaloneDone"
+        ]
+    },
+    "BandFishAfterExitDailyRoutine": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishDailyRoutineReco",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"
         ]
+    },
+    "BandFishAfterExitStandalonePending": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishStandalonePendingReco",
+        "action": "DoNothing",
+        "post_delay": 1500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "BandFishStartRouter"
+        ]
+    },
+    "BandFishAfterExitStandaloneDone": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishStandaloneDoneReco",
+        "action": "DoNothing"
     }
 }

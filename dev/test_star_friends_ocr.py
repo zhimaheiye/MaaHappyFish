@@ -1,0 +1,29 @@
+import cv2, sys
+from rapidocr_onnxruntime import RapidOCR
+
+ocr = RapidOCR()
+roi = [100, 100, 220, 60]
+
+def test_crop(img_path):
+    img = cv2.imread(img_path)
+    img_720 = cv2.resize(img, (1280, 720))
+    crop = img_720[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]]
+    res, _ = ocr(crop)
+    texts = [t for _, t, _ in (res or [])]
+    match = any("星级好友" in t or "我的星级好友" in t for t in texts)
+    print(f"{img_path}: {texts} -> Match: {match}")
+    return match
+
+# 1. 好友列表页
+assert test_crop(r"dev\exploration\friend_gem\screenshots\current_check.png") == True
+
+# 2. 好友水族箱 1
+assert test_crop(r"dev\exploration\friend_gem\screenshots\friend_tank_look.png") == False
+
+# 3. 好友水族箱 2
+assert test_crop(r"dev\exploration\friend_gem\screenshots\user_fish_baby_park_1.png") == False
+
+# 4. 鱼宝乐园
+assert test_crop(r"dev\exploration\friend_gem\screenshots\user_fish_baby_park_2.png") == False
+
+print("\nAll 4 OCR cross-tests for '我的星级好友' PASSED 100%!")

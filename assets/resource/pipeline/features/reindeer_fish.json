@@ -1,0 +1,178 @@
+{
+    "ReindeerFishGiftTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishStartRouter"
+        ]
+    },
+    "ReindeerFishStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 6000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishRewardReturn",
+            "ReindeerFishDirectGift",
+            "ReindeerFishCollectAll",
+            "ReindeerFishReplyAll",
+            "ReindeerFishStartAtGrid",
+            "ReindeerFishStartAtTank"
+        ],
+        "on_error": [
+            "ReindeerFishAbort"
+        ]
+    },
+    "ReindeerFishRewardReturn": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [536, 437, 210, 150],
+        "action": "Click",
+        "post_delay": 800,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishCommonBack"
+        ]
+    },
+    "ReindeerFishDirectGift": {
+        "recognition": "OCR",
+        "expected": "直接赠送",
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishCommonBack"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已识别并点击直接赠送"
+        }
+    },
+    "ReindeerFishCollectAll": {
+        "recognition": "OCR",
+        "expected": "一键收取",
+        "roi": [672, 558, 245, 150],
+        "action": "Click",
+        "post_delay": 800,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishRewardReturn"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已点击一键收取，等待奖励返回按钮"
+        }
+    },
+    "ReindeerFishReplyAll": {
+        "recognition": "OCR",
+        "expected": "一键回礼",
+        "roi": [480, 562, 232, 143],
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishAfterReplyRouter"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已点击一键回礼，兼容直接返回或直接赠送弹窗"
+        }
+    },
+    "ReindeerFishAfterReplyRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishDirectGift",
+            "ReindeerFishCommonBack"
+        ],
+        "on_error": [
+            "ReindeerFishAbort"
+        ]
+    },
+    "ReindeerFishStartAtGrid": {
+        "recognition": "TemplateMatch",
+        "template": "驯鹿鱼_入口.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishStartRouter"
+        ]
+    },
+    "ReindeerFishStartAtTank": {
+        "recognition": "TemplateMatch",
+        "template": "游乐园入口.png",
+        "roi": [15, 450, 90, 90],
+        "threshold": 0.7,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishEnterFromGrid"
+        ]
+    },
+    "ReindeerFishEnterFromGrid": {
+        "recognition": "TemplateMatch",
+        "template": "驯鹿鱼_入口.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishStartRouter"
+        ],
+        "on_error": [
+            "ReindeerFishAbort"
+        ]
+    },
+    "ReindeerFishCommonBack": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [1, 0, 189, 119],
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ReindeerFishVerifyTank"
+        ]
+    },
+    "ReindeerFishVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "Custom",
+        "custom_action": "ReindeerFishDoneAction",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "DailyRoutineDispatcher"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已完成当前已知分支并返回鱼缸"
+        },
+        "on_error": [
+            "ReindeerFishAbort"
+        ]
+    },
+    "ReindeerFishAbort": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 遇到尚未收录的页面状态，已停止且未盲目点击；请补充流程"
+        }
+    }
+}

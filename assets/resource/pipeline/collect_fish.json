@@ -11,6 +11,8 @@
         "post_delay": 200,
         "timeout": -1,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ResumeHarvest"
         ]
     },
@@ -19,6 +21,8 @@
         "action": "DoNothing",
         "timeout": -1,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "CheckScreenStall",
             "HandleCloseAnnouncement",
             "HandleEnterGame",
@@ -50,6 +54,8 @@
         "post_delay": 500,
         "timeout": -1,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ResumeHarvest"
         ]
     },
@@ -61,6 +67,8 @@
         "post_delay": 2000,
         "timeout": -1,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ResumeHarvest"
         ]
     },
@@ -79,6 +87,8 @@
         "rate_limit": 200,
         "timeout": -1,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ResumeHarvest"
         ],
         "on_error": [
@@ -99,6 +109,8 @@
             "Node.Recognition.Succeeded": "[巡检收宝] 进入休眠等待，暂停收宝..."
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "HandleCloseAnnouncement",
             "HandleEnterGame",
             "HandleShellPage",
@@ -123,6 +135,8 @@
             "Node.Recognition.Succeeded": "[海星喂食] 定时已到，正在触发自动补充鱼食..."
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "OpenSettingsForStarfish"
         ]
     },
@@ -145,6 +159,8 @@
         "post_delay": 500,
         "timeout": -1,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ResumeHarvest"
         ]
     },
@@ -162,6 +178,8 @@
         "post_delay": 500,
         "timeout": -1,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ResumeHarvest"
         ]
     },
@@ -170,6 +188,8 @@
         "action": "DoNothing",
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "DismissFishBannerIfOpen",
             "ClickSettingsIcon"
         ],
@@ -190,6 +210,8 @@
         "post_delay": 4500,
         "timeout": 1500,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ClickSettingsIcon"
         ]
     },
@@ -205,6 +227,8 @@
         "post_delay": 2200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "VerifyTankSettings"
         ],
         "on_error": [
@@ -224,6 +248,8 @@
         "post_delay": 200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SelectCuteStarfish"
         ],
         "on_error": [
@@ -243,6 +269,8 @@
         "post_delay": 2200,
         "timeout": 4000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "VerifyStarfishPanel"
         ],
         "on_error": [
@@ -262,6 +290,8 @@
         "post_delay": 200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ClickReplenishFood"
         ],
         "on_error": [
@@ -281,6 +311,8 @@
         "post_delay": 2200,
         "timeout": 6000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ClickFishFoodBag"
         ],
         "on_error": [
@@ -301,6 +333,8 @@
         "post_delay": 2800,
         "timeout": 6000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "CheckFoodFull"
         ],
         "on_error": [
@@ -324,6 +358,8 @@
             "Node.Action.Succeeded": "[海星喂食] 鱼食补充成功！进度条已加满，海星存粮充沛！"
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "StarfishReturnFirst"
         ],
         "on_error": [
@@ -339,6 +375,8 @@
             "Node.Action.Succeeded": "[海星喂食] 提示：未检测到鱼食加满，请检查背包鱼食储备"
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "StarfishReturnFirst"
         ]
     },
@@ -351,6 +389,8 @@
             "Node.Action.Succeeded": "[海星喂食] 未找到海星入口，本轮已跳过"
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "StarfishReturnFirst"
         ]
     },
@@ -367,6 +407,8 @@
         "post_delay": 1500,
         "timeout": 4000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "StarfishReturnSecond"
         ],
         "on_error": [
@@ -386,6 +428,8 @@
         "post_delay": 2000,
         "timeout": 4000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ResumeHarvest"
         ],
         "on_error": [
@@ -397,6 +441,8 @@
         "action": "DoNothing",
         "timeout": 5000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "DismissFishBannerIfOpen_Standalone",
             "ClickSettingsIcon_Standalone"
         ]
@@ -414,6 +460,8 @@
         "post_delay": 4500,
         "timeout": 1500,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ClickSettingsIcon_Standalone"
         ]
     },
@@ -429,6 +477,8 @@
         "post_delay": 2200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "VerifyTankSettings_Standalone"
         ],
         "on_error": [
@@ -448,6 +498,8 @@
         "post_delay": 200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "SelectCuteStarfish_Standalone"
         ],
         "on_error": [
@@ -467,6 +519,8 @@
         "post_delay": 2200,
         "timeout": 4000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "VerifyStarfishPanel_Standalone"
         ],
         "on_error": [
@@ -486,6 +540,8 @@
         "post_delay": 200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ClickReplenishFood_Standalone"
         ],
         "on_error": [
@@ -505,6 +561,8 @@
         "post_delay": 2200,
         "timeout": 6000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "ClickFishFoodBag_Standalone"
         ],
         "on_error": [
@@ -525,6 +583,8 @@
         "post_delay": 2800,
         "timeout": 6000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "CheckFoodFull_Standalone"
         ],
         "on_error": [
@@ -548,6 +608,8 @@
             "Node.Action.Succeeded": "[海星喂食] 鱼食补充成功！进度条已加满，海星存粮充沛！"
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "StarfishReturnFirst_Standalone"
         ],
         "on_error": [
@@ -563,6 +625,8 @@
             "Node.Action.Succeeded": "[海星喂食] 提示：未检测到鱼食加满，请检查背包鱼食储备"
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "StarfishReturnFirst_Standalone"
         ]
     },
@@ -575,6 +639,8 @@
             "Node.Action.Succeeded": "[海星喂食] 未找到海星入口，本轮已跳过"
         },
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "StarfishReturnFirst_Standalone"
         ]
     },
@@ -591,6 +657,8 @@
         "post_delay": 1500,
         "timeout": 4000,
         "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "StarfishReturnSecond_Standalone"
         ],
         "on_error": [
