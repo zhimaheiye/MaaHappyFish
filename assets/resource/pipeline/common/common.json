@@ -1,0 +1,45 @@
+{
+    "StartAppTask": {
+        "action": "StartApp",
+        "package": "com.happyelements.happyfishandroidcns/com.happyelements.happyfish.MainActivity",
+        "post_delay": 2000,
+        "next": [
+            "CloseAnnouncement",
+            "ClickEnterGame",
+            "ConfirmMainScreen"
+        ]
+    },
+    "CloseAnnouncement": {
+        "recognition": "TemplateMatch",
+        "template": "关闭公告.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 300,
+        "next": [
+            "CloseAnnouncement",
+            "ClickEnterGame",
+            "ConfirmMainScreen"
+        ]
+    },
+    "ClickEnterGame": {
+        "recognition": "TemplateMatch",
+        "template": "进入游戏.png",
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 800,
+        "next": [
+            "CloseAnnouncement",
+            "ConfirmMainScreen"
+        ]
+    },
+    "ConfirmMainScreen": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "threshold": 0.7,
+        "action": "DoNothing"
+    },
+    "DailySignTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
+    }
+}

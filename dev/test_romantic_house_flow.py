@@ -10,8 +10,11 @@ ocr = RapidOCR()
 def cv_imread(path):
     return cv2.imdecode(np.fromfile(path, dtype=np.uint8), -1)
 
-with open("assets/resource/pipeline/my_task.json", "r", encoding="utf-8") as f:
-    pipeline = json.load(f)
+import glob
+pipeline = {}
+for pf in glob.glob("assets/resource/pipeline/**/*.json", recursive=True):
+    with open(pf, "r", encoding="utf-8") as f:
+        pipeline.update(json.load(f))
 
 def match_node(node_name, img):
     cfg = pipeline[node_name]

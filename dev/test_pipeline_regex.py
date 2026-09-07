@@ -11,7 +11,7 @@ import re
 import sys
 
 def check_pipeline_regex():
-    pipeline_files = glob.glob("assets/resource/pipeline/*.json")
+    pipeline_files = glob.glob("assets/resource/pipeline/**/*.json", recursive=True)
     if not pipeline_files:
         print("[ERROR] No pipeline files found in assets/resource/pipeline/")
         return False

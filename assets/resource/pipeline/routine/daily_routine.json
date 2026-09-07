@@ -1,0 +1,124 @@
+{
+    "DailyRoutineEnableBandFish": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableGoldenDolphin": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableFishing": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableRomanticHouse": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "InitDailyRoutineAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
+    },
+    "DailyRoutineDispatcher": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "DailyRoutineStepBandFishPass1",
+            "DailyRoutineStepGoldenDolphin",
+            "DailyRoutineStepFishing",
+            "DailyRoutineStepRomanticHouse",
+            "DailyRoutineStepBandFishPass2",
+            "DailyRoutineStepAllDone"
+        ]
+    },
+    "DailyRoutineStepBandFishPass1": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "BAND_FISH_PASS1"
+        },
+        "action": "DoNothing",
+        "next": [
+            "BandFishStartRouter"
+        ]
+    },
+    "DailyRoutineStepGoldenDolphin": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "GOLDEN_DOLPHIN"
+        },
+        "action": "DoNothing",
+        "next": [
+            "GoldenDolphinTask"
+        ]
+    },
+    "DailyRoutineStepFishing": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "FISHING"
+        },
+        "action": "DoNothing",
+        "next": [
+            "FishingTask"
+        ]
+    },
+    "DailyRoutineStepRomanticHouse": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "ROMANTIC_HOUSE"
+        },
+        "action": "DoNothing",
+        "next": [
+            "RomanticHouseStartRouter"
+        ]
+    },
+    "DailyRoutineStepBandFishPass2": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "BAND_FISH_PASS2"
+        },
+        "action": "DoNothing",
+        "next": [
+            "DailyRoutineBandFishPass2CheckSkip",
+            "DailyRoutineBandFishPass2Run"
+        ]
+    },
+    "DailyRoutineBandFishPass2CheckSkip": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishPass2SkipReco",
+        "action": "Custom",
+        "custom_action": "DailyRoutineSkipBandFishPass2Action",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
+    },
+    "DailyRoutineBandFishPass2Run": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishPass2NeededReco",
+        "action": "DoNothing",
+        "next": [
+            "BandFishStartRouter"
+        ]
+    },
+    "DailyRoutineStepAllDone": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "ALL_DONE"
+        },
+        "action": "Custom",
+        "custom_action": "DailyRoutineFinishAction"
+    }
+}

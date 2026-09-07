@@ -17,7 +17,7 @@ def main():
     pipeline_actions = {}
     pipeline_recos = {}
 
-    pipeline_files = glob.glob(os.path.join(pipeline_dir, "*.json"))
+    pipeline_files = glob.glob(os.path.join(pipeline_dir, "**", "*.json"), recursive=True)
     for pfile in pipeline_files:
         rel_pfile = os.path.relpath(pfile, root_dir)
         try:

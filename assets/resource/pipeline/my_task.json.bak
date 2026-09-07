@@ -1647,7 +1647,11 @@
             250
         ],
         "threshold": 0.65,
-        "action": "DoNothing"
+        "action": "Custom",
+        "custom_action": "RomanticHouseExitToTankAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
     },
     "GoldenDolphinTask": {
         "recognition": "DirectHit",
@@ -1656,6 +1660,26 @@
         "next": [
             "DailyRoutineDispatcher"
         ]
+    },
+    "DailyRoutineEnableBandFish": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableGoldenDolphin": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableFishing": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableRomanticHouse": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
     },
     "DailyRoutineTask": {
         "recognition": "DirectHit",
@@ -1672,6 +1696,7 @@
             "DailyRoutineStepBandFishPass1",
             "DailyRoutineStepGoldenDolphin",
             "DailyRoutineStepFishing",
+            "DailyRoutineStepRomanticHouse",
             "DailyRoutineStepBandFishPass2",
             "DailyRoutineStepAllDone"
         ]
@@ -1707,6 +1732,17 @@
         "action": "DoNothing",
         "next": [
             "FishingTask"
+        ]
+    },
+    "DailyRoutineStepRomanticHouse": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "ROMANTIC_HOUSE"
+        },
+        "action": "DoNothing",
+        "next": [
+            "RomanticHouseStartRouter"
         ]
     },
     "DailyRoutineStepBandFishPass2": {

@@ -1,0 +1,43 @@
+{
+    "GoldenDolphinTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "GoldenDolphinNavigation"
+        ]
+    },
+    "GoldenDolphinNavigation": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "GoldenDolphinNavigationAction",
+        "next": [
+            "GoldenDolphinPlayGame",
+            "GoldenDolphinDone"
+        ]
+    },
+    "GoldenDolphinPlayGame": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckGoldenDolphinCanPlayReco",
+        "action": "Custom",
+        "custom_action": "GoldenDolphinPlayGameAction",
+        "next": [
+            "GoldenDolphinExit"
+        ]
+    },
+    "GoldenDolphinExit": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "GoldenDolphinExitAction",
+        "next": [
+            "GoldenDolphinDone"
+        ]
+    },
+    "GoldenDolphinDone": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "GoldenDolphinDoneAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
+    }
+}

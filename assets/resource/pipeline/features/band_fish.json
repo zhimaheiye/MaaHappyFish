@@ -1,0 +1,368 @@
+{
+    "BandFishTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "InitBandFishStateAction",
+        "next": [
+            "BandFishStartRouter"
+        ]
+    },
+    "BandFishStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "BandFishStartAtMyPerformance",
+            "BandFishStartAtAmusementGrid",
+            "BandFishStartAtTank"
+        ]
+    },
+    "BandFishStartAtMyPerformance": {
+        "recognition": "OCR",
+        "expected": "我的演出",
+        "roi": [
+            500,
+            10,
+            280,
+            80
+        ],
+        "action": "DoNothing",
+        "next": [
+            "BandFishStatusRouter"
+        ]
+    },
+    "BandFishStartAtAmusementGrid": {
+        "recognition": "TemplateMatch",
+        "template": "乐队鱼_图标.png",
+        "roi": [
+            100,
+            400,
+            550,
+            220
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2000,
+        "next": [
+            "BandFishStatusRouter"
+        ]
+    },
+    "BandFishStartAtTank": {
+        "recognition": "OCR",
+        "expected": "游乐园",
+        "roi": [
+            10,
+            500,
+            100,
+            70
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "BandFishEnterFromGrid"
+        ]
+    },
+    "BandFishEnterFromGrid": {
+        "recognition": "TemplateMatch",
+        "template": "乐队鱼_图标.png",
+        "roi": [
+            100,
+            400,
+            550,
+            220
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2000,
+        "next": [
+            "BandFishStatusRouter"
+        ]
+    },
+    "BandFishStatusRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "BandFishCheckDone",
+            "BandFishCheckReady",
+            "BandFishCheckInvite"
+        ]
+    },
+    "BandFishCheckDone": {
+        "recognition": "OCR",
+        "expected": "返场演出|返场演出次数",
+        "roi": [
+            500,
+            580,
+            300,
+            120
+        ],
+        "action": "Custom",
+        "custom_action": "LogBandFishStatusAction",
+        "custom_action_param": {
+            "status": "DONE"
+        },
+        "next": [
+            "BandFishDone"
+        ]
+    },
+    "BandFishCheckReady": {
+        "recognition": "OCR",
+        "expected": "开始演出",
+        "roi": [
+            550,
+            590,
+            180,
+            80
+        ],
+        "action": "Custom",
+        "custom_action": "BandFishPerformAction",
+        "next": [
+            "BandFishDone"
+        ]
+    },
+    "BandFishCheckInvite": {
+        "recognition": "OCR",
+        "expected": "我的演出",
+        "roi": [
+            500,
+            10,
+            280,
+            80
+        ],
+        "action": "Custom",
+        "custom_action": "BandFishInviteLoopAction",
+        "next": [
+            "BandFishDone"
+        ]
+    },
+    "BandFishInviteLoopRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "BandFishInviteBranchSlot1",
+            "BandFishInviteBranchSlot2",
+            "BandFishInviteBranchSlot4",
+            "BandFishInviteBranchSlot5",
+            "BandFishInviteBranchRefresh",
+            "BandFishDone"
+        ]
+    },
+    "BandFishInviteBranchSlot1": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishNeedSlot1Reco",
+        "action": "Custom",
+        "custom_action": "BandFishInviteSlotAction",
+        "custom_action_param": {
+            "slot": 1
+        },
+        "next": [
+            "BandFishCheckInvite"
+        ]
+    },
+    "BandFishInviteBranchSlot2": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishNeedSlot2Reco",
+        "action": "Custom",
+        "custom_action": "BandFishInviteSlotAction",
+        "custom_action_param": {
+            "slot": 2
+        },
+        "next": [
+            "BandFishCheckInvite"
+        ]
+    },
+    "BandFishInviteBranchSlot4": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishNeedSlot4Reco",
+        "action": "Custom",
+        "custom_action": "BandFishInviteSlotAction",
+        "custom_action_param": {
+            "slot": 4
+        },
+        "next": [
+            "BandFishCheckInvite"
+        ]
+    },
+    "BandFishInviteBranchSlot5": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishNeedSlot5Reco",
+        "action": "Custom",
+        "custom_action": "BandFishInviteSlotAction",
+        "custom_action_param": {
+            "slot": 5
+        },
+        "next": [
+            "BandFishCheckInvite"
+        ]
+    },
+    "BandFishInviteBranchRefresh": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishNeedRefreshReco",
+        "action": "Custom",
+        "custom_action": "BandFishRefreshStateAction",
+        "next": [
+            "BandFishStatusRouter"
+        ]
+    },
+    "BandFishSlot1InviteBtn": {
+        "recognition": "OCR",
+        "expected": "邀请",
+        "roi": [
+            200,
+            390,
+            160,
+            60
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot2InviteBtn": {
+        "recognition": "OCR",
+        "expected": "邀请",
+        "roi": [
+            380,
+            440,
+            150,
+            60
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot4InviteBtn": {
+        "recognition": "OCR",
+        "expected": "邀请",
+        "roi": [
+            760,
+            440,
+            150,
+            60
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot5InviteBtn": {
+        "recognition": "OCR",
+        "expected": "邀请",
+        "roi": [
+            950,
+            390,
+            160,
+            60
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot1Accepted": {
+        "recognition": "OCR",
+        "expected": "不想上课",
+        "roi": [
+            200,
+            120,
+            160,
+            80
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot2Accepted": {
+        "recognition": "OCR",
+        "expected": "一只胖梨",
+        "roi": [
+            370,
+            170,
+            160,
+            80
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot4Accepted": {
+        "recognition": "OCR",
+        "expected": "扶摇",
+        "roi": [
+            760,
+            170,
+            160,
+            80
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot5Accepted": {
+        "recognition": "OCR",
+        "expected": "游来游去",
+        "roi": [
+            940,
+            120,
+            160,
+            80
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot1Timer": {
+        "recognition": "OCR",
+        "expected": "\\d{2}:\\d{2}",
+        "roi": [
+            200,
+            390,
+            160,
+            60
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot2Timer": {
+        "recognition": "OCR",
+        "expected": "\\d{2}:\\d{2}",
+        "roi": [
+            380,
+            440,
+            150,
+            60
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot4Timer": {
+        "recognition": "OCR",
+        "expected": "\\d{2}:\\d{2}",
+        "roi": [
+            760,
+            440,
+            150,
+            60
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishSlot5Timer": {
+        "recognition": "OCR",
+        "expected": "\\d{2}:\\d{2}",
+        "roi": [
+            950,
+            390,
+            160,
+            60
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishFriendCardTarget": {
+        "recognition": "OCR",
+        "expected": "好友",
+        "roi": [
+            100,
+            160,
+            1050,
+            480
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishConfirmInviteBtn": {
+        "recognition": "OCR",
+        "expected": "邀请",
+        "roi": [
+            850,
+            630,
+            150,
+            70
+        ],
+        "action": "DoNothing"
+    },
+    "BandFishDone": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "BandFishExitToTankAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
+    }
+}

@@ -608,6 +608,14 @@ class CheckBandFishPass2SkipReco(CustomRecognition):
         return None
 
 
-
-
-
+@AgentServer.custom_recognition("CheckGoldenDolphinCanPlayReco")
+class CheckGoldenDolphinCanPlayReco(CustomRecognition):
+    """
+    检查金海豚是否进入小游戏:
+    若导航阶段判定可进入游戏 (READY_TO_PLAY)，返回匹配区域执行游戏动作；
+    若机会已用完 (NO_STAMINA) 或导航异常，返回 None 跳过游戏动作直接流向 Done。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if golden_dolphin_state.get("status") == "READY_TO_PLAY":
+            return (0, 0, 10, 10)
+        return None

@@ -35,7 +35,7 @@
 | `agent/param_utils.py` | 参数安全解析工具 | 所有 CustomAction/CustomRecognition 统一使用 `parse_dict_param`，防御 `"null"` 字符串。 |
 | `agent/requirements-release.txt` | 发布依赖清单 | 新增第三方 import 必须同步更新此文件。 |
 | `assets/interface.json` | 任务选项配置 | 修改后需手动同步至 `client_avalonia/` 和 `client/`。 |
-| `assets/resource/pipeline/my_task.json` | 启动与活动任务流水线 | 包含 `OpenShellTask`、`SeaOtterGemTask`、`FishingTask` 状态机。 |
+| `assets/resource/pipeline/` | 模块化任务流水线目录 | 包含 `common/`、`routine/`、`features/` 业务流水线及 `collect_fish.json` 主干。原 `my_task.json` 保留为 `.bak` 回滚备份。 |
 | `assets/resource/pipeline/collect_fish.json` | 任务主干流水线 | `client_avalonia/resource` 通过 junction 链接至此，修改一处即可生效。 |
 | `dev/test_pipeline_regex.py` | Pipeline 正则双层校验 | 修改 Pipeline 后**必须**运行，防止 `std::regex` 加载失败。 |
 | `dev/test_agent_registration_refs.py` | Pipeline 引用一致性校验 | 静态确保 Pipeline 引用的所有 custom_action/reco 均在 Agent 中注册。 |
@@ -59,6 +59,12 @@
             └─ EarliestKnownStage (如还在初始主界面)
   ```
 - **契约明确**：任务支持的中途启动阶段必须在任务文档与说明（Start Contract）中明确记录。除业务明确要求或中间状态不可安全识别外，一律提供步骤可恢复兼容。
+
+### 动作前置状态确认规则 (Pre-Action State Verification Rule)
+**任何自动化点击前，必须显式验证“当前页面所处真实状态”，严禁臆测或直接穿透点击：**
+- **严禁跨层盲点**：绝对禁止在上一阶段（如主鱼缸）未确认转换成功时，直接向下一阶段（如游乐园面板）的固定坐标盲目下发点击；
+- **禁止失败跌入固定坐标**：当视觉模板或 OCR 未识别到目标时，坚决杜绝“盲点固定坐标保底”（如金海豚盲点 `(674, 468)` 导致点中鱼缸鱼，或乐队鱼未确认选中好友就盲点邀请按钮）；
+- **门禁未达直接熔断**：前置状态未达成或关键模板缺失时，必须记录显式 `ERROR` 日志并安全终止/返回重试，宁可安全停机，绝不引发未预期的破坏性误触。
 
 ### Maa Pipeline 正则规则 (Maa OCR Regex Rules)
 - **Maa OCR expected 字段按正则表达式解析**：任何出现在 `expected` 字段中的文本均会被 MaaFramework 底层作为 `std::regex` 编译校验。

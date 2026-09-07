@@ -1,0 +1,190 @@
+{
+    "RomanticHouseTask": {
+        "action": "DoNothing",
+        "next": [
+            "RomanticHouseStartRouter"
+        ]
+    },
+    "RomanticHouseStartRouter": {
+        "action": "DoNothing",
+        "next": [
+            "RomanticHouseCheckDone",
+            "RomanticHouseTryBless",
+            "RomanticHouseNextCouple",
+            "RomanticHouseInHomePage",
+            "RomanticHouseInFishTank"
+        ]
+    },
+    "RomanticHouseInFishTank": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_珊瑚.png",
+        "roi": [
+            700,
+            450,
+            450,
+            250
+        ],
+        "threshold": 0.65,
+        "action": "Click",
+        "post_delay": 1200,
+        "next": [
+            "RomanticHouseWaitBubble"
+        ]
+    },
+    "RomanticHouseWaitBubble": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_气泡.png",
+        "roi": [
+            750,
+            350,
+            300,
+            200
+        ],
+        "threshold": 0.65,
+        "timeout": 6000,
+        "action": "Click",
+        "post_delay": 2000,
+        "next": [
+            "RomanticHouseInHomePage"
+        ],
+        "on_error": [
+            "RomanticHouseInFishTank"
+        ]
+    },
+    "RomanticHouseInHomePage": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_热恋时刻.png",
+        "roi": [
+            50,
+            300,
+            200,
+            100
+        ],
+        "threshold": 0.7,
+        "action": "Click",
+        "post_delay": 1800,
+        "next": [
+            "RomanticHouseCheckDone",
+            "RomanticHouseTryBless",
+            "RomanticHouseNextCouple"
+        ]
+    },
+    "RomanticHouseCheckDone": {
+        "recognition": "OCR",
+        "expected": "10/10",
+        "roi": [
+            700,
+            590,
+            300,
+            60
+        ],
+        "action": "DoNothing",
+        "next": [
+            "RomanticHouseExitStage"
+        ]
+    },
+    "RomanticHouseTryBless": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_祝福.png",
+        "roi": [
+            780,
+            480,
+            200,
+            90
+        ],
+        "threshold": 0.75,
+        "action": "Click",
+        "post_delay": 800,
+        "next": [
+            "RomanticHouseCheckDone",
+            "RomanticHouseNextCouple"
+        ]
+    },
+    "RomanticHouseNextCouple": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_右箭头.png",
+        "roi": [
+            1150,
+            320,
+            120,
+            120
+        ],
+        "threshold": 0.7,
+        "action": "Click",
+        "post_delay": 1000,
+        "max_hit": 25,
+        "on_error": [
+            "RomanticHouseExitStage"
+        ],
+        "next": [
+            "RomanticHouseCheckDone",
+            "RomanticHouseTryBless",
+            "RomanticHouseNextCouple"
+        ]
+    },
+    "RomanticHouseExitStage": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_关闭.png",
+        "roi": [
+            1150,
+            15,
+            100,
+            90
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "RomanticHouseCheckInHome",
+            "RomanticHouseExitStage"
+        ]
+    },
+    "RomanticHouseCheckInHome": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_热恋时刻.png",
+        "roi": [
+            50,
+            300,
+            200,
+            100
+        ],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "next": [
+            "RomanticHouseExitHome"
+        ]
+    },
+    "RomanticHouseExitHome": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_主页关闭.png",
+        "roi": [
+            1150,
+            15,
+            100,
+            90
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "RomanticHouseDone",
+            "RomanticHouseExitHome"
+        ]
+    },
+    "RomanticHouseDone": {
+        "recognition": "TemplateMatch",
+        "template": "浪漫满屋_珊瑚.png",
+        "roi": [
+            700,
+            450,
+            450,
+            250
+        ],
+        "threshold": 0.65,
+        "action": "Custom",
+        "custom_action": "RomanticHouseExitToTankAction",
+        "next": [
+            "DailyRoutineDispatcher"
+        ]
+    }
+}

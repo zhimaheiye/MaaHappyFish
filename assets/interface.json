@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.4.5",
+    "version": "0.4.6",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -108,16 +108,13 @@
             "description": "前往游乐园乐队鱼演出活动，检查并邀请指定好友，完成每日乐章演出（支持在水族箱主界面、游乐园面板或活动界面直接启动）。"
         },
         {
-            "name": "浪漫满屋",
-            "entry": "RomanticHouseTask",
-            "default_check": false,
-            "description": "自动进入浪漫满屋进行情侣鱼祝福，直至本日点赞值达到10/10满额（支持在主鱼缸、浪漫满屋主页或热恋时刻舞台直接启动）。"
-        },
-        {
             "name": "日常收尾",
             "entry": "DailyRoutineTask",
             "default_check": false,
-            "description": "每日收尾总控任务：按序自动执行乐队鱼首轮邀请、金海豚经验小游戏、钓鱼达人每日垂钓以及乐队鱼终轮演出判定。"
+            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（乐队鱼、金海豚、钓鱼达人、浪漫满屋），每个子任务结束后均安全返回主鱼缸。",
+            "option": [
+                "日常收尾任务"
+            ]
         },
         {
             "name": "金海豚小游戏",
@@ -423,6 +420,51 @@
                             "next": [
                                 "FishingSelectLocation_Xingkonghu"
                             ]
+                        }
+                    }
+                }
+            ]
+        },
+        "日常收尾任务": {
+            "type": "checkbox",
+            "label": "日常收尾任务",
+            "description": "勾选需要执行的日常任务，将按照固定安全顺序依次执行",
+            "default_case": [
+                "乐队鱼",
+                "金海豚",
+                "钓鱼达人",
+                "浪漫满屋"
+            ],
+            "cases": [
+                {
+                    "name": "乐队鱼",
+                    "pipeline_override": {
+                        "DailyRoutineEnableBandFish": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "金海豚",
+                    "pipeline_override": {
+                        "DailyRoutineEnableGoldenDolphin": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "钓鱼达人",
+                    "pipeline_override": {
+                        "DailyRoutineEnableFishing": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "浪漫满屋",
+                    "pipeline_override": {
+                        "DailyRoutineEnableRomanticHouse": {
+                            "enabled": true
                         }
                     }
                 }

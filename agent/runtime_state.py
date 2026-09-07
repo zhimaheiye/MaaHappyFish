@@ -47,11 +47,13 @@ romantic_house_state = {
 
 daily_routine_state = {
     "active": False,
-    "step": "INIT",  # "BAND_FISH_PASS1" | "GOLDEN_DOLPHIN" | "FISHING" | "BAND_FISH_PASS2" | "ALL_DONE"
+    "step": "INIT",  # "BAND_FISH" | "GOLDEN_DOLPHIN" | "FISHING" | "ROMANTIC_HOUSE" | "ALL_DONE"
+    "queue": [],     # 待执行的后续子任务序列
     "tasks": {
         "BandFish": {"status": "IDLE", "stage": "PASS1"},
         "GoldenDolphin": {"status": "IDLE"},
         "Fishing": {"status": "IDLE"},
+        "RomanticHouse": {"status": "IDLE"},
     },
 }
 

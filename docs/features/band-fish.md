@@ -157,12 +157,28 @@ stateDiagram-v2
 
 ---
 
-## 七、待探索未知项（留给用户手动测试）
+## 七、Pass 2 演出闭环与调度机制实现 (2026-09-06)
 
-以下阶段由于涉及每日 1 次体力的不可逆消耗，留待用户手动操作并采集首批实机素材：
-1. **演出动画与跳过流程**：点击“确定”后进入舞台演出画面，“跳过”按钮的出现时机、位置与视觉模板；
-2. **结算奖励弹窗**：演出结束后的领奖弹窗按钮位置与关闭逻辑；
-3. **每日体力耗尽特征**：演出完成后再次进入“我的演出”，页面按钮是变灰、显示“明日再来”还是消失，作为日常巡检的任务完成判定标记。
+在 Phase 2A 中已完成 Pass 2 核心演出动作 `BandFishPerformAction` 与调度闭环：
+1. **就绪分支路由 (`BandFishCheckReady`)**：
+   - OCR 检测到底部绿色【开始演出】按钮后，触发 `BandFishPerformAction`；
+2. **演出动作 5 大职责分工与 4 阶段状态机 (`BandFishPerformAction`)**：
+   - **职责 1: 开始演出**：点击“开始演出” `(637, 630)`；
+   - **职责 2: 选曲确认**：动态等待选曲弹窗（“请选择您要演奏的乐章”），点击右上角绿色【确定】按钮 `(1023, 359)` 消耗体力开始演出；
+   - **职责 3: 演出与跳过检测 (4 阶段状态机)**：
+     - `PLAYING`：进入演出动画阶段；
+     - `WAIT_SKIP_BUTTON`：在 6 秒前置探测窗口内调用 `check_band_fish_skip_button(f_cur)` 检测跳过按钮；
+     - `CLICK_SKIP`：若检测到有效坐标则点击跳过，平滑转入结算等待；
+     - `WAIT_RESULT`：若未检出跳过（当前默认返回 `None`）或已点击跳过，转入结算轮询等待；
+   - **职责 4: 结算等待与领取**：检测“我的乐章”结算弹窗底部【确定】按钮 `(639, 680)` 或“返场演出”页面，点击领取结算奖励；
+   - **职责 5: 状态沉淀**：标记 `band_fish_state["status"] = "DONE"` 与 `band_fish_state["performance_finished"] = True`；
+3. **跳过按钮预留接口规范 (`check_band_fish_skip_button`)**：
+   - `load_band_fish_skip_template()`: 加载 `assets/resource/image/乐队鱼_跳过.png`，不存在时安全返回 `None`；
+   - `check_band_fish_skip_button(frame)`: 当前空实现安全返回 `None`，严禁猜测固定坐标或盲点，待未来采集样本后接入 OpenCV 模板匹配；
+4. **日常收尾 Pass 2 调度闭环**：
+   - 勾选乐队鱼时，`InitDailyRoutineAction` 在末尾追加 `"BAND_FISH_PASS2"`；
+   - 排队流转：`BAND_FISH_PASS1 -> GOLDEN_DOLPHIN -> FISHING -> ROMANTIC_HOUSE -> BAND_FISH_PASS2 -> ALL_DONE`；
+   - Pass 2 到达时：若状态为 `PENDING`，触发回访进入演出；若已为 `DONE`，直接跳过。
 
 ---
 
