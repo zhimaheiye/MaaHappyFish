@@ -459,7 +459,7 @@ client_avalonia/
 logs/
 temp/
 *.log
-MaaHappyFish-TestReports/
+MaaHappyFish-TestReport*/
 
 # Local scratch and backup files
 *.rar

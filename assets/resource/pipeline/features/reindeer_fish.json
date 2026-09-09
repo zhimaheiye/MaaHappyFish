@@ -16,9 +16,9 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "ReindeerFishRewardReturn",
-            "ReindeerFishDirectGift",
             "ReindeerFishCollectAll",
             "ReindeerFishReplyAll",
+            "ReindeerFishDirectGift",
             "ReindeerFishStartAtGrid",
             "ReindeerFishStartAtTank"
         ],
@@ -54,8 +54,8 @@
     },
     "ReindeerFishCollectAll": {
         "recognition": "OCR",
-        "expected": "一键收取",
-        "roi": [672, 558, 245, 150],
+        "expected": "键收取",
+        "roi": [678, 562, 235, 147],
         "action": "Click",
         "post_delay": 800,
         "next": [
@@ -172,7 +172,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 遇到尚未收录的页面状态，已停止且未盲目点击；请补充流程"
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 未识别到当前页面可执行操作，已安全停止且未盲目点击；请查看识别日志，若为新页面再补充流程"
         }
     }
 }

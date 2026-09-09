@@ -1,0 +1,1073 @@
+{
+    "PatrolTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 开始首轮：依次收取 1/2/3 缸产物，再为三缸海星补充鱼食。"
+        },
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolStartRouter"
+        ]
+    },
+    "PatrolStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolStartAtFoodPopupAbort",
+            "PatrolStartAtUniversalStarfish",
+            "PatrolStartAtManagement",
+            "PatrolStartAtPicker",
+            "PatrolStartAtTank1",
+            "PatrolStartAtTank2",
+            "PatrolStartAtTank3",
+            "PatrolAbortUnknownPage"
+        ]
+    },
+    "PatrolStartAtFoodPopupAbort": {
+        "recognition": "OCR",
+        "expected": "选择喂食",
+        "roi": [
+            700,
+            90,
+            240,
+            150
+        ],
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 从喂食弹窗启动时无法可靠判断当前海星，已安全停止。"
+        }
+    },
+    "PatrolStartAtUniversalStarfish": {
+        "recognition": "OCR",
+        "expected": "萌海星|乖海星|亮海星",
+        "roi": [
+            80,
+            70,
+            800,
+            100
+        ],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolSelectCuteStarfishTab"
+        ]
+    },
+    "PatrolStartAtManagement": {
+        "recognition": "OCR",
+        "expected": "鱼缸",
+        "roi": [
+            180,
+            0,
+            230,
+            90
+        ],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolOpenUniversalStarfish"
+        ]
+    },
+    "PatrolStartAtPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_入口.png",
+        "threshold": 0.78,
+        "roi": [
+            135,
+            10,
+            75,
+            80
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyTank1Main"
+        ]
+    },
+    "PatrolStartAtTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank1"
+        ]
+    },
+    "PatrolStartAtTank2": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "Click",
+        "post_delay": 400,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolSelectTank1FromPicker"
+        ]
+    },
+    "PatrolStartAtTank3": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "Click",
+        "post_delay": 400,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolSelectTank1FromPicker"
+        ]
+    },
+    "PatrolSelectTank1FromPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_入口.png",
+        "threshold": 0.78,
+        "roi": [
+            135,
+            10,
+            75,
+            80
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyTank1Main"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyTank1Main": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank1"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolCollectTank1": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 30000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank1Bubble"
+        ],
+        "on_error": [
+            "PatrolOpenPickerAfterTank1"
+        ]
+    },
+    "PatrolCollectTank1Bubble": {
+        "recognition": "TemplateMatch",
+        "template": "金币气泡.png",
+        "threshold": 0.75,
+        "roi": [
+            0,
+            100,
+            1280,
+            560
+        ],
+        "action": "Click",
+        "post_delay": 120,
+        "rate_limit": 180,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank1"
+        ]
+    },
+    "PatrolOpenPickerAfterTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "Click",
+        "post_delay": 400,
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolSelectTank2FromPicker"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolSelectTank2FromPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_入口.png",
+        "threshold": 0.78,
+        "roi": [
+            205,
+            10,
+            75,
+            80
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyTank2Main"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyTank2Main": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank2"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolCollectTank2": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 30000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank2Bubble"
+        ],
+        "on_error": [
+            "PatrolOpenPickerAfterTank2"
+        ]
+    },
+    "PatrolCollectTank2Bubble": {
+        "recognition": "TemplateMatch",
+        "template": "金币气泡.png",
+        "threshold": 0.75,
+        "roi": [
+            0,
+            100,
+            1280,
+            560
+        ],
+        "action": "Click",
+        "post_delay": 120,
+        "rate_limit": 180,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank2"
+        ]
+    },
+    "PatrolOpenPickerAfterTank2": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "Click",
+        "post_delay": 400,
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolSelectTank3FromPicker"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolSelectTank3FromPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_入口.png",
+        "threshold": 0.78,
+        "roi": [
+            275,
+            10,
+            75,
+            80
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyTank3Main"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyTank3Main": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank3"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolCollectTank3": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 30000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank3Bubble"
+        ],
+        "on_error": [
+            "PatrolOpenManagement"
+        ]
+    },
+    "PatrolCollectTank3Bubble": {
+        "recognition": "TemplateMatch",
+        "template": "金币气泡.png",
+        "threshold": 0.75,
+        "roi": [
+            0,
+            100,
+            1280,
+            560
+        ],
+        "action": "Click",
+        "post_delay": 120,
+        "rate_limit": 180,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCollectTank3"
+        ]
+    },
+    "PatrolOpenManagement": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸管理_扳手.png",
+        "threshold": 0.8,
+        "roi": [
+            120,
+            0,
+            120,
+            110
+        ],
+        "action": "Click",
+        "post_delay": 1800,
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyManagement"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyManagement": {
+        "recognition": "OCR",
+        "expected": "鱼缸",
+        "roi": [
+            180,
+            0,
+            230,
+            90
+        ],
+        "action": "DoNothing",
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolOpenUniversalStarfish"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolOpenUniversalStarfish": {
+        "recognition": "OCR",
+        "expected": "海星",
+        "roi": [
+            80,
+            190,
+            1120,
+            510
+        ],
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolSelectCuteStarfishTab"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolSelectCuteStarfishTab": {
+        "recognition": "OCR",
+        "expected": "萌海星",
+        "roi": [
+            80,
+            70,
+            800,
+            100
+        ],
+        "action": "Click",
+        "post_delay": 900,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyCuteStarfish"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyCuteStarfish": {
+        "recognition": "OCR",
+        "expected": "萌海星",
+        "roi": [
+            330,
+            140,
+            420,
+            130
+        ],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCuteReplenish"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolCuteReplenish": {
+        "recognition": "OCR",
+        "expected": "补充",
+        "roi": [
+            880,
+            250,
+            300,
+            120
+        ],
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCuteFoodRouter"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolCuteFoodRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCuteNormalFood",
+            "PatrolCuteSpecialFood",
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolCuteNormalFood": {
+        "recognition": "TemplateMatch",
+        "template": "普通鱼食袋.png",
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 2200,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCuteAfterFeedRouter"
+        ]
+    },
+    "PatrolCuteSpecialFood": {
+        "recognition": "TemplateMatch",
+        "template": "海星_加号.png",
+        "threshold": 0.85,
+        "roi": [
+            457,
+            216,
+            189,
+            186
+        ],
+        "action": "Click",
+        "target": [
+            579,
+            210,
+            196,
+            195
+        ],
+        "post_delay": 2200,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolCuteAfterFeedRouter"
+        ]
+    },
+    "PatrolCuteAfterFeedRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolFoodPopupStillOpen",
+            "PatrolCuteFeedReturnedToPanel",
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolCuteFeedReturnedToPanel": {
+        "recognition": "OCR",
+        "expected": "萌海星",
+        "roi": [
+            330,
+            140,
+            420,
+            130
+        ],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolSelectGoodStarfishTab"
+        ]
+    },
+    "PatrolSelectGoodStarfishTab": {
+        "recognition": "OCR",
+        "expected": "乖海星",
+        "roi": [
+            80,
+            70,
+            800,
+            100
+        ],
+        "action": "Click",
+        "post_delay": 900,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyGoodStarfish"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyGoodStarfish": {
+        "recognition": "OCR",
+        "expected": "乖海星",
+        "roi": [
+            330,
+            140,
+            420,
+            130
+        ],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGoodReplenish"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolGoodReplenish": {
+        "recognition": "OCR",
+        "expected": "补充",
+        "roi": [
+            880,
+            250,
+            300,
+            120
+        ],
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGoodFoodRouter"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolGoodFoodRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGoodNormalFood",
+            "PatrolGoodSpecialFood",
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolGoodNormalFood": {
+        "recognition": "TemplateMatch",
+        "template": "普通鱼食袋.png",
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 2200,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGoodAfterFeedRouter"
+        ]
+    },
+    "PatrolGoodSpecialFood": {
+        "recognition": "TemplateMatch",
+        "template": "海星_加号.png",
+        "threshold": 0.85,
+        "roi": [
+            457,
+            216,
+            189,
+            186
+        ],
+        "action": "Click",
+        "target": [
+            579,
+            210,
+            196,
+            195
+        ],
+        "post_delay": 2200,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGoodAfterFeedRouter"
+        ]
+    },
+    "PatrolGoodAfterFeedRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolFoodPopupStillOpen",
+            "PatrolGoodFeedReturnedToPanel",
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolGoodFeedReturnedToPanel": {
+        "recognition": "OCR",
+        "expected": "乖海星",
+        "roi": [
+            330,
+            140,
+            420,
+            130
+        ],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolSelectBrightStarfishTab"
+        ]
+    },
+    "PatrolSelectBrightStarfishTab": {
+        "recognition": "OCR",
+        "expected": "亮海星",
+        "roi": [
+            80,
+            70,
+            800,
+            100
+        ],
+        "action": "Click",
+        "post_delay": 900,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyBrightStarfish"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyBrightStarfish": {
+        "recognition": "OCR",
+        "expected": "亮海星",
+        "roi": [
+            330,
+            140,
+            420,
+            130
+        ],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolBrightReplenish"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolBrightReplenish": {
+        "recognition": "OCR",
+        "expected": "补充",
+        "roi": [
+            880,
+            250,
+            300,
+            120
+        ],
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolBrightFoodRouter"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolBrightFoodRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolBrightNormalFood",
+            "PatrolBrightSpecialFood",
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolBrightNormalFood": {
+        "recognition": "TemplateMatch",
+        "template": "普通鱼食袋.png",
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 2200,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolBrightAfterFeedRouter"
+        ]
+    },
+    "PatrolBrightSpecialFood": {
+        "recognition": "TemplateMatch",
+        "template": "海星_加号.png",
+        "threshold": 0.85,
+        "roi": [
+            457,
+            216,
+            189,
+            186
+        ],
+        "action": "Click",
+        "target": [
+            579,
+            210,
+            196,
+            195
+        ],
+        "post_delay": 2200,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolBrightAfterFeedRouter"
+        ]
+    },
+    "PatrolBrightAfterFeedRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolFoodPopupStillOpen",
+            "PatrolBrightFeedReturnedToPanel",
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolBrightFeedReturnedToPanel": {
+        "recognition": "OCR",
+        "expected": "亮海星",
+        "roi": [
+            330,
+            140,
+            420,
+            130
+        ],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolExitUniversalStarfish"
+        ]
+    },
+    "PatrolFoodPopupStillOpen": {
+        "recognition": "OCR",
+        "expected": "选择喂食",
+        "roi": [
+            700,
+            90,
+            240,
+            150
+        ],
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼食弹窗仍未关闭，已停止且未继续点击。"
+        }
+    },
+    "PatrolExitUniversalStarfish": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyManagementAfterStarfish"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyManagementAfterStarfish": {
+        "recognition": "OCR",
+        "expected": "鱼缸",
+        "roi": [
+            180,
+            0,
+            230,
+            90
+        ],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolExitManagement"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolExitManagement": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyMainAfterCycle"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyMainAfterCycle": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyMainTank1AfterCycle",
+            "PatrolVerifyMainTank2AfterCycle",
+            "PatrolVerifyMainTank3AfterCycle",
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyMainTank1AfterCycle": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolWaitLoop"
+        ]
+    },
+    "PatrolVerifyMainTank2AfterCycle": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolWaitLoop"
+        ]
+    },
+    "PatrolVerifyMainTank3AfterCycle": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolWaitLoop"
+        ]
+    },
+    "PatrolWaitLoop": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 1000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolTimerDue",
+            "PatrolMagicSummonDue",
+            "PatrolGemFusionDue",
+            "PatrolWaitLoop"
+        ]
+    },
+    "PatrolTimerDue": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckPatrolTimerReco",
+        "custom_recognition_param": {
+            "interval": 1800
+        },
+        "action": "DoNothing",
+        "timeout": 500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolStartRouter"
+        ],
+        "on_error": [
+            "PatrolWaitLoop"
+        ]
+    },
+    "PatrolAbortUnknownPage": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 未识别到鱼缸、鱼缸选择器或鱼缸管理页，已安全停止。"
+        }
+    },
+    "PatrolAbortNavigation": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 页面门禁未通过，已停止且未继续点击。请查看识别日志。"
+        }
+    }
+}

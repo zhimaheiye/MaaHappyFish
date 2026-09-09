@@ -2,7 +2,9 @@
 """
 验证 SeaOtterGemTask 核心状态机 4 大业务场景 (Mock/Replay)
 """
+import json
 import sys
+from pathlib import Path
 sys.path.insert(0, '.')
 
 from agent.runtime_state import sea_otter_gem_state
@@ -33,15 +35,23 @@ class MockContext:
         class Tasker:
             def __init__(self, c):
                 self.controller = c
+                self.running = True
+                self.stopping = False
         self.tasker = Tasker(ctrl)
 
 # Import real actions
-from agent.my_action import InitSeaOtterStateAction, SeaOtterHarvestAction, SeaOtterAdvancePairAction
+from agent.my_action import (
+    InitSeaOtterStateAction,
+    SeaOtterHarvestAction,
+    SeaOtterAdvancePairAction,
+    SeaOtterReturnFromRecommendedAction,
+)
 from agent.my_reco import CheckSeaOtterLimitReco
 
 init_act = InitSeaOtterStateAction()
 harvest_act = SeaOtterHarvestAction()
 advance_act = SeaOtterAdvancePairAction()
+recommended_bridge_act = SeaOtterReturnFromRecommendedAction()
 limit_reco = CheckSeaOtterLimitReco()
 
 def step(ctrl, ctx, ui_state):
@@ -61,6 +71,8 @@ def step(ctrl, ctx, ui_state):
     elif ui_state == 'HARVESTABLE':
         harvest_act.run(ctx, None)
         return 'CONTINUE'
+    elif ui_state == 'RECOMMENDED':
+        return 'CONTINUE' if recommended_bridge_act.run(ctx, None) else 'DONE'
     else:
         raise ValueError(f"Unknown ui_state {ui_state}")
 
@@ -207,9 +219,67 @@ def test_scenario_d():
     print("[PASS] Scenario D: 遇旧 exhausted 绝不误触 Done 验证通过！")
 
 
+def test_scenario_e():
+    """最后好友为 LEFT、推荐玩家为 RIGHT 时，推荐玩家只作为返回跳板。"""
+    ctrl = MockController()
+    ctx = MockContext(ctrl)
+    init_act.run(ctx, None)
+
+    expected_flow = [
+        ('HARVESTABLE', 'left'),
+        ('RECOMMENDED', 'right'),
+        ('HARVESTABLE', 'left'),
+        ('RECOMMENDED', 'right'),
+    ]
+    for ui, expected_side in expected_flow:
+        assert sea_otter_gem_state["current_side"] == expected_side
+        assert step(ctrl, ctx, ui) == 'CONTINUE'
+
+    clicks = [a for a in ctrl.actions if a in ('CLICK_NEXT', 'CLICK_PREV')]
+    assert clicks == ['CLICK_NEXT', 'CLICK_PREV', 'CLICK_NEXT', 'CLICK_PREV']
+    assert sea_otter_gem_state["total_harvests"] == 2
+    assert sea_otter_gem_state["current_side"] == "left"
+    print("[PASS] Scenario E: 最后好友与推荐玩家 LEFT/RIGHT 往返桥接验证通过！")
+
+
+def test_friend_gate_pipeline():
+    pipeline_path = Path("assets/resource/pipeline/features/sea_otter_gem.json")
+    pipeline = json.loads(pipeline_path.read_text(encoding="utf-8"))
+
+    def business_next(node_name):
+        return [
+            item for item in pipeline[node_name].get("next", [])
+            if not item.startswith("[JumpBack]")
+        ]
+
+    assert business_next("SeaOtterFriendRouter") == [
+        "SeaOtterLimitReached",
+        "SeaOtterFriendLiked",
+        "SeaOtterFriendUnliked",
+        "SeaOtterRecommendedBridge",
+        "SeaOtterAddFriendPage",
+        "SeaOtterWaitScreen",
+    ]
+    assert pipeline["SeaOtterFriendLiked"]["template"] == "好友判断_已点赞.png"
+    assert pipeline["SeaOtterFriendUnliked"]["template"] == "好友判断_未点赞.png"
+    assert business_next("SeaOtterFriendLiked") == ["SeaOtterKnownFriendRouter"]
+    assert business_next("SeaOtterFriendUnliked") == ["SeaOtterKnownFriendRouter"]
+    assert business_next("SeaOtterKnownFriendRouter") == [
+        "SeaOtterExhausted",
+        "SeaOtterHarvestable",
+        "SeaOtterWaitScreen",
+    ]
+    bridge = pipeline["SeaOtterRecommendedBridge"]
+    assert bridge["template"] == "好友_下一位.png"
+    assert bridge["custom_action"] == "SeaOtterReturnFromRecommendedAction"
+    print("[PASS] 好友点赞双模板门禁与推荐玩家桥接 Pipeline 验证通过！")
+
+
 if __name__ == "__main__":
     test_scenario_a()
     test_scenario_b()
     test_scenario_c()
     test_scenario_d()
-    print("\n>>> ALL 4 SCENARIOS 100% PASSED! <<<")
+    test_scenario_e()
+    test_friend_gate_pipeline()
+    print("\n>>> ALL 6 SCENARIOS 100% PASSED! <<<")

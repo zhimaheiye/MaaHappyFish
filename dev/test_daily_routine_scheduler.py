@@ -150,14 +150,15 @@ def test_pipeline_topology():
     # 7. 驯鹿鱼已知分支必须全部基于识别结果点击，并使用统一返回 OCR 范围。
     assert business_next(pdata["ReindeerFishStartRouter"]) == [
         "ReindeerFishRewardReturn",
-        "ReindeerFishDirectGift",
         "ReindeerFishCollectAll",
         "ReindeerFishReplyAll",
+        "ReindeerFishDirectGift",
         "ReindeerFishStartAtGrid",
         "ReindeerFishStartAtTank",
     ]
-    assert pdata["ReindeerFishCollectAll"]["expected"] == "一键收取"
-    assert pdata["ReindeerFishCollectAll"]["roi"] == [672, 558, 245, 150]
+    # 实机 OCR 曾把“一键收取”稳定识别为“键收取”；使用共同稳定子串兼容两者。
+    assert pdata["ReindeerFishCollectAll"]["expected"] == "键收取"
+    assert pdata["ReindeerFishCollectAll"]["roi"] == [678, 562, 235, 147]
     assert pdata["ReindeerFishReplyAll"]["expected"] == "一键回礼"
     assert pdata["ReindeerFishReplyAll"]["roi"] == [480, 562, 232, 143]
     assert pdata["ReindeerFishDirectGift"]["expected"] == "直接赠送"

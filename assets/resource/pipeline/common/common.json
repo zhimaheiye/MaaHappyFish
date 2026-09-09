@@ -77,7 +77,9 @@
         "recognition": "TemplateMatch",
         "template": "签到_关闭.png",
         "threshold": 0.8,
+        "roi": [1033, 0, 148, 140],
         "action": "Click",
+        "target": [1103, 63, 6, 6],
         "post_delay": 500
     },
     "GlobalDailySignAutoClosed": {

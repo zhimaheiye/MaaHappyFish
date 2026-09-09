@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import re
 import time
 import traceback
 from datetime import datetime, timedelta
@@ -76,6 +77,36 @@ def _task_cancelled(context: Context) -> bool:
         return bool(context.tasker.stopping) or not bool(context.tasker.running)
     except Exception:
         return True
+
+
+def _band_fish_locate_target_card(context: Context, frame, target_name: str):
+    """在好友列表 OCR 结果中安全定位指定名字，并返回识别框与候选文本。"""
+    if frame is None or not hasattr(context, "run_recognition"):
+        return None, []
+
+    seen_texts = []
+    keywords = [target_name]
+    if len(target_name) >= 2:
+        keywords.append(target_name[:2])
+
+    for keyword in keywords:
+        # Maa OCR 的 expected 使用整段正则匹配。好友名左侧的在线圆点、
+        # 等级数字等有时会被 OCR 合并进同一文本框，因此允许固定名字
+        # 前后存在附加字符，但仍只点击明确包含目标名字/前缀的 OCR 框。
+        expected = f".*{re.escape(keyword)}.*"
+        result = context.run_recognition(
+            "BandFishFriendCardTarget",
+            frame,
+            pipeline_override={"BandFishFriendCardTarget": {"expected": expected}},
+        )
+        for item in getattr(result, "all_results", []) or []:
+            text = str(getattr(item, "text", "")).strip()
+            if text and text not in seen_texts:
+                seen_texts.append(text)
+        if result and result.hit:
+            return tuple(int(value) for value in result.box), seen_texts
+
+    return None, seen_texts
 
 
 def _recognition_number(context: Context, node_name: str, frame):
@@ -783,6 +814,33 @@ class SeaOtterAdvancePairAction(CustomAction):
             return False
 
 
+@AgentServer.custom_action("SeaOtterReturnFromRecommendedAction")
+class SeaOtterReturnFromRecommendedAction(CustomAction):
+    """RIGHT 为系统推荐玩家时，仅返回 LEFT 的最后好友继续摸宝。"""
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[海獭摸宝] 错误: 未获取到 Controller", flush=True)
+                return False
+            if _task_cancelled(context):
+                print("[海獭摸宝] 收到停止请求，未从推荐玩家页面继续操作", flush=True)
+                return False
+            if sea_otter_gem_state.get("current_side", "left") != "right":
+                print("[海獭摸宝] 推荐玩家桥接状态异常：当前不是 RIGHT，已安全停止", flush=True)
+                return False
+
+            print("[SeaOtter] side=RIGHT ui=RECOMMENDED action=PREV_AS_LAST_FRIEND_BRIDGE", flush=True)
+            ctrl.post_click(1085, 68).wait()
+            sea_otter_gem_state["current_side"] = "left"
+            time.sleep(2.0)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海獭摸宝] 推荐玩家桥接异常: {e}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("SeaOtterSwitchPairAction")
 class SeaOtterSwitchPairAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -1262,6 +1320,15 @@ class BandFishInviteLoopAction(CustomAction):
                 print("[乐队鱼邀请] 错误: 未获取到 Controller", flush=True)
                 return False
 
+            def cancelled(stage):
+                if not _task_cancelled(context):
+                    return False
+                print(f"[乐队鱼邀请] 收到停止请求，已在【{stage}】停止后续点击与滑动", flush=True)
+                return True
+
+            if cancelled("开始邀请前"):
+                return False
+
             print("[乐队鱼邀请] 开始执行动态全槽位邀请循环 (严格绑定指定人机好友)...", flush=True)
             t_start = time.time()
             max_loop_duration = 120.0
@@ -1315,30 +1382,10 @@ class BandFishInviteLoopAction(CustomAction):
                         f = cv2.resize(f, (1280, 720))
                 return f
 
-            def locate_target_card(img, name):
-                if not hasattr(context, "run_recognition"):
-                    return None
-                # 1. 尝试全名匹配
-                res = context.run_recognition(
-                    "BandFishFriendCardTarget",
-                    img,
-                    pipeline_override={"BandFishFriendCardTarget": {"expected": name}}
-                )
-                if res and res.hit:
-                    return res.box
-                # 2. 尝试前缀模糊匹配 (若名字长度 >= 2)
-                kw = name[:2] if len(name) >= 2 else name
-                res_kw = context.run_recognition(
-                    "BandFishFriendCardTarget",
-                    img,
-                    pipeline_override={"BandFishFriendCardTarget": {"expected": kw}}
-                )
-                if res_kw and res_kw.hit:
-                    return res_kw.box
-                return None
-
             round_count = 0
             while time.time() - t_start < max_loop_duration:
+                if cancelled("槽位扫描"):
+                    return False
                 round_count += 1
                 frame = capture_frame()
                 if frame is None:
@@ -1364,12 +1411,16 @@ class BandFishInviteLoopAction(CustomAction):
 
                 btn_x, btn_y = SLOT_INVITE_INFO[target_slot]["click"]
                 print(f"[乐队鱼邀请] 准备处理槽位 {target_slot} (目标【{target_name}】)，点击邀请按钮 ({btn_x}, {btn_y})...", flush=True)
+                if cancelled(f"点击槽位 {target_slot} 邀请按钮前"):
+                    return False
                 ctrl.post_click(btn_x, btn_y).wait()
 
                 # 1. 动态等待好友选择弹窗打开
                 dialog_opened = False
                 t_open = time.time()
                 while time.time() - t_open < 4.5:
+                    if cancelled("等待好友选择弹窗"):
+                        return False
                     time.sleep(0.3)
                     f_diag = capture_frame()
                     if f_diag is not None and is_friend_dialog_open(f_diag):
@@ -1383,23 +1434,31 @@ class BandFishInviteLoopAction(CustomAction):
                 print(f"[乐队鱼邀请] 好友选择弹窗已打开，正在对当前列表进行 OCR 匹配指定人机好友【{target_name}】...", flush=True)
 
                 # 2. 对当前页面执行纯列表 OCR 匹配目标好友
-                card_box = locate_target_card(f_diag, target_name)
+                card_box, seen_texts = _band_fish_locate_target_card(context, f_diag, target_name)
 
                 # 3. 若当前屏未匹配到，向上滑动卡片列表寻找（严禁使用搜索框）
                 scroll_count = 0
                 f_cur = f_diag
                 while card_box is None and scroll_count < 2:
+                    if cancelled("滑动好友列表前"):
+                        return False
                     scroll_count += 1
                     print(f"[乐队鱼邀请] 当前页面未检出【{target_name}】，向上滑动列表检索更多卡片 (第 {scroll_count}/2 次)...", flush=True)
                     ctrl.post_swipe(640, 520, 640, 260, 400).wait()
                     time.sleep(1.0)
                     f_cur = capture_frame()
                     if f_cur is not None:
-                        card_box = locate_target_card(f_cur, target_name)
+                        card_box, current_texts = _band_fish_locate_target_card(context, f_cur, target_name)
+                        for text in current_texts:
+                            if text not in seen_texts:
+                                seen_texts.append(text)
 
                 # 4. 严苛防线：若列表 OCR 遍历后仍未定位到目标好友，立即安全熔断退出，绝不点击任何其他好友！
                 if card_box is None:
+                    print(f"[乐队鱼邀请] OCR 候选文本: {seen_texts or ['<无>']}", flush=True)
                     print(f"[乐队鱼邀请] 严重警告: 列表 OCR 遍历后未匹配到指定人机好友【{target_name}】！触发安全熔断，放弃邀请以防误触！", flush=True)
+                    if cancelled("安全退出好友列表前"):
+                        return False
                     ctrl.post_click(91, 46).wait()
                     time.sleep(1.2)
                     continue
@@ -1408,6 +1467,8 @@ class BandFishInviteLoopAction(CustomAction):
                 bx, by, bw, bh = card_box
                 cx, cy = bx + bw // 2, by + bh // 2
                 print(f"[乐队鱼邀请] 列表 OCR 命中目标好友【{target_name}】: bbox=({bx}, {by}, {bw}, {bh})，点击中心 ({cx}, {cy})...", flush=True)
+                if cancelled(f"点击好友【{target_name}】前"):
+                    return False
                 ctrl.post_click(cx, cy).wait()
                 time.sleep(0.6)
 
@@ -1415,6 +1476,8 @@ class BandFishInviteLoopAction(CustomAction):
                 f_check = capture_frame()
                 if f_check is None or not is_confirm_green(f_check):
                     print(f"[乐队鱼邀请] 警告: 点击【{target_name}】后底部确认按钮未变绿，核验失败！点击返回退出", flush=True)
+                    if cancelled("选中核验失败退出前"):
+                        return False
                     ctrl.post_click(91, 46).wait()
                     time.sleep(1.0)
                     continue
@@ -1423,12 +1486,16 @@ class BandFishInviteLoopAction(CustomAction):
 
                 # 7. 点击底部绿色“邀请”确认按钮 (921, 664)
                 print("[乐队鱼邀请] 点击底部绿色确认按钮 (921, 664) 发出邀请...", flush=True)
+                if cancelled(f"确认邀请【{target_name}】前"):
+                    return False
                 ctrl.post_click(921, 664).wait()
 
                 # 8. 动态等待：弹窗关闭 + 回到舞台 + 该槽位绿色邀请按钮消失
                 t_close = time.time()
                 slot_finished = False
                 while time.time() - t_close < 6.0:
+                    if cancelled("等待邀请结果"):
+                        return False
                     time.sleep(0.4)
                     f_ret = capture_frame()
                     if f_ret is None:
@@ -1444,6 +1511,8 @@ class BandFishInviteLoopAction(CustomAction):
 
                 time.sleep(0.5)
 
+            if cancelled("邀请循环结束"):
+                return False
             band_fish_state["status"] = "PENDING"
             print("[乐队鱼邀请] 动态邀请循环全部执行完毕，业务状态沉淀为 PENDING", flush=True)
             return True

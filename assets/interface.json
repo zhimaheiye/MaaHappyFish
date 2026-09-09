@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.4.7",
+    "version": "0.4.8",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -73,11 +73,21 @@
             "name": "收鱼产物",
             "entry": "CollectFishTask",
             "default_check": true,
-            "description": "在鱼缸内循环收宝，支持按周期巡检收宝(每次收2分钟)或持续收宝、海星自动喂食与鱼食预算提醒",
+            "description": "在当前单个鱼缸内循环收宝，支持持续运行或按间隔激活，并可定时为当前鱼缸海星喂食",
             "option": [
                 "挂机鱼食计算",
                 "巡检收宝间隔",
                 "喂食间隔"
+            ]
+        },
+        {
+            "name": "多鱼缸巡检",
+            "entry": "PatrolTask",
+            "default_check": false,
+            "description": "首轮立即依次巡检 1/2/3 鱼缸收宝并为三缸海星补充鱼食；可选每小时检查魔力召唤和宝石融合",
+            "option": [
+                "多鱼缸巡检间隔",
+                "多鱼缸巡检子任务"
             ]
         },
         {
@@ -225,8 +235,8 @@
         },
         "巡检收宝间隔": {
             "type": "select",
-            "label": "巡检收宝间隔",
-            "description": "设置每隔多久激活一次鱼缸收宝(每次收宝2分钟)；选「持续实时」则全天不间断收宝",
+            "label": "单缸收宝间隔",
+            "description": "设置当前单个鱼缸每隔多久激活一次收宝(每次收宝2分钟)；选「持续实时」则不间断收宝",
             "default_case": "持续实时",
             "cases": [
                 {
@@ -314,6 +324,108 @@
                                 "idle_interval": 1800,
                                 "active_duration": 120
                             }
+                        }
+                    }
+                }
+            ]
+        },
+        "多鱼缸巡检间隔": {
+            "type": "select",
+            "label": "多鱼缸巡检间隔",
+            "description": "一轮完成三缸收宝与三缸海星喂食；任务启动先立即执行一轮，之后按此间隔循环",
+            "default_case": "30分钟",
+            "cases": [
+                {
+                    "name": "30秒(测试用)",
+                    "pipeline_override": {
+                        "PatrolTimerDue": {
+                            "custom_recognition_param": {
+                                "interval": 30
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "5分钟",
+                    "pipeline_override": {
+                        "PatrolTimerDue": {
+                            "custom_recognition_param": {
+                                "interval": 300
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "10分钟",
+                    "pipeline_override": {
+                        "PatrolTimerDue": {
+                            "custom_recognition_param": {
+                                "interval": 600
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "15分钟",
+                    "pipeline_override": {
+                        "PatrolTimerDue": {
+                            "custom_recognition_param": {
+                                "interval": 900
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "20分钟",
+                    "pipeline_override": {
+                        "PatrolTimerDue": {
+                            "custom_recognition_param": {
+                                "interval": 1200
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "30分钟",
+                    "pipeline_override": {
+                        "PatrolTimerDue": {
+                            "custom_recognition_param": {
+                                "interval": 1800
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "1小时",
+                    "pipeline_override": {
+                        "PatrolTimerDue": {
+                            "custom_recognition_param": {
+                                "interval": 3600
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "多鱼缸巡检子任务": {
+            "type": "checkbox",
+            "label": "每小时巡检子任务",
+            "description": "可选任务每小时检查一次；时间重合时固定按三缸收宝喂食、魔力召唤、宝石融合的顺序执行",
+            "default_case": [],
+            "cases": [
+                {
+                    "name": "魔力召唤",
+                    "pipeline_override": {
+                        "PatrolMagicSummonDue": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "宝石融合",
+                    "pipeline_override": {
+                        "PatrolGemFusionDue": {
+                            "enabled": true
                         }
                     }
                 }

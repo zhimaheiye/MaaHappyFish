@@ -39,6 +39,14 @@ timer_state = {
     "interval_seconds": 600.0,
 }
 
+patrol_timer_state = {
+    "task_id": None,
+    "last_cycle_time": 0.0,
+    "interval_seconds": 1800.0,
+}
+
+patrol_feature_timer_state = {}
+
 duty_state = {
     "mode": "IDLE",
     "active_start_time": 0.0,
@@ -410,6 +418,100 @@ class CheckDutyCycleReco(CustomRecognition):
                         pass
                 time.sleep(2)
                 return (0, 0, 10, 10)
+
+
+@AgentServer.custom_recognition("CheckPatrolTimerReco")
+class CheckPatrolTimerReco(CustomRecognition):
+    """Wait between completed multi-tank patrol cycles.
+
+    The first patrol cycle is performed by the pipeline before this recognition
+    is reached. Therefore a new task initializes the clock and waits; it must
+    not immediately start a duplicate cycle.
+    """
+
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        global patrol_timer_state
+
+        param = parse_dict_param(argv.custom_recognition_param)
+        interval = safe_float(
+            param.get("interval"),
+            patrol_timer_state["interval_seconds"],
+            min_val=1.0,
+        )
+        patrol_timer_state["interval_seconds"] = interval
+
+        task_id = argv.task_detail.task_id
+        now = time.time()
+        if patrol_timer_state["task_id"] != task_id:
+            patrol_timer_state["task_id"] = task_id
+            patrol_timer_state["last_cycle_time"] = now
+            print(
+                f"[巡检] 首轮巡检已完成，{int(interval)} 秒后开始下一轮。",
+                flush=True,
+            )
+            return None
+
+        elapsed = now - patrol_timer_state["last_cycle_time"]
+        if elapsed < interval:
+            return None
+
+        patrol_timer_state["last_cycle_time"] = now
+        print(
+            "[巡检] 间隔已到，开始新一轮多鱼缸收宝与海星喂食。",
+            flush=True,
+        )
+        try:
+            context.override_pipeline({
+                "PatrolTimerDue": {
+                    "focus": {
+                        "Node.Recognition.Succeeded": "[巡检] 间隔已到，开始新一轮巡检。"
+                    }
+                }
+            })
+        except Exception:
+            pass
+        return (0, 0, 10, 10)
+
+
+@AgentServer.custom_recognition("CheckPatrolFeatureTimerReco")
+class CheckPatrolFeatureTimerReco(CustomRecognition):
+    """Schedule optional patrol features independently from the main cycle."""
+
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        global patrol_feature_timer_state
+
+        param = parse_dict_param(argv.custom_recognition_param)
+        feature = str(param.get("feature", "")).strip()
+        if not feature:
+            return None
+
+        interval = safe_float(param.get("interval"), 3600.0, min_val=1.0)
+        task_id = argv.task_detail.task_id
+        now = time.time()
+        state = patrol_feature_timer_state.get(feature)
+
+        if state is None or state["task_id"] != task_id:
+            patrol_feature_timer_state[feature] = {
+                "task_id": task_id,
+                "last_run_time": now,
+                "interval_seconds": interval,
+            }
+            return (0, 0, 10, 10)
+
+        state["interval_seconds"] = interval
+        if now - state["last_run_time"] < interval:
+            return None
+
+        state["last_run_time"] = now
+        return (0, 0, 10, 10)
 
 
 @AgentServer.custom_recognition("CheckOpenShellLoopReco")

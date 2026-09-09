@@ -1,10 +1,10 @@
 # 海獭摸宝自动化 (docs/features/sea-otter-gem.md)
 
-**最后更新**: 2026-09-04
+**最后更新**: 2026-09-08
 
 ## 功能定位
 
-开心水族箱海獭寻宝特定宝石自动化助手（`SeaOtterGemTask`）。针对用户在海獭寻宝中选定特定宝石并进入寻宝好友列表/鱼缸的场景，自动化在相邻好友之间往复切换、高效摸取目标宝石，并在好友体力耗尽后自动向后滑动窗口，直到到达陌生人/好友列表边界安全退出。
+开心水族箱海獭寻宝特定宝石自动化助手（`SeaOtterGemTask`）。针对用户在海獭寻宝中选定特定宝石并进入寻宝好友列表/鱼缸的场景，自动化在相邻好友之间往复切换、高效摸取目标宝石，并在好友体力耗尽后自动向后滑动窗口。到达末位好友后，右侧系统推荐玩家只作为返回末位好友的跳板，不执行摸宝。
 
 ---
 
@@ -68,6 +68,13 @@ side == "right" → HARVEST_THEN_PREV
     → side 切回 "left"
 ```
 
+#### 好友身份门禁与末位推荐玩家：
+
+- 当前页面命中 `好友判断_已点赞.png` 或 `好友判断_未点赞.png` 任一模板，才认定为真实好友，并进入耗尽/可摸状态识别。
+- 两种模板都未命中时，禁止点击海獭。若此时运行时状态为 `right` 且页面仍有好友导航箭头，则认定为末位好友右侧的系统推荐玩家，只点击 Prev 返回最后一个真实好友。
+- 推荐玩家不再作为任务完成条件。流程可反复执行 `最后好友 LEFT 摸宝 -> 推荐玩家 RIGHT -> Prev -> 最后好友 LEFT 摸宝`，直到安全上限或其他明确终止状态。
+- 若推荐玩家判断发生在非 `right` 状态，动作会安全失败，不使用坐标兜底。
+
 ---
 
 ### 正确的体力耗尽识别方式
@@ -96,12 +103,12 @@ side == "right" → HARVEST_THEN_PREV
 
 ---
 
-### SeaOtterDone 只由两种情况触发
+### SeaOtterDone 的触发条件
 
-1. **到达好友列表末尾**：OCR 识别到"加好友"等陌生人/推荐页特征
-2. **Safety Limit 触发**：`total_harvests >= max_harvests (200)` 或 `consecutive_exhausted >= 30`
+1. **启动时已位于完整推荐好友列表页**：OCR 识别到“全部添加”或“推荐好友”；
+2. **Safety Limit 触发**：`total_harvests >= max_harvests (200)` 或 `consecutive_exhausted >= 30`。
 
-**绝对不允许**仅因为遇到某个 exhausted 好友就触发 `SeaOtterDone`。
+**绝对不允许**仅因为遇到某个 exhausted 好友，或在末位好友右侧进入单个系统推荐玩家鱼缸，就触发 `SeaOtterDone`。
 
 ---
 
@@ -126,7 +133,9 @@ side == "right" → HARVEST_THEN_PREV
 | B: L摸 → R耗尽(Bridge) → L摸 → R耗尽(Bridge) | Mock | **PASS** |
 | C: L1耗尽 → L2(旧R)耗尽 → L3正常 → 采集 | Mock | **PASS** |
 | D: 多次耗尽后遇可摸好友，旧exhausted绝不触发Done | Mock | **PASS** |
+| E: 最后好友摸宝 → 右侧推荐玩家 → 返回最后好友并继续摸宝 | Mock + Pipeline 静态检查 | **PASS（代码级）** |
 | 真实长循环（不对称好友体力实机运行）| 用户实机观测 | **PASS（v0.4.2 验证）** |
+| 末位好友与右侧推荐玩家反复桥接 | MFA 实机 | **待验证** |
 
 ---
 
@@ -180,10 +189,10 @@ side == "right" → HARVEST_THEN_PREV
 | 文件 | 说明 |
 | :--- | :--- |
 | `agent/runtime_state.py` | `sea_otter_gem_state` 共享状态字典 |
-| `agent/my_action.py` | `InitSeaOtterStateAction`, `SeaOtterHarvestAction`, `SeaOtterAdvancePairAction` |
+| `agent/my_action.py` | `InitSeaOtterStateAction`, `SeaOtterHarvestAction`, `SeaOtterAdvancePairAction`, `SeaOtterReturnFromRecommendedAction` |
 | `agent/my_reco.py` | `CheckSeaOtterLimitReco` |
-| `assets/resource/pipeline/my_task.json` | `SeaOtterGemTask` 状态机 Pipeline |
-| `dev/test_sea_otter_scenarios.py` | 4 大业务场景 Mock 验证（无需设备） |
+| `assets/resource/pipeline/features/sea_otter_gem.json` | `SeaOtterGemTask` 状态机 Pipeline |
+| `dev/test_sea_otter_scenarios.py` | 5 大业务场景与好友身份门禁验证（无需设备） |
 
 ---
 
@@ -193,3 +202,4 @@ side == "right" → HARVEST_THEN_PREV
 2. **Right exhausted ≠ 推进窗口**，只需退回 Left；推进只由 Left exhausted 触发。
 3. `consecutive_exhausted` 计数只在 LEFT exhausted → Next 时增加，Harvest 时归零。
 4. 修改 Pipeline 后必须运行 `python dev/test_pipeline_regex.py` 检查正则。
+5. `好友判断_已点赞.png` 与 `好友判断_未点赞.png` 是真实好友的正向身份依据；未通过身份门禁时禁止摸宝。

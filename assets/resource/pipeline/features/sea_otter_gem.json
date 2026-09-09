@@ -69,9 +69,10 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterLimitReached",
+            "SeaOtterFriendLiked",
+            "SeaOtterFriendUnliked",
+            "SeaOtterRecommendedBridge",
             "SeaOtterAddFriendPage",
-            "SeaOtterExhausted",
-            "SeaOtterHarvestable",
             "SeaOtterWaitScreen"
         ]
     },
@@ -83,6 +84,52 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "SeaOtterDone"
+        ]
+    },
+    "SeaOtterFriendLiked": {
+        "recognition": "TemplateMatch",
+        "template": "好友判断_已点赞.png",
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "SeaOtterKnownFriendRouter"
+        ]
+    },
+    "SeaOtterFriendUnliked": {
+        "recognition": "TemplateMatch",
+        "template": "好友判断_未点赞.png",
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "SeaOtterKnownFriendRouter"
+        ]
+    },
+    "SeaOtterKnownFriendRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "SeaOtterExhausted",
+            "SeaOtterHarvestable",
+            "SeaOtterWaitScreen"
+        ]
+    },
+    "SeaOtterRecommendedBridge": {
+        "recognition": "TemplateMatch",
+        "template": "好友_下一位.png",
+        "roi": [1140, 50, 130, 80],
+        "threshold": 0.7,
+        "action": "Custom",
+        "custom_action": "SeaOtterReturnFromRecommendedAction",
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "SeaOtterFriendRouter"
         ]
     },
     "SeaOtterAddFriendPage": {

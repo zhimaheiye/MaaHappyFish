@@ -43,8 +43,9 @@ def run_tests():
 
     close = pipeline["GlobalDailySignClose"]
     assert close["template"] == "签到_关闭.png"
+    assert close["roi"] == [1033, 0, 148, 140]
     assert close["action"] == "Click"
-    assert "target" not in close
+    assert close["target"] == [1103, 63, 6, 6]
 
     auto_closed = pipeline["GlobalDailySignAutoClosed"]
     assert auto_closed["template"] == "签到_识别.png"

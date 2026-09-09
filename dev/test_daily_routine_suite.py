@@ -258,8 +258,16 @@ def run_tests():
     assert run_band_fish_score_tests() == 0
     print("  >>> PASS: 选曲安全门禁、最新/欢乐颂与 Mock 跳过分支验证通过！")
 
+    # -------------------------------------------------------------
+    # Test 11: BandFishInviteLoopAction OCR 与停止门禁
+    # -------------------------------------------------------------
+    print("\n[Test 11] 验证 BandFishInviteLoopAction 好友 OCR 与停止门禁")
+    from test_band_fish_invite import main as run_band_fish_invite_tests
+    assert run_band_fish_invite_tests() == 0
+    print("  >>> PASS: 好友名附加字符兼容与停止后零追加操作验证通过！")
+
     print("\n" + "=" * 70)
-    print("=== [ALL PASS] DailyRoutineTask v3 全部 10 大离线测试用例 100% 通过！ ===")
+    print("=== [ALL PASS] DailyRoutineTask v3 全部 11 大离线测试用例 100% 通过！ ===")
     print("=" * 70)
     return True
 

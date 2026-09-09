@@ -1,0 +1,338 @@
+{
+    "PatrolMagicSummonDue": {
+        "enabled": false,
+        "recognition": "Custom",
+        "custom_recognition": "CheckPatrolFeatureTimerReco",
+        "custom_recognition_param": {
+            "feature": "magic_summon",
+            "interval": 3600
+        },
+        "action": "DoNothing",
+        "timeout": 3000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[巡检] 开始检查魔力召唤。"
+        },
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolMagicOpenTreasure"
+        ],
+        "on_error": [
+            "PatrolWaitLoop"
+        ]
+    },
+    "PatrolMagicOpenTreasure": {
+        "recognition": "TemplateMatch",
+        "template": "右下角_宝箱.png",
+        "threshold": 0.8,
+        "roi": [
+            1120,
+            562,
+            141,
+            141
+        ],
+        "action": "Click",
+        "post_delay": 700,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolMagicClickEntry"
+        ],
+        "on_error": [
+            "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicClickEntry": {
+        "recognition": "TemplateMatch",
+        "template": "魔力召唤入口.png",
+        "threshold": 0.8,
+        "roi": [
+            415,
+            593,
+            173,
+            124
+        ],
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolMagicVerifyPage"
+        ],
+        "on_error": [
+            "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicVerifyPage": {
+        "recognition": "OCR",
+        "expected": "魔力\\s*召唤|魔力|召唤",
+        "roi": [
+            468,
+            0,
+            345,
+            146
+        ],
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolMagicConfirmPopup",
+            "PatrolMagicClickAdvanced",
+            "PatrolMagicReturn"
+        ],
+        "on_error": [
+            "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicClickAdvanced": {
+        "recognition": "TemplateMatch",
+        "template": "点击高级召唤.png",
+        "threshold": 0.8,
+        "roi": [
+            811,
+            495,
+            232,
+            148
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolMagicConfirmPopup"
+        ],
+        "on_error": [
+            "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicConfirmPopup": {
+        "recognition": "TemplateMatch",
+        "template": "绿色勾选按钮.png",
+        "threshold": 0.8,
+        "roi": [
+            751,
+            404,
+            153,
+            150
+        ],
+        "action": "Click",
+        "post_delay": 1800,
+        "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认高级魔力召唤。"
+        },
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolMagicReturn"
+        ],
+        "on_error": [
+            "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicReturn": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyMainAfterCycle"
+        ],
+        "on_error": [
+            "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 页面门禁未通过，已安全停止且未继续点击。"
+        }
+    },
+    "PatrolGemFusionDue": {
+        "enabled": false,
+        "recognition": "Custom",
+        "custom_recognition": "CheckPatrolFeatureTimerReco",
+        "custom_recognition_param": {
+            "feature": "gem_fusion",
+            "interval": 3600
+        },
+        "action": "DoNothing",
+        "timeout": 3000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[巡检] 开始检查宝石融合。"
+        },
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGemFusionOpenTreasure"
+        ],
+        "on_error": [
+            "PatrolWaitLoop"
+        ]
+    },
+    "PatrolGemFusionOpenTreasure": {
+        "recognition": "TemplateMatch",
+        "template": "右下角_宝箱.png",
+        "threshold": 0.8,
+        "roi": [
+            1120,
+            562,
+            141,
+            141
+        ],
+        "action": "Click",
+        "post_delay": 700,
+        "timeout": 3500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGemFusionClickEntry"
+        ],
+        "on_error": [
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionClickEntry": {
+        "recognition": "TemplateMatch",
+        "template": "宝石融合入口.png",
+        "threshold": 0.8,
+        "roi": [
+            632,
+            591,
+            135,
+            128
+        ],
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGemFusionPageRouter"
+        ],
+        "on_error": [
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionPageRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGemFusionPutInStorage",
+            "PatrolGemFusionVerifyPage",
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionPutInStorage": {
+        "recognition": "OCR",
+        "expected": "放入仓库",
+        "roi": [
+            498,
+            486,
+            283,
+            138
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 4500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGemFusionVerifyPage"
+        ],
+        "on_error": [
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionVerifyPage": {
+        "recognition": "TemplateMatch",
+        "template": "宝石融合页面.png",
+        "threshold": 0.8,
+        "roi": [
+            549,
+            0,
+            178,
+            242
+        ],
+        "action": "DoNothing",
+        "timeout": 4500,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGemFusionClickSynthesize",
+            "PatrolGemFusionReturn"
+        ],
+        "on_error": [
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionClickSynthesize": {
+        "recognition": "OCR",
+        "expected": "合成",
+        "roi": [
+            825,
+            556,
+            178,
+            140
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 4500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已启动下一轮宝石融合。"
+        },
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolGemFusionReturn"
+        ],
+        "on_error": [
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionReturn": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolVerifyMainAfterCycle"
+        ],
+        "on_error": [
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-宝石融合] 页面门禁未通过，已安全停止且未继续点击。"
+        }
+    }
+}
