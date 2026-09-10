@@ -733,6 +733,7 @@ class InitSeaOtterStateAction(CustomAction):
             sea_otter_gem_state["current_side"] = "left"
             sea_otter_gem_state["total_harvests"] = 0
             sea_otter_gem_state["consecutive_exhausted"] = 0
+            sea_otter_gem_state["completion_reason"] = None
             print(f"[海獭摸宝] 状态已重置: side=LEFT, harvests=0 (task_id: {task_id})", flush=True)
             return True
         except Exception as e:
@@ -751,6 +752,8 @@ class SeaOtterHarvestAction(CustomAction):
                 return False
 
             side = sea_otter_gem_state.get("current_side", "left")
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            stay_on_current = bool(param.get("stay_on_current", False))
 
             # 1. 点击左下角海獭安全本体 (85, 565)
             ctrl.post_touch_down(85, 565).wait()
@@ -765,7 +768,14 @@ class SeaOtterHarvestAction(CustomAction):
             time.sleep(0.8)
 
             # 2. 依据当前 side 决定下一步导航
-            if side == "left":
+            if stay_on_current:
+                print(
+                    f"[SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_STAY_LAST_FRIEND "
+                    f"(累计摸宝: {cur}/{limit})",
+                    flush=True,
+                )
+                sea_otter_gem_state["current_side"] = "left"
+            elif side == "left":
                 print(f"[SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT (累计摸宝: {cur}/{limit})", flush=True)
                 ctrl.post_click(1205, 68).wait()
                 sea_otter_gem_state["current_side"] = "right"
@@ -816,7 +826,7 @@ class SeaOtterAdvancePairAction(CustomAction):
 
 @AgentServer.custom_action("SeaOtterReturnFromRecommendedAction")
 class SeaOtterReturnFromRecommendedAction(CustomAction):
-    """RIGHT 为系统推荐玩家时，仅返回 LEFT 的最后好友继续摸宝。"""
+    """RIGHT 时返回末位好友；LEFT 时说明末位好友已耗尽，正常结束。"""
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             ctrl = context.tasker.controller
@@ -826,9 +836,13 @@ class SeaOtterReturnFromRecommendedAction(CustomAction):
             if _task_cancelled(context):
                 print("[海獭摸宝] 收到停止请求，未从推荐玩家页面继续操作", flush=True)
                 return False
-            if sea_otter_gem_state.get("current_side", "left") != "right":
-                print("[海獭摸宝] 推荐玩家桥接状态异常：当前不是 RIGHT，已安全停止", flush=True)
-                return False
+            if sea_otter_gem_state.get("current_side", "left") == "left":
+                sea_otter_gem_state["completion_reason"] = "LAST_FRIEND_EXHAUSTED"
+                print(
+                    "[SeaOtter] side=LEFT ui=RECOMMENDED action=DONE_LAST_FRIEND_EXHAUSTED",
+                    flush=True,
+                )
+                return True
 
             print("[SeaOtter] side=RIGHT ui=RECOMMENDED action=PREV_AS_LAST_FRIEND_BRIDGE", flush=True)
             ctrl.post_click(1085, 68).wait()
@@ -1034,7 +1048,11 @@ class BandFishPerformAction(CustomAction):
             param = parse_dict_param(argv.custom_action_param)
             score_mode = str(param.get("score_mode", "latest")).strip().lower()
             score_name = str(param.get("score_name", "欢乐颂")).strip()
-            if score_mode not in ("latest", "named") or (score_mode == "named" and not score_name):
+            score_ocr_keyword = str(param.get("score_ocr_keyword", score_name)).strip()
+            if (
+                score_mode not in ("latest", "named")
+                or (score_mode == "named" and (not score_name or not score_ocr_keyword))
+            ):
                 print("[乐队鱼演出] 错误: 乐章配置无效，未开始演出", flush=True)
                 return False
 
@@ -1124,20 +1142,62 @@ class BandFishPerformAction(CustomAction):
                     print("[乐队鱼演出] 错误: 列表底部仍有被截断的乐章，拒绝猜测最新乐章", flush=True)
                     return False
             else:
-                # 指定乐章先从当前画面查找；找不到时向列表顶部回退，最多 6 次。
-                for scroll_index in range(7):
-                    candidates = _band_fish_score_candidates(context, f_dlg, score_name)
-                    if candidates:
-                        target_name, target_box = candidates[0]
+                # 指定乐章先检查当前页；未命中则回到顶部，再逐页向下查找。
+                score_expected = f".*{re.escape(score_ocr_keyword)}.*"
+                candidates = _band_fish_score_candidates(context, f_dlg, score_expected)
+                if candidates:
+                    _, target_box = candidates[0]
+
+                previous = f_dlg
+                for _ in range(8):
+                    if target_box is not None:
                         break
-                    if scroll_index == 6:
-                        break
+                    if _task_cancelled(context):
+                        print("[乐队鱼演出] 已收到停止请求，未继续查找指定乐章", flush=True)
+                        return False
                     ctrl.post_swipe(750, 250, 750, 590, 450).wait()
                     time.sleep(0.7)
-                    f_dlg = capture_frame()
-                    if _recognition_box(context, "BandFishScoreDialogTitle", f_dlg) is None:
-                        print("[乐队鱼演出] 错误: 查找指定乐章时弹窗门禁丢失，未消耗体力", flush=True)
+                    current = capture_frame()
+                    if (
+                        _recognition_box(context, "BandFishScoreDialogTitle", current) is None
+                        or _recognition_box(context, "BandFishScoreConfirm", current) is None
+                    ):
+                        print("[乐队鱼演出] 错误: 回到乐章列表顶部时弹窗门禁丢失，未消耗体力", flush=True)
                         return False
+                    f_dlg = current
+                    candidates = _band_fish_score_candidates(context, f_dlg, score_expected)
+                    if candidates:
+                        _, target_box = candidates[0]
+                        break
+                    diff = _band_fish_score_view_difference(previous, current)
+                    previous = current
+                    if diff <= 1.0:
+                        break
+
+                for _ in range(8):
+                    if target_box is not None:
+                        break
+                    if _task_cancelled(context):
+                        print("[乐队鱼演出] 已收到停止请求，未继续查找指定乐章", flush=True)
+                        return False
+                    ctrl.post_swipe(750, 590, 750, 250, 450).wait()
+                    time.sleep(0.7)
+                    current = capture_frame()
+                    if (
+                        _recognition_box(context, "BandFishScoreDialogTitle", current) is None
+                        or _recognition_box(context, "BandFishScoreConfirm", current) is None
+                    ):
+                        print("[乐队鱼演出] 错误: 下滑查找指定乐章时弹窗门禁丢失，未消耗体力", flush=True)
+                        return False
+                    f_dlg = current
+                    candidates = _band_fish_score_candidates(context, f_dlg, score_expected)
+                    if candidates:
+                        _, target_box = candidates[0]
+                        break
+                    diff = _band_fish_score_view_difference(previous, current)
+                    previous = current
+                    if diff <= 1.0:
+                        break
 
             if target_box is None:
                 print(f"[乐队鱼演出] 错误: OCR 未找到{score_label}，未消耗体力", flush=True)
@@ -1149,7 +1209,8 @@ class BandFishPerformAction(CustomAction):
             time.sleep(0.6)
 
             selected_frame = capture_frame()
-            selected_candidates = _band_fish_score_candidates(context, selected_frame, target_name)
+            selected_expected = score_expected if score_mode == "named" else target_name
+            selected_candidates = _band_fish_score_candidates(context, selected_frame, selected_expected)
             selected_box = selected_candidates[0][1] if selected_candidates else None
             if not _band_fish_score_is_selected(selected_frame, selected_box):
                 print(f"[乐队鱼演出] 错误: 未确认【{target_name}】黄色选中态，未点击确定、未消耗体力", flush=True)

@@ -16,9 +16,11 @@ graph TD
     C --> F[TriggerStarfishFeed]
     C --> G[CheckDutyCycle]
     C --> H[ClickFishBubble]
-    H -->|找金币气泡| B
+    H --> S[鱼缸底部安全区从左到右滑动]
+    S --> B
 ```
 - **核心识别**: `TemplateMatch` 金币气泡.png (`ROI: [428,126,679,360]`, `threshold: 0.75`)
+- **空中双倍收取**: 每次气泡点击后立即执行 `(221,663) -> (1007,663)` 水平滑动，整条轨迹限制在用户指定安全范围 `[201,630,826,66]` 内，再返回气泡识别循环。
 - **循环机制**: `ResumeHarvest` `timeout: -1` 为无底洞中转，保证 Pipeline 存活。
 
 ## 状态机设计 (CheckDutyCycleReco)

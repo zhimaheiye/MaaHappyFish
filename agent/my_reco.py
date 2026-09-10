@@ -610,6 +610,11 @@ class CheckSeaOtterLimitReco(CustomRecognition):
         context: Context,
         argv: CustomRecognition.AnalyzeArg,
     ) -> Optional[RectType]:
+        completion_reason = sea_otter_gem_state.get("completion_reason")
+        if completion_reason:
+            print(f"[海獭摸宝] 已到达好友边界，任务正常完成 ({completion_reason})", flush=True)
+            return (0, 0, 10, 10)
+
         cur = sea_otter_gem_state.get("total_harvests", 0)
         limit = sea_otter_gem_state.get("max_harvests", 200)
         if cur >= limit:

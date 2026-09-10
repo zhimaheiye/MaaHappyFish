@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.4.8",
+    "version": "0.4.9",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -580,7 +580,7 @@
         "乐队鱼乐章": {
             "type": "select",
             "label": "演奏乐章",
-            "description": "选择滑动到列表底部的最新乐章，或指定演奏欢乐颂；确认选中态后才会消耗演出体力",
+            "description": "选择滑动到列表底部的最新乐章，或指定一首乐章；确认黄色选中态后才会消耗演出体力",
             "default_case": "最新乐章",
             "cases": [
                 {
@@ -599,7 +599,224 @@
                         "BandFishCheckReady": {
                             "custom_action_param": {
                                 "score_mode": "named",
-                                "score_name": "欢乐颂"
+                                "score_name": "欢乐颂",
+                                "score_ocr_keyword": "欢乐"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "噜啦啦",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "噜啦啦",
+                                "score_ocr_keyword": "噜啦"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "玛丽有只小绵羊",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "玛丽有只小绵羊",
+                                "score_ocr_keyword": "小绵羊"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "幸福拍手歌",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "幸福拍手歌",
+                                "score_ocr_keyword": "拍手"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "斗牛士之歌",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "斗牛士之歌",
+                                "score_ocr_keyword": "斗牛士"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝色多瑙河",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "蓝色多瑙河",
+                                "score_ocr_keyword": "多瑙河"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "铃儿响叮当",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "铃儿响叮当",
+                                "score_ocr_keyword": "叮当"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "莫扎特40交响曲",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "莫扎特40交响曲",
+                                "score_ocr_keyword": "莫扎特"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "小星星",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "小星星",
+                                "score_ocr_keyword": "星星"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "生日歌",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "生日歌",
+                                "score_ocr_keyword": "生日"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "新年好",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "新年好",
+                                "score_ocr_keyword": "新年"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "春天在哪里",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "春天在哪里",
+                                "score_ocr_keyword": "春天"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "洋娃娃和小熊跳舞",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "洋娃娃和小熊跳舞",
+                                "score_ocr_keyword": "小熊"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "孤独的牧羊人",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "孤独的牧羊人",
+                                "score_ocr_keyword": "牧羊人"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蜗牛与黄鹂鸟",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "蜗牛与黄鹂鸟",
+                                "score_ocr_keyword": "黄鹂鸟"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "空之精灵",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "空之精灵",
+                                "score_ocr_keyword": "精灵"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "四小天鹅",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "四小天鹅",
+                                "score_ocr_keyword": "天鹅"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "小燕子",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "小燕子",
+                                "score_ocr_keyword": "燕子"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "少女心声",
+                    "pipeline_override": {
+                        "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "少女心声",
+                                "score_ocr_keyword": "心声"
                             }
                         }
                     }

@@ -80,8 +80,54 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicConfirmPopup",
+            "PatrolMagicRevealResult",
             "PatrolMagicClickAdvanced",
             "PatrolMagicReturn"
+        ],
+        "on_error": [
+            "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicRevealResult": {
+        "recognition": "OCR",
+        "expected": "揭晓",
+        "roi": [
+            827,
+            501,
+            210,
+            145
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolMagicConfirmRevealedResult"
+        ],
+        "on_error": [
+            "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicConfirmRevealedResult": {
+        "recognition": "OCR",
+        "expected": "确定",
+        "roi": [
+            538,
+            399,
+            202,
+            142
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已领取上一轮魔力召唤结果。"
+        },
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolMagicClickAdvanced"
         ],
         "on_error": [
             "PatrolMagicAbort"

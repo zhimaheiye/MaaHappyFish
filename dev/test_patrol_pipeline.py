@@ -95,7 +95,12 @@ class PatrolPipelineTest(unittest.TestCase):
             )
             self.assertEqual(window["on_error"], [expected_next])
             self.assertEqual(bubble["roi"], [0, 100, 1280, 560])
-            self.assertEqual(business_next(bubble), [f"PatrolCollectTank{tank}"])
+            sweep_name = f"PatrolSweepTank{tank}AfterBubble"
+            self.assertEqual(business_next(bubble), [sweep_name])
+            self.assertEqual(
+                business_next(self.pipeline[sweep_name]),
+                [f"PatrolCollectTank{tank}"],
+            )
 
     def test_starfish_page_is_entered_once_then_switched_by_tabs(self):
         self.assertEqual(
@@ -257,9 +262,42 @@ class PatrolPipelineTest(unittest.TestCase):
             self.pipeline["PatrolGemFusionClickSynthesize"]["roi"],
             [825, 556, 178, 140],
         )
+        self.assertEqual(
+            self.pipeline["PatrolMagicRevealResult"]["roi"],
+            [827, 501, 210, 145],
+        )
+        self.assertEqual(
+            self.pipeline["PatrolMagicConfirmRevealedResult"]["roi"],
+            [538, 399, 202, 142],
+        )
         magic_expected = self.pipeline["PatrolMagicVerifyPage"]["expected"]
         self.assertIn("魔力", magic_expected)
         self.assertIn("召唤", magic_expected)
+
+    def test_magic_summon_routes_completed_result_back_to_start_flow(self):
+        router_next = business_next(self.pipeline["PatrolMagicVerifyPage"])
+        self.assertEqual(
+            router_next,
+            [
+                "PatrolMagicConfirmPopup",
+                "PatrolMagicRevealResult",
+                "PatrolMagicClickAdvanced",
+                "PatrolMagicReturn",
+            ],
+        )
+        reveal = self.pipeline["PatrolMagicRevealResult"]
+        self.assertEqual(reveal["recognition"], "OCR")
+        self.assertEqual(reveal["expected"], "揭晓")
+        self.assertEqual(reveal["action"], "Click")
+        self.assertEqual(
+            business_next(reveal),
+            ["PatrolMagicConfirmRevealedResult"],
+        )
+        confirm = self.pipeline["PatrolMagicConfirmRevealedResult"]
+        self.assertEqual(confirm["recognition"], "OCR")
+        self.assertEqual(confirm["expected"], "确定")
+        self.assertEqual(confirm["action"], "Click")
+        self.assertEqual(business_next(confirm), ["PatrolMagicClickAdvanced"])
 
     def test_management_resume_accepts_any_main_tank_on_exit(self):
         next_nodes = self.pipeline["PatrolVerifyMainAfterCycle"]["next"]

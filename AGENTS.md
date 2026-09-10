@@ -13,6 +13,7 @@
 | --- | --- |
 | 需了解整体架构或边界约束 | `PRODUCT.md` |
 | 接手当前工作或查看进度 | `docs/handoff/CURRENT.md` |
+| 新 Agent 接手、查询开发流程/用户偏好/历史事故 | `docs/handoff/DEVELOPMENT_PLAYBOOK.md` |
 | 查询游戏资源、消耗与实机测试授权 | `docs/game-knowledge.md` |
 | 维护"收鱼产物"单缸挂机功能 | `docs/features/collect-fish.md` |
 | 维护"多鱼缸巡检"循环任务 | `docs/features/patrol.md` |
@@ -30,6 +31,20 @@
 | 维护"驯鹿鱼送收礼物"日常子任务 | `docs/features/reindeer-fish.md` |
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
+
+## 新 Agent 对话接手顺序（必须执行）
+
+新加入的 Agent 在当前对话或后续对话中接手项目前，按以下顺序建立上下文，不能只看最后一条用户消息就直接改代码：
+
+1. 完整阅读本文件 `AGENTS.md`，先掌握硬规则、工具边界和文档路由；
+2. 阅读 `PRODUCT.md`，确认项目定位、架构、禁止事项与非目标；
+3. 阅读 `docs/handoff/CURRENT.md`，区分“代码已实现”“代码级验证通过”“MFA 实机通过”和“仍待取证”；
+4. 阅读 `docs/handoff/DEVELOPMENT_PLAYBOOK.md`，了解用户偏好、证据模式、AGY 边界和历史事故；
+5. 根据文档路由表阅读本次任务对应的 `docs/features/*.md`；涉及资源消耗时再读 `docs/game-knowledge.md`，涉及模板/OCR/通用按钮时再读 `docs/ui-conventions.md`；
+6. 执行 `git status --short`，检查当前差异与未跟踪文件；修 bug 时同时定位对应时间段的 MFA/MaaFramework 日志；
+7. 最后再阅读目标 Pipeline、Agent 实现和相应 `dev/test_*.py`，建立“需求 -> 当前 UI 状态 -> 节点 -> Action/Reco -> 测试”的完整映射后才能修改。
+
+详细的接手检查表、证据模式和验证矩阵见 `docs/handoff/DEVELOPMENT_PLAYBOOK.md`。实时代码、日志和当前用户纠正的优先级始终高于历史文档；发现冲突时先修正文档，不得沿用已被用户否定的结论。
 
 ## 核心文件速查表
 | 文件路径 | 模块说明 | 关键注意点 |

@@ -256,7 +256,7 @@ def run_tests():
 
     from test_band_fish_score_selection import main as run_band_fish_score_tests
     assert run_band_fish_score_tests() == 0
-    print("  >>> PASS: 选曲安全门禁、最新/欢乐颂与 Mock 跳过分支验证通过！")
+    print("  >>> PASS: 选曲安全门禁、最新/指定乐章与 Mock 跳过分支验证通过！")
 
     # -------------------------------------------------------------
     # Test 11: BandFishInviteLoopAction OCR 与停止门禁

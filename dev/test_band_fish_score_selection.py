@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -19,7 +20,29 @@ READY_BOX = (572, 608, 130, 45)
 TITLE_BOX = (284, 343, 354, 33)
 CONFIRM_BOX = (991, 341, 67, 38)
 TOP_SCORES = [("欢乐颂", (710, 450, 80, 33)), ("噜啦啦", (712, 595, 77, 29))]
-BOTTOM_SCORES = [("美丽的夜空啊", (681, 305, 140, 28)), ("小星星", (711, 453, 78, 30))]
+BOTTOM_SCORES = [("美丽的夜空啊", (681, 305, 140, 28)), ("天鹅", (711, 453, 78, 30))]
+
+SCORE_CASES = [
+    ("欢乐颂", "欢乐"),
+    ("噜啦啦", "噜啦"),
+    ("玛丽有只小绵羊", "小绵羊"),
+    ("幸福拍手歌", "拍手"),
+    ("斗牛士之歌", "斗牛士"),
+    ("蓝色多瑙河", "多瑙河"),
+    ("铃儿响叮当", "叮当"),
+    ("莫扎特40交响曲", "莫扎特"),
+    ("小星星", "星星"),
+    ("生日歌", "生日"),
+    ("新年好", "新年"),
+    ("春天在哪里", "春天"),
+    ("洋娃娃和小熊跳舞", "小熊"),
+    ("孤独的牧羊人", "牧羊人"),
+    ("蜗牛与黄鹂鸟", "黄鹂鸟"),
+    ("空之精灵", "精灵"),
+    ("四小天鹅", "天鹅"),
+    ("小燕子", "燕子"),
+    ("少女心声", "心声"),
+]
 
 
 class Job:
@@ -94,7 +117,7 @@ class FakeContext:
         if node_name == "BandFishScoreName":
             items = TOP_SCORES if ctrl.page == "top" else BOTTOM_SCORES
             expected = ((pipeline_override or {}).get(node_name) or {}).get("expected", ".+")
-            filtered = [SimpleNamespace(text=text, box=box) for text, box in items if expected == ".+" or expected in text]
+            filtered = [SimpleNamespace(text=text, box=box) for text, box in items if re.fullmatch(expected, text)]
             best = filtered[0] if filtered else None
             return SimpleNamespace(
                 hit=bool(filtered),
@@ -147,7 +170,20 @@ def main():
     interface = json.loads(raw_interfaces[0].decode("utf-8"))
     score_option = interface["option"]["乐队鱼乐章"]
     assert score_option["default_case"] == "最新乐章"
-    assert [case["name"] for case in score_option["cases"]] == ["最新乐章", "欢乐颂"]
+    assert [case["name"] for case in score_option["cases"]] == [
+        "最新乐章",
+        *[name for name, _ in SCORE_CASES],
+    ]
+    named_cases = score_option["cases"][1:]
+    configured = []
+    for case, (name, keyword) in zip(named_cases, SCORE_CASES):
+        param = case["pipeline_override"]["BandFishCheckReady"]["custom_action_param"]
+        assert param["score_mode"] == "named"
+        assert param["score_name"] == name
+        assert param.get("score_ocr_keyword", name) == keyword
+        configured.append((name, keyword))
+    for name, keyword in configured:
+        assert [candidate for candidate, _ in configured if keyword in candidate] == [name]
     tasks = {task["entry"]: task for task in interface["task"]}
     assert "乐队鱼乐章" in tasks["BandFishTask"]["option"]
     assert "乐队鱼乐章" in tasks["DailyRoutineTask"]["option"]
@@ -170,11 +206,26 @@ def main():
     finally:
         my_action.load_band_fish_skip_template = old_template_loader
 
-    ok, named = _run({"score_mode": "named", "score_name": "欢乐颂"}, page="bottom")
+    ok, named = _run(
+        {"score_mode": "named", "score_name": "欢乐颂", "score_ocr_keyword": "欢乐"},
+        page="bottom",
+    )
     assert ok is True
     assert (750, 466) in named.clicks
     assert (1024, 360) in named.clicks
     assert named.clicks.index((750, 466)) < named.clicks.index((1024, 360))
+
+    ok, split_named = _run(
+        {
+            "score_mode": "named",
+            "score_name": "四小天鹅",
+            "score_ocr_keyword": "天鹅",
+        },
+        page="top",
+    )
+    assert ok is True
+    assert (750, 468) in split_named.clicks
+    assert any(y1 > y2 for _, y1, _, y2, _ in split_named.swipes)
 
     ok, latest = _run({"score_mode": "latest"}, page="top")
     assert ok is True

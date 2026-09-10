@@ -39,6 +39,12 @@ class MockContext:
                 self.stopping = False
         self.tasker = Tasker(ctrl)
 
+
+class MockArg:
+    def __init__(self, custom_action_param=None):
+        self.custom_action_param = custom_action_param
+        self.task_detail = None
+
 # Import real actions
 from agent.my_action import (
     InitSeaOtterStateAction,
@@ -242,6 +248,36 @@ def test_scenario_e():
     print("[PASS] Scenario E: 最后好友与推荐玩家 LEFT/RIGHT 往返桥接验证通过！")
 
 
+def test_scenario_f():
+    """末位好友耗尽后进入推荐玩家页，应正常完成而不是桥接状态报错。"""
+    ctrl = MockController()
+    ctx = MockContext(ctrl)
+    init_act.run(ctx, None)
+
+    assert step(ctrl, ctx, 'EXHAUSTED') == 'CONTINUE'
+    assert sea_otter_gem_state["current_side"] == "left"
+    assert step(ctrl, ctx, 'RECOMMENDED') == 'CONTINUE'
+    assert sea_otter_gem_state["completion_reason"] == "LAST_FRIEND_EXHAUSTED"
+    assert limit_reco.analyze(ctx, None) is not None
+
+    clicks = [a for a in ctrl.actions if a in ('CLICK_NEXT', 'CLICK_PREV')]
+    assert clicks == ['CLICK_NEXT'], "进入推荐玩家后不应再执行 Prev 或其他点击"
+    print("[PASS] Scenario F: 末位好友耗尽后进入推荐玩家页正常完成！")
+
+
+def test_last_friend_gray_arrow_harvest():
+    """灰色右键下仍先摸取当前好友；不点击不可用的 Next，耗尽后再完成。"""
+    ctrl = MockController()
+    ctx = MockContext(ctrl)
+    init_act.run(ctx, None)
+
+    assert harvest_act.run(ctx, MockArg({"stay_on_current": True}))
+    assert sea_otter_gem_state["current_side"] == "left"
+    assert sea_otter_gem_state["total_harvests"] == 1
+    assert not any(a in ('CLICK_NEXT', 'CLICK_PREV') for a in ctrl.actions)
+    print("[PASS] 灰色右键末位好友可继续摸宝且不会点击不可用箭头！")
+
+
 def test_friend_gate_pipeline():
     pipeline_path = Path("assets/resource/pipeline/features/sea_otter_gem.json")
     pipeline = json.loads(pipeline_path.read_text(encoding="utf-8"))
@@ -265,10 +301,25 @@ def test_friend_gate_pipeline():
     assert business_next("SeaOtterFriendLiked") == ["SeaOtterKnownFriendRouter"]
     assert business_next("SeaOtterFriendUnliked") == ["SeaOtterKnownFriendRouter"]
     assert business_next("SeaOtterKnownFriendRouter") == [
+        "SeaOtterGrayRightArrow",
         "SeaOtterExhausted",
         "SeaOtterHarvestable",
         "SeaOtterWaitScreen",
     ]
+    gray_arrow = pipeline["SeaOtterGrayRightArrow"]
+    assert gray_arrow["template"] == "好友切换_灰色右键.png"
+    assert gray_arrow["roi"] == [1124, 0, 156, 134]
+    assert Path("assets/resource/image/好友切换_灰色右键.png").is_file()
+    assert business_next("SeaOtterGrayRightArrow") == [
+        "SeaOtterLastFriendExhausted",
+        "SeaOtterLastFriendHarvestable",
+        "SeaOtterWaitScreen",
+    ]
+    assert business_next("SeaOtterLastFriendExhausted") == ["SeaOtterDone"]
+    last_harvest = pipeline["SeaOtterLastFriendHarvestable"]
+    assert last_harvest["custom_action"] == "SeaOtterHarvestAction"
+    assert last_harvest["custom_action_param"] == {"stay_on_current": True}
+    assert business_next("SeaOtterLastFriendHarvestable") == ["SeaOtterFriendRouter"]
     bridge = pipeline["SeaOtterRecommendedBridge"]
     assert bridge["template"] == "好友_下一位.png"
     assert bridge["custom_action"] == "SeaOtterReturnFromRecommendedAction"
@@ -281,5 +332,7 @@ if __name__ == "__main__":
     test_scenario_c()
     test_scenario_d()
     test_scenario_e()
+    test_scenario_f()
+    test_last_friend_gray_arrow_harvest()
     test_friend_gate_pipeline()
-    print("\n>>> ALL 6 SCENARIOS 100% PASSED! <<<")
+    print("\n>>> ALL 8 SCENARIOS 100% PASSED! <<<")

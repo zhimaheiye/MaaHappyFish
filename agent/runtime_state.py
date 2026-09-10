@@ -17,6 +17,7 @@ sea_otter_gem_state = {
     "max_harvests": 200,
     "consecutive_exhausted": 0,
     "max_consecutive_exhausted": 30,
+    "completion_reason": None,
     "current_task_id": None,
 }
 
