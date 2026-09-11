@@ -13,6 +13,7 @@
 | --- | --- |
 | 需了解整体架构或边界约束 | `PRODUCT.md` |
 | 查看当前正式版与机器运行状态 | `PROJECT_STATUS.md` |
+| 查看或登记待修复问题 | `ISSUES.md` |
 | 接手当前工作或查看进度 | `docs/handoff/CURRENT.md` |
 | 新 Agent 接手、查询开发流程/用户偏好/历史事故 | `docs/handoff/DEVELOPMENT_PLAYBOOK.md` |
 | 查询游戏资源、消耗与实机测试授权 | `docs/game-knowledge.md` |
