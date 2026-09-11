@@ -43,9 +43,33 @@ patrol_timer_state = {
     "task_id": None,
     "last_cycle_time": 0.0,
     "interval_seconds": 1800.0,
+    "last_ui_log_time": 0.0,
+    "ui_log_interval": 60.0,
+    "wait_focus_visible": False,
+    "cycle_in_progress": False,
 }
 
 patrol_feature_timer_state = {}
+
+
+def _show_patrol_wait_status(context: Context, now: float, interval: float) -> None:
+    patrol_timer_state["last_cycle_time"] = now
+    patrol_timer_state["last_ui_log_time"] = now
+    patrol_timer_state["wait_focus_visible"] = True
+    wake_time = datetime.fromtimestamp(now + interval).strftime("%H:%M:%S")
+    message = (
+        f"[巡检] 本轮多鱼缸巡检已完成，正在等待；"
+        f"下次主巡检 {wake_time}（约 {int(math.ceil(interval))} 秒后）。"
+    )
+    print(message, flush=True)
+    try:
+        context.override_pipeline({
+            "PatrolWaitLoop": {
+                "focus": {"Node.Action.Succeeded": message}
+            }
+        })
+    except Exception:
+        pass
 
 duty_state = {
     "mode": "IDLE",
@@ -448,18 +472,46 @@ class CheckPatrolTimerReco(CustomRecognition):
         now = time.time()
         if patrol_timer_state["task_id"] != task_id:
             patrol_timer_state["task_id"] = task_id
-            patrol_timer_state["last_cycle_time"] = now
-            print(
-                f"[巡检] 首轮巡检已完成，{int(interval)} 秒后开始下一轮。",
-                flush=True,
-            )
+            patrol_timer_state["cycle_in_progress"] = False
+            _show_patrol_wait_status(context, now, interval)
+            return None
+
+        if patrol_timer_state["cycle_in_progress"]:
+            patrol_timer_state["cycle_in_progress"] = False
+            _show_patrol_wait_status(context, now, interval)
             return None
 
         elapsed = now - patrol_timer_state["last_cycle_time"]
         if elapsed < interval:
+            if patrol_timer_state["wait_focus_visible"]:
+                patrol_timer_state["wait_focus_visible"] = False
+                try:
+                    context.override_pipeline({"PatrolWaitLoop": {"focus": {}}})
+                except Exception:
+                    pass
+            elif now - patrol_timer_state["last_ui_log_time"] >= patrol_timer_state["ui_log_interval"]:
+                remaining = max(0.0, interval - elapsed)
+                wake_time = datetime.fromtimestamp(now + remaining).strftime("%H:%M:%S")
+                message = (
+                    f"[巡检] 正在等待；下次主巡检 {wake_time}"
+                    f"（剩余约 {int(math.ceil(remaining))} 秒）。"
+                )
+                patrol_timer_state["last_ui_log_time"] = now
+                patrol_timer_state["wait_focus_visible"] = True
+                print(message, flush=True)
+                try:
+                    context.override_pipeline({
+                        "PatrolWaitLoop": {
+                            "focus": {"Node.Action.Succeeded": message}
+                        }
+                    })
+                except Exception:
+                    pass
             return None
 
-        patrol_timer_state["last_cycle_time"] = now
+        patrol_timer_state["cycle_in_progress"] = True
+        patrol_timer_state["last_ui_log_time"] = now
+        patrol_timer_state["wait_focus_visible"] = False
         print(
             "[巡检] 间隔已到，开始新一轮多鱼缸收宝与海星喂食。",
             flush=True,

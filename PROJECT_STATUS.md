@@ -1,8 +1,8 @@
-﻿# Project Status
+# Project Status
 
 ## 当前正式版
-- 版本：v0.4.9
-- commit：c86a27c
+- 版本：v0.5.0
+- commit：v0.5.0
 - 发布时间：2026-09-11
 
 ## 尚未正式发布

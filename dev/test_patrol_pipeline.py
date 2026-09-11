@@ -102,6 +102,44 @@ class PatrolPipelineTest(unittest.TestCase):
                 [f"PatrolCollectTank{tank}"],
             )
 
+    def test_main_patrol_steps_report_actions_and_results(self):
+        expected_logs = {
+            "PatrolStartAtTank1": ("鱼缸 1", "检查产物"),
+            "PatrolVerifyTank1Main": ("鱼缸 1", "检查产物"),
+            "PatrolSweepTank1AfterBubble": ("鱼缸 1", "重新计时"),
+            "PatrolOpenPickerAfterTank1": ("鱼缸 1", "30 秒", "鱼缸 2"),
+            "PatrolVerifyTank2Main": ("鱼缸 2", "检查产物"),
+            "PatrolSweepTank2AfterBubble": ("鱼缸 2", "重新计时"),
+            "PatrolOpenPickerAfterTank2": ("鱼缸 2", "30 秒", "鱼缸 3"),
+            "PatrolVerifyTank3Main": ("鱼缸 3", "检查产物"),
+            "PatrolSweepTank3AfterBubble": ("鱼缸 3", "重新计时"),
+            "PatrolOpenManagement": ("鱼缸 3", "30 秒", "管理页"),
+            "PatrolVerifyManagement": ("管理页", "确认"),
+            "PatrolExitManagement": ("返回", "主鱼缸"),
+        }
+        for node_name, fragments in expected_logs.items():
+            focus = " ".join(self.pipeline[node_name].get("focus", {}).values())
+            for fragment in fragments:
+                self.assertIn(fragment, focus, node_name)
+
+        for key, label in (
+            ("Cute", "萌海星"),
+            ("Good", "乖海星"),
+            ("Bright", "亮海星"),
+        ):
+            expected = {
+                f"PatrolSelect{key}StarfishTab": (label, "切换"),
+                f"PatrolVerify{key}Starfish": (label, "确认"),
+                f"Patrol{key}Replenish": (label, "选择鱼食"),
+                f"Patrol{key}NormalFood": (label, "普通鱼食", "投放"),
+                f"Patrol{key}SpecialFood": (label, "专用鱼食", "投放"),
+                f"Patrol{key}FeedReturnedToPanel": (label, "投放成功"),
+            }
+            for node_name, fragments in expected.items():
+                focus = " ".join(self.pipeline[node_name].get("focus", {}).values())
+                for fragment in fragments:
+                    self.assertIn(fragment, focus, node_name)
+
     def test_starfish_page_is_entered_once_then_switched_by_tabs(self):
         self.assertEqual(
             business_next(self.pipeline["PatrolVerifyManagement"]),
@@ -282,7 +320,7 @@ class PatrolPipelineTest(unittest.TestCase):
                 "PatrolMagicConfirmPopup",
                 "PatrolMagicRevealResult",
                 "PatrolMagicClickAdvanced",
-                "PatrolMagicReturn",
+                "PatrolMagicAlreadyRunning",
             ],
         )
         reveal = self.pipeline["PatrolMagicRevealResult"]
@@ -298,6 +336,31 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(confirm["expected"], "确定")
         self.assertEqual(confirm["action"], "Click")
         self.assertEqual(business_next(confirm), ["PatrolMagicClickAdvanced"])
+
+    def test_optional_features_report_each_terminal_state(self):
+        magic = self.pipeline["PatrolMagicAlreadyRunning"]
+        self.assertEqual(magic["action"], "DoNothing")
+        self.assertEqual(business_next(magic), ["PatrolMagicReturn"])
+        magic_focus = " ".join(magic["focus"].values())
+        self.assertIn("正在召唤", magic_focus)
+        self.assertIn("未重复", magic_focus)
+
+        fusion = self.pipeline["PatrolGemFusionAlreadyRunning"]
+        self.assertEqual(fusion["action"], "DoNothing")
+        self.assertEqual(business_next(fusion), ["PatrolGemFusionReturn"])
+        fusion_focus = " ".join(fusion["focus"].values())
+        self.assertIn("正在融合", fusion_focus)
+        self.assertIn("未重复", fusion_focus)
+
+        for node_name, fragments in {
+            "PatrolMagicRevealResult": ("上一轮", "揭晓"),
+            "PatrolMagicConfirmPopup": ("已启动", "魔力召唤"),
+            "PatrolGemFusionPutInStorage": ("上一轮", "放入仓库"),
+            "PatrolGemFusionClickSynthesize": ("已启动", "宝石融合"),
+        }.items():
+            focus = " ".join(self.pipeline[node_name].get("focus", {}).values())
+            for fragment in fragments:
+                self.assertIn(fragment, focus, node_name)
 
     def test_management_resume_accepts_any_main_tank_on_exit(self):
         next_nodes = self.pipeline["PatrolVerifyMainAfterCycle"]["next"]

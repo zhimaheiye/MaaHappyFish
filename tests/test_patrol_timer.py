@@ -36,6 +36,10 @@ class PatrolTimerTest(unittest.TestCase):
             task_id=None,
             last_cycle_time=0.0,
             interval_seconds=1800.0,
+            last_ui_log_time=0.0,
+            ui_log_interval=60.0,
+            wait_focus_visible=False,
+            cycle_in_progress=False,
         )
         self.recognition = my_reco.CheckPatrolTimerReco()
         self.context = FakeContext()
@@ -43,12 +47,62 @@ class PatrolTimerTest(unittest.TestCase):
     def test_first_wait_starts_after_completed_initial_cycle(self):
         with patch.object(my_reco.time, "time", side_effect=[100.0, 129.0, 130.0]):
             self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 30)))
+            wait_message = self.context.pipeline["PatrolWaitLoop"]["focus"][
+                "Node.Action.Succeeded"
+            ]
+            self.assertIn("正在等待", wait_message)
+            self.assertIn("下次主巡检", wait_message)
             self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 30)))
             self.assertIsNotNone(self.recognition.analyze(self.context, make_argv(1, 30)))
         self.assertEqual(
             self.context.pipeline["PatrolTimerDue"]["focus"]["Node.Recognition.Succeeded"],
             "[巡检] 间隔已到，开始新一轮巡检。",
         )
+
+    def test_waiting_heartbeat_is_throttled_and_then_cleared(self):
+        with patch.object(
+            my_reco.time,
+            "time",
+            side_effect=[100.0, 101.0, 160.0, 161.0],
+        ):
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 300)))
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 300)))
+            self.assertEqual(
+                self.context.pipeline["PatrolWaitLoop"]["focus"],
+                {},
+            )
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 300)))
+            heartbeat = self.context.pipeline["PatrolWaitLoop"]["focus"][
+                "Node.Action.Succeeded"
+            ]
+            self.assertIn("正在等待", heartbeat)
+            self.assertIn("剩余约 240 秒", heartbeat)
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 300)))
+            self.assertEqual(
+                self.context.pipeline["PatrolWaitLoop"]["focus"],
+                {},
+            )
+
+    def test_interval_restarts_after_each_cycle_finishes(self):
+        with patch.object(
+            my_reco.time,
+            "time",
+            side_effect=[100.0, 130.0, 140.0, 169.0, 170.0],
+        ):
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 30)))
+            self.assertIsNotNone(self.recognition.analyze(self.context, make_argv(1, 30)))
+            self.assertTrue(my_reco.patrol_timer_state["cycle_in_progress"])
+
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 30)))
+            self.assertFalse(my_reco.patrol_timer_state["cycle_in_progress"])
+            self.assertEqual(my_reco.patrol_timer_state["last_cycle_time"], 140.0)
+            completion = self.context.pipeline["PatrolWaitLoop"]["focus"][
+                "Node.Action.Succeeded"
+            ]
+            self.assertIn("本轮多鱼缸巡检已完成", completion)
+
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 30)))
+            self.assertIsNotNone(self.recognition.analyze(self.context, make_argv(1, 30)))
 
     def test_new_task_does_not_reuse_previous_task_clock(self):
         with patch.object(my_reco.time, "time", side_effect=[100.0, 200.0]):

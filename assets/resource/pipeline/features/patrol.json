@@ -3,7 +3,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 开始首轮：依次收取 1/2/3 缸产物，再为三缸海星补充鱼食。"
+            "Node.Action.Succeeded": "[巡检] 开始首轮：依次收取鱼缸 1、2、3 的产物，再为三只海星补充鱼食。"
         },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
@@ -85,6 +85,9 @@
         ],
         "action": "Click",
         "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到鱼缸选择器已展开，已选择鱼缸 1。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -102,6 +105,9 @@
             48
         ],
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认当前位于鱼缸 1，开始检查产物；连续 30 秒无产物后切缸。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -120,6 +126,9 @@
         ],
         "action": "Click",
         "post_delay": 400,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 当前位于鱼缸 2，已展开选择器，准备归一到鱼缸 1。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -138,6 +147,9 @@
         ],
         "action": "Click",
         "post_delay": 400,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 当前位于鱼缸 3，已展开选择器，准备归一到鱼缸 1。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -178,6 +190,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已切换并确认鱼缸 1，开始检查产物；连续 30 秒无产物后切缸。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -224,6 +239,9 @@
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 1 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -243,6 +261,9 @@
         "action": "Click",
         "post_delay": 400,
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 1 已连续 30 秒未发现产物，本缸检查完成，正在切换鱼缸 2。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -286,6 +307,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已切换并确认鱼缸 2，开始检查产物；连续 30 秒无产物后切缸。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -332,6 +356,9 @@
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 2 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -351,6 +378,9 @@
         "action": "Click",
         "post_delay": 400,
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 2 已连续 30 秒未发现产物，本缸检查完成，正在切换鱼缸 3。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -394,6 +424,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已切换并确认鱼缸 3，开始检查产物；连续 30 秒无产物后进入管理页。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -440,6 +473,9 @@
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 3 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -459,6 +495,9 @@
         "action": "Click",
         "post_delay": 1800,
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 3 已连续 30 秒未发现产物，三缸收宝完成，正在打开管理页。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -479,6 +518,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认进入鱼缸管理页，准备依次检查三只海星。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -500,6 +542,9 @@
         "action": "Click",
         "post_delay": 1600,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已点击海星入口，准备从萌海星开始补充鱼食。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -521,6 +566,9 @@
         "action": "Click",
         "post_delay": 900,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-萌海星] 已点击顶部标签，正在验证是否切换成功。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -541,6 +589,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-萌海星] 页面已确认，准备打开选择鱼食弹窗。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -562,6 +613,9 @@
         "action": "Click",
         "post_delay": 1600,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-萌海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -588,6 +642,9 @@
         "threshold": 0.85,
         "action": "Click",
         "post_delay": 2200,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-萌海星] 检测到普通鱼食，已执行投放，正在验证结果。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -612,6 +669,9 @@
             195
         ],
         "post_delay": 2200,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-萌海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -639,6 +699,9 @@
             130
         ],
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-萌海星] 鱼食投放成功，喂食弹窗已关闭。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -657,6 +720,9 @@
         "action": "Click",
         "post_delay": 900,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-乖海星] 已点击顶部标签，正在验证是否切换成功。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -677,6 +743,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-乖海星] 页面已确认，准备打开选择鱼食弹窗。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -698,6 +767,9 @@
         "action": "Click",
         "post_delay": 1600,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-乖海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -724,6 +796,9 @@
         "threshold": 0.85,
         "action": "Click",
         "post_delay": 2200,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-乖海星] 检测到普通鱼食，已执行投放，正在验证结果。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -748,6 +823,9 @@
             195
         ],
         "post_delay": 2200,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-乖海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -775,6 +853,9 @@
             130
         ],
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-乖海星] 鱼食投放成功，喂食弹窗已关闭。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -793,6 +874,9 @@
         "action": "Click",
         "post_delay": 900,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-亮海星] 已点击顶部标签，正在验证是否切换成功。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -813,6 +897,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-亮海星] 页面已确认，准备打开选择鱼食弹窗。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -834,6 +921,9 @@
         "action": "Click",
         "post_delay": 1600,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-亮海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -860,6 +950,9 @@
         "threshold": 0.85,
         "action": "Click",
         "post_delay": 2200,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-亮海星] 检测到普通鱼食，已执行投放，正在验证结果。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -884,6 +977,9 @@
             195
         ],
         "post_delay": 2200,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-亮海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -911,6 +1007,9 @@
             130
         ],
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-亮海星] 鱼食投放成功，喂食弹窗已关闭。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -943,6 +1042,9 @@
         "action": "Click",
         "post_delay": 1200,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 三只海星均已检查，正在返回鱼缸管理页。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -963,6 +1065,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认返回鱼缸管理页，准备返回主鱼缸。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -984,6 +1089,9 @@
         "action": "Click",
         "post_delay": 1500,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已点击返回，正在确认主鱼缸页面。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -1017,6 +1125,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认返回鱼缸 1，进入调度等待。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -1035,6 +1146,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认返回鱼缸 2，进入调度等待。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -1053,6 +1167,9 @@
         ],
         "action": "DoNothing",
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认返回鱼缸 3，进入调度等待。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",

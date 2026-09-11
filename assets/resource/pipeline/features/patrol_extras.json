@@ -34,6 +34,9 @@
         "action": "Click",
         "post_delay": 700,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 已打开右下角宝箱菜单。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -56,6 +59,9 @@
         "action": "Click",
         "post_delay": 1600,
         "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 已点击魔力召唤入口，正在确认页面状态。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -76,13 +82,16 @@
         ],
         "action": "DoNothing",
         "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 已确认进入召唤页面，正在判断可召唤、待揭晓或召唤中。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicConfirmPopup",
             "PatrolMagicRevealResult",
             "PatrolMagicClickAdvanced",
-            "PatrolMagicReturn"
+            "PatrolMagicAlreadyRunning"
         ],
         "on_error": [
             "PatrolMagicAbort"
@@ -100,6 +109,9 @@
         "action": "Click",
         "post_delay": 1200,
         "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 发现上一轮召唤已结束，已点击揭晓，等待确认结果。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -122,7 +134,7 @@
         "post_delay": 1500,
         "timeout": 5000,
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 已领取上一轮魔力召唤结果。"
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 已点击确定并领取上一轮结果，继续检查是否可开启下一轮。"
         },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
@@ -146,6 +158,9 @@
         "action": "Click",
         "post_delay": 1200,
         "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 检测到高级召唤可用，已点击并等待确认。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -169,7 +184,7 @@
         "post_delay": 1800,
         "timeout": 5000,
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 已确认高级魔力召唤。"
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 已确认，高级魔力召唤已启动，约 1 小时后再次检查。"
         },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
@@ -178,6 +193,16 @@
         ],
         "on_error": [
             "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicAlreadyRunning": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 检测到正在召唤，本次未重复召唤，准备返回鱼缸。"
+        },
+        "next": [
+            "PatrolMagicReturn"
         ]
     },
     "PatrolMagicReturn": {
@@ -192,6 +217,9 @@
         "action": "Click",
         "post_delay": 1500,
         "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-魔力召唤] 已返回主鱼缸，继续巡检调度。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -243,6 +271,9 @@
         "action": "Click",
         "post_delay": 700,
         "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-宝石融合] 已打开右下角宝箱菜单。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -265,6 +296,9 @@
         "action": "Click",
         "post_delay": 1600,
         "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-宝石融合] 已点击宝石融合入口，正在确认页面状态。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -298,6 +332,9 @@
         "action": "Click",
         "post_delay": 1500,
         "timeout": 4500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-宝石融合] 发现上一轮融合结果，已放入仓库，继续检查下一轮。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -319,11 +356,14 @@
         ],
         "action": "DoNothing",
         "timeout": 4500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-宝石融合] 已确认进入融合页面，正在判断可合成或融合中。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionClickSynthesize",
-            "PatrolGemFusionReturn"
+            "PatrolGemFusionAlreadyRunning"
         ],
         "on_error": [
             "PatrolGemFusionAbort"
@@ -342,7 +382,7 @@
         "post_delay": 1500,
         "timeout": 4500,
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 已启动下一轮宝石融合。"
+            "Node.Action.Succeeded": "[巡检-宝石融合] 检测到合成可用，已启动下一轮宝石融合，约 1 小时后再次检查。"
         },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
@@ -351,6 +391,16 @@
         ],
         "on_error": [
             "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionAlreadyRunning": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-宝石融合] 检测到宝石正在融合，本次未重复合成，准备返回鱼缸。"
+        },
+        "next": [
+            "PatrolGemFusionReturn"
         ]
     },
     "PatrolGemFusionReturn": {
@@ -365,6 +415,9 @@
         "action": "Click",
         "post_delay": 1500,
         "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-宝石融合] 已返回主鱼缸，继续巡检调度。"
+        },
         "next": [
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
