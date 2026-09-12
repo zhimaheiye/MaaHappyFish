@@ -1,7 +1,7 @@
 # 日常收尾总控任务 (docs/features/daily-routine.md)
 
-**最后更新**: 2026-09-08
-**版本**: v5 (新增驯鹿鱼送收礼物子任务)
+**最后更新**: 2026-09-11
+**版本**: v6 (金海豚连续三局与无次数正常推进)
 **状态**: 已实现串行容器、自由多选组合与乐队鱼异步调度；相关实机边界详见“实机测试状态”。
 
 ---
@@ -66,7 +66,7 @@ flowchart TD
     FG --> FG_Exit[识别回到鱼缸 -> DailyFreeGiftDoneAction]
     RF --> RF_Exit[识别回到鱼缸 -> ReindeerFishDoneAction]
     BF --> BF_Exit[BandFishExitToTankAction: 回主鱼缸 -> advance_daily_routine_step]
-    GD --> GD_Exit[GoldenDolphinTaskAction: 回主鱼缸 -> advance_daily_routine_step]
+    GD --> GD_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
     FI --> FI_Exit[FishingExitToTankAction: 回主鱼缸 -> advance_daily_routine_step]
     RH --> RH_Exit[RomanticHouseExitToTankAction: 珊瑚回主鱼缸 -> advance_daily_routine_step]
 
@@ -123,7 +123,7 @@ flowchart TD
 | **每日免费礼包** | 领取成功或识别到已售罄 | OCR 点击充值页左上角“返回”，模板确认鱼缸后推进队列 |
 | **驯鹿鱼送收礼物** | 一键收取，或一键回礼后直接返回/直接赠送 | OCR 点击通用返回，模板确认鱼缸后推进队列 |
 | **乐队鱼** | 邀请完成或无空位 | `BandFishExitToTankAction`：点击左上角返回 `(91, 46)` + 保底关闭面板 `(640, 150)` |
-| **金海豚** | 游戏结束/超时/机会耗尽 | `GoldenDolphinTaskAction`：点击退出 `(850, 574)` 或确认 `(btn_cx, btn_cy)` + 保底关闭面板 `(640, 150)` |
+| **金海豚** | 每局结束后未满 3 局则重进；第 3 局完成或机会耗尽 | `GoldenDolphinExitAction` 记录局数并以 `NEXT_ROUND` 重进；`NO_STAMINA` 作为正常业务状态推进队列 |
 | **钓鱼达人** | 5杆完成或鱼饵耗尽 | `FishingExitToTankAction`：钓场返回 `(50, 45)` + 地图关闭 `(1235, 45)` + 关闭面板 `(640, 150)` |
 | **浪漫满屋** | 10次点赞完成或已满 | 双级心形关闭 `(1197, 57)` + 状态验证回主鱼缸珊瑚 + `RomanticHouseExitToTankAction` |
 
@@ -176,6 +176,7 @@ python dev/test_daily_routine_scheduler.py
 10. **UI Pipeline Override 节点读取**: 模拟 MFA 传入 override 的完整流转
 11. **独立执行保护**: `active=False` 时各子任务退出互不影响
 12. **乐队鱼运行模式分流**: 日常模式返回调度器；独立待接受状态退出重进；独立完成状态正常结束
+13. **金海豚连续执行**: 两次 `NEXT_ROUND` 后第 3 局 `DONE`；任意入口 `NO_STAMINA` 均正常推进下一任务
 
 #### 乐队鱼异步实机测试状态（2026-09-08）
 

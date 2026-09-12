@@ -4,6 +4,7 @@
         "package": "com.happyelements.happyfishandroidcns/com.happyelements.happyfish.MainActivity",
         "post_delay": 2000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "CloseAnnouncement",
@@ -18,6 +19,7 @@
         "action": "Click",
         "post_delay": 300,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "CloseAnnouncement",
@@ -32,6 +34,7 @@
         "action": "Click",
         "post_delay": 800,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "CloseAnnouncement",
@@ -48,10 +51,20 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailySignNoPopup"
         ]
+    },
+    "GlobalActivityPagePopup": {
+        "recognition": "TemplateMatch",
+        "template": "活动页面_退出.png",
+        "roi": [0, 0, 136, 116],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1000,
+        "focus": "检测到活动页面弹出，已点击左上角退出并返回鱼缸，继续当前任务"
     },
     "GlobalDailySignPopup": {
         "recognition": "TemplateMatch",

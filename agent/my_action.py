@@ -86,6 +86,10 @@ def _band_fish_locate_target_card(context: Context, frame, target_name: str):
 
     seen_texts = []
     keywords = [target_name]
+    # 台式机发行版 Maa OCR 会把“一只胖梨”稳定识别成“只胖梨”。
+    # 仅放行日志已确认的专用别名，不泛化为任意首字缺失，避免误邀。
+    if target_name == "一只胖梨":
+        keywords.append("只胖梨")
     if len(target_name) >= 2:
         keywords.append(target_name[:2])
 
@@ -1492,7 +1496,16 @@ class BandFishInviteLoopAction(CustomAction):
                     print(f"[乐队鱼邀请] 点击槽位 {target_slot} 后未检测到好友选择弹窗打开，重试...", flush=True)
                     continue
 
-                print(f"[乐队鱼邀请] 好友选择弹窗已打开，正在对当前列表进行 OCR 匹配指定人机好友【{target_name}】...", flush=True)
+                print(f"[乐队鱼邀请] 好友选择弹窗已打开，等待 1 秒让首屏列表稳定...", flush=True)
+                time.sleep(1.0)
+                if cancelled("等待好友列表稳定"):
+                    return False
+                f_diag = capture_frame()
+                if f_diag is None or not is_friend_dialog_open(f_diag):
+                    print(f"[乐队鱼邀请] 等待后好友选择弹窗门禁丢失，返回舞台重新扫描...", flush=True)
+                    continue
+
+                print(f"[乐队鱼邀请] 首屏列表已稳定，开始 OCR 匹配指定人机好友【{target_name}】...", flush=True)
 
                 # 2. 对当前页面执行纯列表 OCR 匹配目标好友
                 card_box, seen_texts = _band_fish_locate_target_card(context, f_diag, target_name)
@@ -1882,7 +1895,7 @@ class FishingExitToTankAction(CustomAction):
     钓鱼达人结算并安全返回主鱼缸动作:
     1. 判断业务状态: cast_count >= max_casts 判定为 DONE，否则判定为 NO_STAMINA (鱼饵耗尽/购买弹窗关闭);
     2. 若处于 DailyRoutineTask 流程中，同步状态并推进至 BAND_FISH_PASS2;
-    3. 点击钓场左上角返回 [50, 45] -> 点击地点大地图右上角关闭 [1235, 45] -> 点击安全区 [640, 150]，确保 100% 回到主鱼缸。
+    3. 当前节点已由钓场业务状态门禁确认，直接点击钓场右上角退出 [1235, 45]；由 Pipeline 再确认主鱼缸。
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
@@ -1906,19 +1919,12 @@ class FishingExitToTankAction(CustomAction):
 
             print(f"[钓鱼退出] 业务状态: {biz_status}，执行物理退出回鱼缸...", flush=True)
 
-            # 1. 点击钓场左上角返回
-            ctrl.post_click(50, 45).wait()
-            time.sleep(2.0)
-
-            # 2. 点击地点大地图右上角关闭按钮
+            # 钓场左上角会退回地点地图，继续点击可能再次选中默认的“星河”。
+            # 此处按钓场已确认状态直接点击右上角退出，不再跨页面盲点。
             ctrl.post_click(1235, 45).wait()
             time.sleep(1.8)
 
-            # 3. 保底点击安全区关闭游乐园面板
-            ctrl.post_click(640, 150).wait()
-            time.sleep(1.0)
-
-            print("[钓鱼退出] 已安全退出回主鱼缸", flush=True)
+            print("[钓鱼退出] 已点击钓场右上角退出，正在验证是否返回主鱼缸...", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
@@ -1929,6 +1935,8 @@ class FishingExitToTankAction(CustomAction):
 # ==============================================================================
 # 金海豚小游戏基础设施与 Action 拆分 (Phase 2A-1)
 # ==============================================================================
+
+GOLDEN_DOLPHIN_HEART_FALLBACK_DELAY_SECONDS = 1.0
 
 def _get_golden_dolphin_templates():
     """统一解析并加载金海豚关键视觉模板"""
@@ -1966,6 +1974,7 @@ def _get_golden_dolphin_templates():
         "dolphin": _load_tpl("金海豚_图标.png"),
         "confirm": _load_tpl("金海豚_确定按钮.png"),
         "coin": _load_tpl("金海豚_贝币.png"),
+        "heart": _load_tpl("金海豚_爱心.png"),
         "stars": star_templates,
         "cancel": _load_tpl("金海豚_结束取消.png"),
     }
@@ -2051,8 +2060,48 @@ def _find_golden_dolphin_xp(frame, templates):
     return sorted(candidates, key=lambda candidate: (candidate[1], candidate[2]), reverse=True)
 
 
-def _select_golden_dolphin_frame_targets(frame, coin_template, star_templates, xp_started: bool):
-    """经验优先；经验尚未出现时，只返回模板识别到的贝币。"""
+def _find_golden_dolphin_hearts(frame, template, threshold: float = 0.70):
+    """在完整画面识别爱心并合并同一目标周围的重复命中。"""
+    if frame is None or template is None or template.size == 0:
+        return []
+    if frame.shape[:2] != (720, 1280):
+        frame = cv2.resize(frame, (1280, 720))
+    template_h, template_w = template.shape[:2]
+    if template_h > frame.shape[0] or template_w > frame.shape[1]:
+        return []
+
+    result = cv2.matchTemplate(frame, template, cv2.TM_CCOEFF_NORMED)
+    ys, xs = np.where(result >= threshold)
+    raw = sorted(
+        (
+            (int(x + template_w // 2), int(y + template_h // 2), float(result[y, x]))
+            for y, x in zip(ys, xs)
+        ),
+        key=lambda candidate: candidate[2],
+        reverse=True,
+    )
+    candidates = []
+    for candidate in raw:
+        x, y, _ = candidate
+        if any(
+            abs(x - selected_x) < template_w * 0.65
+            and abs(y - selected_y) < template_h * 0.65
+            for selected_x, selected_y, _ in candidates
+        ):
+            continue
+        candidates.append(candidate)
+    return sorted(candidates, key=lambda candidate: (candidate[1], candidate[2]), reverse=True)
+
+
+def _select_golden_dolphin_frame_targets(
+    frame,
+    coin_template,
+    star_templates,
+    heart_template,
+    xp_started: bool,
+    xp_quiet_seconds: float,
+):
+    """每帧优先全屏经验；XP 阶段静默一段时间后用全屏爱心补充。"""
     xp_candidates = _find_golden_dolphin_xp(frame, star_templates)
     if xp_candidates:
         return "xp", xp_candidates[:4]
@@ -2060,7 +2109,21 @@ def _select_golden_dolphin_frame_targets(frame, coin_template, star_templates, x
         coin = _find_golden_dolphin_coin(frame, coin_template)
         if coin is not None:
             return "coin", [coin]
+    elif xp_quiet_seconds >= GOLDEN_DOLPHIN_HEART_FALLBACK_DELAY_SECONDS:
+        heart_candidates = _find_golden_dolphin_hearts(frame, heart_template)
+        if heart_candidates:
+            return "heart", heart_candidates[:4]
     return "wait", []
+
+
+def _complete_golden_dolphin_round():
+    """记录一局结算；前三局之间继续，第三局后完成。"""
+    completed = int(golden_dolphin_state.get("completed_rounds", 0)) + 1
+    max_rounds = int(golden_dolphin_state.get("max_rounds", 3))
+    golden_dolphin_state["completed_rounds"] = completed
+    status = "NEXT_ROUND" if completed < max_rounds else "DONE"
+    golden_dolphin_state["status"] = status
+    return status
 
 
 def _find_green_check(img):
@@ -2294,6 +2357,17 @@ class GoldenDolphinNavigationAction(CustomAction):
             return False
 
 
+@AgentServer.custom_action("GoldenDolphinInitAction")
+class GoldenDolphinInitAction(CustomAction):
+    """为本次任务重置三局连续执行状态。"""
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        golden_dolphin_state["status"] = "IDLE"
+        golden_dolphin_state["completed_rounds"] = 0
+        golden_dolphin_state["max_rounds"] = 3
+        print("[金海豚] 任务开始：计划连续执行 3 局；中途无次数则正常结束", flush=True)
+        return True
+
+
 @AgentServer.custom_action("GoldenDolphinPlayGameAction")
 class GoldenDolphinPlayGameAction(CustomAction):
     """
@@ -2313,6 +2387,7 @@ class GoldenDolphinPlayGameAction(CustomAction):
 
             tpls = _get_golden_dolphin_templates()
             tpl_coin = tpls.get("coin")
+            tpl_heart = tpls.get("heart")
             tpl_stars = tpls.get("stars", ())
             tpl_cancel = tpls.get("cancel")
 
@@ -2322,14 +2397,22 @@ class GoldenDolphinPlayGameAction(CustomAction):
             if len(tpl_stars) < 2:
                 print("[金海豚游戏] ERROR: 金海豚_经验星1.png / 经验星2.png 未完整加载，安全终止任务", flush=True)
                 return False
+            if tpl_heart is None or tpl_heart.size == 0:
+                print("[金海豚游戏] ERROR: 缺少金海豚_爱心.png，安全终止任务", flush=True)
+                return False
 
-            print("[金海豚游戏] 当前策略：经验星出现前持续点击识别到的贝币；出现后只点击经验星", flush=True)
+            print(
+                "[金海豚游戏] 当前策略：先点贝币；XP 阶段全屏经验优先，连续 1 秒无经验时全屏点爱心补充",
+                flush=True,
+            )
             t_game_start = time.monotonic()
             game_done = False
             coin_clicks = 0
             xp_clicks = 0
+            heart_clicks = 0
             loop_count = 0
             xp_started = False
+            last_xp_seen_at = None
 
             while time.monotonic() - t_game_start < 55.0:
                 if _task_cancelled(context):
@@ -2351,10 +2434,13 @@ class GoldenDolphinPlayGameAction(CustomAction):
                         game_done = True
                         break
 
+                now = time.monotonic()
+                xp_quiet_seconds = (now - last_xp_seen_at) if last_xp_seen_at is not None else 0.0
                 phase, candidates = _select_golden_dolphin_frame_targets(
-                    img, tpl_coin, tpl_stars, xp_started
+                    img, tpl_coin, tpl_stars, tpl_heart, xp_started, xp_quiet_seconds
                 )
                 if phase == "xp":
+                    last_xp_seen_at = now
                     if not xp_started:
                         xp_started = True
                         print(
@@ -2368,6 +2454,20 @@ class GoldenDolphinPlayGameAction(CustomAction):
                             return False
                         ctrl.post_click(target_x, target_y)
                         xp_clicks += 1
+                    time.sleep(0.01)
+                elif phase == "heart":
+                    for target_x, target_y, _ in candidates:
+                        if _task_cancelled(context):
+                            print("[金海豚游戏] 收到停止请求，立即停止爱心点击", flush=True)
+                            return False
+                        ctrl.post_click(target_x, target_y)
+                        heart_clicks += 1
+                    if heart_clicks == len(candidates) or heart_clicks % 20 == 0:
+                        print(
+                            f"[金海豚游戏] 已连续 {xp_quiet_seconds:.1f} 秒未识别到经验，"
+                            f"点击爱心补充 (累计 {heart_clicks} 次)",
+                            flush=True,
+                        )
                     time.sleep(0.01)
                 elif phase == "coin":
                     coin_x, coin_y, score = candidates[0]
@@ -2387,7 +2487,8 @@ class GoldenDolphinPlayGameAction(CustomAction):
             average_fps = loop_count / duration if duration > 0 else 0.0
             print(
                 f"[金海豚游戏] 小游戏循环完成 (耗时 {duration:.1f}s, 检测 {loop_count} 帧/{average_fps:.1f} FPS, "
-                f"点击贝币 {coin_clicks} 次, 点击 XP {xp_clicks} 次, XP阶段={xp_started}, 弹窗就绪={game_done})",
+                f"点击贝币 {coin_clicks} 次, 点击 XP {xp_clicks} 次, 点击爱心 {heart_clicks} 次, "
+                f"XP阶段={xp_started}, 弹窗就绪={game_done})",
                 flush=True,
             )
             return True
@@ -2403,7 +2504,7 @@ class GoldenDolphinExitAction(CustomAction):
     金海豚退出与归位动作 (职责 3):
     1. 点击结算取消按钮 (或保底点击)
     2. 关闭潜在浮层，确认回到主鱼缸
-    3. 设置 golden_dolphin_state["status"] = "DONE"
+    3. 记录已完成局数；未满 3 局设置 NEXT_ROUND，否则设置 DONE
     注意: 不负责推进日常收尾调度 (解耦设计)
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -2442,8 +2543,16 @@ class GoldenDolphinExitAction(CustomAction):
                 ctrl.post_click(640, 150).wait()
                 time.sleep(1.0)
 
-            golden_dolphin_state["status"] = "DONE"
-            print("[金海豚退出] 结算退出完成，已设置 status=DONE，确认回到主鱼缸", flush=True)
+            status = _complete_golden_dolphin_round()
+            completed = golden_dolphin_state["completed_rounds"]
+            max_rounds = golden_dolphin_state["max_rounds"]
+            if status == "NEXT_ROUND":
+                print(
+                    f"[金海豚退出] 第 {completed}/{max_rounds} 局结算退出完成，回到主鱼缸后继续下一局",
+                    flush=True,
+                )
+            else:
+                print(f"[金海豚退出] 第 {completed}/{max_rounds} 局结算退出完成，三局任务完成", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
@@ -2469,43 +2578,44 @@ class GoldenDolphinTaskAction(CustomAction):
     """
     金海豚任务总控入口适配器 (保持 Pipeline 100% 兼容):
     内部顺次协调调用:
-    1. GoldenDolphinNavigationAction
-    2. 若状态为 READY_TO_PLAY:
+    1. 重置并循环 GoldenDolphinNavigationAction，最多 3 局
+    2. 每局状态为 READY_TO_PLAY:
        -> GoldenDolphinPlayGameAction
        -> GoldenDolphinExitAction
-    3. 若处于日常收尾流程，根据最终业务状态推进 DailyRoutine 队列
+    3. 任意一局 NO_STAMINA 均正常停止；最后根据业务状态推进 DailyRoutine 队列
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
-            # 1. 导航与弹窗判定
-            nav = GoldenDolphinNavigationAction()
-            nav_ok = nav.run(context, argv)
-            if not nav_ok:
-                if daily_routine_state.get("active"):
-                    advance_daily_routine_step("GoldenDolphin", "FAILED")
-                return False
+            GoldenDolphinInitAction().run(context, argv)
+            while golden_dolphin_state["completed_rounds"] < golden_dolphin_state["max_rounds"]:
+                nav_ok = GoldenDolphinNavigationAction().run(context, argv)
+                if not nav_ok:
+                    if daily_routine_state.get("active"):
+                        advance_daily_routine_step("GoldenDolphin", "FAILED")
+                    return False
 
-            st = golden_dolphin_state.get("status")
-            if st == "NO_STAMINA":
-                if daily_routine_state.get("active"):
-                    advance_daily_routine_step("GoldenDolphin", "NO_STAMINA")
-                return True
+                st = golden_dolphin_state.get("status")
+                if st == "NO_STAMINA":
+                    if daily_routine_state.get("active"):
+                        advance_daily_routine_step("GoldenDolphin", "NO_STAMINA")
+                    return True
+                if st != "READY_TO_PLAY":
+                    break
 
-            if st == "READY_TO_PLAY":
-                # 2. 小游戏主循环
-                play = GoldenDolphinPlayGameAction()
-                play.run(context, argv)
+                if not GoldenDolphinPlayGameAction().run(context, argv):
+                    golden_dolphin_state["status"] = "FAILED"
+                    if daily_routine_state.get("active"):
+                        advance_daily_routine_step("GoldenDolphin", "FAILED")
+                    return False
+                if not GoldenDolphinExitAction().run(context, argv):
+                    if daily_routine_state.get("active"):
+                        advance_daily_routine_step("GoldenDolphin", "FAILED")
+                    return False
 
-                # 3. 结算退出
-                exit_act = GoldenDolphinExitAction()
-                exit_ok = exit_act.run(context, argv)
-
-                if daily_routine_state.get("active"):
-                    final_st = golden_dolphin_state.get("status", "DONE")
-                    advance_daily_routine_step("GoldenDolphin", final_st)
-                return exit_ok
-
-            return True
+            final_st = golden_dolphin_state.get("status", "DONE")
+            if daily_routine_state.get("active"):
+                advance_daily_routine_step("GoldenDolphin", final_st)
+            return final_st != "FAILED"
         except Exception as e:
             traceback.print_exc()
             print(f"[金海豚总控] 运行异常: {e}", flush=True)

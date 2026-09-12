@@ -27,7 +27,7 @@ def run_tests():
     assert tpl_dir is not None, "Failed to resolve valid tpl_dir containing 游乐园入口.png"
     print(f"[PASS] Check 1: 模板资源路径正确解析 -> {tpl_dir}")
 
-    # 2. 验证所有 6 张关键模板存在且解码非 None
+    # 2. 验证所有 7 张关键模板存在且解码非 None
     def _load_tpl(name):
         p = os.path.join(tpl_dir, name)
         if os.path.exists(p):
@@ -38,6 +38,7 @@ def run_tests():
     tpl_confirm = _load_tpl("金海豚_确定按钮.png")
     tpl_star_1 = _load_tpl("金海豚_经验星1.png")
     tpl_star_2 = _load_tpl("金海豚_经验星2.png")
+    tpl_heart = _load_tpl("金海豚_爱心.png")
     tpl_cancel = _load_tpl("金海豚_结束取消.png")
     tpl_ent = _load_tpl("游乐园入口.png")
 
@@ -47,12 +48,13 @@ def run_tests():
         "金海豚_确定按钮": tpl_confirm,
         "金海豚_经验星1": tpl_star_1,
         "金海豚_经验星2": tpl_star_2,
+        "金海豚_爱心": tpl_heart,
         "金海豚_结束取消": tpl_cancel,
     }
     for name, tpl in required.items():
         assert tpl is not None, f"Template {name} failed to load!"
         assert tpl.shape[0] > 10 and tpl.shape[1] > 10, f"Template {name} has invalid shape: {tpl.shape}"
-    print(f"[PASS] Check 2: 全部 6 张关键视觉模板完整加载 (无一为 None)")
+    print(f"[PASS] Check 2: 全部 7 张关键视觉模板完整加载 (无一为 None)")
 
     # 3. 验证主鱼缸截屏
     live_screen = cv2.imdecode(np.fromfile("dev/current_live_mumu_screen.png", dtype=np.uint8), cv2.IMREAD_COLOR)

@@ -6,17 +6,37 @@
             "Node.Action.Succeeded": "[巡检] 开始首轮：依次收取鱼缸 1、2、3 的产物，再为三只海星补充鱼食。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolStartRouter"
         ]
+    },
+    "PatrolShellPagePopup": {
+        "recognition": "TemplateMatch",
+        "template": "贝壳页面_返回.png",
+        "threshold": 0.75,
+        "roi": [
+            0,
+            0,
+            250,
+            150
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到误入大章鱼开贝壳页面，已点击该页面返回按钮并继续巡检。"
+        }
     },
     "PatrolStartRouter": {
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolStartAtFoodPopupAbort",
             "PatrolStartAtUniversalStarfish",
             "PatrolStartAtManagement",
@@ -52,8 +72,10 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectCuteStarfishTab"
         ]
     },
@@ -68,8 +90,10 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenUniversalStarfish"
         ]
     },
@@ -89,8 +113,10 @@
             "Node.Action.Succeeded": "[巡检] 检测到鱼缸选择器已展开，已选择鱼缸 1。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank1Main"
         ]
     },
@@ -109,8 +135,10 @@
             "Node.Action.Succeeded": "[巡检] 已确认当前位于鱼缸 1，开始检查产物；连续 30 秒无产物后切缸。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1"
         ]
     },
@@ -130,8 +158,10 @@
             "Node.Action.Succeeded": "[巡检] 当前位于鱼缸 2，已展开选择器，准备归一到鱼缸 1。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank1FromPicker"
         ]
     },
@@ -151,8 +181,10 @@
             "Node.Action.Succeeded": "[巡检] 当前位于鱼缸 3，已展开选择器，准备归一到鱼缸 1。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank1FromPicker"
         ]
     },
@@ -170,8 +202,10 @@
         "post_delay": 1200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank1Main"
         ],
         "on_error": [
@@ -194,8 +228,10 @@
             "Node.Action.Succeeded": "[巡检] 已切换并确认鱼缸 1，开始检查产物；连续 30 秒无产物后切缸。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1"
         ],
         "on_error": [
@@ -207,8 +243,10 @@
         "action": "DoNothing",
         "timeout": 30000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1Bubble"
         ],
         "on_error": [
@@ -243,8 +281,10 @@
             "Node.Action.Succeeded": "[巡检] 鱼缸 1 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1"
         ]
     },
@@ -265,8 +305,10 @@
             "Node.Action.Succeeded": "[巡检] 鱼缸 1 已连续 30 秒未发现产物，本缸检查完成，正在切换鱼缸 2。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank2FromPicker"
         ],
         "on_error": [
@@ -287,8 +329,10 @@
         "post_delay": 1200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank2Main"
         ],
         "on_error": [
@@ -311,8 +355,10 @@
             "Node.Action.Succeeded": "[巡检] 已切换并确认鱼缸 2，开始检查产物；连续 30 秒无产物后切缸。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2"
         ],
         "on_error": [
@@ -324,8 +370,10 @@
         "action": "DoNothing",
         "timeout": 30000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2Bubble"
         ],
         "on_error": [
@@ -360,8 +408,10 @@
             "Node.Action.Succeeded": "[巡检] 鱼缸 2 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2"
         ]
     },
@@ -382,8 +432,10 @@
             "Node.Action.Succeeded": "[巡检] 鱼缸 2 已连续 30 秒未发现产物，本缸检查完成，正在切换鱼缸 3。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank3FromPicker"
         ],
         "on_error": [
@@ -404,8 +456,10 @@
         "post_delay": 1200,
         "timeout": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank3Main"
         ],
         "on_error": [
@@ -428,8 +482,10 @@
             "Node.Action.Succeeded": "[巡检] 已切换并确认鱼缸 3，开始检查产物；连续 30 秒无产物后进入管理页。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3"
         ],
         "on_error": [
@@ -441,8 +497,10 @@
         "action": "DoNothing",
         "timeout": 30000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3Bubble"
         ],
         "on_error": [
@@ -477,8 +535,10 @@
             "Node.Action.Succeeded": "[巡检] 鱼缸 3 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3"
         ]
     },
@@ -499,8 +559,10 @@
             "Node.Action.Succeeded": "[巡检] 鱼缸 3 已连续 30 秒未发现产物，三缸收宝完成，正在打开管理页。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyManagement"
         ],
         "on_error": [
@@ -522,8 +584,10 @@
             "Node.Action.Succeeded": "[巡检] 已确认进入鱼缸管理页，准备依次检查三只海星。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenUniversalStarfish"
         ],
         "on_error": [
@@ -546,8 +610,10 @@
             "Node.Action.Succeeded": "[巡检] 已点击海星入口，准备从萌海星开始补充鱼食。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectCuteStarfishTab"
         ],
         "on_error": [
@@ -570,8 +636,10 @@
             "Node.Action.Succeeded": "[巡检-萌海星] 已点击顶部标签，正在验证是否切换成功。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyCuteStarfish"
         ],
         "on_error": [
@@ -593,8 +661,10 @@
             "Node.Action.Succeeded": "[巡检-萌海星] 页面已确认，准备打开选择鱼食弹窗。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteReplenish"
         ],
         "on_error": [
@@ -617,8 +687,10 @@
             "Node.Action.Succeeded": "[巡检-萌海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteFoodRouter"
         ],
         "on_error": [
@@ -629,8 +701,10 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteNormalFood",
             "PatrolCuteSpecialFood",
             "PatrolAbortNavigation"
@@ -646,8 +720,10 @@
             "Node.Action.Succeeded": "[巡检-萌海星] 检测到普通鱼食，已执行投放，正在验证结果。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteAfterFeedRouter"
         ]
     },
@@ -673,8 +749,10 @@
             "Node.Action.Succeeded": "[巡检-萌海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteAfterFeedRouter"
         ]
     },
@@ -682,8 +760,10 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolCuteFeedReturnedToPanel",
             "PatrolAbortNavigation"
@@ -703,8 +783,10 @@
             "Node.Action.Succeeded": "[巡检-萌海星] 鱼食投放成功，喂食弹窗已关闭。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectGoodStarfishTab"
         ]
     },
@@ -724,8 +806,10 @@
             "Node.Action.Succeeded": "[巡检-乖海星] 已点击顶部标签，正在验证是否切换成功。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyGoodStarfish"
         ],
         "on_error": [
@@ -747,8 +831,10 @@
             "Node.Action.Succeeded": "[巡检-乖海星] 页面已确认，准备打开选择鱼食弹窗。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodReplenish"
         ],
         "on_error": [
@@ -771,8 +857,10 @@
             "Node.Action.Succeeded": "[巡检-乖海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodFoodRouter"
         ],
         "on_error": [
@@ -783,8 +871,10 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodNormalFood",
             "PatrolGoodSpecialFood",
             "PatrolAbortNavigation"
@@ -800,8 +890,10 @@
             "Node.Action.Succeeded": "[巡检-乖海星] 检测到普通鱼食，已执行投放，正在验证结果。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodAfterFeedRouter"
         ]
     },
@@ -827,8 +919,10 @@
             "Node.Action.Succeeded": "[巡检-乖海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodAfterFeedRouter"
         ]
     },
@@ -836,8 +930,10 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolGoodFeedReturnedToPanel",
             "PatrolAbortNavigation"
@@ -857,8 +953,10 @@
             "Node.Action.Succeeded": "[巡检-乖海星] 鱼食投放成功，喂食弹窗已关闭。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectBrightStarfishTab"
         ]
     },
@@ -878,8 +976,10 @@
             "Node.Action.Succeeded": "[巡检-亮海星] 已点击顶部标签，正在验证是否切换成功。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyBrightStarfish"
         ],
         "on_error": [
@@ -901,8 +1001,10 @@
             "Node.Action.Succeeded": "[巡检-亮海星] 页面已确认，准备打开选择鱼食弹窗。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightReplenish"
         ],
         "on_error": [
@@ -925,8 +1027,10 @@
             "Node.Action.Succeeded": "[巡检-亮海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightFoodRouter"
         ],
         "on_error": [
@@ -937,8 +1041,10 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightNormalFood",
             "PatrolBrightSpecialFood",
             "PatrolAbortNavigation"
@@ -954,8 +1060,10 @@
             "Node.Action.Succeeded": "[巡检-亮海星] 检测到普通鱼食，已执行投放，正在验证结果。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightAfterFeedRouter"
         ]
     },
@@ -981,8 +1089,10 @@
             "Node.Action.Succeeded": "[巡检-亮海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightAfterFeedRouter"
         ]
     },
@@ -990,8 +1100,10 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolBrightFeedReturnedToPanel",
             "PatrolAbortNavigation"
@@ -1011,8 +1123,10 @@
             "Node.Action.Succeeded": "[巡检-亮海星] 鱼食投放成功，喂食弹窗已关闭。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolExitUniversalStarfish"
         ]
     },
@@ -1046,8 +1160,10 @@
             "Node.Action.Succeeded": "[巡检] 三只海星均已检查，正在返回鱼缸管理页。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyManagementAfterStarfish"
         ],
         "on_error": [
@@ -1069,8 +1185,10 @@
             "Node.Action.Succeeded": "[巡检] 已确认返回鱼缸管理页，准备返回主鱼缸。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolExitManagement"
         ],
         "on_error": [
@@ -1093,8 +1211,10 @@
             "Node.Action.Succeeded": "[巡检] 已点击返回，正在确认主鱼缸页面。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyMainAfterCycle"
         ],
         "on_error": [
@@ -1105,8 +1225,10 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyMainTank1AfterCycle",
             "PatrolVerifyMainTank2AfterCycle",
             "PatrolVerifyMainTank3AfterCycle",
@@ -1129,8 +1251,10 @@
             "Node.Action.Succeeded": "[巡检] 已确认返回鱼缸 1，进入调度等待。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
     },
@@ -1150,8 +1274,10 @@
             "Node.Action.Succeeded": "[巡检] 已确认返回鱼缸 2，进入调度等待。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
     },
@@ -1171,8 +1297,10 @@
             "Node.Action.Succeeded": "[巡检] 已确认返回鱼缸 3，进入调度等待。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
     },
@@ -1181,8 +1309,10 @@
         "action": "DoNothing",
         "post_delay": 1000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolTimerDue",
             "PatrolMagicSummonDue",
             "PatrolGemFusionDue",
@@ -1198,8 +1328,10 @@
         "action": "DoNothing",
         "timeout": 500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolStartRouter"
         ],
         "on_error": [

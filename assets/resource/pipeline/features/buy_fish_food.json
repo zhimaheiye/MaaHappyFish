@@ -3,6 +3,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodStartRouter"
@@ -13,6 +14,7 @@
         "action": "DoNothing",
         "timeout": 6000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodStartAtDetail",
@@ -57,6 +59,7 @@
             "max_scrolls": 4
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodPurchaseOnDetail"
@@ -76,6 +79,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodOpenStore"
@@ -93,6 +97,7 @@
         "threshold": 0.7,
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodOpenFeedPopup"
@@ -111,6 +116,7 @@
         "action": "Click",
         "post_delay": 1200,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodVerifyFeedPopup"
@@ -131,6 +137,7 @@
         "action": "DoNothing",
         "timeout": 4000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodOpenStore"
@@ -152,6 +159,7 @@
         "action": "Click",
         "post_delay": 1400,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodVerifyStore"
@@ -176,6 +184,7 @@
         },
         "timeout": 5000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BuyFishFoodPurchaseOnDetail"

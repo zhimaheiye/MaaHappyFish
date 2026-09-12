@@ -4,13 +4,21 @@ from pathlib import Path
 
 PIPELINE_DIR = Path("assets/resource/pipeline")
 GLOBAL_HANDLERS = [
+    "[JumpBack]GlobalActivityPagePopup",
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
 ]
 HANDLER_NODES = {
+    "GlobalActivityPagePopup",
     "GlobalDailySignPopup",
     "GlobalDailySignClaim",
     "GlobalSpecialOfferPopup",
+}
+ATOMIC_NEXT_NODES = {
+    "ClickFishBubble",
+    "PatrolCollectTank1Bubble",
+    "PatrolCollectTank2Bubble",
+    "PatrolCollectTank3Bubble",
 }
 
 
@@ -29,6 +37,12 @@ def load_pipeline():
 
 def run_tests():
     pipeline, locations = load_pipeline()
+
+    activity_page = pipeline["GlobalActivityPagePopup"]
+    assert activity_page["template"] == "活动页面_退出.png"
+    assert activity_page["roi"] == [0, 0, 136, 116]
+    assert activity_page["action"] == "Click"
+    assert "target" not in activity_page
 
     popup = pipeline["GlobalDailySignPopup"]
     assert popup["template"] == "签到_识别.png"
@@ -70,14 +84,15 @@ def run_tests():
     missing = []
     for name, node in pipeline.items():
         successors = node.get("next")
-        if name in HANDLER_NODES or not successors:
+        if name in HANDLER_NODES or name in ATOMIC_NEXT_NODES or not successors:
             continue
-        if successors[:2] != GLOBAL_HANDLERS:
+        if successors[:len(GLOBAL_HANDLERS)] != GLOBAL_HANDLERS:
             missing.append(f"{locations[name]}::{name}")
     assert not missing, "global popup handlers are not first:\n" + "\n".join(missing)
 
     image_dir = Path("assets/resource/image")
     for template in (
+        "活动页面_退出.png",
         "签到_识别.png",
         "签到_点击.png",
         "签到_关闭.png",
@@ -86,7 +101,7 @@ def run_tests():
     ):
         assert (image_dir / template).is_file(), f"missing template: {template}"
 
-    print("[PASS] global daily-sign and special-offer popup handlers")
+    print("[PASS] global activity-page, daily-sign, and special-offer handlers")
 
 
 if __name__ == "__main__":

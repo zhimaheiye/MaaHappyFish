@@ -34,6 +34,7 @@ from agent.my_reco import (
 )
 
 GLOBAL_POPUP_HANDLERS = {
+    "[JumpBack]GlobalActivityPagePopup",
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
 }

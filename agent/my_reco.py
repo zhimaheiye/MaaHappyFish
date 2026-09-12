@@ -805,3 +805,12 @@ class CheckGoldenDolphinCanPlayReco(CustomRecognition):
         if golden_dolphin_state.get("status") == "READY_TO_PLAY":
             return (0, 0, 10, 10)
         return None
+
+
+@AgentServer.custom_recognition("CheckGoldenDolphinRepeatReco")
+class CheckGoldenDolphinRepeatReco(CustomRecognition):
+    """一局结算后仍未达到三局时，重新进入导航。"""
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if golden_dolphin_state.get("status") == "NEXT_ROUND":
+            return (0, 0, 10, 10)
+        return None

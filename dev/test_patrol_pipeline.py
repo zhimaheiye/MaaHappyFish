@@ -20,8 +20,10 @@ INTERFACE_PATHS = [
 ]
 FIXTURE_ROOT = os.path.join(ROOT, "dev", "fixtures", "patrol", "image")
 GLOBAL_HANDLERS = {
+    "[JumpBack]GlobalActivityPagePopup",
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
+    "[JumpBack]PatrolShellPagePopup",
 }
 
 
@@ -67,6 +69,17 @@ class PatrolPipelineTest(unittest.TestCase):
                 self.assertIn(node.get("recognition"), {"OCR", "TemplateMatch"}, name)
                 if name not in explicit_user_targets:
                     self.assertNotIn("target", node, name)
+
+    def test_accidental_open_shell_uses_existing_specific_return_template(self):
+        handler = self.pipeline["PatrolShellPagePopup"]
+        self.assertEqual(handler["recognition"], "TemplateMatch")
+        self.assertEqual(handler["template"], "贝壳页面_返回.png")
+        self.assertEqual(handler["roi"], [0, 0, 250, 150])
+        self.assertEqual(handler["action"], "Click")
+        self.assertNotIn("target", handler)
+        for tank in (1, 2, 3):
+            sweep = self.pipeline[f"PatrolSweepTank{tank}AfterBubble"]
+            self.assertIn("[JumpBack]PatrolShellPagePopup", sweep["next"])
 
     def test_start_router_supports_known_resume_stages(self):
         next_nodes = self.pipeline["PatrolStartRouter"]["next"]

@@ -1,8 +1,10 @@
 {
     "GoldenDolphinTask": {
         "recognition": "DirectHit",
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "GoldenDolphinInitAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinNavigation"
@@ -13,6 +15,7 @@
         "action": "Custom",
         "custom_action": "GoldenDolphinNavigationAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinPlayGame",
@@ -25,6 +28,7 @@
         "action": "Custom",
         "custom_action": "GoldenDolphinPlayGameAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinExit"
@@ -35,9 +39,22 @@
         "action": "Custom",
         "custom_action": "GoldenDolphinExitAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "GoldenDolphinRepeat",
             "GoldenDolphinDone"
+        ]
+    },
+    "GoldenDolphinRepeat": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckGoldenDolphinRepeatReco",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "GoldenDolphinNavigation"
         ]
     },
     "GoldenDolphinDone": {
@@ -45,6 +62,7 @@
         "action": "Custom",
         "custom_action": "GoldenDolphinDoneAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"

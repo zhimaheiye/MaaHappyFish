@@ -34,6 +34,7 @@
         "action": "Custom",
         "custom_action": "InitDailyRoutineAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"
@@ -43,6 +44,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineStepFreeGift",
@@ -63,6 +65,7 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailyFreeGiftTask"
@@ -76,6 +79,7 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "ReindeerFishGiftTask"
@@ -89,6 +93,7 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStartRouter"
@@ -102,6 +107,7 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinTask"
@@ -115,6 +121,7 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingTask"
@@ -128,6 +135,7 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseStartRouter"
@@ -141,6 +149,7 @@
         },
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineBandFishPass2CheckSkip",
@@ -153,6 +162,7 @@
         "action": "Custom",
         "custom_action": "DailyRoutineSkipBandFishPass2Action",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"
@@ -163,6 +173,7 @@
         "custom_recognition": "CheckBandFishPass2NeededReco",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "BandFishStartRouter"

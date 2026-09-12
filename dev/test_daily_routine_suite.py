@@ -13,7 +13,9 @@
 """
 import sys
 import os
+import json
 import types
+from pathlib import Path
 import numpy as np
 
 # Add agent path
@@ -112,7 +114,11 @@ def run_tests():
     print("\n[Test 3] 验证 BandFishExitToTankAction - Pass 1 (待响应 PENDING 状态)")
     # 模拟 Mock Controller 避免物理报错
     class MockCtrl:
+        def __init__(self):
+            self.clicks = []
+
         def post_click(self, x, y):
+            self.clicks.append((x, y))
             class Job:
                 def wait(self): pass
             return Job()
@@ -136,13 +142,26 @@ def run_tests():
     # -------------------------------------------------------------
     print("\n[Test 4] 验证 FishingExitToTankAction 业务状态流转")
     fish_exit = registered_actions["FishingExitToTankAction"]
+    fishing_pipeline = json.loads(
+        Path("assets/resource/pipeline/features/fishing.json").read_text(encoding="utf-8")
+    )
+    assert fishing_pipeline["FishingDone"]["next"][-1] == "FishingVerifyExitToTank"
+    verify_exit = fishing_pipeline["FishingVerifyExitToTank"]
+    assert verify_exit["template"] == "主界面特征.png"
+    assert verify_exit["next"][-1] == "DailyRoutineDispatcher"
+    assert verify_exit["on_error"] == ["FishingExitFailed"]
+    assert fishing_pipeline["FishingExitFailed"]["action"] == "StopTask"
 
     # 4.1 鱼饵耗尽 (未满5杆)
+    ctx.tasker.controller.clicks.clear()
     runtime_state.daily_routine_state["queue"] = ["BAND_FISH_PASS2"]
     runtime_state.fishing_state["cast_count"] = 2
     runtime_state.fishing_state["max_casts"] = 5
     success = fish_exit.run(ctx, DummyArg())
     assert success is True
+    assert ctx.tasker.controller.clicks[-1:] == [(1235, 45)]
+    assert (50, 45) not in ctx.tasker.controller.clicks
+    assert (640, 150) not in ctx.tasker.controller.clicks
     assert runtime_state.fishing_state["status"] == "NO_STAMINA"
     assert runtime_state.daily_routine_state["tasks"]["Fishing"]["status"] == "NO_STAMINA"
     assert runtime_state.daily_routine_state["step"] == "BAND_FISH_PASS2"
@@ -153,6 +172,7 @@ def run_tests():
     runtime_state.fishing_state["cast_count"] = 5
     success = fish_exit.run(ctx, DummyArg())
     assert success is True
+    assert ctx.tasker.controller.clicks[-1:] == [(1235, 45)]
     assert runtime_state.fishing_state["status"] == "DONE"
     assert runtime_state.daily_routine_state["tasks"]["Fishing"]["status"] == "DONE"
     print("  >>> PASS: 甩杆满额正常退出，标记为 DONE！")

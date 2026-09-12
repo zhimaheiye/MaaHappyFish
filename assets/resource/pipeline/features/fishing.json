@@ -4,6 +4,7 @@
         "action": "Custom",
         "custom_action": "ResetFishingStateAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingStartRouter"
@@ -13,6 +14,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingStartAtPurchasePopup",
@@ -38,6 +40,7 @@
         "action": "Click",
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingDone"
@@ -54,6 +57,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingCatchSuccess"
@@ -71,6 +75,7 @@
         "action": "Custom",
         "custom_action": "FishingWatchBiteOnlyAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingPostRoundRouter"
@@ -90,6 +95,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingRound"
@@ -106,6 +112,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
@@ -122,6 +129,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingLocationRouter"
@@ -139,6 +147,7 @@
         "threshold": 0.7,
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingNavActivityGrid"
@@ -156,6 +165,7 @@
         "threshold": 0.7,
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingNavOpenAmusement"
@@ -180,6 +190,7 @@
         ],
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingNavActivityGrid"
@@ -204,6 +215,7 @@
         ],
         "post_delay": 2500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingLocationRouter"
@@ -220,6 +232,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingSelectLocation_Xinghe"
@@ -236,6 +249,7 @@
         ],
         "post_delay": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
@@ -252,6 +266,7 @@
         ],
         "post_delay": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
@@ -268,6 +283,7 @@
         ],
         "post_delay": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
@@ -284,6 +300,7 @@
         ],
         "post_delay": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
@@ -300,6 +317,7 @@
         ],
         "post_delay": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
@@ -316,6 +334,7 @@
         ],
         "post_delay": 3000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
@@ -325,6 +344,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitPurchasePopup",
@@ -346,6 +366,7 @@
         "action": "Click",
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingDone"
@@ -362,6 +383,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingRound"
@@ -385,6 +407,7 @@
         ],
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingSelectCheeseBait"
@@ -403,6 +426,7 @@
         "action": "Click",
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitVerifyReady"
@@ -419,6 +443,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingRound"
@@ -436,6 +461,7 @@
         "action": "Custom",
         "custom_action": "FishingCastAndBiteQTEAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingPostRoundRouter"
@@ -452,6 +478,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingCatchSuccess",
@@ -477,6 +504,7 @@
         ],
         "post_delay": 2000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingLoopRouter"
@@ -493,6 +521,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingLoopRouter"
@@ -503,6 +532,7 @@
         "action": "DoNothing",
         "post_delay": 1000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingPostRoundRouter"
@@ -512,6 +542,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingLoopCheckLimit",
@@ -525,6 +556,7 @@
         "custom_recognition": "CheckFishingCastLimitReco",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingDone"
@@ -541,6 +573,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingRound"
@@ -557,6 +590,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
@@ -567,9 +601,36 @@
         "action": "Custom",
         "custom_action": "FishingExitToTankAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "FishingVerifyExitToTank"
+        ]
+    },
+    "FishingVerifyExitToTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[钓鱼退出] 已确认返回主鱼缸，继续后续任务。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"
+        ],
+        "on_error": [
+            "FishingExitFailed"
         ]
+    },
+    "FishingExitFailed": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[钓鱼退出] ERROR：点击右上角后未确认返回主鱼缸，已安全停止，未继续后续任务。"
+        }
     }
 }

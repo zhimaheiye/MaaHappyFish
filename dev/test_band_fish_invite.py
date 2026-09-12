@@ -77,6 +77,27 @@ def main():
     assert texts == ["●41一只胖梨"]
     assert ocr_context.expected == [".*一只胖梨.*"]
 
+    # 台式机发行版日志中目标稳定被识别成“只胖梨”（漏掉首字“一”），
+    # 仍应只通过这个已确认的专用别名命中槽位 2，避免首屏误判后下滑。
+    missing_first_char_context = OcrContext("只胖梨")
+    box, texts = my_action._band_fish_locate_target_card(
+        missing_first_char_context,
+        np.zeros((720, 1280, 3), dtype=np.uint8),
+        "一只胖梨",
+    )
+    assert box == (180, 220, 90, 28)
+    assert texts == ["只胖梨"]
+    assert missing_first_char_context.expected == [".*一只胖梨.*", ".*只胖梨.*"]
+
+    # 不继续放宽为只有“胖梨”，避免相似好友名被误邀。
+    too_short_context = OcrContext("胖梨")
+    box, _ = my_action._band_fish_locate_target_card(
+        too_short_context,
+        np.zeros((720, 1280, 3), dtype=np.uint8),
+        "一只胖梨",
+    )
+    assert box is None
+
     # 用户停止后，CustomAction 不得继续截图、滑动、点好友或点确认。
     controller = StopController()
     context = SimpleNamespace(

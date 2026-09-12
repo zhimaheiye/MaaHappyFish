@@ -2,6 +2,7 @@
     "RomanticHouseTask": {
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseStartRouter"
@@ -10,6 +11,7 @@
     "RomanticHouseStartRouter": {
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseCheckDone",
@@ -32,6 +34,7 @@
         "action": "Click",
         "post_delay": 1200,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseWaitBubble"
@@ -51,6 +54,7 @@
         "action": "Click",
         "post_delay": 2000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseInHomePage"
@@ -72,6 +76,7 @@
         "action": "Click",
         "post_delay": 1800,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseCheckDone",
@@ -90,6 +95,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseExitStage"
@@ -108,6 +114,7 @@
         "action": "Click",
         "post_delay": 800,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseCheckDone",
@@ -131,6 +138,7 @@
             "RomanticHouseExitStage"
         ],
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseCheckDone",
@@ -151,6 +159,7 @@
         "action": "Click",
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseCheckInHome",
@@ -169,6 +178,7 @@
         "threshold": 0.7,
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseExitHome"
@@ -187,6 +197,7 @@
         "action": "Click",
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "RomanticHouseDone",
@@ -206,6 +217,7 @@
         "action": "Custom",
         "custom_action": "RomanticHouseExitToTankAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "DailyRoutineDispatcher"

@@ -52,6 +52,8 @@ def main():
         assert sweep["duration"] == 250
         assert sweep["post_delay"] == post_delay
         assert business_next(sweep) == [return_name]
+        if click_name.startswith("PatrolCollectTank"):
+            assert "[JumpBack]PatrolShellPagePopup" in sweep["next"]
         covered_clicks.add((path.as_posix(), click_name))
 
     all_bubble_clicks = set()
@@ -70,7 +72,7 @@ def main():
     assert friend_click["post_delay"] == 500
     assert business_next(friend_click) == ["FriendGemRecordAttempt"]
     assert "FriendGemSweepBottomAfterBubble" not in friend_pipeline
-    print("[PASS] 单缸收鱼与三缸巡检共 4 个产物气泡点击均一对一衔接安全区内左到右滑动")
+    print("[PASS] 4 个产物气泡点击均衔接安全滑动，巡检滑动后使用专用模板恢复开贝壳页面")
 
 
 if __name__ == "__main__":

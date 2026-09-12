@@ -69,5 +69,7 @@ fishing_state = {
 }
 
 golden_dolphin_state = {
-    "status": "IDLE",  # "DONE" | "NO_STAMINA"
+    "status": "IDLE",  # "READY_TO_PLAY" | "NEXT_ROUND" | "DONE" | "NO_STAMINA" | "FAILED"
+    "completed_rounds": 0,
+    "max_rounds": 3,
 }

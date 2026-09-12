@@ -4,6 +4,7 @@
         "action": "Custom",
         "custom_action": "InitFriendGemStateAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemStartRouter"
@@ -13,6 +14,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemStartCheckCard1Manatee",
@@ -39,6 +41,7 @@
         ],
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -62,6 +65,7 @@
         ],
         "post_delay": 1500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -78,6 +82,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -94,6 +99,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -103,6 +109,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemAddFriendPage",
@@ -128,6 +135,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemDone"
@@ -139,6 +147,7 @@
         "action": "Click",
         "post_delay": 500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -157,6 +166,7 @@
         "action": "Click",
         "post_delay": 500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -180,6 +190,7 @@
         ],
         "post_delay": 1000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -196,6 +207,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemNextFriend"
@@ -212,6 +224,7 @@
         ],
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemNextFriend"
@@ -222,6 +235,7 @@
         "custom_recognition": "CheckFriendGemLimitReco",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemNextFriend"
@@ -240,6 +254,7 @@
         "action": "Click",
         "post_delay": 500,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemRecordAttempt"
@@ -250,6 +265,7 @@
         "action": "Custom",
         "custom_action": "RecordFriendGemAttemptAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -260,6 +276,7 @@
         "custom_recognition": "CheckFriendGemBubbleMissLimitReco",
         "action": "DoNothing",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemNextFriend"
@@ -271,6 +288,7 @@
         "custom_action": "RecordFriendGemBubbleMissAction",
         "post_delay": 600,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
@@ -295,6 +313,7 @@
         ],
         "post_delay": 1200,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemStepIndex"
@@ -305,6 +324,7 @@
         "action": "Custom",
         "custom_action": "StepFriendGemIndexAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemResetAttempts"
@@ -315,6 +335,7 @@
         "action": "Custom",
         "custom_action": "ResetFriendGemAttemptsAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"

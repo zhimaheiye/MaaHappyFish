@@ -13,6 +13,7 @@
             "Node.Recognition.Succeeded": "[巡检] 开始检查魔力召唤。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicOpenTreasure"
@@ -38,6 +39,7 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 已打开右下角宝箱菜单。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicClickEntry"
@@ -63,6 +65,7 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 已点击魔力召唤入口，正在确认页面状态。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicVerifyPage"
@@ -86,6 +89,7 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 已确认进入召唤页面，正在判断可召唤、待揭晓或召唤中。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicConfirmPopup",
@@ -113,6 +117,7 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 发现上一轮召唤已结束，已点击揭晓，等待确认结果。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicConfirmRevealedResult"
@@ -137,6 +142,7 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 已点击确定并领取上一轮结果，继续检查是否可开启下一轮。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicClickAdvanced"
@@ -162,6 +168,7 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 检测到高级召唤可用，已点击并等待确认。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicConfirmPopup"
@@ -187,6 +194,7 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 已确认，高级魔力召唤已启动，约 1 小时后再次检查。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicReturn"
@@ -202,6 +210,9 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 检测到正在召唤，本次未重复召唤，准备返回鱼缸。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolMagicReturn"
         ]
     },
@@ -221,6 +232,7 @@
             "Node.Action.Succeeded": "[巡检-魔力召唤] 已返回主鱼缸，继续巡检调度。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolVerifyMainAfterCycle"
@@ -250,6 +262,7 @@
             "Node.Recognition.Succeeded": "[巡检] 开始检查宝石融合。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionOpenTreasure"
@@ -275,6 +288,7 @@
             "Node.Action.Succeeded": "[巡检-宝石融合] 已打开右下角宝箱菜单。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionClickEntry"
@@ -300,6 +314,7 @@
             "Node.Action.Succeeded": "[巡检-宝石融合] 已点击宝石融合入口，正在确认页面状态。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionPageRouter"
@@ -313,6 +328,7 @@
         "action": "DoNothing",
         "timeout": 5000,
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionPutInStorage",
@@ -336,6 +352,7 @@
             "Node.Action.Succeeded": "[巡检-宝石融合] 发现上一轮融合结果，已放入仓库，继续检查下一轮。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionVerifyPage"
@@ -360,6 +377,7 @@
             "Node.Action.Succeeded": "[巡检-宝石融合] 已确认进入融合页面，正在判断可合成或融合中。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionClickSynthesize",
@@ -385,6 +403,7 @@
             "Node.Action.Succeeded": "[巡检-宝石融合] 检测到合成可用，已启动下一轮宝石融合，约 1 小时后再次检查。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionReturn"
@@ -400,6 +419,9 @@
             "Node.Action.Succeeded": "[巡检-宝石融合] 检测到宝石正在融合，本次未重复合成，准备返回鱼缸。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolGemFusionReturn"
         ]
     },
@@ -419,6 +441,7 @@
             "Node.Action.Succeeded": "[巡检-宝石融合] 已返回主鱼缸，继续巡检调度。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "PatrolVerifyMainAfterCycle"
