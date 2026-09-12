@@ -1,0 +1,294 @@
+{
+    "ManateeTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "InitManateeStateAction",
+        "custom_action_param": {
+            "return_mode": "standalone"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeStartRouter"
+        ]
+    },
+    "ManateeStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeSelectFood",
+            "ManateeTankIdentity",
+            "ManateeStartFromFriendList",
+            "ManateeWeekendGate",
+            "ManateeWeekdayDone"
+        ]
+    },
+    "ManateeWeekendGate": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckManateeStateReco",
+        "custom_recognition_param": {
+            "condition": "weekend"
+        },
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeOpenFriendPage"
+        ]
+    },
+    "ManateeWeekdayDone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 今天不是周六或周日，且当前未识别到海牛先生页面，任务正常结束。"
+        }
+    },
+    "ManateeOpenFriendPage": {
+        "recognition": "TemplateMatch",
+        "template": "好友页面_入口.png",
+        "threshold": 0.8,
+        "roi": [1128, 205, 131, 124],
+        "action": "Click",
+        "post_delay": 1200,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeStartFromFriendList"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 已从鱼缸点击好友入口，正在查找海牛先生。"
+        }
+    },
+    "ManateeStartFromFriendList": {
+        "recognition": "OCR",
+        "expected": "海牛先生",
+        "roi": [460, 185, 183, 127],
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeTankIdentity"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 已在好友列表识别并点击海牛先生，正在确认到达活动页面。"
+        }
+    },
+    "ManateeTankIdentity": {
+        "recognition": "OCR",
+        "expected": "海牛先生",
+        "roi": [300, 40, 350, 80],
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeExhausted",
+            "ManateeOpenFeed"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 已确认进入海牛先生页面，准备打开喂食。"
+        }
+    },
+    "ManateeOpenFeed": {
+        "recognition": "TemplateMatch",
+        "template": "好友_喂食.png",
+        "threshold": 0.8,
+        "roi": [1126, 258, 143, 145],
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeSelectFood"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 已识别并点击好友喂食按钮，正在选择鱼食。"
+        }
+    },
+    "ManateeSelectFood": {
+        "recognition": "TemplateMatch",
+        "template": "海牛先生_选择喂食.png",
+        "threshold": 0.8,
+        "roi": [795, 265, 159, 135],
+        "action": "Click",
+        "post_delay": 500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeFeedUntilExhausted"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 已选择指定鱼食，开始连续喂食；至少点击 30 次并等待刷新体力出现。"
+        }
+    },
+    "ManateeFeedUntilExhausted": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FeedManateeUntilExhaustedAction",
+        "custom_action_param": {
+            "min_clicks": 30,
+            "max_clicks": 120
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeReturnStandalone",
+            "ManateeReturnFriendGem"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 已完成至少 30 次喂食并识别到刷新体力，准备返回。",
+            "Node.Action.Failed": "[海牛先生] 喂食未达到安全终态，已停止继续点击。"
+        }
+    },
+    "ManateeExhausted": {
+        "recognition": "OCR",
+        "expected": "刷新体力",
+        "roi": [0, 70, 327, 244],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeReturnStandalone",
+            "ManateeReturnFriendGem"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 已识别到刷新体力，无需继续投喂，准备返回。"
+        }
+    },
+    "ManateeReturnStandalone": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckManateeStateReco",
+        "custom_recognition_param": {
+            "condition": "standalone"
+        },
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeBackToFriendList"
+        ]
+    },
+    "ManateeReturnFriendGem": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckManateeStateReco",
+        "custom_recognition_param": {
+            "condition": "friend_gem"
+        },
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "FriendGemNextFriend"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 好友巡访模式喂食完成，正在点击下一位并恢复摸宝流程。"
+        }
+    },
+    "ManateeBackToFriendList": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [1, 0, 189, 119],
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeVerifyFriendList"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 独立任务已执行第一次返回，正在确认好友列表。"
+        }
+    },
+    "ManateeVerifyFriendList": {
+        "recognition": "OCR",
+        "expected": "星级好友",
+        "roi": [110, 100, 200, 55],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeBackToTank"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ]
+    },
+    "ManateeBackToTank": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [1, 0, 189, 119],
+        "action": "Click",
+        "post_delay": 1000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ManateeVerifyMainTank"
+        ],
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 独立任务已执行第二次返回，正在确认主鱼缸。"
+        }
+    },
+    "ManateeVerifyMainTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "on_error": [
+            "ManateeAbort"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 已确认返回主鱼缸，独立任务完成。"
+        }
+    },
+    "ManateeAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[海牛先生] 页面门禁、截图或安全终态未通过，已停止且不再继续点击；请查看识别日志。"
+        }
+    }
+}

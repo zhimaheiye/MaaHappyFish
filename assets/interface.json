@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -64,10 +64,22 @@
             ]
         },
         {
+            "name": "宝石礼盒兑换",
+            "entry": "GemGiftBoxTask",
+            "default_check": false,
+            "description": "从主鱼缸进入宝石礼盒，按 16/21/26/31/36/41/46 级配方依次兑换至今日 10/10；已完成配方自动跳过。"
+        },
+        {
             "name": "好友摸宝",
             "entry": "FriendGemTask",
             "default_check": false,
-            "description": "自动巡访好友鱼缸收取金币产物，单好友上限12次，体力耗尽自动跳过（支持在好友列表主界面或任意好友水族箱开始任务）"
+            "description": "从主鱼缸、好友列表或好友水族箱启动，自动巡访并收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。"
+        },
+        {
+            "name": "海牛先生",
+            "entry": "ManateeTask",
+            "default_check": false,
+            "description": "周六、周日从主鱼缸、好友列表或海牛先生页面启动，连续喂食至识别到刷新体力后返回主鱼缸。"
         },
         {
             "name": "收鱼产物",

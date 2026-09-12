@@ -15,6 +15,24 @@
     },
     "PatrolShellPagePopup": {
         "recognition": "TemplateMatch",
+        "template": "开贝壳_识别.png",
+        "threshold": 0.8,
+        "roi": [
+            508,
+            70,
+            263,
+            201
+        ],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "PatrolShellPageReturn"
+        ]
+    },
+    "PatrolShellPageReturn": {
+        "recognition": "TemplateMatch",
         "template": "贝壳页面_返回.png",
         "threshold": 0.75,
         "roi": [
@@ -277,9 +295,6 @@
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
-        "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼缸 1 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
-        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -404,9 +419,6 @@
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
-        "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼缸 2 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
-        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -531,9 +543,6 @@
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
-        "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼缸 3 发现产物：已点击并完成底部滑动收取，30 秒无产物窗口重新计时。"
-        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",

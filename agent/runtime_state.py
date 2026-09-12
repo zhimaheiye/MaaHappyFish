@@ -11,6 +11,11 @@ friend_gem_state = {
     "max_bubble_misses": 12,
 }
 
+manatee_state = {
+    "return_mode": "standalone",
+    "last_feed_count": 0,
+}
+
 sea_otter_gem_state = {
     "current_side": "left",
     "total_harvests": 0,

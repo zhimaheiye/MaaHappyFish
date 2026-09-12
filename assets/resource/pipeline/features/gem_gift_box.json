@@ -1,0 +1,241 @@
+{
+    "GemGiftBoxTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "GemGiftBoxUnexpectedDialog",
+            "GemGiftBoxRun",
+            "GemGiftBoxOpenEntry",
+            "GemGiftBoxOpenTreasure"
+        ]
+    },
+    "GemGiftBoxUnexpectedDialog": {
+        "recognition": "TemplateMatch",
+        "template": "宝石礼盒_兑换识别.png",
+        "roi": [
+            771,
+            229,
+            200,
+            180
+        ],
+        "threshold": 0.8,
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[宝石礼盒] 启动时处于兑换弹窗，无法确认所属配方，已安全停止以避免重复兑换。"
+        }
+    },
+    "GemGiftBoxOpenTreasure": {
+        "recognition": "TemplateMatch",
+        "template": "右下角_宝箱.png",
+        "roi": [
+            1120,
+            562,
+            141,
+            141
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 700,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石礼盒] 已打开右下角宝箱菜单。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "GemGiftBoxOpenEntry"
+        ],
+        "on_error": [
+            "GemGiftBoxAbort"
+        ]
+    },
+    "GemGiftBoxOpenEntry": {
+        "recognition": "TemplateMatch",
+        "template": "宝石礼盒兑换入口.png",
+        "roi": [
+            828,
+            575,
+            132,
+            121
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石礼盒] 已点击宝石礼盒兑换入口，正在确认兑换页面。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "GemGiftBoxRun"
+        ],
+        "on_error": [
+            "GemGiftBoxAbort"
+        ]
+    },
+    "GemGiftBoxRun": {
+        "recognition": "OCR",
+        "expected": "兑换鱼配方数",
+        "roi": [
+            0,
+            70,
+            500,
+            120
+        ],
+        "action": "Custom",
+        "custom_action": "GemGiftBoxExchangeAllAction",
+        "timeout": 5000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[宝石礼盒] 已确认兑换列表，开始按配方编号检查七个渠道。",
+            "Node.Action.Succeeded": "[宝石礼盒] 七个配方均已兑换或确认今日达到上限，准备返回鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "GemGiftBoxReturn"
+        ],
+        "on_error": [
+            "GemGiftBoxAbort"
+        ]
+    },
+    "GemGiftBoxTopRecipe": {
+        "recognition": "OCR",
+        "expected": "16级配方",
+        "roi": [
+            55,
+            196,
+            108,
+            41
+        ],
+        "action": "DoNothing"
+    },
+    "GemGiftBoxRecipeLabel": {
+        "recognition": "OCR",
+        "expected": "16级配方",
+        "roi": [
+            0,
+            150,
+            1280,
+            570
+        ],
+        "action": "DoNothing"
+    },
+    "GemGiftBoxCompletedCount": {
+        "recognition": "OCR",
+        "expected": ".*兑换.*10/10.*",
+        "roi": [
+            0,
+            250,
+            640,
+            150
+        ],
+        "action": "DoNothing"
+    },
+    "GemGiftBoxExchangeableMarker": {
+        "recognition": "TemplateMatch",
+        "template": "宝石礼盒_可兑换.png",
+        "roi": [
+            587,
+            195,
+            47,
+            35
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing"
+    },
+    "GemGiftBoxExchangeDialog": {
+        "recognition": "TemplateMatch",
+        "template": "宝石礼盒_兑换识别.png",
+        "roi": [
+            771,
+            229,
+            200,
+            180
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing"
+    },
+    "GemGiftBoxPlusButton": {
+        "recognition": "TemplateMatch",
+        "template": "宝石礼盒兑换_点击.png",
+        "roi": [
+            878,
+            336,
+            134,
+            132
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing"
+    },
+    "GemGiftBoxExchangeButton": {
+        "recognition": "OCR",
+        "expected": "^兑换$",
+        "roi": [
+            789,
+            486,
+            169,
+            131
+        ],
+        "action": "DoNothing"
+    },
+    "GemGiftBoxConfirmButton": {
+        "recognition": "OCR",
+        "expected": "^确定$",
+        "roi": [
+            557,
+            568,
+            178,
+            135
+        ],
+        "action": "DoNothing"
+    },
+    "GemGiftBoxReturn": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石礼盒] 已点击返回，正在确认主鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "GemGiftBoxVerifyTank"
+        ],
+        "on_error": [
+            "GemGiftBoxAbort"
+        ]
+    },
+    "GemGiftBoxVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石礼盒] 已确认返回主鱼缸，任务完成。"
+        },
+        "on_error": [
+            "GemGiftBoxAbort"
+        ]
+    },
+    "GemGiftBoxAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[宝石礼盒] 页面门禁或兑换结果未通过，已安全停止且未继续点击。"
+        }
+    }
+}

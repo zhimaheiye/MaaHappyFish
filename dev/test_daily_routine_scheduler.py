@@ -148,7 +148,31 @@ def test_pipeline_topology():
     assert "驯鹿鱼送收礼物" in routine_cases
     print("[PASS] 独立钓鱼与日常收尾共享钓鱼地点选项，三份 interface.json 同步")
 
-    # 7. 驯鹿鱼已知分支必须全部基于识别结果点击，并使用统一返回 OCR 范围。
+    # 7. 鱼饵耗尽是钓场内的正常终态：各运行阶段都应优先识别，并复用既有安全退出链。
+    exhausted = pdata["FishingBaitExhausted"]
+    assert exhausted["recognition"] == "TemplateMatch"
+    assert exhausted["template"] == "钓鱼达人_鱼饵已用尽.png"
+    assert exhausted["roi"] == [8, 369, 196, 153]
+    assert exhausted["action"] == "DoNothing"
+    assert "target" not in exhausted
+    assert business_next(exhausted) == ["FishingDone"]
+    assert os.path.isfile(os.path.join("assets", "resource", "image", exhausted["template"]))
+    for router_name in (
+        "FishingStartRouter",
+        "FishingBaitRouter",
+        "FishingPostRoundRouter",
+        "FishingLoopRouter",
+    ):
+        assert business_next(pdata[router_name])[0] == "FishingBaitExhausted"
+    assert business_next(pdata["FishingBaitNeedSelect"]) == [
+        "FishingBaitExhausted",
+        "FishingSelectCheeseBait",
+    ]
+    assert business_next(pdata["FishingDone"]) == ["FishingVerifyExitToTank"]
+    assert business_next(pdata["FishingVerifyExitToTank"]) == ["DailyRoutineDispatcher"]
+    print("[PASS] 鱼饵耗尽模板在四个钓场路由中优先命中，并复用右上角退出与主鱼缸确认链")
+
+    # 8. 驯鹿鱼已知分支必须全部基于识别结果点击，并使用统一返回 OCR 范围。
     assert business_next(pdata["ReindeerFishStartRouter"]) == [
         "ReindeerFishRewardReturn",
         "ReindeerFishCollectAll",
@@ -158,8 +182,9 @@ def test_pipeline_topology():
         "ReindeerFishStartAtTank",
     ]
     # 实机 OCR 曾把“一键收取”稳定识别为“键收取”；使用共同稳定子串兼容两者。
+    # 2026-09-12 礼物列表布局把按钮移到 x=512..691，收取 ROI 需兼容新旧位置。
     assert pdata["ReindeerFishCollectAll"]["expected"] == "键收取"
-    assert pdata["ReindeerFishCollectAll"]["roi"] == [678, 562, 235, 147]
+    assert pdata["ReindeerFishCollectAll"]["roi"] == [480, 562, 440, 143]
     assert pdata["ReindeerFishReplyAll"]["expected"] == "一键回礼"
     assert pdata["ReindeerFishReplyAll"]["roi"] == [480, 562, 232, 143]
     assert pdata["ReindeerFishDirectGift"]["expected"] == "直接赠送"

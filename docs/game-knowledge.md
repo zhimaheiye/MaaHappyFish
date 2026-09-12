@@ -29,6 +29,7 @@
 - `BuyFishFoodTask`：购买廉价鱼食。
 - `FeedStarfishStandalone`、`CollectFishTask`：给当前鱼缸海星补充鱼食。
 - `PatrolTask`：在鱼缸管理页依次给多个鱼缸的海星补充鱼食。
+- `ManateeTask` / `FriendGemTask` 海牛分支：只投放用户指定的现有鱼食，不执行购买；至少投喂 30 次，直到识别到刷新体力。
 - 后续明确限定为廉价鱼食的购买或投放模块。
 
 如果未来自动化支持其他鱼食类别，必须单独记录其价格、资源类型与测试授权；不得自动继承廉价鱼食的宽松测试规则。

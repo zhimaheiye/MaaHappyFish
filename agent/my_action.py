@@ -18,6 +18,7 @@ from maa.pipeline import JActionType, JLongPress
 try:
     from runtime_state import (
         friend_gem_state,
+        manatee_state,
         sea_otter_gem_state,
         band_fish_state,
         BAND_FISH_TARGETS,
@@ -29,6 +30,7 @@ try:
 except ImportError:
     from agent.runtime_state import (
         friend_gem_state,
+        manatee_state,
         sea_otter_gem_state,
         band_fish_state,
         BAND_FISH_TARGETS,
@@ -406,6 +408,8 @@ class InitFriendGemStateAction(CustomAction):
             friend_gem_state["max_attempts"] = 30
             friend_gem_state["bubble_miss_count"] = 0
             friend_gem_state["max_bubble_misses"] = 12
+            manatee_state["return_mode"] = "friend_gem"
+            manatee_state["last_feed_count"] = 0
             print("[好友摸宝] 任务初始化完成：当前好友序号设为 1（从启动位置起算），安全保护上限为 30，连续未见气泡容忍上限为 12", flush=True)
             return True
         except Exception as e:
@@ -473,6 +477,83 @@ class RecordFriendGemBubbleMissAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[好友摸宝] 记录气泡漏检异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("InitManateeStateAction")
+class InitManateeStateAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            return_mode = param.get("return_mode", "standalone")
+            if return_mode not in {"standalone", "friend_gem"}:
+                return_mode = "standalone"
+            manatee_state["return_mode"] = return_mode
+            manatee_state["last_feed_count"] = 0
+            print(f"[海牛先生] 任务初始化完成，返回模式: {return_mode}", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海牛先生] 初始化异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("FeedManateeUntilExhaustedAction")
+class FeedManateeUntilExhaustedAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            min_clicks = safe_int(param.get("min_clicks"), 30, 30, 120)
+            max_clicks = safe_int(param.get("max_clicks"), 120, min_clicks, 300)
+            controller = context.tasker.controller
+            click_points = (
+                (850, 360), (962, 360), (1075, 360),
+                (850, 465), (962, 465), (1075, 465),
+                (850, 570), (962, 570), (1075, 570),
+            )
+
+            for click_count in range(max_clicks + 1):
+                if _task_cancelled(context):
+                    print("[海牛先生] 已收到停止请求，终止喂食", flush=True)
+                    return False
+
+                frame = _capture_720p(controller)
+                if frame is None:
+                    print("[海牛先生] 截图失败，终止喂食", flush=True)
+                    return False
+
+                if click_count >= min_clicks and _recognition_box(
+                    context, "ManateeExhausted", frame
+                ) is not None:
+                    manatee_state["last_feed_count"] = click_count
+                    print(
+                        f"[海牛先生] 已投喂 {click_count} 次并识别到刷新体力，喂食完成",
+                        flush=True,
+                    )
+                    return True
+
+                if click_count >= max_clicks:
+                    break
+
+                if _recognition_box(context, "ManateeTankIdentity", frame) is None:
+                    print("[海牛先生] 喂食前未确认仍在海牛先生页面，安全停止", flush=True)
+                    return False
+
+                x, y = click_points[click_count % len(click_points)]
+                controller.post_click(x, y).wait()
+                manatee_state["last_feed_count"] = click_count + 1
+                if (click_count + 1) % 10 == 0:
+                    print(f"[海牛先生] 已执行 {click_count + 1} 次喂食点击", flush=True)
+                time.sleep(0.1)
+
+            print(
+                f"[海牛先生] 已达到 {max_clicks} 次安全上限但仍未识别到刷新体力，停止操作",
+                flush=True,
+            )
+            return False
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海牛先生] 喂食异常: {e}", flush=True)
             return False
 
 
@@ -1929,6 +2010,277 @@ class FishingExitToTankAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[钓鱼退出] 异常: {e}", flush=True)
+            return False
+
+
+# ==============================================================================
+# 宝石礼盒七配方兑换
+# ==============================================================================
+
+GEM_GIFT_BOX_LEVELS = (16, 21, 26, 31, 36, 41, 46)
+
+
+def _gem_gift_box_recognition_box(context: Context, node_name: str, frame, override=None):
+    if frame is None or not hasattr(context, "run_recognition"):
+        return None
+    result = context.run_recognition(node_name, frame, pipeline_override=override or {})
+    if not result or not result.hit or result.box is None:
+        return None
+    try:
+        return tuple(int(value) for value in result.box)
+    except (TypeError, ValueError):
+        return None
+
+
+def _gem_gift_box_card_roi(recipe_box, kind: str):
+    """根据配方文字所在卡片推导同卡片的 OK 或今日兑换计数范围。"""
+    x, y, width, height = recipe_box
+    is_left = x + width // 2 < 640
+    if kind == "marker":
+        # 用户给定基准：配方 [55,196,108,41] -> OK [587,195,47,35]。
+        # 纵向略扩展以兼容列表滚动后的文字框紧裁差异，横向仍锁定卡片右上角。
+        marker_x = 587 if is_left else 1207
+        marker_y = max(150, y - 25)
+        return [marker_x, marker_y, 47, min(80, 720 - marker_y)]
+
+    count_x = 0 if is_left else 640
+    count_y = max(150, min(690, y + 60))
+    return [count_x, count_y, 640, min(150, 720 - count_y)]
+
+
+def _gem_gift_box_card_click_point(recipe_box, marker_box):
+    """点击配方文字与同卡片 OK 标志的中心点，避免直接点击状态标志。"""
+    recipe_x, recipe_y, recipe_width, recipe_height = recipe_box
+    marker_x, marker_y, marker_width, marker_height = marker_box
+    click_x = int(
+        ((recipe_x + recipe_width / 2) + (marker_x + marker_width / 2)) / 2 + 0.5
+    )
+    click_y = int(
+        ((recipe_y + recipe_height / 2) + (marker_y + marker_height / 2)) / 2 + 0.5
+    )
+    return click_x, click_y
+
+
+@AgentServer.custom_action("GemGiftBoxExchangeAllAction")
+class GemGiftBoxExchangeAllAction(CustomAction):
+    """按配方等级逐一完成七张宝石礼盒卡片，使用每日 10/10 状态防重。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[宝石礼盒] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            def cancelled(stage):
+                if not _task_cancelled(context):
+                    return False
+                print(f"[宝石礼盒] 已收到停止请求，终止阶段: {stage}", flush=True)
+                return True
+
+            def capture_page():
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    print("[宝石礼盒] 截屏失败", flush=True)
+                    return None
+                if _recognition_box(context, "GemGiftBoxRun", frame) is None:
+                    print("[宝石礼盒] 当前画面未通过兑换列表页面门禁", flush=True)
+                    return None
+                return frame
+
+            def wait_for(node_name, timeout_seconds):
+                deadline = time.time() + timeout_seconds
+                while time.time() < deadline:
+                    if cancelled(f"等待 {node_name}"):
+                        return None, None
+                    frame = _capture_720p(ctrl)
+                    box = _recognition_box(context, node_name, frame)
+                    if box is not None:
+                        return frame, box
+                    time.sleep(0.25)
+                return None, None
+
+            # 只看真实顶部锚点决定是否继续回滚，不依赖上一次滚动位置。
+            top_frame = None
+            for attempt in range(5):
+                if cancelled("列表回到顶部"):
+                    return False
+                frame = capture_page()
+                if frame is None:
+                    return False
+                if _recognition_box(context, "GemGiftBoxTopRecipe", frame) is not None:
+                    top_frame = frame
+                    print(f"[宝石礼盒] 已确认列表顶部（回滚 {attempt} 次）", flush=True)
+                    break
+                if attempt == 4:
+                    break
+                print(f"[宝石礼盒] 未见 16级配方，向页面顶部回滚 ({attempt + 1}/4)", flush=True)
+                ctrl.post_swipe(640, 240, 640, 620, 450).wait()
+                time.sleep(0.8)
+            if top_frame is None:
+                print("[宝石礼盒] 回滚后仍未识别到 16级配方，安全停止", flush=True)
+                return False
+
+            def locate_recipe(level):
+                expected = f"{level}级配方"
+                for swipe_index in range(5):
+                    if cancelled(f"查找 {expected}"):
+                        return None, None
+                    frame = capture_page()
+                    if frame is None:
+                        return None, None
+                    box = _gem_gift_box_recognition_box(
+                        context,
+                        "GemGiftBoxRecipeLabel",
+                        frame,
+                        {"GemGiftBoxRecipeLabel": {"expected": expected}},
+                    )
+                    if box is not None and box[1] + box[3] // 2 <= 570:
+                        return frame, box
+                    if swipe_index == 4:
+                        break
+                    print(f"[宝石礼盒] 当前视区未完整显示 {expected}，向下查找 ({swipe_index + 1}/4)", flush=True)
+                    ctrl.post_swipe(640, 610, 640, 260, 450).wait()
+                    time.sleep(0.8)
+                return None, None
+
+            def is_completed(frame, recipe_box):
+                count_roi = _gem_gift_box_card_roi(recipe_box, "count")
+                override = {
+                    "GemGiftBoxCompletedCount": {
+                        "expected": ".*兑换.*10/10.*",
+                        "roi": count_roi,
+                    }
+                }
+                return _gem_gift_box_recognition_box(
+                    context, "GemGiftBoxCompletedCount", frame, override
+                ) is not None
+
+            completed_levels = []
+            exchanged_levels = []
+            for level in GEM_GIFT_BOX_LEVELS:
+                frame, recipe_box = locate_recipe(level)
+                if frame is None or recipe_box is None:
+                    print(f"[宝石礼盒] 未定位到 {level}级配方，停止以避免漏兑", flush=True)
+                    return False
+
+                already_done = False
+                for check_index in range(3):
+                    if is_completed(frame, recipe_box):
+                        already_done = True
+                        break
+                    if check_index < 2:
+                        time.sleep(0.35)
+                        frame = capture_page()
+                        if frame is None:
+                            return False
+                if already_done:
+                    completed_levels.append(level)
+                    print(f"[宝石礼盒] {level}级配方今日已兑换 10/10，跳过且不重复点击 OK", flush=True)
+                    continue
+
+                marker_roi = _gem_gift_box_card_roi(recipe_box, "marker")
+                marker_box = None
+                for check_index in range(3):
+                    marker_box = _gem_gift_box_recognition_box(
+                        context,
+                        "GemGiftBoxExchangeableMarker",
+                        frame,
+                        {"GemGiftBoxExchangeableMarker": {"roi": marker_roi}},
+                    )
+                    if marker_box is not None:
+                        break
+                    if check_index < 2:
+                        time.sleep(0.35)
+                        frame = capture_page()
+                        if frame is None:
+                            return False
+                if marker_box is None:
+                    print(f"[宝石礼盒] {level}级配方尚未达到 10/10，但未识别到对应 OK，停止以避免漏兑", flush=True)
+                    return False
+
+                card_x, card_y = _gem_gift_box_card_click_point(recipe_box, marker_box)
+                if cancelled(f"点击 {level}级配方卡片"):
+                    return False
+                print(
+                    f"[宝石礼盒] {level}级配方未满 10/10，已识别同卡片 OK；"
+                    f"点击配方文字与 OK 的中点 ({card_x}, {card_y})",
+                    flush=True,
+                )
+                ctrl.post_click(card_x, card_y).wait()
+
+                dialog_frame, _ = wait_for("GemGiftBoxExchangeDialog", 5.0)
+                if dialog_frame is None:
+                    print(f"[宝石礼盒] 点击 {level}级配方后未确认兑换弹窗，安全停止", flush=True)
+                    return False
+                plus_box = _recognition_box(context, "GemGiftBoxPlusButton", dialog_frame)
+                if plus_box is None:
+                    print(f"[宝石礼盒] {level}级配方兑换弹窗未识别到加号，安全停止", flush=True)
+                    return False
+
+                plus_x, plus_y = _box_center(plus_box)
+                print(f"[宝石礼盒] {level}级配方点击加号 9 次，将数量提高到本日剩余上限", flush=True)
+                for click_index in range(9):
+                    if cancelled(f"{level}级配方增加数量 {click_index + 1}/9"):
+                        return False
+                    ctrl.post_click(plus_x, plus_y).wait()
+                    time.sleep(0.08)
+
+                submit_frame = _capture_720p(ctrl)
+                submit_box = _recognition_box(context, "GemGiftBoxExchangeButton", submit_frame)
+                if submit_box is None:
+                    print(f"[宝石礼盒] {level}级配方未识别到兑换按钮，未提交", flush=True)
+                    return False
+                submit_x, submit_y = _box_center(submit_box)
+                print(f"[宝石礼盒] {level}级配方数量设置完成，点击识别到的兑换按钮", flush=True)
+                ctrl.post_click(submit_x, submit_y).wait()
+
+                _, confirm_box = wait_for("GemGiftBoxConfirmButton", 4.0)
+                if confirm_box is None:
+                    print(f"[宝石礼盒] {level}级配方未识别到结果确定按钮，安全停止", flush=True)
+                    return False
+                confirm_x, confirm_y = _box_center(confirm_box)
+                print(f"[宝石礼盒] {level}级配方兑换结果已出现，点击确定", flush=True)
+                ctrl.post_click(confirm_x, confirm_y).wait()
+
+                returned = False
+                for _ in range(12):
+                    if cancelled(f"等待 {level}级配方返回列表"):
+                        return False
+                    time.sleep(0.25)
+                    verify_frame = _capture_720p(ctrl)
+                    if _recognition_box(context, "GemGiftBoxRun", verify_frame) is not None:
+                        returned = True
+                        break
+                if not returned:
+                    print(f"[宝石礼盒] {level}级配方确认后未返回兑换列表，安全停止", flush=True)
+                    return False
+
+                verified = False
+                for verify_index in range(3):
+                    if is_completed(verify_frame, recipe_box):
+                        verified = True
+                        break
+                    if verify_index < 2:
+                        time.sleep(0.4)
+                        verify_frame = capture_page()
+                        if verify_frame is None:
+                            return False
+                if not verified:
+                    print(f"[宝石礼盒] {level}级配方兑换后未确认今日 10/10，停止且不重复提交", flush=True)
+                    return False
+
+                exchanged_levels.append(level)
+                print(f"[宝石礼盒] {level}级配方已确认今日兑换 10/10，继续下一配方", flush=True)
+
+            print(
+                f"[宝石礼盒] 七配方检查完成；本次兑换={exchanged_levels}，此前已满={completed_levels}",
+                flush=True,
+            )
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[宝石礼盒] 执行异常: {e}", flush=True)
             return False
 
 

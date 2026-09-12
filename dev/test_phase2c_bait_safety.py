@@ -63,14 +63,20 @@ for pf in glob.glob("assets/resource/pipeline/**/*.json", recursive=True):
 start_next = [name for name in pipeline["FishingStartRouter"]["next"] if not name.startswith("[JumpBack]Global")]
 bait_next = [name for name in pipeline["FishingBaitRouter"]["next"] if not name.startswith("[JumpBack]Global")]
 assert "FishingStartAtPurchasePopup" in start_next
-assert start_next[0] == "FishingStartAtPurchasePopup"
+assert start_next[0] == "FishingBaitExhausted"
 assert "FishingBaitPurchasePopup" in bait_next
-assert bait_next[0] == "FishingBaitPurchasePopup"
+assert bait_next[0] == "FishingBaitExhausted"
+exhausted = pipeline["FishingBaitExhausted"]
+assert exhausted["template"] == "钓鱼达人_鱼饵已用尽.png"
+assert exhausted["roi"] == [8, 369, 196, 153]
+assert exhausted["action"] == "DoNothing"
+assert "target" not in exhausted
 assert pipeline["FishingSelectCheeseBait"]["recognition"] == "TemplateMatch"
 assert pipeline["FishingSelectCheeseBait"]["template"] == "普通饵食_黄色奶酪.png"
 print("\n4. Pipeline 路由合规验证:")
 print("   FishingStartRouter 首选业务路由:", start_next[0])
 print("   FishingBaitRouter 首选业务路由:", bait_next[0])
+print("   FishingBaitExhausted 使用模板与 ROI:", exhausted["template"], exhausted["roi"])
 print("   FishingSelectCheeseBait 采用识别:", pipeline["FishingSelectCheeseBait"]["recognition"], pipeline["FishingSelectCheeseBait"]["template"])
 print("   >>> Pipeline 配置规范 100% PASS！")
 

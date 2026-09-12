@@ -13,6 +13,12 @@ PIPELINE_PATH = os.path.join(
 EXTRAS_PIPELINE_PATH = os.path.join(
     ROOT, "assets", "resource", "pipeline", "features", "patrol_extras.json"
 )
+OPEN_SHELL_PIPELINE_PATH = os.path.join(
+    ROOT, "assets", "resource", "pipeline", "features", "open_shell.json"
+)
+COLLECT_FISH_PIPELINE_PATH = os.path.join(
+    ROOT, "assets", "resource", "pipeline", "collect_fish.json"
+)
 INTERFACE_PATHS = [
     os.path.join(ROOT, "assets", "interface.json"),
     os.path.join(ROOT, "client", "interface.json"),
@@ -57,6 +63,10 @@ class PatrolPipelineTest(unittest.TestCase):
             cls.pipeline = json.load(file)
         with open(EXTRAS_PIPELINE_PATH, "r", encoding="utf-8") as file:
             cls.pipeline.update(json.load(file))
+        with open(OPEN_SHELL_PIPELINE_PATH, "r", encoding="utf-8") as file:
+            cls.open_shell_pipeline = json.load(file)
+        with open(COLLECT_FISH_PIPELINE_PATH, "r", encoding="utf-8") as file:
+            cls.collect_fish_pipeline = json.load(file)
 
     def test_clicks_are_guarded_by_visual_recognition(self):
         explicit_user_targets = {
@@ -70,13 +80,45 @@ class PatrolPipelineTest(unittest.TestCase):
                 if name not in explicit_user_targets:
                     self.assertNotIn("target", node, name)
 
-    def test_accidental_open_shell_uses_existing_specific_return_template(self):
+    def test_open_shell_page_is_verified_before_clicking_return(self):
         handler = self.pipeline["PatrolShellPagePopup"]
         self.assertEqual(handler["recognition"], "TemplateMatch")
-        self.assertEqual(handler["template"], "贝壳页面_返回.png")
-        self.assertEqual(handler["roi"], [0, 0, 250, 150])
-        self.assertEqual(handler["action"], "Click")
+        self.assertEqual(handler["template"], "开贝壳_识别.png")
+        self.assertEqual(handler["roi"], [508, 70, 263, 201])
+        self.assertEqual(handler["action"], "DoNothing")
         self.assertNotIn("target", handler)
+        self.assertEqual(business_next(handler), ["PatrolShellPageReturn"])
+
+        return_node = self.pipeline["PatrolShellPageReturn"]
+        self.assertEqual(return_node["recognition"], "TemplateMatch")
+        self.assertEqual(return_node["template"], "贝壳页面_返回.png")
+        self.assertEqual(return_node["roi"], [0, 0, 250, 150])
+        self.assertEqual(return_node["action"], "Click")
+        self.assertNotIn("target", return_node)
+
+        start_page = self.open_shell_pipeline["OpenShellStartPage"]
+        self.assertEqual(start_page["recognition"], "TemplateMatch")
+        self.assertEqual(start_page["template"], "开贝壳_识别.png")
+        self.assertEqual(start_page["roi"], [508, 70, 263, 201])
+        self.assertEqual(start_page["action"], "DoNothing")
+        self.assertEqual(business_next(start_page), ["OpenShellRoundStart"])
+        self.assertEqual(
+            business_next(self.open_shell_pipeline["OpenShellTask"]),
+            ["OpenShellStartPage"],
+        )
+
+        collect_handler = self.collect_fish_pipeline["HandleShellPage"]
+        self.assertEqual(collect_handler["template"], "开贝壳_识别.png")
+        self.assertEqual(collect_handler["roi"], [508, 70, 263, 201])
+        self.assertEqual(collect_handler["action"], "DoNothing")
+        self.assertEqual(business_next(collect_handler), ["HandleShellPageReturn"])
+
+        collect_return = self.collect_fish_pipeline["HandleShellPageReturn"]
+        self.assertEqual(collect_return["template"], "贝壳页面_返回.png")
+        self.assertEqual(collect_return["roi"], [0, 0, 250, 150])
+        self.assertEqual(collect_return["action"], "Click")
+        self.assertEqual(business_next(collect_return), ["ResumeHarvest"])
+
         for tank in (1, 2, 3):
             sweep = self.pipeline[f"PatrolSweepTank{tank}AfterBubble"]
             self.assertIn("[JumpBack]PatrolShellPagePopup", sweep["next"])
@@ -119,13 +161,10 @@ class PatrolPipelineTest(unittest.TestCase):
         expected_logs = {
             "PatrolStartAtTank1": ("鱼缸 1", "检查产物"),
             "PatrolVerifyTank1Main": ("鱼缸 1", "检查产物"),
-            "PatrolSweepTank1AfterBubble": ("鱼缸 1", "重新计时"),
             "PatrolOpenPickerAfterTank1": ("鱼缸 1", "30 秒", "鱼缸 2"),
             "PatrolVerifyTank2Main": ("鱼缸 2", "检查产物"),
-            "PatrolSweepTank2AfterBubble": ("鱼缸 2", "重新计时"),
             "PatrolOpenPickerAfterTank2": ("鱼缸 2", "30 秒", "鱼缸 3"),
             "PatrolVerifyTank3Main": ("鱼缸 3", "检查产物"),
-            "PatrolSweepTank3AfterBubble": ("鱼缸 3", "重新计时"),
             "PatrolOpenManagement": ("鱼缸 3", "30 秒", "管理页"),
             "PatrolVerifyManagement": ("管理页", "确认"),
             "PatrolExitManagement": ("返回", "主鱼缸"),
@@ -134,6 +173,12 @@ class PatrolPipelineTest(unittest.TestCase):
             focus = " ".join(self.pipeline[node_name].get("focus", {}).values())
             for fragment in fragments:
                 self.assertIn(fragment, focus, node_name)
+
+        for tank in (1, 2, 3):
+            self.assertNotIn(
+                "focus",
+                self.pipeline[f"PatrolSweepTank{tank}AfterBubble"],
+            )
 
         for key, label in (
             ("Cute", "萌海星"),

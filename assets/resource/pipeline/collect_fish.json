@@ -191,6 +191,25 @@
     },
     "HandleShellPage": {
         "recognition": "TemplateMatch",
+        "template": "开贝壳_识别.png",
+        "threshold": 0.8,
+        "roi": [
+            508,
+            70,
+            263,
+            201
+        ],
+        "action": "DoNothing",
+        "timeout": -1,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "HandleShellPageReturn"
+        ]
+    },
+    "HandleShellPageReturn": {
+        "recognition": "TemplateMatch",
         "template": "贝壳页面_返回.png",
         "threshold": 0.75,
         "roi": [

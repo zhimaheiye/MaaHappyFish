@@ -18,7 +18,7 @@
 
 ## 禁止事项（负向边界）
 1. **绝对禁止**：实现任何涉及付费（氪金）的自动化操作。
-2. **暂不实现**：鱼苗养殖自动化、宝石兑换功能。
+2. **暂不实现**：鱼苗养殖自动化。
 3. **日志输出限制**：**严禁在 Python print 中使用任何 Emoji 字符**。Windows 控制台默认 GBK 编码不支持 Unicode Emoji，会导致 Python 进程 `UnicodeEncodeError` 崩溃。
 4. **界面同步限制**：**严禁仅修改某一处 `interface.json`**，修改 `assets/interface.json` 后必须手动复制到 `client_avalonia/` 和 `client/`。
 

@@ -17,6 +17,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "FishingBaitExhausted",
             "FishingStartAtPurchasePopup",
             "FishingStartAtCatchResult",
             "FishingStartAtWaitingForBite",
@@ -347,6 +348,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "FishingBaitExhausted",
             "FishingBaitPurchasePopup",
             "FishingBaitAlreadySelected",
             "FishingBaitNeedSelect",
@@ -410,6 +412,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "FishingBaitExhausted",
             "FishingSelectCheeseBait"
         ]
     },
@@ -481,6 +484,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "FishingBaitExhausted",
             "FishingCatchSuccess",
             "FishingPostRoundCheckReady",
             "FishingPostRoundWait"
@@ -545,6 +549,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "FishingBaitExhausted",
             "FishingLoopCheckLimit",
             "FishingLoopHasBait",
             "FishingLoopNeedBait",
@@ -594,6 +599,27 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "FishingBaitRouter"
+        ]
+    },
+    "FishingBaitExhausted": {
+        "recognition": "TemplateMatch",
+        "template": "钓鱼达人_鱼饵已用尽.png",
+        "roi": [
+            8,
+            369,
+            196,
+            153
+        ],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "focus": {
+            "Node.Recognition.Succeeded": "[钓鱼] 已识别到鱼饵/体力耗尽，按正常完成退出钓场。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "FishingDone"
         ]
     },
     "FishingDone": {

@@ -13,12 +13,13 @@
 
 ## 2. 步骤可恢复启动契约 (Step-resumable Start Contract)
 
-任务基于「最深已知阶段优先（Deepest-First）」原则，支持从以下 8 个已知阶段自适应恢复，无需强行倒退回第一步：
+任务基于「最深已知阶段优先（Deepest-First）」原则，支持从以下 9 个已知阶段自适应恢复，无需强行倒退回第一步：
 
 ```text
 FishingTask (入口，重置 cast_count=0)
     ↓
 FishingStartRouter (最深已知阶段优先路由，按真实截屏自适应恢复)
+    ├─ [最深/终态] 鱼饵已用尽 ─────────> FishingBaitExhausted (模板、ROI [8,369,196,153]) ──> FishingDone
     ├─ 1. [最深/模态] 误入鱼饵购买弹窗 ──> FishingStartAtPurchasePopup (模板匹配右上角红色×) ─> 点击×关闭 ──> FishingBaitRouter
     ├─ 2. 处于结算弹窗 ───────────────> FishingStartAtCatchResult (OCR "恭喜您获得") ─────────> 自动点击「领取」 ─> FishingLoopRouter
     ├─ 3. [特殊] 已甩杆等待咬钩 ───────> FishingStartAtWaitingForBite (OCR "收杆") ──────────> 进入 WatchOnly 高速监听 ─> FishingPostRoundRouter
@@ -39,6 +40,7 @@ FishingStartRouter (最深已知阶段优先路由，按真实截屏自适应恢
 
 ```text
 FishingBaitRouter
+    ├─ BaitExhausted (模板匹配“鱼饵已用尽”) ─> FishingDone (正常终止)
     ├─ PurchasePopup (模板匹配红色×) ─────> FishingBaitPurchasePopup (点击×关闭弹窗并返回)
     ├─ AlreadySelected (OCR "更换鱼饵") ──> FishingRound
     ├─ NeedSelect (OCR "选择鱼饵") ────────> OpenBaitPicker ──> SelectCheese (点击黄色奶酪) ──> VerifyReady ──> FishingRound
@@ -49,11 +51,13 @@ FishingRound
 FishingCastAndBiteQTEAction (EmulatorExtras 高频抓帧 + 双阶段 ColorGeometry 检测)
     ↓ (完整形态优先；3 秒后同时允许渐入早期形态，首次命中立即收杆)
 FishingPostRoundRouter
+    ├─ BaitExhausted (模板匹配“鱼饵已用尽”) ─> FishingDone
     ├─ CatchSuccess (OCR "恭喜您获得") ──> 点击「领取」 (642, 584) ──> post_delay ──> FishingLoopRouter
     ├─ ReadyAgain (失败/未中自然恢复，OCR "甩杆") ──> FishingLoopRouter
     └─ Unknown (有界等待 bounded wait，超时后安全退出保存现场)
 
 FishingLoopRouter
+    ├─ 鱼饵已用尽 (模板、优先于普通循环) ───> FishingDone
     ├─ 检查上限 (cast_count >= 5) ────────> FishingDone
     ├─ 仍有鱼饵 (OCR "更换鱼饵") ──────────> FishingRound (开启下一杆)
     ├─ 需选鱼饵 (OCR "选择鱼饵") ──────────> FishingBaitRouter
@@ -110,7 +114,8 @@ FishingLoopRouter
 
 ## 8. 退出契约与 2026-09-12 修复
 
+- 用户提供的 `钓鱼达人_鱼饵已用尽.png` 已按 ROI `[8,369,196,153]` 接入 `FishingStartRouter`、`FishingBaitRouter`、打开选饵抽屉后的候选、`FishingPostRoundRouter` 与 `FishingLoopRouter`。命中后只记录“鱼饵/体力耗尽”正常终态，不在识别节点点击任何坐标，统一转入既有 `FishingDone`。
 - `FishingDone` 只会从已确认的钓场业务状态进入，因此退出动作直接点击钓场右上角 `[1235, 45]`；随后 `FishingVerifyExitToTank` 必须匹配 `主界面特征.png`，确认返回主鱼缸后才继续后续任务。
 - 旧流程先点击左上角 `[50, 45]` 退回地点地图，再点击右上角并盲点 `[640, 150]`；该跨页面点击链会重新落入地点选择并可能再次进入默认“星河”。现已删除左上角返回与页面空白区兜底。
 - 若点击后 3 秒内仍未确认主鱼缸，`FishingExitFailed` 会打印明确错误并停止，不会把未验证的页面当作成功继续。
-- 离线回归同时锁定 `DONE` 与 `NO_STAMINA` 两种结算状态都只发送一次右上角退出点击，并锁定“主界面验证成功才调度 / 验证失败即停止”的拓扑。本次按用户要求仅完成代码级验证，未运行模拟器测试。
+- 离线回归同时锁定耗尽模板、精确 ROI、五处候选顺序，以及 `DONE` 与 `NO_STAMINA` 两种结算状态都只发送一次右上角退出点击；同时锁定“主界面验证成功才调度 / 验证失败即停止”的拓扑。本次按用户要求仅完成代码级验证，未运行模拟器测试。

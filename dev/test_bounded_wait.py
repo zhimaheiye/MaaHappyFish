@@ -41,10 +41,10 @@ assert rs.friend_gem_state["attempts"] == 1
 assert rs.friend_gem_state["bubble_miss_count"] == 0
 print("Test 3 Hit bubble resets miss count: PASS")
 
-# Test 4: Miss 8 times -> triggers miss limit
-for i in range(8):
+# Test 4: Miss 12 times -> triggers miss limit
+for i in range(12):
     miss_act.run(None, None)
-assert rs.friend_gem_state["bubble_miss_count"] == 8
+assert rs.friend_gem_state["bubble_miss_count"] == 12
 res = miss_reco.analyze(None, None)
 assert res == (0, 0, 10, 10), f"Expected limit trigger, got {res}"
 print("Test 4 Miss limit triggered: PASS")

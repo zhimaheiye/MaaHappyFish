@@ -59,7 +59,7 @@
     "ReindeerFishCollectAll": {
         "recognition": "OCR",
         "expected": "键收取",
-        "roi": [678, 562, 235, 147],
+        "roi": [480, 562, 440, 143],
         "action": "Click",
         "post_delay": 800,
         "next": [

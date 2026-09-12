@@ -1,4 +1,7 @@
-import cv2, numpy as np
+import json
+
+import cv2
+import numpy as np
 
 def imread_unicode(path):
     return cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
@@ -21,8 +24,14 @@ assert test_next(r"dev\exploration\friend_gem\screenshots\friend_tank_look.png")
 # Tank 2:
 assert test_next(r"dev\exploration\friend_gem\screenshots\user_fish_baby_park_1.png") >= 0.70
 
-# List page:
-assert test_next(r"dev\exploration\friend_gem\screenshots\current_check.png") < 0.50
+# List page contains a visually similar orange control. Safety comes from routing:
+# FriendGemNextFriend is reachable only after a verified friend-tank completion state.
+assert test_next(r"dev\exploration\friend_gem\screenshots\current_check.png") >= 0.70
+with open(
+    r"assets\resource\pipeline\features\friend_gem.json", encoding="utf-8"
+) as file:
+    friend_pipeline = json.load(file)
+assert "FriendGemNextFriend" not in friend_pipeline["FriendGemStartRouter"]["next"]
 
 # Park page:
 assert test_next(r"dev\exploration\friend_gem\screenshots\user_fish_baby_park_2.png") < 0.50

@@ -11,7 +11,9 @@
 graph TD
     A[CollectFishTask (入口)] --> B[ResumeHarvest]
     B -->|DirectHit| C{分发判断}
-    C --> D[HandleShellPage]
+    C --> D[HandleShellPage 页面本体门禁]
+    D --> D2[HandleShellPageReturn 点击返回]
+    D2 --> B
     C --> E[CloseFeedPopup]
     C --> F[TriggerStarfishFeed]
     C --> G[CheckDutyCycle]
@@ -22,6 +24,7 @@ graph TD
 - **核心识别**: `TemplateMatch` 金币气泡.png (`ROI: [428,126,679,360]`, `threshold: 0.75`)
 - **空中双倍收取**: 每次气泡点击后立即执行 `(221,663) -> (1007,663)` 水平滑动，整条轨迹限制在用户指定安全范围 `[201,630,826,66]` 内，再返回气泡识别循环。
 - **循环机制**: `ResumeHarvest` `timeout: -1` 为无底洞中转，保证 Pipeline 存活。
+- **误入开贝壳恢复**: 先在 `[508,70,263,201]` 识别 `开贝壳_识别.png` 确认大章鱼页面，再在 `[0,0,250,150]` 识别并点击 `贝壳页面_返回.png`；返回按钮模板不能单独充当页面门禁。
 
 ## 状态机设计 (CheckDutyCycleReco)
 - **实现层**: Python Custom Recognition (`my_reco.py`)
@@ -64,7 +67,9 @@ graph TD
   - [x] 巡检收宝 IDLE/ACTIVE 状态机
   - [x] MFA UI 日志面板动态状态播报（focus 注入机制）
   - [x] 播报节流（每 60 秒最多一次）
-- **暂不实现**: 鱼苗养殖、宝石兑换、任何付费操作。
+- **本任务不包含**: 鱼苗养殖、宝石兑换、任何付费操作；宝石礼盒兑换由独立 `GemGiftBoxTask` 负责。
+
+2026-09-12 已将误入开贝壳页的恢复拆为“页面本体确认 → 返回按钮点击”两步，避免鱼缸管理页的同款返回按钮被误认为大章鱼页面；已完成代码级验证，本次未做模拟器测试。
 
 ## 关键文件入口
 - `assets/resource/pipeline/collect_fish.json` — Pipeline 拓扑（含 focus 静态配置）

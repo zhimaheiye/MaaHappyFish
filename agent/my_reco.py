@@ -17,6 +17,7 @@ from maa.define import RectType
 try:
     from runtime_state import (
         friend_gem_state,
+        manatee_state,
         sea_otter_gem_state,
         band_fish_state,
         daily_routine_state,
@@ -26,6 +27,7 @@ try:
 except ImportError:
     from agent.runtime_state import (
         friend_gem_state,
+        manatee_state,
         sea_otter_gem_state,
         band_fish_state,
         daily_routine_state,
@@ -636,6 +638,26 @@ class CheckFriendGemBubbleMissLimitReco(CustomRecognition):
             )
             return (0, 0, 10, 10)
         return None
+
+
+@AgentServer.custom_recognition("CheckManateeStateReco")
+class CheckManateeStateReco(CustomRecognition):
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        param = parse_dict_param(getattr(argv, "custom_recognition_param", None))
+        condition = param.get("condition")
+        if condition == "weekend":
+            matched = datetime.now().weekday() >= 5
+        elif condition == "standalone":
+            matched = manatee_state.get("return_mode") == "standalone"
+        elif condition == "friend_gem":
+            matched = manatee_state.get("return_mode") == "friend_gem"
+        else:
+            matched = False
+        return (0, 0, 10, 10) if matched else None
 
 
 

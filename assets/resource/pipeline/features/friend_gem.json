@@ -17,34 +17,10 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "FriendGemStartCheckCard1Manatee",
             "FriendGemStartFromFriendList",
             "FriendGemStartManateeTank",
-            "FriendGemStartInFriendTank"
-        ]
-    },
-    "FriendGemStartCheckCard1Manatee": {
-        "recognition": "OCR",
-        "expected": "海牛",
-        "roi": [
-            80,
-            220,
-            180,
-            60
-        ],
-        "action": "Click",
-        "target": [
-            295,
-            320,
-            60,
-            60
-        ],
-        "post_delay": 1500,
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "FriendGemFriendRouter"
+            "FriendGemStartInFriendTank",
+            "FriendGemOpenFriendPage"
         ]
     },
     "FriendGemStartFromFriendList": {
@@ -85,7 +61,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "FriendGemFriendRouter"
+            "ManateeTankIdentity"
         ]
     },
     "FriendGemStartInFriendTank": {
@@ -210,7 +186,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "FriendGemNextFriend"
+            "ManateeTankIdentity"
         ]
     },
     "FriendGemExhausted": {
@@ -340,6 +316,23 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "FriendGemFriendRouter"
         ]
+    },
+    "FriendGemOpenFriendPage": {
+        "recognition": "TemplateMatch",
+        "template": "好友页面_入口.png",
+        "threshold": 0.8,
+        "roi": [1128, 205, 131, 124],
+        "action": "Click",
+        "post_delay": 1200,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "FriendGemStartRouter"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[好友摸宝] 已从主鱼缸点击好友入口，正在识别好友列表。"
+        }
     },
     "FriendGemDone": {
         "recognition": "DirectHit",
