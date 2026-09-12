@@ -148,7 +148,7 @@ def run_tests():
     assert fishing_pipeline["FishingDone"]["next"][-1] == "FishingVerifyExitToTank"
     verify_exit = fishing_pipeline["FishingVerifyExitToTank"]
     assert verify_exit["template"] == "主界面特征.png"
-    assert verify_exit["next"][-1] == "DailyRoutineDispatcher"
+    assert verify_exit["next"][-2:] == ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"]
     assert verify_exit["on_error"] == ["FishingExitFailed"]
     assert fishing_pipeline["FishingExitFailed"]["action"] == "StopTask"
 

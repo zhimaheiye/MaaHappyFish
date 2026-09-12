@@ -1,7 +1,9 @@
 import json
 import math
 import os
+from pathlib import Path
 import re
+import subprocess
 import time
 import traceback
 from datetime import datetime, timedelta
@@ -26,6 +28,8 @@ try:
         daily_routine_state,
         fishing_state,
         golden_dolphin_state,
+        shake_game_state,
+        gem_collect_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -38,6 +42,8 @@ except ImportError:
         daily_routine_state,
         fishing_state,
         golden_dolphin_state,
+        shake_game_state,
+        gem_collect_state,
     )
 
 try:
@@ -2037,11 +2043,12 @@ def _gem_gift_box_card_roi(recipe_box, kind: str):
     x, y, width, height = recipe_box
     is_left = x + width // 2 < 640
     if kind == "marker":
-        # 用户给定基准：配方 [55,196,108,41] -> OK [587,195,47,35]。
-        # 纵向略扩展以兼容列表滚动后的文字框紧裁差异，横向仍锁定卡片右上角。
-        marker_x = 587 if is_left else 1207
+        # 用户给定基准：左列配方 [55,196,108,41] -> OK [587,195,47,35]。
+        # 右列 OK 实机约 x=1199，宽度约 40，放宽为 [1180, ..., 80, ...] 避免左侧裁切。
+        marker_x = 587 if is_left else 1180
+        marker_width = 47 if is_left else 80
         marker_y = max(150, y - 25)
-        return [marker_x, marker_y, 47, min(80, 720 - marker_y)]
+        return [marker_x, marker_y, marker_width, min(80, 720 - marker_y)]
 
     count_x = 0 if is_left else 640
     count_y = max(150, min(690, y + 60))
@@ -2157,7 +2164,9 @@ class GemGiftBoxExchangeAllAction(CustomAction):
                 ) is not None
 
             completed_levels = []
-            exchanged_levels = []
+            full_exchanged_levels = []
+            partial_exchanged_levels = []
+            unavailable_levels = []
             for level in GEM_GIFT_BOX_LEVELS:
                 frame, recipe_box = locate_recipe(level)
                 if frame is None or recipe_box is None:
@@ -2196,8 +2205,13 @@ class GemGiftBoxExchangeAllAction(CustomAction):
                         if frame is None:
                             return False
                 if marker_box is None:
-                    print(f"[宝石礼盒] {level}级配方尚未达到 10/10，但未识别到对应 OK，停止以避免漏兑", flush=True)
-                    return False
+                    unavailable_levels.append(level)
+                    print(
+                        f"[宝石礼盒] {level}级配方今日未满 10/10，但当前无可兑换 OK；"
+                        f"视为本次不可兑换，跳过并继续下一配方",
+                        flush=True,
+                    )
+                    continue
 
                 card_x, card_y = _gem_gift_box_card_click_point(recipe_box, marker_box)
                 if cancelled(f"点击 {level}级配方卡片"):
@@ -2224,7 +2238,7 @@ class GemGiftBoxExchangeAllAction(CustomAction):
                     if cancelled(f"{level}级配方增加数量 {click_index + 1}/9"):
                         return False
                     ctrl.post_click(plus_x, plus_y).wait()
-                    time.sleep(0.08)
+                    time.sleep(0.22)
 
                 submit_frame = _capture_720p(ctrl)
                 submit_box = _recognition_box(context, "GemGiftBoxExchangeButton", submit_frame)
@@ -2256,25 +2270,34 @@ class GemGiftBoxExchangeAllAction(CustomAction):
                     print(f"[宝石礼盒] {level}级配方确认后未返回兑换列表，安全停止", flush=True)
                     return False
 
-                verified = False
+                verified_full = False
                 for verify_index in range(3):
                     if is_completed(verify_frame, recipe_box):
-                        verified = True
+                        verified_full = True
                         break
                     if verify_index < 2:
                         time.sleep(0.4)
                         verify_frame = capture_page()
                         if verify_frame is None:
                             return False
-                if not verified:
-                    print(f"[宝石礼盒] {level}级配方兑换后未确认今日 10/10，停止且不重复提交", flush=True)
-                    return False
 
-                exchanged_levels.append(level)
-                print(f"[宝石礼盒] {level}级配方已确认今日兑换 10/10，继续下一配方", flush=True)
+                if verified_full:
+                    full_exchanged_levels.append(level)
+                    print(f"[宝石礼盒] {level}级配方已确认今日兑换 10/10，继续下一配方", flush=True)
+                else:
+                    partial_exchanged_levels.append(level)
+                    print(
+                        f"[宝石礼盒] {level}级配方兑换事务已成功完成，但今日尚未达到 10/10；"
+                        f"视为部分兑换成功，本轮不重复提交，继续下一配方",
+                        flush=True,
+                    )
 
             print(
-                f"[宝石礼盒] 七配方检查完成；本次兑换={exchanged_levels}，此前已满={completed_levels}",
+                f"[宝石礼盒] 七配方检查完成；"
+                f"此前已满={completed_levels}，"
+                f"本轮兑满={full_exchanged_levels}，"
+                f"本轮部分兑换={partial_exchanged_levels}，"
+                f"本轮不可兑换={unavailable_levels}",
                 flush=True,
             )
             return True
@@ -2987,19 +3010,21 @@ class InitDailyRoutineAction(CustomAction):
                 "ReindeerFish": {"status": "IDLE"},
                 "BandFish": {"status": "IDLE", "stage": "PASS1"},
                 "GoldenDolphin": {"status": "IDLE"},
+                "ShakeGame": {"status": "IDLE"},
                 "Fishing": {"status": "IDLE"},
                 "RomanticHouse": {"status": "IDLE"},
             }
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "band_fish", "golden_dolphin", "fishing", "romantic_house"))
+            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "band_fish", "golden_dolphin", "shake_game", "fishing", "romantic_house"))
 
             if has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
                 enable_bf = bool(param.get("band_fish", False))
                 enable_gd = bool(param.get("golden_dolphin", False))
+                enable_sg = bool(param.get("shake_game", False))
                 enable_fi = bool(param.get("fishing", False))
                 enable_rh = bool(param.get("romantic_house", False))
             else:
@@ -3015,6 +3040,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_rf = _is_node_enabled("DailyRoutineEnableReindeerFish")
                 enable_bf = _is_node_enabled("DailyRoutineEnableBandFish")
                 enable_gd = _is_node_enabled("DailyRoutineEnableGoldenDolphin")
+                enable_sg = _is_node_enabled("DailyRoutineEnableShakeGame")
                 enable_fi = _is_node_enabled("DailyRoutineEnableFishing")
                 enable_rh = _is_node_enabled("DailyRoutineEnableRomanticHouse")
 
@@ -3029,6 +3055,8 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("REINDEER_FISH")
             if enable_gd:
                 queue.append("GOLDEN_DOLPHIN")
+            if enable_sg:
+                queue.append("SHAKE_GAME")
             if enable_fi:
                 queue.append("FISHING")
             if enable_rh:
@@ -3042,6 +3070,7 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 驯鹿鱼送收礼 : {'[ON]' if enable_rf else '[OFF]'}", flush=True)
             print(f"  - 乐队鱼演出   : {'[ON]' if enable_bf else '[OFF]'}", flush=True)
             print(f"  - 金海豚小游戏 : {'[ON]' if enable_gd else '[OFF]'}", flush=True)
+            print(f"  - 摇一摇小游戏 : {'[ON]' if enable_sg else '[OFF]'}", flush=True)
             print(f"  - 钓鱼达人     : {'[ON]' if enable_fi else '[OFF]'}", flush=True)
             print(f"  - 浪漫满屋     : {'[ON]' if enable_rh else '[OFF]'}", flush=True)
             print("=" * 60, flush=True)
@@ -3132,6 +3161,7 @@ class DailyRoutineFinishAction(CustomAction):
             rf_st = tasks.get("ReindeerFish", {}).get("status", "SKIPPED")
             bf_st = tasks.get("BandFish", {}).get("status", "SKIPPED")
             gd_st = tasks.get("GoldenDolphin", {}).get("status", "SKIPPED")
+            sg_st = tasks.get("ShakeGame", {}).get("status", "SKIPPED")
             fi_st = tasks.get("Fishing", {}).get("status", "SKIPPED")
             rh_st = tasks.get("RomanticHouse", {}).get("status", "SKIPPED")
 
@@ -3141,6 +3171,7 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 驯鹿鱼送收礼 (ReindeerFish) : {rf_st}", flush=True)
             print(f"  - 乐队鱼演出 (BandFish)       : {bf_st}", flush=True)
             print(f"  - 金海豚小游戏 (GoldenDolphin) : {gd_st}", flush=True)
+            print(f"  - 摇一摇小游戏 (ShakeGame)     : {sg_st}", flush=True)
             print(f"  - 钓鱼达人 (Fishing)          : {fi_st}", flush=True)
             print(f"  - 浪漫满屋 (RomanticHouse)    : {rh_st}", flush=True)
             print("=" * 60, flush=True)
@@ -3153,3 +3184,808 @@ class DailyRoutineFinishAction(CustomAction):
             traceback.print_exc()
             print(f"[日常收尾] 结束汇总异常: {e}", flush=True)
             return False
+
+
+# ==========================================
+# 摇一摇小游戏 (ShakeGame) 核心控制参数与动作
+# ==========================================
+SHAKE_GAME_INTERVAL_SECONDS = 0.8
+SHAKE_GAME_MAX_DURATION_SECONDS = 40.0
+SHAKE_GAME_MAX_CONSECUTIVE_FAILURES = 3
+
+
+def _get_mumu_manager_and_vm(ctrl) -> Tuple[Optional[Path], Optional[int]]:
+    """
+    从 Controller 上下文动态解析 MuMuManager.exe 路径与 VM 实例号。
+    严格安全规则：
+    1. 从 ctrl.info 读取真实配置；
+    2. mumu_path / adb_path 推导的 MuMuManager.exe 必须真实存在于文件系统中；
+    3. VM index 必须由 Controller 明确提供 (extras.mumu.index)；
+    4. 若 VM index 缺失或为 None，严格返回 (None, None)，绝不猜测或默认 vm_index = 0！
+    """
+    try:
+        raw_info = getattr(ctrl, "info", None)
+        if raw_info is None:
+            return None, None
+        info = json.loads(raw_info) if isinstance(raw_info, str) else raw_info
+        if not isinstance(info, dict):
+            return None, None
+
+        cfg = info.get("config", {})
+        mumu_cfg = cfg.get("extras", {}).get("mumu", {})
+        mumu_path = mumu_cfg.get("path")
+        vm_index = mumu_cfg.get("index")
+
+        # 严格门禁：VM index 必须明确取得，禁止盲目默认
+        if vm_index is None:
+            return None, None
+
+        # 1. 尝试从 extras.mumu.path 定位
+        candidate = None
+        if mumu_path:
+            candidate = Path(mumu_path) / "nx_main" / "MuMuManager.exe"
+
+        # 2. 若 extras 未配置路径，尝试从 adb_path 所在目录推导
+        if not candidate or not candidate.exists():
+            adb_path = info.get("adb_path")
+            if adb_path:
+                candidate = Path(adb_path).parent / "MuMuManager.exe"
+
+        if not candidate or not candidate.exists():
+            return None, None
+
+        return candidate, int(vm_index)
+    except Exception:
+        return None, None
+
+
+def _run_mumu_shake(manager_path: Path, vm_index: int, timeout: float = 2.0) -> bool:
+    """
+    通过 MuMuManager 执行一次 shake 命令。
+    必须同时满足:
+    1. subprocess returncode == 0
+    2. stdout 为合法 JSON
+    3. JSON 中 errcode == 0
+    """
+    cmd = [
+        str(manager_path),
+        "control",
+        "-v",
+        str(vm_index),
+        "tool",
+        "func",
+        "-n",
+        "shake",
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            shell=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        if proc.returncode != 0:
+            print(f"[摇一摇] 警告: MuMuManager 进程退出码非零 ({proc.returncode}): {proc.stderr.strip()}", flush=True)
+            return False
+
+        stdout_text = proc.stdout.strip()
+        if not stdout_text:
+            print("[摇一摇] 警告: MuMuManager stdout 为空", flush=True)
+            return False
+
+        data = json.loads(stdout_text)
+        if not isinstance(data, dict):
+            print(f"[摇一摇] 警告: MuMuManager 返回非字典数据: {stdout_text}", flush=True)
+            return False
+
+        errcode = data.get("errcode")
+        if errcode != 0:
+            errmsg = data.get("errmsg", "")
+            print(f"[摇一摇] 警告: MuMuManager 报告错误 (errcode={errcode}, errmsg={errmsg})", flush=True)
+            return False
+
+        return True
+    except subprocess.TimeoutExpired:
+        print(f"[摇一摇] 警告: MuMuManager 调用超时 ({timeout}s)", flush=True)
+        return False
+    except json.JSONDecodeError as e:
+        print(f"[摇一摇] 警告: MuMuManager 返回非有效 JSON: {proc.stdout.strip()} ({e})", flush=True)
+        return False
+    except Exception as e:
+        print(f"[摇一摇] 警告: 调用 MuMuManager 异常: {e}", flush=True)
+        return False
+
+
+def _get_shake_game_templates():
+    """解析并加载摇一摇小游戏所需的关键视觉模板"""
+    agent_dir = os.path.dirname(os.path.abspath(__file__))
+    candidate_dirs = [
+        os.path.join(agent_dir, "../resource/image"),
+        os.path.join(agent_dir, "../assets/resource/image"),
+        os.path.join(agent_dir, "../../assets/resource/image"),
+        os.path.abspath("assets/resource/image"),
+        os.path.abspath("client_avalonia/resource/image"),
+        os.path.abspath("resource/image"),
+    ]
+    tpl_dir = None
+    for d in candidate_dirs:
+        if os.path.isdir(d) and os.path.exists(os.path.join(d, "游乐园入口.png")):
+            tpl_dir = os.path.abspath(d)
+            break
+
+    def _load_tpl(name: str):
+        if not tpl_dir:
+            return None
+        p = os.path.join(tpl_dir, name)
+        if not os.path.exists(p):
+            return None
+        return cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
+
+    return {
+        "entrance": _load_tpl("游乐园入口.png"),
+        "shake_entrance": _load_tpl("摇一摇_入口.png"),
+        "confirm": _load_tpl("金海豚_确定按钮.png"),
+        "cancel": _load_tpl("金海豚_结束取消.png"),
+    }
+
+
+def _complete_shake_game_round():
+    """记录一局结算；前三局之间继续，第三局后完成。"""
+    completed = int(shake_game_state.get("completed_rounds", 0)) + 1
+    max_rounds = int(shake_game_state.get("max_rounds", 3))
+    shake_game_state["completed_rounds"] = completed
+    status = "NEXT_ROUND" if completed < max_rounds else "DONE"
+    shake_game_state["status"] = status
+    return status
+
+
+@AgentServer.custom_action("ShakeGameInitAction")
+class ShakeGameInitAction(CustomAction):
+    """重置摇一摇状态 (支持最多 3 局)"""
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        shake_game_state["status"] = "IDLE"
+        shake_game_state["completed_rounds"] = 0
+        shake_game_state["max_rounds"] = 3
+        print("[摇一摇] 任务启动，重置状态为 IDLE (0/3局)", flush=True)
+        return True
+
+
+@AgentServer.custom_action("ShakeGameNavigationAction")
+class ShakeGameNavigationAction(CustomAction):
+    """
+    摇一摇导航与进入动作:
+    1. Deepest-First 状态判定 (确认/耗尽弹窗 -> 游乐园面板 -> 主鱼缸场景)
+    2. 打开游乐园并识别点击 摇一摇_入口.png
+    3. 弹窗裁决 (「机会已用完」vs「正常想玩」)
+       - 耗尽: 点击对号关闭弹窗，设置 status=NO_STAMINA，返回 True (流向 Done 正常结束)
+       - 正常: 点击对号进入游戏，设置 status=READY_TO_PLAY，返回 True
+       - 失败: 设置 status=FAILED，返回 False
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[摇一摇导航] 错误: 未获取到 Controller", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            tpls = _get_shake_game_templates()
+            tpl_ent = tpls.get("entrance")
+            tpl_shake = tpls.get("shake_entrance")
+            tpl_confirm = tpls.get("confirm")
+
+            if tpl_ent is None or tpl_shake is None or tpl_confirm is None:
+                print("[摇一摇导航] ERROR: 缺少关键视觉模板，安全终止任务！", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            print("[摇一摇导航] 启动导航流程，检测当前页面状态...", flush=True)
+            screen = _capture_720p(ctrl)
+            if screen is None:
+                print("[摇一摇导航] ERROR: 无法获取截屏，安全终止任务", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            # Deepest-First 状态检查 0: 检查是否已经处于确认/机会用完弹窗
+            gc_init = _find_green_check(screen)
+            res_c_init = cv2.matchTemplate(screen, tpl_confirm, cv2.TM_CCOEFF_NORMED) if tpl_confirm is not None else None
+            vc_init = cv2.minMaxLoc(res_c_init)[1] if res_c_init is not None else 0
+            already_in_popup = (gc_init is not None or vc_init >= 0.70)
+
+            screen_confirm = None
+            has_confirm = False
+            btn_cx, btn_cy = 828, 490
+
+            if already_in_popup:
+                print("[摇一摇导航] 状态判定：当前已处于提示/确认弹窗界面", flush=True)
+                screen_confirm = screen
+                has_confirm = True
+                if gc_init:
+                    btn_cx, btn_cy = gc_init
+                elif res_c_init is not None:
+                    loc_c = cv2.minMaxLoc(res_c_init)[3]
+                    btn_cx = loc_c[0] + tpl_confirm.shape[1] // 2
+                    btn_cy = loc_c[1] + tpl_confirm.shape[0] // 2
+            else:
+                # 状态判定 1: 检查是否已经处于游乐园面板内
+                res_s = cv2.matchTemplate(screen, tpl_shake, cv2.TM_CCOEFF_NORMED)
+                _, max_vs, _, loc_s = cv2.minMaxLoc(res_s)
+                in_amusement_panel = (max_vs >= 0.65)
+
+                if in_amusement_panel:
+                    print(f"[摇一摇导航] 状态判定：当前已处于游乐园面板内 (摇一摇入口 match={max_vs:.3f})", flush=True)
+                else:
+                    # 状态判定 2: 主鱼缸场景，检测游乐园入口
+                    print("[摇一摇导航] 状态判定：当前未在游乐园面板，检测主鱼缸游乐园入口...", flush=True)
+                    res_e = cv2.matchTemplate(screen, tpl_ent, cv2.TM_CCOEFF_NORMED)
+                    _, max_ve, _, loc_e = cv2.minMaxLoc(res_e)
+                    if max_ve < 0.70:
+                        print(f"[摇一摇导航] ERROR: 未识别到游乐园入口 (score={max_ve:.3f} < 0.70)，安全终止！", flush=True)
+                        shake_game_state["status"] = "FAILED"
+                        return False
+
+                    ent_cx = loc_e[0] + tpl_ent.shape[1] // 2
+                    ent_cy = loc_e[1] + tpl_ent.shape[0] // 2
+                    print(f"[摇一摇导航] 识别到游乐园入口 (score={max_ve:.3f})，点击 ({ent_cx}, {ent_cy}) 打开游乐园...", flush=True)
+                    ctrl.post_click(ent_cx, ent_cy).wait()
+
+                    # 等待游乐园面板展开
+                    in_amusement_panel = False
+                    for wait_idx in range(3):
+                        time.sleep(1.2 if wait_idx == 0 else 0.8)
+                        screen = _capture_720p(ctrl)
+                        if screen is None:
+                            continue
+                        res_s = cv2.matchTemplate(screen, tpl_shake, cv2.TM_CCOEFF_NORMED)
+                        _, max_vs, _, loc_s = cv2.minMaxLoc(res_s)
+                        if max_vs >= 0.65:
+                            in_amusement_panel = True
+                            break
+
+                    if not in_amusement_panel:
+                        print(f"[摇一摇导航] ERROR: 打开游乐园后未检测到摇一摇图标 (max_score={max_vs:.3f} < 0.65)，安全收起浮层！", flush=True)
+                        ctrl.post_click(640, 150).wait()
+                        time.sleep(1.0)
+                        shake_game_state["status"] = "FAILED"
+                        return False
+
+                # 2. 点击摇一摇入口图标
+                sx = loc_s[0] + tpl_shake.shape[1] // 2
+                sy = loc_s[1] + tpl_shake.shape[0] // 2
+                print(f"[摇一摇导航] 点击摇一摇入口图标 (score={max_vs:.3f}) at ({sx}, {sy})...", flush=True)
+                ctrl.post_click(sx, sy).wait()
+                time.sleep(1.5)
+
+                # 3. 轮询确认弹窗
+                for wait_c in range(4):
+                    screen_confirm = _capture_720p(ctrl)
+                    if screen_confirm is not None:
+                        gc = _find_green_check(screen_confirm)
+                        res_c = cv2.matchTemplate(screen_confirm, tpl_confirm, cv2.TM_CCOEFF_NORMED) if tpl_confirm is not None else None
+                        max_vc = cv2.minMaxLoc(res_c)[1] if res_c is not None else 0
+                        if gc is not None:
+                            has_confirm = True
+                            btn_cx, btn_cy = gc
+                            print(f"[摇一摇导航] 准确定位到确认对号按钮 (HSV检测) at ({btn_cx}, {btn_cy})", flush=True)
+                            break
+                        elif max_vc >= 0.70:
+                            has_confirm = True
+                            loc_c = cv2.minMaxLoc(res_c)[3]
+                            btn_cx = loc_c[0] + tpl_confirm.shape[1] // 2
+                            btn_cy = loc_c[1] + tpl_confirm.shape[0] // 2
+                            print(f"[摇一摇导航] 匹配到确认对号按钮 (模板 score={max_vc:.3f}) at ({btn_cx}, {btn_cy})", flush=True)
+                            break
+                    time.sleep(0.6)
+
+            if not has_confirm or screen_confirm is None:
+                print("[摇一摇导航] 未检测到确认对号按钮，安全收起面板退出", flush=True)
+                shake_game_state["status"] = "NO_STAMINA"
+                ctrl.post_click(640, 150).wait()
+                time.sleep(1.0)
+                return True
+
+            # 区分“今天的机会已全部用完”与“您想玩这个小游戏吗”
+            is_exhausted = False
+            try:
+                sc_720 = cv2.resize(screen_confirm, (1280, 720))
+                red_patch = sc_720[430:490, 650:710]
+                hsv_p = cv2.cvtColor(red_patch, cv2.COLOR_BGR2HSV)
+                mask_r = ((hsv_p[:, :, 0] < 10) | (hsv_p[:, :, 0] > 170)) & (hsv_p[:, :, 1] > 90) & (hsv_p[:, :, 2] > 90)
+                has_red_cancel = bool(np.sum(mask_r) > 400)
+                if not has_red_cancel:
+                    is_exhausted = True
+            except Exception:
+                pass
+
+            if not is_exhausted:
+                try:
+                    from rapidocr_onnxruntime import RapidOCR
+                    _ocr = RapidOCR()
+                    res_ocr, _ = _ocr(screen_confirm)
+                    for _, txt, _ in (res_ocr or []):
+                        if any(k in txt for k in ("用完", "明天再来", "全部用完", "明天")):
+                            is_exhausted = True
+                            break
+                except Exception:
+                    pass
+
+            if is_exhausted:
+                print(f"[摇一摇导航] 检测到提示「今天的机会已全部用完」，点击绿色对号按钮 ({btn_cx}, {btn_cy}) 关闭并验证...", flush=True)
+                for click_retry in range(3):
+                    ctrl.post_click(btn_cx, btn_cy).wait()
+                    time.sleep(1.2)
+                    sc_after = _capture_720p(ctrl)
+                    if sc_after is not None:
+                        res_check = cv2.matchTemplate(sc_after, tpl_confirm, cv2.TM_CCOEFF_NORMED) if tpl_confirm is not None else None
+                        max_vc_after = cv2.minMaxLoc(res_check)[1] if res_check is not None else 0
+                        gc_after = _find_green_check(sc_after)
+                        if max_vc_after < 0.65 and gc_after is None:
+                            print("[摇一摇导航] 验证通过：机会耗尽提示弹窗已成功关闭！", flush=True)
+                            break
+                        if gc_after:
+                            btn_cx, btn_cy = gc_after
+
+                shake_game_state["status"] = "NO_STAMINA"
+                return True
+
+            # 点击绿色确认按钮进入小游戏
+            print(f"[摇一摇导航] 点击确认按钮 ({btn_cx}, {btn_cy}) 进入小游戏...", flush=True)
+            ctrl.post_click(btn_cx, btn_cy).wait()
+            time.sleep(2.0)
+            shake_game_state["status"] = "READY_TO_PLAY"
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[摇一摇导航] 运行异常: {e}", flush=True)
+            shake_game_state["status"] = "FAILED"
+            return False
+
+
+@AgentServer.custom_action("ShakeGamePlayAction")
+class ShakeGamePlayAction(CustomAction):
+    """
+    摇一摇小游戏核心执行动作 (单局):
+    1. 解析 MuMuManager 路径与 VM index (缺失时安全终止，禁止盲目默认)
+    2. 以安全节奏循环调用 shake 命令，并周期截屏检查结算弹窗
+    3. 成功条件: 检测到结算弹窗 -> SETTLEMENT, return True
+    4. 失败条件: 超时未检出结算 / 连续3次RPC失败 / 任务取消 -> FAILED, return False
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[摇一摇] 错误: 未获取到 Controller", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            manager_path, vm_index = _get_mumu_manager_and_vm(ctrl)
+            if not manager_path or not manager_path.exists():
+                print(f"[摇一摇] ERROR: 未能定位有效的 MuMuManager.exe (路径={manager_path})，安全终止任务", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+            if vm_index is None:
+                print("[摇一摇] ERROR: 未能从 Controller 明确获取当前 VM index，安全终止任务 (禁止猜测默认值)", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            tpls = _get_shake_game_templates()
+            tpl_cancel = tpls.get("cancel")
+            if tpl_cancel is None:
+                print("[摇一摇] ERROR: 缺少结算取消模板 (金海豚_结束取消.png)，安全终止！", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            shake_game_state["status"] = "PLAYING"
+            print(f"[摇一摇] 已确认模拟器管理器: {manager_path} (VM={vm_index})，开始摇晃主循环...", flush=True)
+
+            start_time = time.time()
+            shake_count = 0
+            consecutive_failures = 0
+            settlement_detected = False
+
+            while time.time() - start_time < SHAKE_GAME_MAX_DURATION_SECONDS:
+                if _task_cancelled(context):
+                    print("[摇一摇] 收到任务停止信号，退出摇晃循环", flush=True)
+                    shake_game_state["status"] = "FAILED"
+                    return False
+
+                # 1. 执行单次 shake RPC 命令
+                ok = _run_mumu_shake(manager_path, vm_index, timeout=2.0)
+                if ok:
+                    shake_count += 1
+                    consecutive_failures = 0
+                else:
+                    consecutive_failures += 1
+                    print(f"[摇一摇] shake 执行失败 ({consecutive_failures}/{SHAKE_GAME_MAX_CONSECUTIVE_FAILURES})", flush=True)
+                    if consecutive_failures >= SHAKE_GAME_MAX_CONSECUTIVE_FAILURES:
+                        print("[摇一摇] ERROR: 连续 3 次 shake RPC 失败，触发安全熔断！", flush=True)
+                        shake_game_state["status"] = "FAILED"
+                        return False
+
+                time.sleep(SHAKE_GAME_INTERVAL_SECONDS)
+
+                # 2. 采样截屏检测结算弹窗是否出现
+                frame = _capture_720p(ctrl)
+                if frame is not None:
+                    res = cv2.matchTemplate(frame, tpl_cancel, cv2.TM_CCOEFF_NORMED)
+                    score = cv2.minMaxLoc(res)[1]
+                    if score >= 0.70:
+                        print(f"[摇一摇] 检出结算弹窗 (score={score:.3f})，提前结束摇晃 (累计摇晃 {shake_count} 次)", flush=True)
+                        settlement_detected = True
+                        break
+
+            if settlement_detected:
+                shake_game_state["status"] = "SETTLEMENT"
+                print(f"[摇一摇] 摇晃阶段完成，耗时 {time.time() - start_time:.1f}s，累计摇晃 {shake_count} 次，进入结算", flush=True)
+                return True
+            else:
+                print(f"[摇一摇] ERROR: 达到最大时长 {SHAKE_GAME_MAX_DURATION_SECONDS}s 且未检出结算弹窗，保留现场安全终止！", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[摇一摇] 运行异常: {e}", flush=True)
+            shake_game_state["status"] = "FAILED"
+            return False
+
+
+@AgentServer.custom_action("ShakeGameExitAction")
+class ShakeGameExitAction(CustomAction):
+    """
+    摇一摇结算与退出动作:
+    只在确认出现结算状态后，识别并点击结算取消按钮，关闭可能的游乐园抽屉，确认返回主鱼缸。
+    禁止在超时未检测到结算时盲点固定坐标。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[摇一摇退出] 错误: 未获取到 Controller", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            tpls = _get_shake_game_templates()
+            tpl_cancel = tpls.get("cancel")
+
+            frame = _capture_720p(ctrl)
+            if frame is None or tpl_cancel is None:
+                print("[摇一摇退出] ERROR: 无法获取截屏或缺少结算模板", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            res = cv2.matchTemplate(frame, tpl_cancel, cv2.TM_CCOEFF_NORMED)
+            score, _, loc = cv2.minMaxLoc(res)[1], None, cv2.minMaxLoc(res)[3]
+            if score < 0.70:
+                print(f"[摇一摇退出] ERROR: 未能确认结算取消按钮 (score={score:.3f} < 0.70)，安全终止以保留现场", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            cx = loc[0] + tpl_cancel.shape[1] // 2
+            cy = loc[1] + tpl_cancel.shape[0] // 2
+            print(f"[摇一摇退出] 识别到结算取消按钮 (score={score:.3f})，点击 ({cx}, {cy}) 关闭结算...", flush=True)
+            ctrl.post_click(cx, cy).wait()
+            time.sleep(1.8)
+
+            # 检查若游乐园抽屉仍在展开状态，点击 (640, 150) 收起
+            ctrl.post_click(640, 150).wait()
+            time.sleep(1.0)
+
+            status = _complete_shake_game_round()
+            completed = shake_game_state["completed_rounds"]
+            max_rounds = shake_game_state["max_rounds"]
+            if status == "NEXT_ROUND":
+                print(
+                    f"[摇一摇退出] 第 {completed}/{max_rounds} 局结算退出完成，回到主鱼缸后继续下一局",
+                    flush=True,
+                )
+            else:
+                print(f"[摇一摇退出] 第 {completed}/{max_rounds} 局结算退出完成，三局任务完成", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[摇一摇退出] 运行异常: {e}", flush=True)
+            shake_game_state["status"] = "FAILED"
+            return False
+
+
+@AgentServer.custom_action("ShakeGameDoneAction")
+class ShakeGameDoneAction(CustomAction):
+    """
+    摇一摇结束节点动作:
+    沉淀最终状态，若处于日常收尾流程中，通知日常收尾推进下一个任务。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        st = shake_game_state.get("status", "DONE")
+        if st not in ("DONE", "NO_STAMINA", "FAILED"):
+            st = "DONE"
+            shake_game_state["status"] = "DONE"
+        if daily_routine_state.get("active"):
+            advance_daily_routine_step("ShakeGame", st)
+        print(f"[摇一摇] 流程结束，最终状态: {st}", flush=True)
+        return True
+
+
+# =========================================================================
+# 摇一摇收宝石实验任务 (ShakeGemCollectTestTask)
+# =========================================================================
+SHAKE_GEM_TEST_COUNT = 6
+SHAKE_GEM_TEST_INTERVAL_SECONDS = 0.8
+SHAKE_GEM_MAX_CONSECUTIVE_FAILURES = 3
+
+
+@AgentServer.custom_action("ShakeGemCollectAction")
+class ShakeGemCollectAction(CustomAction):
+    """
+    摇一摇收宝石实验动作：
+    从 Controller 获取 MuMuManager 及 VM 实例，在主鱼缸连续触发模拟摇晃命令。
+    具备任务取消检查与连续失败安全熔断机制。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(argv.custom_action_param)
+            count = int(param.get("count", SHAKE_GEM_TEST_COUNT)) if param else SHAKE_GEM_TEST_COUNT
+            interval = float(param.get("interval", SHAKE_GEM_TEST_INTERVAL_SECONDS)) if param else SHAKE_GEM_TEST_INTERVAL_SECONDS
+
+            ctrl = getattr(getattr(context, "tasker", None), "controller", None)
+            if ctrl is None:
+                print("[摇一摇收宝石] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            manager_path, vm_index = _get_mumu_manager_and_vm(ctrl)
+            if not manager_path or vm_index is None:
+                print(
+                    "[摇一摇收宝石] ERROR: 无法解析 MuMuManager 路径或 VM index！"
+                    "请确认运行在 MuMu 模拟器环境且配置完整。",
+                    flush=True,
+                )
+                return False
+
+            print(
+                f"[摇一摇收宝石] 已确认模拟器管理器: {manager_path} (VM={vm_index})，"
+                f"开始执行连续 {count} 次摇晃测试 (间隔 {interval}s)...",
+                flush=True,
+            )
+
+            consecutive_failures = 0
+            for i in range(count):
+                if _task_cancelled(context):
+                    print("[摇一摇收宝石] 收到任务停止信号，安全退出摇晃循环", flush=True)
+                    return False
+
+                ok = _run_mumu_shake(manager_path, vm_index, timeout=2.0)
+                if ok:
+                    consecutive_failures = 0
+                    print(f"[摇一摇收宝石] 模拟摇晃 ({i + 1}/{count}) 成功", flush=True)
+                else:
+                    consecutive_failures += 1
+                    print(
+                        f"[摇一摇收宝石] 模拟摇晃 ({i + 1}/{count}) 失败 "
+                        f"({consecutive_failures}/{SHAKE_GEM_MAX_CONSECUTIVE_FAILURES})",
+                        flush=True,
+                    )
+                    if consecutive_failures >= SHAKE_GEM_MAX_CONSECUTIVE_FAILURES:
+                        print("[摇一摇收宝石] ERROR: 连续 3 次 shake RPC 失败，触发安全熔断！", flush=True)
+                        return False
+
+                if i < count - 1:
+                    time.sleep(interval)
+
+            print("[摇一摇收宝石] 连续摇晃完毕，等待 1.0 秒缓冲使宝石下落...", flush=True)
+            time.sleep(1.0)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[摇一摇收宝石] 执行异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("ShakeGemCollectDoneAction")
+class ShakeGemCollectDoneAction(CustomAction):
+    """
+    摇一摇收宝石实验任务完成动作：
+    输出测试完成日志。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        print("[摇一摇收宝石] 实验流程全部执行完毕（连续摇晃 + 底部滑动收宝）。", flush=True)
+        return True
+
+
+# =========================================================================
+# 统一鱼缸收宝石双模式 (IMAGE / SHAKE)
+# =========================================================================
+GEM_SHAKE_CYCLES = 5
+GEM_SHAKE_SETTLE_DELAY_SECONDS = 1.5          # 每次摇晃后等待宝石下落沉降时间 (调参值)
+GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS = 1.5    # 全部摇晃完成后，最终补刀扫底前的额外沉降等待时间 (调参值)
+GEM_SHAKE_MAX_CONSECUTIVE_FAILURES = 3
+SWEEP_BOTTOM_BEGIN = (221, 663)
+SWEEP_BOTTOM_END = (1007, 663)
+SWEEP_BOTTOM_DURATION_MS = 250
+SWEEP_BOTTOM_POST_DELAY_SECONDS = 0.12
+
+
+def perform_fish_tank_bottom_sweep(ctrl, post_delay_seconds: float = SWEEP_BOTTOM_POST_DELAY_SECONDS) -> None:
+    """在鱼缸底部执行扫底收宝滑动 (221, 663) -> (1007, 663)，耗时 250ms"""
+    ctrl.post_swipe(
+        SWEEP_BOTTOM_BEGIN[0],
+        SWEEP_BOTTOM_BEGIN[1],
+        SWEEP_BOTTOM_END[0],
+        SWEEP_BOTTOM_END[1],
+        SWEEP_BOTTOM_DURATION_MS,
+    ).wait()
+    if post_delay_seconds > 0:
+        time.sleep(post_delay_seconds)
+
+
+def execute_shake_gem_collect_cycle(
+    context: Context,
+    ctrl,
+    cycles: int = GEM_SHAKE_CYCLES,
+    delay_between: float = GEM_SHAKE_SETTLE_DELAY_SECONDS,
+    final_delay: float = GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS,
+) -> bool:
+    """
+    统一执行一次鱼缸摇晃收宝循环:
+    严格交替模式与充分沉降等待:
+    Shake 1 -> Settle 1 -> Sweep 1 -> ... -> Shake N -> Settle N -> Sweep N -> Final Settle -> Final Sweep (补刀)
+    连续 3 次 shake 失败触发安全熔断；检测到任务取消立即退出。
+    """
+    manager_path, vm_index = _get_mumu_manager_and_vm(ctrl)
+    if not manager_path or vm_index is None:
+        print(
+            "[统一收宝石] ERROR: 无法解析 MuMuManager 路径或 VM index！"
+            "请确认运行在 MuMu 模拟器环境且配置完整。",
+            flush=True,
+        )
+        return False
+
+    consecutive_failures = 0
+    for i in range(cycles):
+        if _task_cancelled(context):
+            print("[统一收宝石] 收到任务停止信号，安全退出摇晃循环", flush=True)
+            return False
+
+        ok = _run_mumu_shake(manager_path, vm_index, timeout=2.0)
+        if ok:
+            consecutive_failures = 0
+            print(f"[统一收宝石] Shake/Sweep ({i + 1}/{cycles})：shake 成功", flush=True)
+        else:
+            consecutive_failures += 1
+            print(
+                f"[统一收宝石] Shake/Sweep ({i + 1}/{cycles})：shake 失败 "
+                f"({consecutive_failures}/{GEM_SHAKE_MAX_CONSECUTIVE_FAILURES})",
+                flush=True,
+            )
+            if consecutive_failures >= GEM_SHAKE_MAX_CONSECUTIVE_FAILURES:
+                print("[统一收宝石] ERROR: 连续 3 次 shake RPC 失败，触发安全熔断！", flush=True)
+                return False
+
+        if delay_between > 0:
+            print(f"[统一收宝石] Shake/Sweep ({i + 1}/{cycles})：等待宝石下落 {delay_between:.1f}s", flush=True)
+            steps = int(delay_between / 0.1)
+            remainder = delay_between - steps * 0.1
+            cancelled = False
+            for _ in range(steps):
+                if _task_cancelled(context):
+                    print("[统一收宝石] 等待宝石下落期间收到停止信号，安全退出", flush=True)
+                    cancelled = True
+                    break
+                time.sleep(0.1)
+            if cancelled:
+                return False
+            if remainder > 0:
+                if _task_cancelled(context):
+                    print("[统一收宝石] 等待宝石下落期间收到停止信号，安全退出", flush=True)
+                    return False
+                time.sleep(remainder)
+
+        if _task_cancelled(context):
+            print("[统一收宝石] 收到任务停止信号，终止滑动", flush=True)
+            return False
+
+        # 每次摇晃后紧跟一次扫底
+        print(f"[统一收宝石] Shake/Sweep ({i + 1}/{cycles})：执行底部扫宝", flush=True)
+        perform_fish_tank_bottom_sweep(ctrl)
+
+    # 循环结束后再等待充分沉降，给迟到的掉落物留出收取时间
+    print(f"[统一收宝石] {cycles}/{cycles} 摇晃扫底完成，进入最终沉降等待...", flush=True)
+    if final_delay > 0:
+        print(f"[统一收宝石] 等待最终批次宝石下落 {final_delay:.1f}s", flush=True)
+        steps = int(final_delay / 0.1)
+        remainder = final_delay - steps * 0.1
+        cancelled = False
+        for _ in range(steps):
+            if _task_cancelled(context):
+                print("[统一收宝石] 最终沉降等待期间收到停止信号，终止最终滑动", flush=True)
+                cancelled = True
+                break
+            time.sleep(0.1)
+        if cancelled:
+            return False
+        if remainder > 0:
+            if _task_cancelled(context):
+                print("[统一收宝石] 最终沉降等待期间收到停止信号，终止最终滑动", flush=True)
+                return False
+            time.sleep(remainder)
+
+    if _task_cancelled(context):
+        print("[统一收宝石] 收到任务停止信号，终止最终滑动", flush=True)
+        return False
+
+    print("[统一收宝石] 执行最终底部扫宝 (补刀)", flush=True)
+    perform_fish_tank_bottom_sweep(ctrl)
+    print(f"[统一收宝石] 最终扫底完成，本鱼缸 SHAKE 收宝结束 (共 {cycles} 次摇晃 + {cycles + 1} 次扫底)", flush=True)
+    return True
+
+
+@AgentServer.custom_action("SetGemCollectModeAction")
+class SetGemCollectModeAction(CustomAction):
+    """设置收宝石模式: IMAGE 或 SHAKE"""
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        mode = str(param.get("mode", "IMAGE")).strip().upper()
+        if mode not in ("IMAGE", "SHAKE"):
+            mode = "IMAGE"
+        gem_collect_state["mode"] = mode
+        print(f"[收宝石模式] 当前模式设置为: {mode}", flush=True)
+        return True
+
+
+@AgentServer.custom_action("UnifiedShakeGemCollectAction")
+class UnifiedShakeGemCollectAction(CustomAction):
+    """
+    统一摇晃收宝石动作 (单缸挂机 / 巡检各缸 / 好友摸宝):
+    执行标准摇晃循环:
+    Shake 1 -> Settle 1 -> Sweep 1 -> ... -> Shake N -> Settle N -> Sweep N -> Final Settle -> Final Sweep (补刀)
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = getattr(getattr(context, "tasker", None), "controller", None)
+            if ctrl is None:
+                print("[统一摇晃收宝] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            param = parse_dict_param(argv.custom_action_param)
+            cycles = safe_int(param.get("cycles"), GEM_SHAKE_CYCLES)
+            delay = safe_float(param.get("delay"), GEM_SHAKE_SETTLE_DELAY_SECONDS)
+            final_delay = safe_float(param.get("final_delay"), GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS)
+
+            print(f"[统一摇晃收宝] 开始执行摇晃扫底收宝 (轮数: {cycles}, 沉降: {delay}s, 最终沉降: {final_delay}s)...", flush=True)
+            return execute_shake_gem_collect_cycle(
+                context, ctrl, cycles=cycles, delay_between=delay, final_delay=final_delay
+            )
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[统一摇晃收宝] 异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("FriendGemShakeAndAdvanceAction")
+class FriendGemShakeAndAdvanceAction(CustomAction):
+    """
+    好友摸宝摇晃动作 (别名/专用包装):
+    执行标准摇晃循环，完成后由 Pipeline 流向 FriendGemNextFriend。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = getattr(getattr(context, "tasker", None), "controller", None)
+            if ctrl is None:
+                print("[好友摇晃摸宝] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            param = parse_dict_param(argv.custom_action_param)
+            cycles = safe_int(param.get("cycles"), GEM_SHAKE_CYCLES)
+            delay = safe_float(param.get("delay"), GEM_SHAKE_SETTLE_DELAY_SECONDS)
+            final_delay = safe_float(param.get("final_delay"), GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS)
+
+            print(f"[好友摇晃摸宝] 开始执行摇晃扫底收宝 (轮数: {cycles}, 沉降: {delay}s, 最终沉降: {final_delay}s)...", flush=True)
+            return execute_shake_gem_collect_cycle(
+                context, ctrl, cycles=cycles, delay_between=delay, final_delay=final_delay
+            )
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[好友摇晃摸宝] 异常: {e}", flush=True)
+            return False
+
+
+

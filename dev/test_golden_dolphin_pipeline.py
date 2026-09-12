@@ -67,7 +67,7 @@ def run_tests():
     assert pipe['GoldenDolphinRepeat']['custom_recognition'] == 'CheckGoldenDolphinRepeatReco'
     assert business_next('GoldenDolphinRepeat') == ['GoldenDolphinNavigation']
     assert pipe['GoldenDolphinDone']['custom_action'] == 'GoldenDolphinDoneAction'
-    assert business_next('GoldenDolphinDone') == ['DailyRoutineDispatcher']
+    assert business_next('GoldenDolphinDone') == ['DailyRoutineReturnIfActive', 'DailyRoutineStandaloneDone']
     print('[PASS] Check 1: Pipeline JSON 拓扑节点与路由完全合规！')
 
     print("\n--- Test 2: CheckGoldenDolphinCanPlayReco 状态分支裁决 ---")

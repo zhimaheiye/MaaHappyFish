@@ -91,7 +91,7 @@
         "timeout": 5000,
         "focus": {
             "Node.Recognition.Succeeded": "[宝石礼盒] 已确认兑换列表，开始按配方编号检查七个渠道。",
-            "Node.Action.Succeeded": "[宝石礼盒] 七个配方均已兑换或确认今日达到上限，准备返回鱼缸。"
+            "Node.Action.Succeeded": "[宝石礼盒] 七个配方均已检查完成，准备返回鱼缸。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -174,7 +174,7 @@
     },
     "GemGiftBoxExchangeButton": {
         "recognition": "OCR",
-        "expected": "^兑换$",
+        "expected": "^[兑兌][换換]$",
         "roi": [
             789,
             486,

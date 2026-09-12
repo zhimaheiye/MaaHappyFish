@@ -23,6 +23,8 @@ try:
         daily_routine_state,
         fishing_state,
         golden_dolphin_state,
+        shake_game_state,
+        gem_collect_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -33,6 +35,8 @@ except ImportError:
         daily_routine_state,
         fishing_state,
         golden_dolphin_state,
+        shake_game_state,
+        gem_collect_state,
     )
 
 timer_state = {
@@ -755,6 +759,19 @@ class CheckBandFishNeedRefreshReco(CustomRecognition):
         return None
 
 
+@AgentServer.custom_recognition("CheckDailyRoutineActiveReco")
+class CheckDailyRoutineActiveReco(CustomRecognition):
+    """
+    检查当前是否处于日常收尾总控任务容器 (DailyRoutineTask) 中。
+    active == True 返回 (0, 0, 10, 10)，否则返回 None。
+    职责仅限于判断当前是否属于日常收尾容器，不负责具体的 step 分发。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if daily_routine_state.get("active"):
+            return (0, 0, 10, 10)
+        return None
+
+
 @AgentServer.custom_recognition("CheckDailyRoutineStepReco")
 class CheckDailyRoutineStepReco(CustomRecognition):
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
@@ -836,3 +853,47 @@ class CheckGoldenDolphinRepeatReco(CustomRecognition):
         if golden_dolphin_state.get("status") == "NEXT_ROUND":
             return (0, 0, 10, 10)
         return None
+
+
+@AgentServer.custom_recognition("CheckShakeGameCanPlayReco")
+class CheckShakeGameCanPlayReco(CustomRecognition):
+    """
+    检查摇一摇小游戏是否进入小游戏:
+    若导航阶段判定可进入游戏 (READY_TO_PLAY)，返回匹配区域执行游戏动作；
+    若机会已用完 (NO_STAMINA) 或导航异常，返回 None 跳过游戏动作直接流向 Done。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if shake_game_state.get("status") == "READY_TO_PLAY":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckShakeGameRepeatReco")
+class CheckShakeGameRepeatReco(CustomRecognition):
+    """
+    检查摇一摇是否需要继续下一局:
+    若状态为 NEXT_ROUND，返回区域触发 Repeat 重新导航；
+    否则返回 None 流向 Done。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if shake_game_state.get("status") == "NEXT_ROUND":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckGemCollectModeReco")
+class CheckGemCollectModeReco(CustomRecognition):
+    """
+    检查当前收宝石模式:
+    若当前模式为 SHAKE，返回匹配区域执行摇晃收宝流水线；
+    若当前模式为 IMAGE（默认），返回 None，使流水线跌入原有的图像识别收宝。
+    支持 custom_recognition_param: {"mode": "SHAKE"} 直接覆盖，默认读取 gem_collect_state。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        param = parse_dict_param(getattr(argv, "custom_recognition_param", None))
+        mode = param.get("mode") if param and "mode" in param else gem_collect_state.get("mode", "IMAGE")
+        if str(mode).strip().upper() == "SHAKE":
+            return (0, 0, 10, 10)
+        return None
+
+

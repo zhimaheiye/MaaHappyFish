@@ -4,6 +4,21 @@
         "action": "Custom",
         "custom_action": "InitFriendGemStateAction",
         "next": [
+            "FriendGemSetGemCollectMode",
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "FriendGemStartRouter"
+        ]
+    },
+    "FriendGemSetGemCollectMode": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "SetGemCollectModeAction",
+        "custom_action_param": {
+            "mode": "IMAGE"
+        },
+        "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -94,6 +109,7 @@
             "FriendGemFishBabyPark",
             "FriendGemCheckManatee",
             "FriendGemExhausted",
+            "FriendGemShakeGem",
             "FriendGemCollectBubble",
             "FriendGemBubbleMissLimitReached",
             "FriendGemAttemptLimitReached",
@@ -210,6 +226,19 @@
         "recognition": "Custom",
         "custom_recognition": "CheckFriendGemLimitReco",
         "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "FriendGemNextFriend"
+        ]
+    },
+    "FriendGemShakeGem": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckGemCollectModeReco",
+        "action": "Custom",
+        "custom_action": "FriendGemShakeAndAdvanceAction",
+        "post_delay": 500,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",

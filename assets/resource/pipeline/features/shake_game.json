@@ -1,66 +1,82 @@
 {
-    "GoldenDolphinTask": {
+    "ShakeGameTask": {
         "recognition": "DirectHit",
         "action": "Custom",
-        "custom_action": "GoldenDolphinInitAction",
+        "custom_action": "ShakeGameInitAction",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "GoldenDolphinNavigation"
+            "ShakeGameNavigation"
         ]
     },
-    "GoldenDolphinNavigation": {
+    "ShakeGameNavigation": {
         "recognition": "DirectHit",
         "action": "Custom",
-        "custom_action": "GoldenDolphinNavigationAction",
+        "custom_action": "ShakeGameNavigationAction",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "GoldenDolphinPlayGame",
-            "GoldenDolphinDone"
+            "ShakeGamePlay",
+            "ShakeGameDone"
         ]
     },
-    "GoldenDolphinPlayGame": {
+    "ShakeGamePlay": {
         "recognition": "Custom",
-        "custom_recognition": "CheckGoldenDolphinCanPlayReco",
+        "custom_recognition": "CheckShakeGameCanPlayReco",
         "action": "Custom",
-        "custom_action": "GoldenDolphinPlayGameAction",
+        "custom_action": "ShakeGamePlayAction",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "GoldenDolphinExit"
+            "ShakeGameExit"
         ]
     },
-    "GoldenDolphinExit": {
+    "ShakeGameExit": {
         "recognition": "DirectHit",
         "action": "Custom",
-        "custom_action": "GoldenDolphinExitAction",
+        "custom_action": "ShakeGameExitAction",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "GoldenDolphinRepeat",
-            "GoldenDolphinDone"
+            "ShakeGameRepeat",
+            "ShakeGameDone"
         ]
     },
-    "GoldenDolphinRepeat": {
+    "ShakeGameRepeat": {
         "recognition": "Custom",
-        "custom_recognition": "CheckGoldenDolphinRepeatReco",
+        "custom_recognition": "CheckShakeGameRepeatReco",
         "action": "DoNothing",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "GoldenDolphinNavigation"
+            "ShakeGameNavigation"
         ]
     },
-    "GoldenDolphinDone": {
+    "ShakeGameDone": {
         "recognition": "DirectHit",
         "action": "Custom",
-        "custom_action": "GoldenDolphinDoneAction",
+        "custom_action": "ShakeGameDoneAction",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ShakeGameVerifyTank"
+        ]
+    },
+    "ShakeGameVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[摇一摇] 已确认返回主鱼缸，任务完成。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",

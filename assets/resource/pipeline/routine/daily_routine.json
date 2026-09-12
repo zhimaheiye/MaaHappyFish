@@ -19,6 +19,11 @@
         "action": "DoNothing",
         "enabled": false
     },
+    "DailyRoutineEnableShakeGame": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineEnableFishing": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -51,6 +56,7 @@
             "DailyRoutineStepReindeerFish",
             "DailyRoutineStepBandFishPass1",
             "DailyRoutineStepGoldenDolphin",
+            "DailyRoutineStepShakeGame",
             "DailyRoutineStepFishing",
             "DailyRoutineStepRomanticHouse",
             "DailyRoutineStepBandFishPass2",
@@ -111,6 +117,20 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "GoldenDolphinTask"
+        ]
+    },
+    "DailyRoutineStepShakeGame": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "SHAKE_GAME"
+        },
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ShakeGameTask"
         ]
     },
     "DailyRoutineStepFishing": {
@@ -187,5 +207,20 @@
         },
         "action": "Custom",
         "custom_action": "DailyRoutineFinishAction"
+    },
+    "DailyRoutineReturnIfActive": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineActiveReco",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "DailyRoutineDispatcher"
+        ]
+    },
+    "DailyRoutineStandaloneDone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
     }
 }

@@ -23,6 +23,7 @@ from agent.my_action import (
     advance_daily_routine_step,
     DailyFreeGiftDoneAction,
     ReindeerFishDoneAction,
+    ShakeGameDoneAction,
     DailyRoutineFinishAction,
     RomanticHouseExitToTankAction,
 )
@@ -66,18 +67,19 @@ def test_pipeline_topology():
         with open(pf, "r", encoding="utf-8") as f:
             pdata.update(json.load(f))
 
-    # 1. 验证 6 个 Enable 节点存在
+    # 1. 验证 7 个 Enable 节点存在
     for en in [
         "DailyRoutineEnableFreeGift",
         "DailyRoutineEnableReindeerFish",
         "DailyRoutineEnableBandFish",
         "DailyRoutineEnableGoldenDolphin",
+        "DailyRoutineEnableShakeGame",
         "DailyRoutineEnableFishing",
         "DailyRoutineEnableRomanticHouse",
     ]:
         assert en in pdata, f"Missing enable node: {en}"
         assert pdata[en].get("enabled") is False, f"{en} default should be enabled: false"
-    print("[PASS] 6 个 DailyRoutineEnable* 节点配置正确 (默认 enabled: false)")
+    print("[PASS] 7 个 DailyRoutineEnable* 节点配置正确 (默认 enabled: false)")
 
     # 2. 验证 Dispatcher 候选
     disp = pdata.get("DailyRoutineDispatcher", {})
@@ -87,6 +89,7 @@ def test_pipeline_topology():
         "DailyRoutineStepReindeerFish",
         "DailyRoutineStepBandFishPass1",
         "DailyRoutineStepGoldenDolphin",
+        "DailyRoutineStepShakeGame",
         "DailyRoutineStepFishing",
         "DailyRoutineStepRomanticHouse",
         "DailyRoutineStepBandFishPass2",
@@ -95,30 +98,40 @@ def test_pipeline_topology():
     assert candidates == expected_order, f"Dispatcher candidates mismatch: {candidates} vs {expected_order}"
     print("[PASS] DailyRoutineDispatcher 候选节点顺序与保留项完全匹配")
 
-    # 3. 验证 RomanticHouseDone 接入
-    rh_done = pdata.get("RomanticHouseDone", {})
-    assert rh_done.get("action") == "Custom"
-    assert rh_done.get("custom_action") == "RomanticHouseExitToTankAction"
-    assert business_next(rh_done) == ["DailyRoutineDispatcher"]
-    print("[PASS] RomanticHouseDone 正确配置为 RomanticHouseExitToTankAction 并接入 Dispatcher")
+    # 3. 验证共享双出口路由节点配置
+    assert "DailyRoutineReturnIfActive" in pdata, "Missing DailyRoutineReturnIfActive"
+    assert pdata["DailyRoutineReturnIfActive"]["custom_recognition"] == "CheckDailyRoutineActiveReco"
+    assert business_next(pdata["DailyRoutineReturnIfActive"]) == ["DailyRoutineDispatcher"]
 
-    # 4. 免费礼包必须是二选一分支；领取成功后不再检查“已售罄”。
+    assert "DailyRoutineStandaloneDone" in pdata, "Missing DailyRoutineStandaloneDone"
+    assert pdata["DailyRoutineStandaloneDone"]["recognition"] == "DirectHit"
+    assert "next" not in pdata["DailyRoutineStandaloneDone"], "DailyRoutineStandaloneDone 必须是叶子节点"
+    print("[PASS] 共享双出口路由节点 (DailyRoutineReturnIfActive / DailyRoutineStandaloneDone) 配置正确")
+
+    # 4. 验证所有 DailyRoutine 子任务终态节点均已接入双出口路由，杜绝硬编码 DailyRoutineDispatcher
+    dual_exit = ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"]
+    assert business_next(pdata["ShakeGameVerifyTank"]) == dual_exit, "ShakeGameVerifyTank 未接入双出口路由"
+    assert business_next(pdata["GoldenDolphinDone"]) == dual_exit, "GoldenDolphinDone 未接入双出口路由"
+    assert business_next(pdata["FishingVerifyExitToTank"]) == dual_exit, "FishingVerifyExitToTank 未接入双出口路由"
+    assert business_next(pdata["DailyFreeGiftVerifyTank"]) == dual_exit, "DailyFreeGiftVerifyTank 未接入双出口路由"
+    assert business_next(pdata["ReindeerFishVerifyTank"]) == dual_exit, "ReindeerFishVerifyTank 未接入双出口路由"
+    assert business_next(pdata["RomanticHouseDone"]) == dual_exit, "RomanticHouseDone 未接入双出口路由"
+    print("[PASS] 摇一摇、金海豚、钓鱼达人、免费礼包、驯鹿鱼、浪漫满屋 均已接入双出口路由")
+
+    # 5. 免费礼包必须是二选一分支；领取成功后不再检查“已售罄”。
     assert business_next(pdata["DailyFreeGiftAvailabilityRouter"]) == [
         "DailyFreeGiftAlreadySoldOut",
         "DailyFreeGiftClaimable",
     ]
-    # 实机日志中标题可能被 OCR 成“售罄”或“已售罄”；短语匹配必须兼容两者，
-    # 否则灰色禁用按钮仍会被识别成“免费领取”，导致误入领取分支。
     assert pdata["DailyFreeGiftAlreadySoldOut"]["expected"] == "售罄"
     assert business_next(pdata["DailyFreeGiftClaimable"]) == ["DailyFreeGiftRewardReturn"]
     assert business_next(pdata["DailyFreeGiftRewardReturn"]) == ["DailyFreeGiftExitRecharge"]
     assert business_next(pdata["DailyFreeGiftAlreadySoldOut"]) == ["DailyFreeGiftExitRecharge"]
     assert pdata["DailyFreeGiftTankEntry"]["roi"] == [455, 0, 140, 115]
     assert "target" not in pdata["DailyFreeGiftTankEntry"]
-    assert business_next(pdata["DailyFreeGiftVerifyTank"]) == ["DailyRoutineDispatcher"]
     print("[PASS] 免费领取/已售罄分支独立，并在识别返回鱼缸后汇合")
 
-    # 5. 乐队鱼退出后必须按运行模式分流，独立任务不能跌入未激活的日常调度器。
+    # 6. 乐队鱼退出后必须按运行模式分流，独立任务不能跌入未激活的日常调度器。
     assert business_next(pdata["BandFishDone"]) == ["BandFishAfterExitRouter"]
     assert business_next(pdata["BandFishAfterExitRouter"]) == [
         "BandFishAfterExitDailyRoutine",
@@ -169,7 +182,7 @@ def test_pipeline_topology():
         "FishingSelectCheeseBait",
     ]
     assert business_next(pdata["FishingDone"]) == ["FishingVerifyExitToTank"]
-    assert business_next(pdata["FishingVerifyExitToTank"]) == ["DailyRoutineDispatcher"]
+    assert business_next(pdata["FishingVerifyExitToTank"]) == dual_exit
     print("[PASS] 鱼饵耗尽模板在四个钓场路由中优先命中，并复用右上角退出与主鱼缸确认链")
 
     # 8. 驯鹿鱼已知分支必须全部基于识别结果点击，并使用统一返回 OCR 范围。
@@ -221,6 +234,7 @@ def simulate_flow(config_param):
         "BAND_FISH_PASS1": ("BandFish", "PENDING"),
         "REINDEER_FISH": ("ReindeerFish", "DONE"),
         "GOLDEN_DOLPHIN": ("GoldenDolphin", "DONE"),
+        "SHAKE_GAME": ("ShakeGame", "DONE"),
         "FISHING": ("Fishing", "DONE"),
         "ROMANTIC_HOUSE": ("RomanticHouse", "DONE"),
         "BAND_FISH_PASS2": ("BandFish", "DONE"),
@@ -249,6 +263,11 @@ def simulate_flow(config_param):
             loops += 1
             continue
 
+        if cur_step == "SHAKE_GAME":
+            assert ShakeGameDoneAction().run(ctx, arg) is True
+            loops += 1
+            continue
+
         task_name, biz_st = step_mapping[cur_step]
         advance_daily_routine_step(task_name, biz_st)
         loops += 1
@@ -259,11 +278,37 @@ def simulate_flow(config_param):
 
 def test_combination_1():
     print("--- [Check 2: 组合 1 - 全部勾选] ---")
-    config = {"free_gift": True, "reindeer_fish": True, "band_fish": True, "golden_dolphin": True, "fishing": True, "romantic_house": True}
+    config = {
+        "free_gift": True,
+        "reindeer_fish": True,
+        "band_fish": True,
+        "golden_dolphin": True,
+        "shake_game": True,
+        "fishing": True,
+        "romantic_house": True,
+    }
     steps = simulate_flow(config)
-    expected = ["BAND_FISH_PASS1", "FREE_GIFT", "REINDEER_FISH", "GOLDEN_DOLPHIN", "FISHING", "ROMANTIC_HOUSE", "BAND_FISH_PASS2", "ALL_DONE"]
+    expected = [
+        "BAND_FISH_PASS1",
+        "FREE_GIFT",
+        "REINDEER_FISH",
+        "GOLDEN_DOLPHIN",
+        "SHAKE_GAME",
+        "FISHING",
+        "ROMANTIC_HOUSE",
+        "BAND_FISH_PASS2",
+        "ALL_DONE",
+    ]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 组合 1 完整顺序验证通过: {' -> '.join(steps)}")
+
+
+def test_shake_game_only():
+    print("--- [Check 3C: 仅摇一摇小游戏] ---")
+    steps = simulate_flow({"shake_game": True})
+    expected = ["SHAKE_GAME", "ALL_DONE"]
+    assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
+    print(f"[PASS] 摇一摇小游戏可独立启用并正常推进: {' -> '.join(steps)}")
 
 
 def test_combination_2():
@@ -408,6 +453,80 @@ def test_band_fish_after_exit_modes():
     print("[PASS] 独立待接受会重进，独立完成会正常结束，日常模式会回调度器")
 
 
+def test_dual_exit_routing_and_all_done_semantic_preservation():
+    print("--- [Check 11: 双出口路由分流与 ALL_DONE 语义严格保持] ---")
+    from agent.my_reco import CheckDailyRoutineActiveReco, CheckDailyRoutineStepReco
+
+    ctx = MockContext()
+    active_reco = CheckDailyRoutineActiveReco()
+    step_reco = CheckDailyRoutineStepReco()
+
+    # 1. 验证 Case D: ALL_DONE 语义保持
+    # 当 active == False 时，即使 expected 是 ALL_DONE，也绝不能被伪装成匹配
+    daily_routine_state["active"] = False
+    daily_routine_state["step"] = "ALL_DONE"
+    all_done_arg = MockArg({"expected_step": "ALL_DONE"})
+    assert step_reco.analyze(ctx, all_done_arg) is None, "active=False 时 CheckDailyRoutineStepReco 必须返回 None，杜绝语义伪装"
+
+    # 只有当 active == True 且 step == ALL_DONE 时，才命中
+    daily_routine_state["active"] = True
+    assert step_reco.analyze(ctx, all_done_arg) == (0, 0, 10, 10), "active=True 且 step=ALL_DONE 时必须正常命中"
+
+    # 2. 验证 CheckDailyRoutineActiveReco 纯粹的职责分离
+    # active=True -> (0,0,10,10)
+    assert active_reco.analyze(ctx, MockArg({})) == (0, 0, 10, 10)
+    # active=False -> None
+    daily_routine_state["active"] = False
+    assert active_reco.analyze(ctx, MockArg({})) is None
+
+    # 3. 验证 Case C: 金海豚、钓鱼达人 DoneAction 的双模式行为
+    from agent.my_action import GoldenDolphinDoneAction
+    from agent.runtime_state import golden_dolphin_state
+
+    # 金海豚独立模式
+    daily_routine_state["active"] = False
+    daily_routine_state["step"] = "INIT"
+    golden_dolphin_state["status"] = "DONE"
+    gd_act = GoldenDolphinDoneAction()
+    assert gd_act.run(ctx, MockArg({})) is True
+    assert daily_routine_state["step"] == "INIT"  # 不 advance
+
+    # 金海豚日常模式
+    daily_routine_state["active"] = True
+    daily_routine_state["step"] = "GOLDEN_DOLPHIN"
+    daily_routine_state["queue"] = ["SHAKE_GAME"]
+    assert gd_act.run(ctx, MockArg({})) is True
+    assert daily_routine_state["step"] == "SHAKE_GAME"  # 正常 advance
+
+    daily_routine_state["active"] = False
+    print("[PASS] 双出口分流与 ALL_DONE 语义保持验证 100% 通过!")
+
+
+def test_architecture_contract_no_hardcoded_dispatcher():
+    print("--- [Check 12: 架构契约门禁 - 禁止最终返回节点硬编码 Dispatcher] ---")
+    # 遍历当前所有 DailyRoutine 子任务 pipeline 文件
+    subtask_files = {
+        "shake_game.json": "ShakeGameVerifyTank",
+        "golden_dolphin.json": "GoldenDolphinDone",
+        "fishing.json": "FishingVerifyExitToTank",
+        "daily_free_gift.json": "DailyFreeGiftVerifyTank",
+        "reindeer_fish.json": "ReindeerFishVerifyTank",
+        "romantic_house.json": "RomanticHouseDone",
+    }
+    for fname, exit_node in subtask_files.items():
+        fpath = os.path.join("assets", "resource", "pipeline", "features", fname)
+        with open(fpath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        node = data.get(exit_node)
+        assert node is not None, f"文件 {fname} 缺少终态节点 {exit_node}"
+        next_list = business_next(node)
+        # 严禁直接硬编码指向 DailyRoutineDispatcher
+        assert next_list != ["DailyRoutineDispatcher"], f"严重架构违规: {fname} 的 {exit_node} 直接硬编码指向 DailyRoutineDispatcher"
+        # 必须接入双出口路由
+        assert next_list == ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"], f"{fname} 的 {exit_node} 未接入标准双出口路由"
+    print("[PASS] 架构契约静态检查 100% 通过：所有子任务终态节点均已接入双出口路由，无任何硬编码 Dispatcher！")
+
+
 def main():
     print("=" * 70)
     print("  MaaHappyFish 日常收尾 Phase 2 调度器测试套件")
@@ -417,6 +536,7 @@ def main():
     test_combination_2()
     test_free_gift_only()
     test_reindeer_fish_only()
+    test_shake_game_only()
     test_combination_3()
     test_combination_4()
     test_combination_5_empty()
@@ -424,8 +544,10 @@ def main():
     test_node_override_mode()
     test_standalone_non_active()
     test_band_fish_after_exit_modes()
+    test_dual_exit_routing_and_all_done_semantic_preservation()
+    test_architecture_contract_no_hardcoded_dispatcher()
     print("=" * 70)
-    print("  [PASS] 调度器全部 12 项测试用例 100% 验证通过!")
+    print("  [PASS] 调度器全部 15 项测试用例 100% 验证通过!")
     print("=" * 70)
     return 0
 

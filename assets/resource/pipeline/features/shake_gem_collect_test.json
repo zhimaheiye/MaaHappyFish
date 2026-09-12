@@ -1,0 +1,61 @@
+{
+    "ShakeGemCollectTestTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "ShakeGemCollectVerifyTank"
+        ]
+    },
+    "ShakeGemCollectVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[摇一摇收宝石] 已确认处于主鱼缸，准备执行摇晃测试..."
+        },
+        "next": [
+            "ShakeGemCollectActionNode"
+        ]
+    },
+    "ShakeGemCollectActionNode": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "ShakeGemCollectAction",
+        "next": [
+            "ShakeGemCollectSweepBottom"
+        ]
+    },
+    "ShakeGemCollectSweepBottom": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [
+            221,
+            663
+        ],
+        "end": [
+            1007,
+            663
+        ],
+        "duration": 250,
+        "post_delay": 500,
+        "focus": {
+            "Node.Action.Succeeded": "[摇一摇收宝石] 摇晃结束，已执行底部滑动收宝。"
+        },
+        "next": [
+            "ShakeGemCollectTestDone"
+        ]
+    },
+    "ShakeGemCollectTestDone": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "ShakeGemCollectDoneAction",
+        "focus": {
+            "Node.Action.Succeeded": "[摇一摇收宝石] 实验任务完成。"
+        }
+    }
+}

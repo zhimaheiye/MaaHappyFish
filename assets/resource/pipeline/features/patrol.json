@@ -6,6 +6,22 @@
             "Node.Action.Succeeded": "[巡检] 开始首轮：依次收取鱼缸 1、2、3 的产物，再为三只海星补充鱼食。"
         },
         "next": [
+            "PatrolSetGemCollectMode",
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolStartRouter"
+        ]
+    },
+    "PatrolSetGemCollectMode": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "SetGemCollectModeAction",
+        "custom_action_param": {
+            "mode": "IMAGE"
+        },
+        "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -265,9 +281,27 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank1ShakeGem",
             "PatrolCollectTank1Bubble"
         ],
         "on_error": [
+            "PatrolOpenPickerAfterTank1"
+        ]
+    },
+    "PatrolCollectTank1ShakeGem": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckGemCollectModeReco",
+        "action": "Custom",
+        "custom_action": "UnifiedShakeGemCollectAction",
+        "post_delay": 500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 1 摇晃收宝完成，准备切换鱼缸 2。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenPickerAfterTank1"
         ]
     },
@@ -389,9 +423,27 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank2ShakeGem",
             "PatrolCollectTank2Bubble"
         ],
         "on_error": [
+            "PatrolOpenPickerAfterTank2"
+        ]
+    },
+    "PatrolCollectTank2ShakeGem": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckGemCollectModeReco",
+        "action": "Custom",
+        "custom_action": "UnifiedShakeGemCollectAction",
+        "post_delay": 500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 2 摇晃收宝完成，准备切换鱼缸 3。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenPickerAfterTank2"
         ]
     },
@@ -513,9 +565,27 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank3ShakeGem",
             "PatrolCollectTank3Bubble"
         ],
         "on_error": [
+            "PatrolOpenManagement"
+        ]
+    },
+    "PatrolCollectTank3ShakeGem": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckGemCollectModeReco",
+        "action": "Custom",
+        "custom_action": "UnifiedShakeGemCollectAction",
+        "post_delay": 500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 鱼缸 3 摇晃收宝完成，三缸收宝完成，正在打开管理页。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenManagement"
         ]
     },

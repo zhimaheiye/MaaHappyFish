@@ -646,7 +646,8 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "DailyRoutineDispatcher"
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
         ],
         "on_error": [
             "FishingExitFailed"

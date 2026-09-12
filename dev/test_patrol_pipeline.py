@@ -439,7 +439,7 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(raw_files[0], raw_files[1])
         self.assertEqual(raw_files[0], raw_files[2])
         task = next(item for item in payloads[0]["task"] if item["entry"] == "PatrolTask")
-        self.assertEqual(task["option"], ["多鱼缸巡检间隔", "多鱼缸巡检子任务"])
+        self.assertEqual(task["option"], ["多鱼缸巡检间隔", "多鱼缸巡检子任务", "收宝石方式"])
         option = payloads[0]["option"]["多鱼缸巡检间隔"]
         self.assertEqual(option["default_case"], "30分钟")
         extras = payloads[0]["option"]["多鱼缸巡检子任务"]

@@ -220,7 +220,8 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "DailyRoutineDispatcher"
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
         ]
     }
 }

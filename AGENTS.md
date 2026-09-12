@@ -32,6 +32,7 @@
 | 维护"乐队鱼演出"邀请与演出活动 | `docs/features/band-fish.md` |
 | 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
 | 维护"金海豚小游戏"活动自动化 | `docs/features/golden-dolphin.md` |
+| 维护"摇一摇小游戏"活动自动化 | `docs/features/shake-game.md` |
 | 维护"驯鹿鱼送收礼物"日常子任务 | `docs/features/reindeer-fish.md` |
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |

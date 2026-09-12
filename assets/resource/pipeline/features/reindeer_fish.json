@@ -171,7 +171,8 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "DailyRoutineDispatcher"
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
         ],
         "focus": {
             "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已完成当前已知分支并返回鱼缸"

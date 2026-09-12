@@ -71,6 +71,16 @@ graph TD
 
 2026-09-12 已将误入开贝壳页的恢复拆为“页面本体确认 → 返回按钮点击”两步，避免鱼缸管理页的同款返回按钮被误认为大章鱼页面；已完成代码级验证，本次未做模拟器测试。
 
+2026-09-12 新增独立实验任务 `ShakeGemCollectTestTask`（摇一摇收宝石（测试）），用于在主鱼缸验证 MuMu 原生后台 shake 连续模拟能否使鱼身上宝石脱落并由底部滑动收走；该实验任务完全独立，默认未勾选，严禁且未修改正式收鱼产物主干流水线。
+
+2026-09-12 正式支持收宝石双模式（IMAGE 图像识别 / SHAKE MuMu摇晃）：
+- 默认保持 `IMAGE` 图像识别模式，原有气泡检测、点击与底部滑动逻辑 100% 不受影响；
+- 选择 `SHAKE` 模式时，任务入口设置 `gem_collect_state["mode"] = "SHAKE"`，流水线在 `ClickFishBubble` 前命中 `CollectFishShakeGem`，执行严格交替的高频摇晃与扫底收宝循环（5 次摇晃 + 6 次扫底补刀），连续 3 次失败安全熔断。
+- 2026-09-12 第二轮优化：增加每次摇晃后的充分沉降等待（`GEM_SHAKE_SETTLE_DELAY_SECONDS = 1.5s`）以及循环完成后的最终沉降等待（`GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS = 1.5s`），给空中飘落的宝石留出充足物理下落时间后再执行底部扫宝，彻底解决过早切缸导致宝石未收完的问题。
+
 ## 关键文件入口
 - `assets/resource/pipeline/collect_fish.json` — Pipeline 拓扑（含 focus 静态配置）
-- `agent/my_reco.py` — `CheckDutyCycleReco` 状态机 + focus 注入逻辑
+- `assets/resource/pipeline/features/shake_gem_collect_test.json` — 摇一摇收宝石独立实验流水线
+- `agent/my_action.py` — `UnifiedShakeGemCollectAction` 摇晃与扫底动作、`SetGemCollectModeAction`
+- `agent/my_reco.py` — `CheckGemCollectModeReco` 模式识别器、`CheckDutyCycleReco` 状态机
+

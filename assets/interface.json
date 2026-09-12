@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -73,7 +73,10 @@
             "name": "好友摸宝",
             "entry": "FriendGemTask",
             "default_check": false,
-            "description": "从主鱼缸、好友列表或好友水族箱启动，自动巡访并收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。"
+            "description": "从主鱼缸、好友列表或好友水族箱启动，自动巡访并收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。",
+            "option": [
+                "收宝石方式"
+            ]
         },
         {
             "name": "海牛先生",
@@ -89,7 +92,8 @@
             "option": [
                 "挂机鱼食计算",
                 "巡检收宝间隔",
-                "喂食间隔"
+                "喂食间隔",
+                "收宝石方式"
             ]
         },
         {
@@ -99,7 +103,8 @@
             "description": "首轮立即依次巡检 1/2/3 鱼缸收宝并为三缸海星补充鱼食；可选每小时检查魔力召唤和宝石融合",
             "option": [
                 "多鱼缸巡检间隔",
-                "多鱼缸巡检子任务"
+                "多鱼缸巡检子任务",
+                "收宝石方式"
             ]
         },
         {
@@ -145,7 +150,7 @@
             "name": "日常收尾",
             "entry": "DailyRoutineTask",
             "default_check": false,
-            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（每日免费礼包、驯鹿鱼送收礼物、乐队鱼、金海豚、钓鱼达人、浪漫满屋），每个子任务结束后均安全返回主鱼缸。",
+            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（每日免费礼包、驯鹿鱼送收礼物、乐队鱼、金海豚、摇一摇、钓鱼达人、浪漫满屋），每个子任务结束后均安全返回主鱼缸。",
             "option": [
                 "日常收尾任务",
                 "乐队鱼乐章",
@@ -157,6 +162,18 @@
             "entry": "GoldenDolphinTask",
             "default_check": false,
             "description": "自动进入游乐园金海豚小游戏，高频抓帧检测并点击掉落的XP经验星奖励，次数耗尽或结束后安全返回鱼缸。"
+        },
+        {
+            "name": "摇一摇小游戏",
+            "entry": "ShakeGameTask",
+            "default_check": false,
+            "description": "自动进入游乐园摇一摇小游戏，通过 MuMu 原生后台命令模拟设备摇晃，次数耗尽或结束后安全返回鱼缸。"
+        },
+        {
+            "name": "摇一摇收宝石（测试）",
+            "entry": "ShakeGemCollectTestTask",
+            "default_check": false,
+            "description": "实验任务：在主鱼缸连续触发设备摇晃，并在摇晃结束后执行底部滑动收宝，用于实机验证摇晃是否可以使宝石脱落。"
         }
     ],
 
@@ -842,6 +859,7 @@
             "default_case": [
                 "乐队鱼",
                 "金海豚",
+                "摇一摇",
                 "钓鱼达人",
                 "浪漫满屋"
             ],
@@ -879,6 +897,14 @@
                     }
                 },
                 {
+                    "name": "摇一摇",
+                    "pipeline_override": {
+                        "DailyRoutineEnableShakeGame": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
                     "name": "钓鱼达人",
                     "pipeline_override": {
                         "DailyRoutineEnableFishing": {
@@ -891,6 +917,54 @@
                     "pipeline_override": {
                         "DailyRoutineEnableRomanticHouse": {
                             "enabled": true
+                        }
+                    }
+                }
+            ]
+        },
+        "收宝石方式": {
+            "type": "select",
+            "label": "收宝石方式",
+            "description": "选择普通鱼缸收宝石的方式：图像识别（默认）逐个识别并点击气泡；MuMu摇晃通过模拟器后台摇晃使宝石脱落并高频扫底拾取",
+            "default_case": "图像识别",
+            "cases": [
+                {
+                    "name": "图像识别",
+                    "pipeline_override": {
+                        "CollectFishSetGemCollectMode": {
+                            "custom_action_param": {
+                                "mode": "IMAGE"
+                            }
+                        },
+                        "PatrolSetGemCollectMode": {
+                            "custom_action_param": {
+                                "mode": "IMAGE"
+                            }
+                        },
+                        "FriendGemSetGemCollectMode": {
+                            "custom_action_param": {
+                                "mode": "IMAGE"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "MuMu摇晃",
+                    "pipeline_override": {
+                        "CollectFishSetGemCollectMode": {
+                            "custom_action_param": {
+                                "mode": "SHAKE"
+                            }
+                        },
+                        "PatrolSetGemCollectMode": {
+                            "custom_action_param": {
+                                "mode": "SHAKE"
+                            }
+                        },
+                        "FriendGemSetGemCollectMode": {
+                            "custom_action_param": {
+                                "mode": "SHAKE"
+                            }
                         }
                     }
                 }

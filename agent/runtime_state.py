@@ -78,3 +78,14 @@ golden_dolphin_state = {
     "completed_rounds": 0,
     "max_rounds": 3,
 }
+
+shake_game_state = {
+    "status": "IDLE",  # "IDLE" | "READY_TO_PLAY" | "PLAYING" | "SETTLEMENT" | "NEXT_ROUND" | "DONE" | "NO_STAMINA" | "FAILED"
+    "completed_rounds": 0,
+    "max_rounds": 3,
+}
+
+gem_collect_state = {
+    "mode": "IMAGE",  # "IMAGE" | "SHAKE"
+}
+

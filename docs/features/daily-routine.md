@@ -1,8 +1,8 @@
 # 日常收尾总控任务 (docs/features/daily-routine.md)
 
 **最后更新**: 2026-09-12
-**版本**: v7 (钓鱼鱼饵耗尽识别与正常推进)
-**状态**: 已实现串行容器、自由多选组合与乐队鱼异步调度；相关实机边界详见“实机测试状态”。
+**版本**: v8 (摇一摇小游戏接入与独立/日常收尾双出口路由架构)
+**状态**: 已实现串行容器、自由多选组合与乐队鱼异步调度；已落地双出口路由消除独立运行超时失败。
 
 ---
 
@@ -13,12 +13,13 @@
 - **驯鹿鱼送收礼物** (`ReindeerFishGiftTask`)
 - **乐队鱼演出** (`BandFishTask`)
 - **金海豚小游戏** (`GoldenDolphinTask`)
+- **摇一摇小游戏** (`ShakeGameTask`)
 - **钓鱼达人** (`FishingTask`)
 - **浪漫满屋** (`RomanticHouseTask`)
 
 在 Phase 2 中，【日常收尾】(`DailyRoutineTask`) 明确降级为确定性的**“串行任务容器”**：
 1. **自由多选组合**：用户可在 MFAAvalonia 界面中按需自由勾选任意子任务组合；
-2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请，再执行每日免费礼包、驯鹿鱼送收礼物、金海豚、钓鱼达人、浪漫满屋等其他已勾选任务，最后执行乐队鱼 Pass 2 回访演出；
+2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请，再执行每日免费礼包、驯鹿鱼送收礼物、金海豚、摇一摇、钓鱼达人、浪漫满屋等其他已勾选任务，最后执行乐队鱼 Pass 2 回访演出；
 3. **安全退出保障**：每个子任务执行结束（成功、次数用尽、体力不足等）后，必须 100% 返回主鱼缸珊瑚，方可推进下一任务；
 4. **两阶段异步执行**：乐队鱼 Pass 1 / Pass 2 已接入调度；中间任务的执行时间用于等待人机好友接受邀请。
 
@@ -36,12 +37,13 @@
   - `驯鹿鱼送收礼物` → `DailyRoutineEnableReindeerFish: { "enabled": true }`
   - `乐队鱼` $\rightarrow$ `DailyRoutineEnableBandFish: { "enabled": true }`
   - `金海豚` $\rightarrow$ `DailyRoutineEnableGoldenDolphin: { "enabled": true }`
+  - `摇一摇` $\rightarrow$ `DailyRoutineEnableShakeGame: { "enabled": true }`
   - `钓鱼达人` $\rightarrow$ `DailyRoutineEnableFishing: { "enabled": true }`
   - `浪漫满屋` $\rightarrow$ `DailyRoutineEnableRomanticHouse: { "enabled": true }`
 
 ### 2. 独立调试入口管理
 - **浪漫满屋 (`RomanticHouseTask`)**：因功能已全面测试完毕并达成 100% 闭环，从三份 `interface.json` 的任务列表中移除独立入口，统一通过日常收尾入口运行；
-- **保留独立入口**：`BandFishTask`、`GoldenDolphinTask`、`FishingTask` 保留在 `interface.json` 中，供后续专项调试使用。
+- **保留独立入口**：`BandFishTask`、`GoldenDolphinTask`、`ShakeGameTask`、`FishingTask` 保留在 `interface.json` 中，供后续专项调试使用。
 - **共享子任务参数**：`DailyRoutineTask` 同时显示“乐队鱼乐章”和“钓鱼地点”；勾选钓鱼达人时，日常收尾会沿用与独立 `FishingTask` 相同的六地点 Pipeline Override。
 
 ---
@@ -58,6 +60,7 @@ flowchart TD
     Dispatcher -- step=REINDEER_FISH --> RF[ReindeerFishGiftTask: 驯鹿鱼送收礼物]
     Dispatcher -- step=BAND_FISH_PASS1 --> BF[BandFishStartRouter: 乐队鱼]
     Dispatcher -- step=GOLDEN_DOLPHIN --> GD[GoldenDolphinTask: 金海豚]
+    Dispatcher -- step=SHAKE_GAME --> SG[ShakeGameTask: 摇一摇]
     Dispatcher -- step=FISHING --> FI[FishingTask: 钓鱼达人]
     Dispatcher -- step=ROMANTIC_HOUSE --> RH[RomanticHouseStartRouter: 浪漫满屋]
     Dispatcher -- step=ALL_DONE --> Finish[DailyRoutineFinishAction: 汇总报告并结束]
@@ -67,6 +70,7 @@ flowchart TD
     RF --> RF_Exit[识别回到鱼缸 -> ReindeerFishDoneAction]
     BF --> BF_Exit[BandFishExitToTankAction: 回主鱼缸 -> advance_daily_routine_step]
     GD --> GD_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
+    SG --> SG_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
     FI --> FI_Exit[FishingExitToTankAction: 回主鱼缸 -> advance_daily_routine_step]
     RH --> RH_Exit[RomanticHouseExitToTankAction: 珊瑚回主鱼缸 -> advance_daily_routine_step]
 
@@ -74,6 +78,7 @@ flowchart TD
     RF_Exit --> Dispatcher
     BF_Exit --> Dispatcher
     GD_Exit --> Dispatcher
+    SG_Exit --> Dispatcher
     FI_Exit --> Dispatcher
     RH_Exit --> Dispatcher
 
@@ -124,8 +129,39 @@ flowchart TD
 | **驯鹿鱼送收礼物** | 一键收取，或一键回礼后直接返回/直接赠送 | OCR 点击通用返回，模板确认鱼缸后推进队列 |
 | **乐队鱼** | 邀请完成或无空位 | `BandFishExitToTankAction`：点击左上角返回 `(91, 46)` + 保底关闭面板 `(640, 150)` |
 | **金海豚** | 每局结束后未满 3 局则重进；第 3 局完成或机会耗尽 | `GoldenDolphinExitAction` 记录局数并以 `NEXT_ROUND` 重进；`NO_STAMINA` 作为正常业务状态推进队列 |
+| **摇一摇** | 每局结束后未满 3 局则重进；第 3 局完成或次数耗尽 | `ShakeGameExitAction` 记录局数并重进；`NO_STAMINA` 正常推进队列；退出后接入双出口路由 |
 | **钓鱼达人** | 5杆完成，或在钓场/选饵抽屉识别 `钓鱼达人_鱼饵已用尽.png` | `FishingExitToTankAction`：只点击钓场右上角 `(1235, 45)`，再由 `主界面特征.png` 确认回到主鱼缸后推进队列；验证失败即停止 |
 | **浪漫满屋** | 10次点赞完成或已满 | 双级心形关闭 `(1197, 57)` + 状态验证回主鱼缸珊瑚 + `RomanticHouseExitToTankAction` |
+
+### 4. 独立运行与日常收尾双出口路由架构 (Dual-Exit Routing Contract)
+
+开心水族箱存在多个既可作为**独立任务**单独勾选运行，又可作为**日常收尾子任务**串行调度的功能（如摇一摇、金海豚、钓鱼达人等）。
+
+#### 根因与设计原则
+- **问题根因**：若各子任务在返回主鱼缸确认后，终态节点硬编码指向 `DailyRoutineDispatcher`，在独立运行模式下（`daily_routine_state["active"] == False`），进入 Dispatcher 后的所有 Step 判定条件均不满足，MaaFramework 持续重试 20 秒超时后触发 `NextList.Failed`，最终在 UI 判定为任务运行失败；
+- **禁止语义伪装**：严禁在 `CheckDailyRoutineStepReco` 中通过“若未激活则命中 ALL_DONE”来压制错误，因为“日常未激活”绝不等于“日常任务全部完成”，此种做法会混淆业务语义并导致虚假执行报告；
+- **双出口分流规范**：所有子任务终态节点统一接入共享双出口路由：
+
+```text
+子任务终态节点 (如 ShakeGameVerifyTank / GoldenDolphinDone)
+                     │
+                     ▼
+        ┌────────────────────────────┐
+        │  next:                     │
+        │  DailyRoutineReturnIfActive│
+        │  DailyRoutineStandaloneDone│
+        └──────────────┬─────────────┘
+                       │
+         ┌─────────────┴─────────────┐
+         ▼                           ▼
+DailyRoutineReturnIfActive   DailyRoutineStandaloneDone
+(CheckDailyRoutineActiveReco)  (DirectHit -> DoNothing 叶子节点)
+         │                           │
+         ▼ (active == True)          ▼ (active == False)
+DailyRoutineDispatcher        任务成功正常退出 (ret=true)
+```
+
+- **静态契约门禁**：`dev/test_daily_routine_scheduler.py` 中的 `test_architecture_contract_no_hardcoded_dispatcher` 确保所有日常子任务终态节点均接入双出口路由，严禁任何子任务直接硬编码指向 `DailyRoutineDispatcher`。
 
 ### 每日免费礼包分支契约
 

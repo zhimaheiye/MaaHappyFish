@@ -182,7 +182,8 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
-            "DailyRoutineDispatcher"
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
         ],
         "focus": {
             "Node.Action.Succeeded": "[每日免费礼包] 已完成领取或确认已售罄，并返回鱼缸"
