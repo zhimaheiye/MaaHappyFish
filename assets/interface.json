@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.3",
+    "version": "0.5.4",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -70,13 +70,16 @@
             "description": "从主鱼缸进入宝石礼盒，按 16/21/26/31/36/41/46 级配方依次兑换至今日 10/10；已完成配方自动跳过。"
         },
         {
+            "name": "宝石订单",
+            "entry": "GemOrderTask",
+            "default_check": false,
+            "description": "从主鱼缸进入宝石订单，优先完成带对号的普通或特殊订单，其余订单自动丢弃；达到今日 10/10 后返回鱼缸。"
+        },
+        {
             "name": "好友摸宝",
             "entry": "FriendGemTask",
             "default_check": false,
-            "description": "从主鱼缸、好友列表或好友水族箱启动，自动巡访并收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。",
-            "option": [
-                "收宝石方式"
-            ]
+            "description": "从主鱼缸、好友列表或好友水族箱启动；优先使用可用的快捷摸宝按钮，不可用时通过图像识别收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。"
         },
         {
             "name": "海牛先生",
@@ -940,11 +943,6 @@
                             "custom_action_param": {
                                 "mode": "IMAGE"
                             }
-                        },
-                        "FriendGemSetGemCollectMode": {
-                            "custom_action_param": {
-                                "mode": "IMAGE"
-                            }
                         }
                     }
                 },
@@ -957,11 +955,6 @@
                             }
                         },
                         "PatrolSetGemCollectMode": {
-                            "custom_action_param": {
-                                "mode": "SHAKE"
-                            }
-                        },
-                        "FriendGemSetGemCollectMode": {
                             "custom_action_param": {
                                 "mode": "SHAKE"
                             }

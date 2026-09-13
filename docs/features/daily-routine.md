@@ -130,7 +130,7 @@ flowchart TD
 | **乐队鱼** | 邀请完成或无空位 | `BandFishExitToTankAction`：点击左上角返回 `(91, 46)` + 保底关闭面板 `(640, 150)` |
 | **金海豚** | 每局结束后未满 3 局则重进；第 3 局完成或机会耗尽 | `GoldenDolphinExitAction` 记录局数并以 `NEXT_ROUND` 重进；`NO_STAMINA` 作为正常业务状态推进队列 |
 | **摇一摇** | 每局结束后未满 3 局则重进；第 3 局完成或次数耗尽 | `ShakeGameExitAction` 记录局数并重进；`NO_STAMINA` 正常推进队列；退出后接入双出口路由 |
-| **钓鱼达人** | 5杆完成，或在钓场/选饵抽屉识别 `钓鱼达人_鱼饵已用尽.png` | `FishingExitToTankAction`：只点击钓场右上角 `(1235, 45)`，再由 `主界面特征.png` 确认回到主鱼缸后推进队列；验证失败即停止 |
+| **钓鱼达人** | 5杆完成，或在钓场/选饵抽屉识别 `钓鱼达人_鱼饵已用尽.png` | `FishingDone` 识别 `钓鱼达人_退出.png` 后，由 `FishingExitToTankAction` 点击实际命中框中心；再以 `主界面特征.png` 确认回到主鱼缸后推进队列，验证失败即停止 |
 | **浪漫满屋** | 10次点赞完成或已满 | 双级心形关闭 `(1197, 57)` + 状态验证回主鱼缸珊瑚 + `RomanticHouseExitToTankAction` |
 
 ### 4. 独立运行与日常收尾双出口路由架构 (Dual-Exit Routing Contract)

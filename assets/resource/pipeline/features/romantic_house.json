@@ -5,6 +5,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseStartRouter"
         ]
     },
@@ -14,6 +15,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseCheckDone",
             "RomanticHouseTryBless",
             "RomanticHouseNextCouple",
@@ -37,6 +39,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseWaitBubble"
         ]
     },
@@ -57,6 +60,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseInHomePage"
         ],
         "on_error": [
@@ -79,6 +83,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseCheckDone",
             "RomanticHouseTryBless",
             "RomanticHouseNextCouple"
@@ -98,6 +103,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseExitStage"
         ]
     },
@@ -117,6 +123,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseCheckDone",
             "RomanticHouseNextCouple"
         ]
@@ -141,6 +148,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseCheckDone",
             "RomanticHouseTryBless",
             "RomanticHouseNextCouple"
@@ -162,6 +170,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseCheckInHome",
             "RomanticHouseExitStage"
         ]
@@ -181,6 +190,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseExitHome"
         ]
     },
@@ -200,6 +210,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "RomanticHouseDone",
             "RomanticHouseExitHome"
         ]
@@ -220,6 +231,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "DailyRoutineReturnIfActive",
             "DailyRoutineStandaloneDone"
         ]

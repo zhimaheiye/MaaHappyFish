@@ -7,6 +7,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishStartRouter"
         ]
     },
@@ -17,6 +18,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishStartAtMyPerformance",
             "BandFishStartAtAmusementGrid",
             "BandFishStartAtTank"
@@ -36,6 +38,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishStatusRouter"
         ]
     },
@@ -55,6 +58,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishStatusRouter"
         ]
     },
@@ -73,6 +77,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishEnterFromGrid"
         ]
     },
@@ -92,6 +97,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishStatusRouter"
         ]
     },
@@ -102,6 +108,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishCheckDone",
             "BandFishCheckReady",
             "BandFishCheckInvite"
@@ -125,6 +132,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishDone"
         ]
     },
@@ -143,6 +151,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishDone"
         ]
     },
@@ -161,6 +170,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishDone"
         ]
     },
@@ -171,6 +181,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishInviteBranchSlot1",
             "BandFishInviteBranchSlot2",
             "BandFishInviteBranchSlot4",
@@ -191,6 +202,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishCheckInvite"
         ]
     },
@@ -206,6 +218,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishCheckInvite"
         ]
     },
@@ -221,6 +234,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishCheckInvite"
         ]
     },
@@ -236,6 +250,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishCheckInvite"
         ]
     },
@@ -248,6 +263,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishStatusRouter"
         ]
     },
@@ -446,6 +462,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishAfterExitRouter"
         ]
     },
@@ -456,6 +473,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishAfterExitDailyRoutine",
             "BandFishAfterExitStandalonePending",
             "BandFishAfterExitStandaloneDone"
@@ -469,6 +487,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "DailyRoutineDispatcher"
         ]
     },
@@ -481,6 +500,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "BandFishStartRouter"
         ]
     },

@@ -38,6 +38,7 @@ GLOBAL_POPUP_HANDLERS = {
     "[JumpBack]GlobalActivityPagePopup",
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
+    "[JumpBack]GlobalNewsPopup",
 }
 
 
@@ -182,6 +183,11 @@ def test_pipeline_topology():
         "FishingSelectCheeseBait",
     ]
     assert business_next(pdata["FishingDone"]) == ["FishingVerifyExitToTank"]
+    assert pdata["FishingDone"]["recognition"] == "TemplateMatch"
+    assert pdata["FishingDone"]["template"] == "钓鱼达人_退出.png"
+    assert pdata["FishingDone"]["roi"] == [1152, 0, 128, 125]
+    assert "target" not in pdata["FishingDone"]
+    assert os.path.isfile(os.path.join("assets", "resource", "image", "钓鱼达人_退出.png"))
     assert business_next(pdata["FishingVerifyExitToTank"]) == dual_exit
     print("[PASS] 鱼饵耗尽模板在四个钓场路由中优先命中，并复用右上角退出与主鱼缸确认链")
 

@@ -1,7 +1,7 @@
 """
 统一鱼缸收宝石双模式 (IMAGE / SHAKE) 静态与契约单元测试
 覆盖：
-1. Pipeline 结构校验 (单缸、巡检、好友摸宝)
+1. Pipeline 结构校验（单缸、巡检双模式；好友摸宝快捷键优先、图像识别降级）
 2. Interface 配置与契约校验
 3. SetGemCollectModeAction 模式切换
 4. CheckGemCollectModeReco 识别器分流
@@ -31,7 +31,6 @@ from agent.my_action import (
     execute_shake_gem_collect_cycle,
     SetGemCollectModeAction,
     UnifiedShakeGemCollectAction,
-    FriendGemShakeAndAdvanceAction,
 )
 from agent.my_reco import CheckGemCollectModeReco
 
@@ -45,12 +44,14 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
             cls.patrol_pipeline = json.load(f)
         with open(os.path.join(ROOT, "assets/resource/pipeline/features/friend_gem.json"), "r", encoding="utf-8") as f:
             cls.friend_pipeline = json.load(f)
+        with open(os.path.join(ROOT, "assets/resource/pipeline/features/sea_otter_gem.json"), "r", encoding="utf-8") as f:
+            cls.sea_otter_pipeline = json.load(f)
 
     def test_collect_fish_pipeline_structure(self):
         # 1. CollectFishTask entry node
         entry = self.collect_pipeline["CollectFishTask"]
-        self.assertIn("CollectFishSetGemCollectMode", entry["next"])
-        self.assertEqual(entry["next"][0], "CollectFishSetGemCollectMode")
+        business_next = [n for n in entry["next"] if not n.startswith("[JumpBack]")]
+        self.assertEqual(business_next[0], "CollectFishSetGemCollectMode")
 
         # 2. CollectFishSetGemCollectMode definition
         set_node = self.collect_pipeline["CollectFishSetGemCollectMode"]
@@ -76,8 +77,8 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
     def test_patrol_pipeline_structure(self):
         # 1. PatrolTask entry node
         entry = self.patrol_pipeline["PatrolTask"]
-        self.assertIn("PatrolSetGemCollectMode", entry["next"])
-        self.assertEqual(entry["next"][0], "PatrolSetGemCollectMode")
+        business_next = [n for n in entry["next"] if not n.startswith("[JumpBack]")]
+        self.assertEqual(business_next[0], "PatrolSetGemCollectMode")
 
         # 2. PatrolSetGemCollectMode definition
         set_node = self.patrol_pipeline["PatrolSetGemCollectMode"]
@@ -105,17 +106,17 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
             self.assertEqual(shake_def["action"], "Custom")
             self.assertEqual(shake_def["custom_action"], "UnifiedShakeGemCollectAction")
 
-            expected_next = f"PatrolOpenPickerAfterTank{tank}" if tank < 3 else "PatrolOpenManagement"
-            self.assertIn(expected_next, shake_def["next"])
+            self.assertIn(f"PatrolCollectTank{tank}ImageWindow", shake_def["next"])
 
-    def test_patrol_advance_only_after_shake_action_succeeded(self):
-        """验证 Patrol 切缸节点必须作为 ShakeGem 节点的 next，严格依赖 Action 执行成功"""
+    def test_patrol_image_recheck_only_after_shake_action_succeeded(self):
+        """摇晃动作成功后必须先进入图像复查，不能直接切缸。"""
         for tank in (1, 2, 3):
             shake_name = f"PatrolCollectTank{tank}ShakeGem"
             shake_def = self.patrol_pipeline[shake_name]
+            image_window = f"PatrolCollectTank{tank}ImageWindow"
             expected_next = f"PatrolOpenPickerAfterTank{tank}" if tank < 3 else "PatrolOpenManagement"
-            # 必须在 next 列表中，且该节点自身只在 Action 返回 True 后由 MaaFW 触发 next
-            self.assertEqual(shake_def["next"][-1], expected_next)
+            self.assertEqual(shake_def["next"][-1], image_window)
+            self.assertEqual(self.patrol_pipeline[image_window]["on_error"], [expected_next])
             # 无不受控的旁路直接跳转
             self.assertEqual(shake_def["action"], "Custom")
             self.assertEqual(shake_def["custom_action"], "UnifiedShakeGemCollectAction")
@@ -139,31 +140,57 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
             self.assertEqual(sweep_node["duration"], 250)
 
     def test_friend_gem_pipeline_structure(self):
-        # 1. FriendGemTask entry node
+        # 好友家摇晃不会掉落宝石：快捷键可用时优先使用，否则走图像识别。
         entry = self.friend_pipeline["FriendGemTask"]
-        self.assertIn("FriendGemSetGemCollectMode", entry["next"])
-        self.assertEqual(entry["next"][0], "FriendGemSetGemCollectMode")
-
-        # 2. FriendGemSetGemCollectMode definition
-        set_node = self.friend_pipeline["FriendGemSetGemCollectMode"]
-        self.assertEqual(set_node["recognition"], "DirectHit")
-        self.assertEqual(set_node["action"], "Custom")
-        self.assertEqual(set_node["custom_action"], "SetGemCollectModeAction")
-        self.assertEqual(set_node["custom_action_param"]["mode"], "IMAGE")
-
-        # 3. FriendGemFriendRouter next list has FriendGemShakeGem before FriendGemCollectBubble
+        self.assertNotIn("FriendGemSetGemCollectMode", entry["next"])
+        self.assertNotIn("FriendGemSetGemCollectMode", self.friend_pipeline)
         router = self.friend_pipeline["FriendGemFriendRouter"]
-        shake_idx = router["next"].index("FriendGemShakeGem")
-        bubble_idx = router["next"].index("FriendGemCollectBubble")
-        self.assertEqual(shake_idx + 1, bubble_idx)
+        self.assertNotIn("FriendGemShakeGem", router["next"])
+        self.assertNotIn("FriendGemShakeGem", self.friend_pipeline)
+        self.assertIn("FriendGemCollectBubble", router["next"])
 
-        # 4. FriendGemShakeGem definition
-        shake_node = self.friend_pipeline["FriendGemShakeGem"]
-        self.assertEqual(shake_node["recognition"], "Custom")
-        self.assertEqual(shake_node["custom_recognition"], "CheckGemCollectModeReco")
-        self.assertEqual(shake_node["action"], "Custom")
-        self.assertEqual(shake_node["custom_action"], "FriendGemShakeAndAdvanceAction")
-        self.assertIn("FriendGemNextFriend", shake_node["next"])
+        available_idx = router["next"].index("FriendGemQuickCollectAvailable")
+        unavailable_idx = router["next"].index("FriendGemQuickCollectUnavailable")
+        bubble_idx = router["next"].index("FriendGemCollectBubble")
+        self.assertLess(available_idx, unavailable_idx)
+        self.assertLess(unavailable_idx, bubble_idx)
+
+        available = self.friend_pipeline["FriendGemQuickCollectAvailable"]
+        self.assertEqual(available["template"], "好友摸宝快捷键_可用.png")
+        self.assertEqual(available["roi"], [231, 592, 123, 120])
+        self.assertEqual(available["action"], "Click")
+        self.assertNotIn("target", available)
+        self.assertEqual(available["next"][-1], "FriendGemQuickCollectVerifyExhausted")
+
+        verify = self.friend_pipeline["FriendGemQuickCollectVerifyExhausted"]
+        self.assertEqual(verify["expected"], "刷新体力")
+        self.assertEqual(verify["next"][-1], "FriendGemNextFriend")
+        self.assertEqual(verify["on_error"], ["FriendGemQuickCollectVerifyFallback"])
+
+        unavailable = self.friend_pipeline["FriendGemQuickCollectUnavailable"]
+        self.assertEqual(unavailable["template"], "好友摸宝快捷键_不可用.png")
+        self.assertEqual(unavailable["roi"], [231, 592, 123, 120])
+        self.assertEqual(unavailable["action"], "DoNothing")
+        self.assertEqual(unavailable["next"][-1], "FriendGemImageFallbackRouter")
+
+        fallback = self.friend_pipeline["FriendGemImageFallbackRouter"]
+        self.assertNotIn("FriendGemQuickCollectAvailable", fallback["next"])
+        self.assertNotIn("FriendGemQuickCollectUnavailable", fallback["next"])
+        self.assertIn("FriendGemCollectBubble", fallback["next"])
+        self.assertIn("FriendGemSpecialPopup", fallback["next"])
+        self.assertIn("FriendGemFishBabyPark", fallback["next"])
+        self.assertEqual(
+            self.friend_pipeline["FriendGemRecordAttempt"]["next"][-1],
+            "FriendGemImageFallbackRouter",
+        )
+        self.assertEqual(
+            self.friend_pipeline["FriendGemWaitForBubble"]["next"][-1],
+            "FriendGemImageFallbackRouter",
+        )
+
+        for template in ("好友摸宝快捷键_可用.png", "好友摸宝快捷键_不可用.png"):
+            self.assertTrue(os.path.isfile(os.path.join(ROOT, "assets/resource/image", template)))
+            self.assertNotIn(template, json.dumps(self.sea_otter_pipeline, ensure_ascii=False))
 
 
 class TestUnifiedGemCollectInterface(unittest.TestCase):
@@ -182,9 +209,12 @@ class TestUnifiedGemCollectInterface(unittest.TestCase):
 
         # Check bindings
         tasks_map = {t["entry"]: t for t in self.interface["task"]}
-        for entry_name in ("CollectFishTask", "PatrolTask", "FriendGemTask"):
+        for entry_name in ("CollectFishTask", "PatrolTask"):
             self.assertIn(entry_name, tasks_map)
             self.assertIn("收宝石方式", tasks_map[entry_name].get("option", []))
+        self.assertNotIn("收宝石方式", tasks_map["FriendGemTask"].get("option", []))
+        for case in opt["cases"]:
+            self.assertNotIn("FriendGemSetGemCollectMode", case["pipeline_override"])
 
 
 class TestUnifiedGemCollectAgentLogic(unittest.TestCase):
@@ -403,4 +433,3 @@ class TestUnifiedGemCollectExecutor(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

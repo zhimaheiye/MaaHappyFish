@@ -7,6 +7,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterStartRouter"
         ]
     },
@@ -17,6 +18,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterAddFriendPage",
             "SeaOtterStartAtFriendTank",
             "SeaOtterStartFromFriendList"
@@ -43,6 +45,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -63,6 +66,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -73,6 +77,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterLimitReached",
             "SeaOtterFriendLiked",
             "SeaOtterFriendUnliked",
@@ -89,6 +94,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterDone"
         ]
     },
@@ -101,6 +107,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterKnownFriendRouter"
         ]
     },
@@ -113,6 +120,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterKnownFriendRouter"
         ]
     },
@@ -123,6 +131,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterGrayRightArrow",
             "SeaOtterExhausted",
             "SeaOtterHarvestable",
@@ -144,6 +153,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterLastFriendExhausted",
             "SeaOtterLastFriendHarvestable",
             "SeaOtterWaitScreen"
@@ -163,6 +173,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterDone"
         ]
     },
@@ -185,6 +196,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -199,6 +211,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -219,6 +232,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterDone"
         ]
     },
@@ -237,6 +251,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -256,6 +271,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -267,6 +283,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterFriendRouter"
         ]
     },
@@ -278,6 +295,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "SeaOtterFriendRouter"
         ]
     },

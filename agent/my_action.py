@@ -1982,7 +1982,7 @@ class FishingExitToTankAction(CustomAction):
     钓鱼达人结算并安全返回主鱼缸动作:
     1. 判断业务状态: cast_count >= max_casts 判定为 DONE，否则判定为 NO_STAMINA (鱼饵耗尽/购买弹窗关闭);
     2. 若处于 DailyRoutineTask 流程中，同步状态并推进至 BAND_FISH_PASS2;
-    3. 当前节点已由钓场业务状态门禁确认，直接点击钓场右上角退出 [1235, 45]；由 Pipeline 再确认主鱼缸。
+    3. 当前节点以用户提供的退出按钮模板确认钓场状态，点击实际命中框中心；由 Pipeline 再确认主鱼缸。
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
@@ -1990,6 +1990,15 @@ class FishingExitToTankAction(CustomAction):
             if not ctrl:
                 print("[钓鱼退出] 错误: 未获取到 Controller", flush=True)
                 return False
+
+            try:
+                exit_box = tuple(int(value) for value in argv.box)
+                if len(exit_box) != 4 or exit_box[2] <= 0 or exit_box[3] <= 0:
+                    raise ValueError("invalid recognition box")
+            except (AttributeError, TypeError, ValueError):
+                print("[钓鱼退出] ERROR: 未取得有效的退出按钮识别框，拒绝盲点点击", flush=True)
+                return False
+            exit_x, exit_y = _box_center(exit_box)
 
             casts = fishing_state.get("cast_count", 0)
             max_c = fishing_state.get("max_casts", 5)
@@ -2004,14 +2013,15 @@ class FishingExitToTankAction(CustomAction):
                 print(f"[日常收尾] 钓鱼达人 状态沉淀: {biz_status} (已完成 {casts}/{max_c} 杆)", flush=True)
                 advance_daily_routine_step("Fishing", biz_status)
 
-            print(f"[钓鱼退出] 业务状态: {biz_status}，执行物理退出回鱼缸...", flush=True)
-
-            # 钓场左上角会退回地点地图，继续点击可能再次选中默认的“星河”。
-            # 此处按钓场已确认状态直接点击右上角退出，不再跨页面盲点。
-            ctrl.post_click(1235, 45).wait()
+            print(
+                f"[钓鱼退出] 业务状态: {biz_status}，点击识别到的退出按钮 "
+                f"({exit_x}, {exit_y}) 返回鱼缸...",
+                flush=True,
+            )
+            ctrl.post_click(exit_x, exit_y).wait()
             time.sleep(1.8)
 
-            print("[钓鱼退出] 已点击钓场右上角退出，正在验证是否返回主鱼缸...", flush=True)
+            print("[钓鱼退出] 已点击模板命中的钓场退出按钮，正在验证是否返回主鱼缸...", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
@@ -3934,7 +3944,7 @@ class SetGemCollectModeAction(CustomAction):
 @AgentServer.custom_action("UnifiedShakeGemCollectAction")
 class UnifiedShakeGemCollectAction(CustomAction):
     """
-    统一摇晃收宝石动作 (单缸挂机 / 巡检各缸 / 好友摸宝):
+    统一摇晃收宝石动作（单缸挂机 / 巡检各缸）:
     执行标准摇晃循环:
     Shake 1 -> Settle 1 -> Sweep 1 -> ... -> Shake N -> Settle N -> Sweep N -> Final Settle -> Final Sweep (补刀)
     """
@@ -3958,34 +3968,3 @@ class UnifiedShakeGemCollectAction(CustomAction):
             traceback.print_exc()
             print(f"[统一摇晃收宝] 异常: {e}", flush=True)
             return False
-
-
-@AgentServer.custom_action("FriendGemShakeAndAdvanceAction")
-class FriendGemShakeAndAdvanceAction(CustomAction):
-    """
-    好友摸宝摇晃动作 (别名/专用包装):
-    执行标准摇晃循环，完成后由 Pipeline 流向 FriendGemNextFriend。
-    """
-    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
-        try:
-            ctrl = getattr(getattr(context, "tasker", None), "controller", None)
-            if ctrl is None:
-                print("[好友摇晃摸宝] 错误: 未获取到 Controller", flush=True)
-                return False
-
-            param = parse_dict_param(argv.custom_action_param)
-            cycles = safe_int(param.get("cycles"), GEM_SHAKE_CYCLES)
-            delay = safe_float(param.get("delay"), GEM_SHAKE_SETTLE_DELAY_SECONDS)
-            final_delay = safe_float(param.get("final_delay"), GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS)
-
-            print(f"[好友摇晃摸宝] 开始执行摇晃扫底收宝 (轮数: {cycles}, 沉降: {delay}s, 最终沉降: {final_delay}s)...", flush=True)
-            return execute_shake_gem_collect_cycle(
-                context, ctrl, cycles=cycles, delay_between=delay, final_delay=final_delay
-            )
-        except Exception as e:
-            traceback.print_exc()
-            print(f"[好友摇晃摸宝] 异常: {e}", flush=True)
-            return False
-
-
-

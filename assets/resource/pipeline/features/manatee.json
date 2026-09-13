@@ -10,6 +10,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeStartRouter"
         ]
     },
@@ -20,6 +21,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeSelectFood",
             "ManateeTankIdentity",
             "ManateeStartFromFriendList",
@@ -38,6 +40,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeOpenFriendPage"
         ]
     },
@@ -59,6 +62,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeStartFromFriendList"
         ],
         "on_error": [
@@ -78,6 +82,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeTankIdentity"
         ],
         "on_error": [
@@ -97,6 +102,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeExhausted",
             "ManateeOpenFeed"
         ],
@@ -118,6 +124,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeSelectFood"
         ],
         "on_error": [
@@ -138,6 +145,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeFeedUntilExhausted"
         ],
         "on_error": [
@@ -159,6 +167,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeReturnStandalone",
             "ManateeReturnFriendGem"
         ],
@@ -179,6 +188,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeReturnStandalone",
             "ManateeReturnFriendGem"
         ],
@@ -197,6 +207,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeBackToFriendList"
         ]
     },
@@ -211,6 +222,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FriendGemNextFriend"
         ],
         "focus": {
@@ -227,6 +239,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeVerifyFriendList"
         ],
         "on_error": [
@@ -245,6 +258,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeBackToTank"
         ],
         "on_error": [
@@ -261,6 +275,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ManateeVerifyMainTank"
         ],
         "on_error": [

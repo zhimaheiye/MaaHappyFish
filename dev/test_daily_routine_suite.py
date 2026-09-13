@@ -146,6 +146,10 @@ def run_tests():
         Path("assets/resource/pipeline/features/fishing.json").read_text(encoding="utf-8")
     )
     assert fishing_pipeline["FishingDone"]["next"][-1] == "FishingVerifyExitToTank"
+    assert fishing_pipeline["FishingDone"]["recognition"] == "TemplateMatch"
+    assert fishing_pipeline["FishingDone"]["template"] == "钓鱼达人_退出.png"
+    assert fishing_pipeline["FishingDone"]["roi"] == [1152, 0, 128, 125]
+    assert "target" not in fishing_pipeline["FishingDone"]
     verify_exit = fishing_pipeline["FishingVerifyExitToTank"]
     assert verify_exit["template"] == "主界面特征.png"
     assert verify_exit["next"][-2:] == ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"]
@@ -157,9 +161,11 @@ def run_tests():
     runtime_state.daily_routine_state["queue"] = ["BAND_FISH_PASS2"]
     runtime_state.fishing_state["cast_count"] = 2
     runtime_state.fishing_state["max_casts"] = 5
-    success = fish_exit.run(ctx, DummyArg())
+    fish_exit_arg = DummyArg()
+    fish_exit_arg.box = (1152, 0, 128, 125)
+    success = fish_exit.run(ctx, fish_exit_arg)
     assert success is True
-    assert ctx.tasker.controller.clicks[-1:] == [(1235, 45)]
+    assert ctx.tasker.controller.clicks[-1:] == [(1216, 62)]
     assert (50, 45) not in ctx.tasker.controller.clicks
     assert (640, 150) not in ctx.tasker.controller.clicks
     assert runtime_state.fishing_state["status"] == "NO_STAMINA"
@@ -170,9 +176,9 @@ def run_tests():
 
     # 4.2 甩杆满额 (满5杆)
     runtime_state.fishing_state["cast_count"] = 5
-    success = fish_exit.run(ctx, DummyArg())
+    success = fish_exit.run(ctx, fish_exit_arg)
     assert success is True
-    assert ctx.tasker.controller.clicks[-1:] == [(1235, 45)]
+    assert ctx.tasker.controller.clicks[-1:] == [(1216, 62)]
     assert runtime_state.fishing_state["status"] == "DONE"
     assert runtime_state.daily_routine_state["tasks"]["Fishing"]["status"] == "DONE"
     print("  >>> PASS: 甩杆满额正常退出，标记为 DONE！")

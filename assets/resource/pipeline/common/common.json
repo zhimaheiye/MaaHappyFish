@@ -7,6 +7,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "CloseAnnouncement",
             "ClickEnterGame",
             "ConfirmMainScreen"
@@ -22,6 +23,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "CloseAnnouncement",
             "ClickEnterGame",
             "ConfirmMainScreen"
@@ -37,6 +39,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "CloseAnnouncement",
             "ConfirmMainScreen"
         ]
@@ -54,6 +57,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "DailySignNoPopup"
         ]
     },
@@ -117,6 +121,34 @@
         "threshold": 0.8,
         "action": "Click",
         "post_delay": 500
+    },
+    "GlobalNewsPopup": {
+        "recognition": "OCR",
+        "expected": "快报",
+        "roi": [
+            635,
+            23,
+            226,
+            162
+        ],
+        "action": "DoNothing",
+        "next": [
+            "GlobalNewsClose"
+        ]
+    },
+    "GlobalNewsClose": {
+        "recognition": "TemplateMatch",
+        "template": "快报页面_关闭.png",
+        "roi": [
+            1044,
+            77,
+            26,
+            31
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 500,
+        "focus": "检测到快报页面弹出，已识别并点击关闭，继续当前任务"
     },
     "DailySignNoPopup": {
         "recognition": "DirectHit",

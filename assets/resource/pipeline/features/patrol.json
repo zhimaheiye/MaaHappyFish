@@ -6,11 +6,12 @@
             "Node.Action.Succeeded": "[巡检] 开始首轮：依次收取鱼缸 1、2、3 的产物，再为三只海星补充鱼食。"
         },
         "next": [
-            "PatrolSetGemCollectMode",
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolSetGemCollectMode",
             "PatrolStartRouter"
         ]
     },
@@ -25,6 +26,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolStartRouter"
         ]
@@ -44,6 +46,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "PatrolShellPageReturn"
         ]
     },
@@ -70,6 +73,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolStartAtFoodPopupAbort",
             "PatrolStartAtUniversalStarfish",
@@ -109,6 +113,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectCuteStarfishTab"
         ]
@@ -127,6 +132,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenUniversalStarfish"
         ]
@@ -150,6 +156,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank1Main"
         ]
@@ -172,6 +179,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1"
         ]
@@ -195,6 +203,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank1FromPicker"
         ]
@@ -218,6 +227,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank1FromPicker"
         ]
@@ -239,6 +249,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank1Main"
         ],
@@ -265,6 +276,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1"
         ],
@@ -280,6 +292,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1ShakeGem",
             "PatrolCollectTank1Bubble"
@@ -295,13 +308,30 @@
         "custom_action": "UnifiedShakeGemCollectAction",
         "post_delay": 500,
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼缸 1 摇晃收宝完成，准备切换鱼缸 2。"
+            "Node.Action.Succeeded": "[巡检] 鱼缸 1 摇晃与扫底完成，正在用图像识别复查残留产物；连续 30 秒无产物后切换鱼缸 2。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank1ImageWindow"
+        ]
+    },
+    "PatrolCollectTank1ImageWindow": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 30000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank1Bubble"
+        ],
+        "on_error": [
             "PatrolOpenPickerAfterTank1"
         ]
     },
@@ -333,8 +363,9 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
-            "PatrolCollectTank1"
+            "PatrolCollectTank1ImageWindow"
         ]
     },
     "PatrolOpenPickerAfterTank1": {
@@ -357,6 +388,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank2FromPicker"
         ],
@@ -381,6 +413,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank2Main"
         ],
@@ -407,6 +440,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2"
         ],
@@ -422,6 +456,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2ShakeGem",
             "PatrolCollectTank2Bubble"
@@ -437,13 +472,30 @@
         "custom_action": "UnifiedShakeGemCollectAction",
         "post_delay": 500,
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼缸 2 摇晃收宝完成，准备切换鱼缸 3。"
+            "Node.Action.Succeeded": "[巡检] 鱼缸 2 摇晃与扫底完成，正在用图像识别复查残留产物；连续 30 秒无产物后切换鱼缸 3。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank2ImageWindow"
+        ]
+    },
+    "PatrolCollectTank2ImageWindow": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 30000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank2Bubble"
+        ],
+        "on_error": [
             "PatrolOpenPickerAfterTank2"
         ]
     },
@@ -475,8 +527,9 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
-            "PatrolCollectTank2"
+            "PatrolCollectTank2ImageWindow"
         ]
     },
     "PatrolOpenPickerAfterTank2": {
@@ -499,6 +552,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank3FromPicker"
         ],
@@ -523,6 +577,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank3Main"
         ],
@@ -549,6 +604,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3"
         ],
@@ -564,6 +620,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3ShakeGem",
             "PatrolCollectTank3Bubble"
@@ -579,13 +636,30 @@
         "custom_action": "UnifiedShakeGemCollectAction",
         "post_delay": 500,
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼缸 3 摇晃收宝完成，三缸收宝完成，正在打开管理页。"
+            "Node.Action.Succeeded": "[巡检] 鱼缸 3 摇晃与扫底完成，正在用图像识别复查残留产物；连续 30 秒无产物后进入管理页。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank3ImageWindow"
+        ]
+    },
+    "PatrolCollectTank3ImageWindow": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 30000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank3Bubble"
+        ],
+        "on_error": [
             "PatrolOpenManagement"
         ]
     },
@@ -617,8 +691,9 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
-            "PatrolCollectTank3"
+            "PatrolCollectTank3ImageWindow"
         ]
     },
     "PatrolOpenManagement": {
@@ -641,6 +716,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyManagement"
         ],
@@ -666,6 +742,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenUniversalStarfish"
         ],
@@ -692,6 +769,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectCuteStarfishTab"
         ],
@@ -718,6 +796,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyCuteStarfish"
         ],
@@ -743,6 +822,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteReplenish"
         ],
@@ -769,6 +849,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteFoodRouter"
         ],
@@ -783,6 +864,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteNormalFood",
             "PatrolCuteSpecialFood",
@@ -802,6 +884,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteAfterFeedRouter"
         ]
@@ -831,6 +914,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteAfterFeedRouter"
         ]
@@ -842,6 +926,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolCuteFeedReturnedToPanel",
@@ -865,6 +950,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectGoodStarfishTab"
         ]
@@ -888,6 +974,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyGoodStarfish"
         ],
@@ -913,6 +1000,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodReplenish"
         ],
@@ -939,6 +1027,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodFoodRouter"
         ],
@@ -953,6 +1042,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodNormalFood",
             "PatrolGoodSpecialFood",
@@ -972,6 +1062,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodAfterFeedRouter"
         ]
@@ -1001,6 +1092,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodAfterFeedRouter"
         ]
@@ -1012,6 +1104,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolGoodFeedReturnedToPanel",
@@ -1035,6 +1128,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectBrightStarfishTab"
         ]
@@ -1058,6 +1152,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyBrightStarfish"
         ],
@@ -1083,6 +1178,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightReplenish"
         ],
@@ -1109,6 +1205,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightFoodRouter"
         ],
@@ -1123,6 +1220,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightNormalFood",
             "PatrolBrightSpecialFood",
@@ -1142,6 +1240,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightAfterFeedRouter"
         ]
@@ -1171,6 +1270,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightAfterFeedRouter"
         ]
@@ -1182,6 +1282,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolBrightFeedReturnedToPanel",
@@ -1205,6 +1306,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolExitUniversalStarfish"
         ]
@@ -1242,6 +1344,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyManagementAfterStarfish"
         ],
@@ -1267,6 +1370,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolExitManagement"
         ],
@@ -1293,6 +1397,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyMainAfterCycle"
         ],
@@ -1307,6 +1412,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyMainTank1AfterCycle",
             "PatrolVerifyMainTank2AfterCycle",
@@ -1333,6 +1439,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
@@ -1356,6 +1463,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
@@ -1379,6 +1487,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
@@ -1391,6 +1500,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolTimerDue",
             "PatrolMagicSummonDue",
@@ -1410,6 +1520,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolStartRouter"
         ],

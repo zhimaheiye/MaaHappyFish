@@ -7,12 +7,14 @@ GLOBAL_HANDLERS = [
     "[JumpBack]GlobalActivityPagePopup",
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
+    "[JumpBack]GlobalNewsPopup",
 ]
 HANDLER_NODES = {
     "GlobalActivityPagePopup",
     "GlobalDailySignPopup",
     "GlobalDailySignClaim",
     "GlobalSpecialOfferPopup",
+    "GlobalNewsPopup",
 }
 ATOMIC_NEXT_NODES = {
     "ClickFishBubble",
@@ -81,6 +83,19 @@ def run_tests():
     assert offer_close["action"] == "Click"
     assert "target" not in offer_close
 
+    news = pipeline["GlobalNewsPopup"]
+    assert news["recognition"] == "OCR"
+    assert news["expected"] == "快报"
+    assert news["roi"] == [635, 23, 226, 162]
+    assert news["action"] == "DoNothing"
+    assert news["next"] == ["GlobalNewsClose"]
+
+    news_close = pipeline["GlobalNewsClose"]
+    assert news_close["template"] == "快报页面_关闭.png"
+    assert news_close["roi"] == [1044, 77, 26, 31]
+    assert news_close["action"] == "Click"
+    assert "target" not in news_close
+
     missing = []
     for name, node in pipeline.items():
         successors = node.get("next")
@@ -98,10 +113,11 @@ def run_tests():
         "签到_关闭.png",
         "特惠礼包_识别.png",
         "特惠礼包_关闭.png",
+        "快报页面_关闭.png",
     ):
         assert (image_dir / template).is_file(), f"missing template: {template}"
 
-    print("[PASS] global activity-page, daily-sign, and special-offer handlers")
+    print("[PASS] global activity-page, daily-sign, special-offer, and news handlers")
 
 
 if __name__ == "__main__":

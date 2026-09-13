@@ -6,6 +6,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ShakeGemCollectVerifyTank"
         ]
     },
@@ -19,6 +20,10 @@
             "Node.Action.Succeeded": "[摇一摇收宝石] 已确认处于主鱼缸，准备执行摇晃测试..."
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ShakeGemCollectActionNode"
         ]
     },
@@ -27,6 +32,10 @@
         "action": "Custom",
         "custom_action": "ShakeGemCollectAction",
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ShakeGemCollectSweepBottom"
         ]
     },
@@ -47,6 +56,10 @@
             "Node.Action.Succeeded": "[摇一摇收宝石] 摇晃结束，已执行底部滑动收宝。"
         },
         "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "ShakeGemCollectTestDone"
         ]
     },

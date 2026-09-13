@@ -7,6 +7,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingStartRouter"
         ]
     },
@@ -17,6 +18,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitExhausted",
             "FishingStartAtPurchasePopup",
             "FishingStartAtCatchResult",
@@ -44,6 +46,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingDone"
         ]
     },
@@ -61,6 +64,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingCatchSuccess"
         ]
     },
@@ -79,6 +83,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingPostRoundRouter"
         ],
         "on_error": [
@@ -99,6 +104,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingRound"
         ]
     },
@@ -116,6 +122,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitRouter"
         ]
     },
@@ -133,6 +140,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingLocationRouter"
         ]
     },
@@ -151,6 +159,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingNavActivityGrid"
         ]
     },
@@ -169,6 +178,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingNavOpenAmusement"
         ]
     },
@@ -194,6 +204,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingNavActivityGrid"
         ]
     },
@@ -219,6 +230,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingLocationRouter"
         ]
     },
@@ -236,6 +248,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingSelectLocation_Xinghe"
         ]
     },
@@ -253,6 +266,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitRouter"
         ]
     },
@@ -270,6 +284,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitRouter"
         ]
     },
@@ -287,6 +302,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitRouter"
         ]
     },
@@ -304,6 +320,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitRouter"
         ]
     },
@@ -321,6 +338,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitRouter"
         ]
     },
@@ -338,6 +356,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitRouter"
         ]
     },
@@ -348,6 +367,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitExhausted",
             "FishingBaitPurchasePopup",
             "FishingBaitAlreadySelected",
@@ -371,6 +391,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingDone"
         ]
     },
@@ -388,6 +409,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingRound"
         ]
     },
@@ -412,6 +434,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitExhausted",
             "FishingSelectCheeseBait"
         ]
@@ -432,6 +455,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitVerifyReady"
         ]
     },
@@ -449,6 +473,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingRound"
         ]
     },
@@ -467,6 +492,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingPostRoundRouter"
         ],
         "on_error": [
@@ -484,6 +510,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitExhausted",
             "FishingCatchSuccess",
             "FishingPostRoundCheckReady",
@@ -511,6 +538,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingLoopRouter"
         ]
     },
@@ -528,6 +556,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingLoopRouter"
         ]
     },
@@ -539,6 +568,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingPostRoundRouter"
         ]
     },
@@ -549,6 +579,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitExhausted",
             "FishingLoopCheckLimit",
             "FishingLoopHasBait",
@@ -564,6 +595,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingDone"
         ]
     },
@@ -581,6 +613,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingRound"
         ]
     },
@@ -598,6 +631,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingBaitRouter"
         ]
     },
@@ -619,18 +653,35 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingDone"
         ]
     },
     "FishingDone": {
-        "recognition": "DirectHit",
+        "recognition": "TemplateMatch",
+        "template": "钓鱼达人_退出.png",
+        "roi": [
+            1152,
+            0,
+            128,
+            125
+        ],
+        "threshold": 0.75,
         "action": "Custom",
         "custom_action": "FishingExitToTankAction",
+        "timeout": 3000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[钓鱼退出] 已识别钓场右上角退出按钮，正在点击模板命中位置。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "FishingVerifyExitToTank"
+        ],
+        "on_error": [
+            "FishingExitFailed"
         ]
     },
     "FishingVerifyExitToTank": {
@@ -646,6 +697,7 @@
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
             "DailyRoutineReturnIfActive",
             "DailyRoutineStandaloneDone"
         ],
@@ -657,7 +709,7 @@
         "recognition": "DirectHit",
         "action": "StopTask",
         "focus": {
-            "Node.Action.Succeeded": "[钓鱼退出] ERROR：点击右上角后未确认返回主鱼缸，已安全停止，未继续后续任务。"
+            "Node.Action.Succeeded": "[钓鱼退出] ERROR：未识别到退出按钮，或点击后未确认返回主鱼缸；已安全停止，未继续后续任务。"
         }
     }
 }

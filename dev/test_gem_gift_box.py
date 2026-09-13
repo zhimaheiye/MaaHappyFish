@@ -17,6 +17,7 @@ GLOBAL_HANDLERS = {
     "[JumpBack]GlobalActivityPagePopup",
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
+    "[JumpBack]GlobalNewsPopup",
 }
 
 
@@ -414,4 +415,3 @@ if __name__ == "__main__":
     test_transaction_failure_aborts_confirm_missing()
     test_transaction_failure_aborts_stuck_in_confirm()
     print("[PASS] 宝石礼盒七配方身份、10/10 防重、部分兑换、无OK跳过与防御异常全场景闭环验证通过")
-

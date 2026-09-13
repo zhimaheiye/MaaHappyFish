@@ -1,0 +1,268 @@
+{
+    "GemOrderTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderOnPage",
+            "GemOrderOpenEntry",
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderOpenEntry": {
+        "recognition": "TemplateMatch",
+        "template": "宝石订单_入口.png",
+        "roi": [
+            30,
+            377,
+            52,
+            48
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石订单] 已点击主鱼缸入口，正在确认订单页面。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderOnPage"
+        ],
+        "on_error": [
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderOnPage": {
+        "recognition": "TemplateMatch",
+        "template": "宝石订单_识别.png",
+        "roi": [
+            535,
+            1,
+            316,
+            155
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[宝石订单] 已确认订单页面，正在检查今日进度和当前订单。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderRouter"
+        ],
+        "on_error": [
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderAllIssued",
+            "GemOrderSpecialCompletable",
+            "GemOrderNormalCompletable",
+            "GemOrderDiscard",
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderAllIssued": {
+        "recognition": "OCR",
+        "expected": "10/10",
+        "roi": [
+            288,
+            86,
+            172,
+            140
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Recognition.Succeeded": "[宝石订单] 已识别今日免费订单 10/10，准备退出。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderExit"
+        ]
+    },
+    "GemOrderSpecialCompletable": {
+        "recognition": "TemplateMatch",
+        "template": "宝石订单_特殊订单_可完成.png",
+        "roi": [
+            241,
+            199,
+            150,
+            120
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "focus": {
+            "Node.Recognition.Succeeded": "[宝石订单] 当前特殊订单可完成，准备点击完成。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderComplete"
+        ]
+    },
+    "GemOrderNormalCompletable": {
+        "recognition": "TemplateMatch",
+        "template": "宝石订单_普通订单_可完成.png",
+        "roi": [
+            241,
+            199,
+            150,
+            120
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "focus": {
+            "Node.Recognition.Succeeded": "[宝石订单] 当前普通订单可完成，准备点击完成。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderComplete"
+        ]
+    },
+    "GemOrderComplete": {
+        "recognition": "OCR",
+        "expected": "^完成$",
+        "roi": [
+            944,
+            625,
+            65,
+            33
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石订单] 已点击完成，正在确认下一张订单。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderOnPage"
+        ],
+        "on_error": [
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderDiscard": {
+        "recognition": "OCR",
+        "expected": "^[丢丟]弃$",
+        "roi": [
+            735,
+            626,
+            66,
+            32
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石订单] 当前订单未识别到可完成对号，已点击第一次丢弃，正在等待确认弹窗。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderConfirmDiscard"
+        ],
+        "on_error": [
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderConfirmDiscard": {
+        "recognition": "OCR",
+        "expected": "^[丢丟]弃$",
+        "roi": [
+            603,
+            460,
+            85,
+            32
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石订单] 已确认丢弃订单，正在确认下一张订单。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderOnPage"
+        ],
+        "on_error": [
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderExit": {
+        "recognition": "TemplateMatch",
+        "template": "宝石订单_退出.png",
+        "roi": [
+            1107,
+            84,
+            37,
+            36
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石订单] 已点击退出，正在确认返回主鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "GemOrderVerifyTank"
+        ],
+        "on_error": [
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[宝石订单] 已确认返回主鱼缸，任务完成。"
+        },
+        "on_error": [
+            "GemOrderAbort"
+        ]
+    },
+    "GemOrderAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[宝石订单] 页面门禁或关键按钮未通过，已安全停止且未继续点击。"
+        }
+    }
+}

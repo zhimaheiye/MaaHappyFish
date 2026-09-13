@@ -29,6 +29,7 @@ GLOBAL_HANDLERS = {
     "[JumpBack]GlobalActivityPagePopup",
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
+    "[JumpBack]GlobalNewsPopup",
     "[JumpBack]PatrolShellPagePopup",
 }
 
@@ -104,8 +105,35 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(business_next(start_page), ["OpenShellRoundStart"])
         self.assertEqual(
             business_next(self.open_shell_pipeline["OpenShellTask"]),
-            ["OpenShellStartPage"],
+            ["OpenShellStartPage", "OpenShellEntry", "OpenShellAbort"],
         )
+
+        entry = self.open_shell_pipeline["OpenShellEntry"]
+        self.assertEqual(entry["recognition"], "TemplateMatch")
+        self.assertEqual(entry["template"], "开贝壳_入口.png")
+        self.assertEqual(entry["roi"], [289, 492, 168, 139])
+        self.assertEqual(entry["action"], "Click")
+        self.assertNotIn("target", entry)
+        self.assertEqual(business_next(entry), ["OpenShellStartPage"])
+        self.assertTrue(
+            os.path.isfile(
+                os.path.join(ROOT, "assets", "resource", "image", "开贝壳_入口.png")
+            )
+        )
+
+        done = self.open_shell_pipeline["OpenShellDone"]
+        self.assertEqual(done["recognition"], "OCR")
+        self.assertEqual(done["expected"], "返回")
+        self.assertEqual(done["roi"], [0, 0, 173, 123])
+        self.assertEqual(done["action"], "Click")
+        self.assertNotIn("target", done)
+        self.assertEqual(business_next(done), ["OpenShellVerifyMainAfterDone"])
+
+        verify_main = self.open_shell_pipeline["OpenShellVerifyMainAfterDone"]
+        self.assertEqual(verify_main["template"], "主界面特征.png")
+        self.assertEqual(verify_main["roi"], [0, 200, 150, 400])
+        self.assertEqual(verify_main["action"], "DoNothing")
+        self.assertEqual(verify_main["on_error"], ["OpenShellAbort"])
 
         collect_handler = self.collect_fish_pipeline["HandleShellPage"]
         self.assertEqual(collect_handler["template"], "开贝壳_识别.png")
@@ -139,6 +167,7 @@ class PatrolPipelineTest(unittest.TestCase):
     def test_each_tank_uses_a_30_second_inactivity_window(self):
         for tank in (1, 2, 3):
             window = self.pipeline[f"PatrolCollectTank{tank}"]
+            image_window = self.pipeline[f"PatrolCollectTank{tank}ImageWindow"]
             bubble = self.pipeline[f"PatrolCollectTank{tank}Bubble"]
             self.assertEqual(window["recognition"], "DirectHit")
             self.assertEqual(window["timeout"], 30000)
@@ -149,13 +178,28 @@ class PatrolPipelineTest(unittest.TestCase):
                 else "PatrolOpenManagement"
             )
             self.assertEqual(window["on_error"], [expected_next])
+            self.assertEqual(image_window["recognition"], "DirectHit")
+            self.assertEqual(image_window["timeout"], 30000)
+            self.assertIn(f"PatrolCollectTank{tank}Bubble", image_window["next"])
+            self.assertEqual(image_window["on_error"], [expected_next])
             self.assertEqual(bubble["roi"], [0, 100, 1280, 560])
             sweep_name = f"PatrolSweepTank{tank}AfterBubble"
             self.assertEqual(business_next(bubble), [sweep_name])
             self.assertEqual(
                 business_next(self.pipeline[sweep_name]),
-                [f"PatrolCollectTank{tank}"],
+                [f"PatrolCollectTank{tank}ImageWindow"],
             )
+
+    def test_shake_mode_falls_back_to_image_recognition_before_switching_tanks(self):
+        for tank in (1, 2, 3):
+            shake = self.pipeline[f"PatrolCollectTank{tank}ShakeGem"]
+            self.assertEqual(
+                business_next(shake),
+                [f"PatrolCollectTank{tank}ImageWindow"],
+            )
+            focus = " ".join(shake.get("focus", {}).values())
+            self.assertIn("图像识别", focus)
+            self.assertIn("30 秒", focus)
 
     def test_main_patrol_steps_report_actions_and_results(self):
         expected_logs = {
@@ -310,6 +354,7 @@ class PatrolPipelineTest(unittest.TestCase):
         next_nodes = self.pipeline["PatrolWaitLoop"]["next"]
         self.assertIn("[JumpBack]GlobalDailySignPopup", next_nodes)
         self.assertIn("[JumpBack]GlobalSpecialOfferPopup", next_nodes)
+        self.assertIn("[JumpBack]GlobalNewsPopup", next_nodes)
         self.assertIn("PatrolTimerDue", next_nodes)
         self.assertEqual(
             self.pipeline["PatrolTimerDue"]["custom_recognition"],
@@ -419,6 +464,36 @@ class PatrolPipelineTest(unittest.TestCase):
             focus = " ".join(self.pipeline[node_name].get("focus", {}).values())
             for fragment in fragments:
                 self.assertIn(fragment, focus, node_name)
+
+    def test_gem_fusion_return_retries_only_after_page_reconfirmation(self):
+        first_return = self.pipeline["PatrolGemFusionReturn"]
+        self.assertEqual(business_next(first_return), ["PatrolGemFusionReturnRouter"])
+        self.assertIn("第一次返回", " ".join(first_return["focus"].values()))
+
+        router = self.pipeline["PatrolGemFusionReturnRouter"]
+        router_next = business_next(router)
+        self.assertEqual(
+            router_next[:3],
+            [
+                "PatrolVerifyMainTank1AfterCycle",
+                "PatrolVerifyMainTank2AfterCycle",
+                "PatrolVerifyMainTank3AfterCycle",
+            ],
+        )
+        self.assertEqual(router_next[3:], ["PatrolGemFusionStillOnPage", "PatrolGemFusionAbort"])
+
+        still_page = self.pipeline["PatrolGemFusionStillOnPage"]
+        self.assertEqual(still_page["recognition"], "TemplateMatch")
+        self.assertEqual(still_page["template"], "宝石融合页面.png")
+        self.assertEqual(still_page["roi"], [549, 0, 178, 242])
+        self.assertEqual(still_page["action"], "DoNothing")
+        self.assertEqual(business_next(still_page), ["PatrolGemFusionReturnAgain"])
+
+        retry = self.pipeline["PatrolGemFusionReturnAgain"]
+        self.assertEqual(retry["recognition"], "OCR")
+        self.assertEqual(retry["expected"], "返回")
+        self.assertEqual(retry["action"], "Click")
+        self.assertEqual(business_next(retry), ["PatrolVerifyMainAfterCycle"])
 
     def test_management_resume_accepts_any_main_tank_on_exit(self):
         next_nodes = self.pipeline["PatrolVerifyMainAfterCycle"]["next"]
