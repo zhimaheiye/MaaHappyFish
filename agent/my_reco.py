@@ -25,6 +25,7 @@ try:
         golden_dolphin_state,
         shake_game_state,
         gem_collect_state,
+        mobile_ad_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -37,6 +38,7 @@ except ImportError:
         golden_dolphin_state,
         shake_game_state,
         gem_collect_state,
+        mobile_ad_state,
     )
 
 timer_state = {
@@ -672,13 +674,35 @@ class CheckFishingCastLimitReco(CustomRecognition):
         context: Context,
         argv: CustomRecognition.AnalyzeArg,
     ) -> Optional[RectType]:
-        if fishing_state.get("cast_count", 0) >= fishing_state.get("max_casts", 5):
+        max_casts = fishing_state.get("max_casts", 0)
+        if max_casts > 0 and fishing_state.get("cast_count", 0) >= max_casts:
             print(
                 f"[钓鱼达人] 判定已达最大安全甩杆上限 ({fishing_state['cast_count']}/{fishing_state['max_casts']})，安全停止任务",
                 flush=True,
             )
             return (0, 0, 10, 10)
         return None
+
+
+@AgentServer.custom_recognition("CheckFishingDailyReselectOrdinaryReco")
+class CheckFishingDailyReselectOrdinaryReco(CustomRecognition):
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        if not fishing_state.get("force_ordinary_bait", False):
+            return None
+        try:
+            result = context.run_recognition("FishingBaitAlreadySelected", argv.image)
+            if not result or not result.hit:
+                return None
+            box = tuple(int(value) for value in result.box)
+            print("[钓鱼达人] 日常收尾检测到当前已有鱼饵，准备重新选择普通饵食", flush=True)
+            return box
+        except Exception as e:
+            print(f"[钓鱼达人] 日常普通饵食重选门禁异常: {e}", flush=True)
+            return None
 
 
 @AgentServer.custom_recognition("CheckSeaOtterLimitReco")
@@ -897,3 +921,78 @@ class CheckGemCollectModeReco(CustomRecognition):
         return None
 
 
+@AgentServer.custom_recognition("MobileAdCheckCycleLimitReco")
+class MobileAdCheckCycleLimitReco(CustomRecognition):
+    """
+    检查看广告任务是否已达到目标轮数 (max_cycles):
+    - 若已达到 (completed_cycles >= max_cycles)，返回 (0, 0, 10, 10)，命中该节点走向关闭弹窗;
+    - 若未达到，返回 None，让流水线顺位评估下一个候选节点 MobileAdClickContinueCheck (点击绿色对号)。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        param = parse_dict_param(getattr(argv, "custom_recognition_param", None))
+        max_cycles = safe_int(param.get("max_cycles", mobile_ad_state.get("max_cycles", 3)), 3)
+        curr = mobile_ad_state.get("completed_cycles", 0)
+
+        if curr >= max_cycles:
+            return (0, 0, 10, 10)
+
+        return None
+
+
+@AgentServer.custom_recognition("CheckGoldShellPageReco")
+class CheckGoldShellPageReco(CustomRecognition):
+    """
+    金贝壳主页专属门禁：
+    1. 负向门禁：若贝壳分类页特征命中（小章鱼或 [904, 579, 108, 40] '进入'），绝不能误判为金贝壳主页 (Case 1 核心保障)；
+    2. 负向门禁：若主鱼缸特征命中，绝不能误判为金贝壳主页；
+    3. 正向门禁：必须存在左上角返回按钮 (Template 贝壳页面_返回.png 或 OCR '返回' [0, 0, 189, 146])；
+    4. 专属验证：在分类页特征彻底消失且存在返回按钮的前提下，确认处于金贝壳场景。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        try:
+            # 1. 负向门禁：分类页小章鱼命中 -> 绝非金贝壳主页 (Case 1)
+            cat_res = context.run_recognition("GoldShellCouponVerifyCategoryPage", argv.image)
+            if cat_res and cat_res.hit:
+                return None
+
+            # 2. 负向门禁：分类页进入按钮命中 -> 绝非金贝壳主页
+            enter_res = context.run_recognition("GoldShellCouponEnterGold", argv.image)
+            if enter_res and enter_res.hit:
+                return None
+
+            # 3. 负向门禁：主界面特征命中 -> 绝非金贝壳主页
+            tank_res = context.run_recognition("GoldShellCouponVerifyTankInternal", argv.image)
+            if tank_res and tank_res.hit:
+                return None
+
+            # 4. 正向门禁：左上角返回按钮必须存在
+            back_res = context.run_recognition("GoldShellCouponReturnButtonCheck", argv.image)
+            if not back_res or not back_res.hit:
+                return None
+
+            box = tuple(int(v) for v in back_res.box) if back_res.box else (0, 0, 189, 146)
+            return box
+        except Exception as e:
+            print(f"[兑换金贝壳券] 金贝壳主页专属门禁识别异常: {e}", flush=True)
+            return None
+
+
+@AgentServer.custom_recognition("CheckExchangeDisappearedReco")
+class CheckExchangeDisappearedReco(CustomRecognition):
+    """
+    检查金贝壳兑换按钮是否已经消失 (方案 A 状态验证):
+    检查 ROI [1136, 41, 91, 35] 是否还存在 '兑换/兌換'。
+    - 若仍检测到兑换按钮，说明状态未变，返回 None；
+    - 若未检测到兑换按钮，说明状态已变（兑换成功/已领走），返回 (0, 0, 10, 10)。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        try:
+            res = context.run_recognition("GoldShellCouponCheckExchange", argv.image)
+            if res and res.hit:
+                # 兑换按钮依然存在，未消失
+                return None
+            # 兑换按钮已消失，验证通过
+            return (0, 0, 10, 10)
+        except Exception as e:
+            print(f"[兑换金贝壳券] 检查兑换按钮消失状态异常: {e}", flush=True)
+            return None

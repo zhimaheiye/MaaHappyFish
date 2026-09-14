@@ -8,6 +8,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemStartRouter"
         ]
     },
@@ -19,6 +20,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemStartFromFriendList",
             "FriendGemStartManateeTank",
             "FriendGemStartInFriendTank",
@@ -47,6 +49,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemFriendRouter"
         ]
     },
@@ -65,6 +68,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ManateeTankIdentity"
         ]
     },
@@ -83,6 +87,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemFriendRouter"
         ]
     },
@@ -94,6 +99,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemAddFriendPage",
             "FriendGemWelcomePopup",
             "FriendGemSpecialPopup",
@@ -123,6 +129,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemDone"
         ]
     },
@@ -136,6 +143,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemFriendRouter"
         ]
     },
@@ -156,6 +164,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemFriendRouter"
         ]
     },
@@ -181,6 +190,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemFriendRouter"
         ]
     },
@@ -199,6 +209,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ManateeTankIdentity"
         ]
     },
@@ -217,6 +228,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
         ]
     },
@@ -240,6 +252,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemQuickCollectVerifyExhausted"
         ]
     },
@@ -262,6 +275,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
         ],
         "on_error": [
@@ -279,6 +293,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemImageFallbackRouter"
         ]
     },
@@ -301,6 +316,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemImageFallbackRouter"
         ]
     },
@@ -312,6 +328,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemAddFriendPage",
             "FriendGemWelcomePopup",
             "FriendGemSpecialPopup",
@@ -333,6 +350,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
         ]
     },
@@ -353,6 +371,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemRecordAttempt"
         ]
     },
@@ -365,6 +384,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemImageFallbackRouter"
         ]
     },
@@ -377,6 +397,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
         ]
     },
@@ -390,6 +411,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemImageFallbackRouter"
         ]
     },
@@ -416,6 +438,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemStepIndex"
         ]
     },
@@ -428,6 +451,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemResetAttempts"
         ]
     },
@@ -440,6 +464,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemFriendRouter"
         ]
     },
@@ -455,6 +480,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FriendGemStartRouter"
         ],
         "focus": {

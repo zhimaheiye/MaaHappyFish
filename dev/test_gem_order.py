@@ -9,6 +9,7 @@ GLOBAL_HANDLERS = [
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
     "[JumpBack]GlobalNewsPopup",
+    "[JumpBack]GlobalLevelUpPopup",
 ]
 
 

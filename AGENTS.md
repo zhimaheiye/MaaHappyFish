@@ -22,7 +22,7 @@
 | 维护"海星喂食"定时机制 | `docs/features/starfish-feeding.md` |
 | 维护"鱼食预算"计算逻辑 | `docs/features/fish-food-budget.md` |
 | 维护"购买鱼食"独立模块 | `docs/features/buy-fish-food.md` |
-| 维护"活动页面/每日签到/特惠礼包"全局处理 | `docs/features/daily-sign.md` |
+| 维护"活动页面/每日签到/特惠礼包/快报/升级弹窗"全局处理 | `docs/features/daily-sign.md` |
 | 维护"开贝壳"活动自动化 | `docs/features/open-shell.md` |
 | 维护"宝石礼盒兑换"七配方自动化 | `docs/features/gem-gift-box.md` |
 | 维护"宝石订单"完成与丢弃循环 | `docs/features/gem-order.md` |
@@ -36,6 +36,7 @@
 | 维护"摇一摇小游戏"活动自动化 | `docs/features/shake-game.md` |
 | 维护"驯鹿鱼送收礼物"日常子任务 | `docs/features/reindeer-fish.md` |
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
+| 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 
 ## 新 Agent 对话接手顺序（必须执行）

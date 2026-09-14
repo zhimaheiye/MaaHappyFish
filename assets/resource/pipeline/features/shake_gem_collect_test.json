@@ -7,6 +7,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ShakeGemCollectVerifyTank"
         ]
     },
@@ -24,6 +25,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ShakeGemCollectActionNode"
         ]
     },
@@ -36,6 +38,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ShakeGemCollectSweepBottom"
         ]
     },
@@ -60,6 +63,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ShakeGemCollectTestDone"
         ]
     },

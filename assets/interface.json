@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.4",
+    "version": "0.5.5",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -177,6 +177,30 @@
             "entry": "ShakeGemCollectTestTask",
             "default_check": false,
             "description": "实验任务：在主鱼缸连续触发设备摇晃，并在摇晃结束后执行底部滑动收宝，用于实机验证摇晃是否可以使宝石脱落。"
+        },
+        {
+            "name": "兑换金贝壳券",
+            "entry": "GoldShellCouponTask",
+            "default_check": false,
+            "description": "前往主鱼缸贝壳分类页进入金贝壳，并在有可兑换时完成金贝壳券兑换，随后安全返回主鱼缸。"
+        },
+        {
+            "name": "模拟器看广告",
+            "entry": "EmulatorAdTask",
+            "default_check": false,
+            "description": "在 MuMu 模拟器 1280x720 画面中自动识别看视频赚大奖入口、广告关闭、转盘停止与奖励弹窗，按配置轮数连续执行。",
+            "option": [
+                "手机广告轮数"
+            ]
+        },
+        {
+            "name": "手机看广告",
+            "entry": "MobileAdTask",
+            "default_check": false,
+            "description": "专为 Android 真实手机环境（1600x720 等比缩放）打造的看广告与转盘领奖自动化，按配置轮数连续执行。",
+            "option": [
+                "手机广告轮数"
+            ]
         }
     ],
 
@@ -884,6 +908,14 @@
                     }
                 },
                 {
+                    "name": "兑换金贝壳券",
+                    "pipeline_override": {
+                        "DailyRoutineEnableGoldShellCoupon": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
                     "name": "乐队鱼",
                     "pipeline_override": {
                         "DailyRoutineEnableBandFish": {
@@ -911,6 +943,14 @@
                     "name": "钓鱼达人",
                     "pipeline_override": {
                         "DailyRoutineEnableFishing": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "宝石礼盒兑换",
+                    "pipeline_override": {
+                        "DailyRoutineEnableGemGiftBox": {
                             "enabled": true
                         }
                     }
@@ -957,6 +997,95 @@
                         "PatrolSetGemCollectMode": {
                             "custom_action_param": {
                                 "mode": "SHAKE"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "手机广告轮数": {
+            "type": "select",
+            "label": "连续看广告轮数",
+            "description": "选择单次运行连续观看并领取的广告轮数（每轮包含一条视频广告与一次转盘）",
+            "default_case": "3 轮(默认测试)",
+            "cases": [
+                {
+                    "name": "3 轮(默认测试)",
+                    "pipeline_override": {
+                        "MobileAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 3,
+                                "log_tag": "手机看广告"
+                            }
+                        },
+                        "MobileAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 3
+                            }
+                        },
+                        "EmulatorAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 3,
+                                "log_tag": "模拟器看广告"
+                            }
+                        },
+                        "EmulatorAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 3
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "5 轮",
+                    "pipeline_override": {
+                        "MobileAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 5,
+                                "log_tag": "手机看广告"
+                            }
+                        },
+                        "MobileAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 5
+                            }
+                        },
+                        "EmulatorAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 5,
+                                "log_tag": "模拟器看广告"
+                            }
+                        },
+                        "EmulatorAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 5
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "10 轮",
+                    "pipeline_override": {
+                        "MobileAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 10,
+                                "log_tag": "手机看广告"
+                            }
+                        },
+                        "MobileAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 10
+                            }
+                        },
+                        "EmulatorAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 10,
+                                "log_tag": "模拟器看广告"
+                            }
+                        },
+                        "EmulatorAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 10
                             }
                         }
                     }

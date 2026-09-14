@@ -10,6 +10,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSetGemCollectMode",
             "PatrolStartRouter"
@@ -27,19 +29,21 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolStartRouter"
         ]
     },
-    "PatrolShellPagePopup": {
+    "PatrolShellEntryMisTouchPopup": {
         "recognition": "TemplateMatch",
-        "template": "开贝壳_识别.png",
+        "template": "开贝壳_误触识别.png",
         "threshold": 0.8,
         "roi": [
-            508,
-            70,
-            263,
-            201
+            498,
+            80,
+            280,
+            191
         ],
         "action": "DoNothing",
         "next": [
@@ -47,6 +51,42 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolShellEntryMisTouchReturn"
+        ]
+    },
+    "PatrolShellEntryMisTouchReturn": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到误触开贝壳入口页，已点击左上角返回并继续巡检。"
+        }
+    },
+    "PatrolShellPagePopup": {
+        "recognition": "TemplateMatch",
+        "template": "开贝壳_识别.png",
+        "threshold": 0.8,
+        "roi": [
+            37,
+            68,
+            226,
+            142
+        ],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolShellPageReturn"
         ]
     },
@@ -74,6 +114,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolStartAtFoodPopupAbort",
             "PatrolStartAtUniversalStarfish",
@@ -114,6 +156,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectCuteStarfishTab"
         ]
@@ -133,6 +177,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenUniversalStarfish"
         ]
@@ -157,6 +203,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank1Main"
         ]
@@ -180,6 +228,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1"
         ]
@@ -204,6 +254,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank1FromPicker"
         ]
@@ -228,6 +280,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank1FromPicker"
         ]
@@ -250,6 +304,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank1Main"
         ],
@@ -277,6 +333,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1"
         ],
@@ -293,6 +351,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1ShakeGem",
             "PatrolCollectTank1Bubble"
@@ -315,6 +375,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1ImageWindow"
         ]
@@ -328,6 +390,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1Bubble"
         ],
@@ -364,6 +428,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1ImageWindow"
         ]
@@ -389,6 +455,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank2FromPicker"
         ],
@@ -414,6 +482,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank2Main"
         ],
@@ -441,6 +511,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2"
         ],
@@ -457,6 +529,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2ShakeGem",
             "PatrolCollectTank2Bubble"
@@ -479,6 +553,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2ImageWindow"
         ]
@@ -492,6 +568,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2Bubble"
         ],
@@ -528,6 +606,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2ImageWindow"
         ]
@@ -553,6 +633,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectTank3FromPicker"
         ],
@@ -578,6 +660,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank3Main"
         ],
@@ -605,6 +689,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3"
         ],
@@ -621,6 +707,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3ShakeGem",
             "PatrolCollectTank3Bubble"
@@ -643,6 +731,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3ImageWindow"
         ]
@@ -656,6 +746,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3Bubble"
         ],
@@ -692,6 +784,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3ImageWindow"
         ]
@@ -717,6 +811,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyManagement"
         ],
@@ -743,6 +839,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolOpenUniversalStarfish"
         ],
@@ -770,6 +868,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectCuteStarfishTab"
         ],
@@ -797,6 +897,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyCuteStarfish"
         ],
@@ -823,6 +925,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteReplenish"
         ],
@@ -850,6 +954,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteFoodRouter"
         ],
@@ -865,6 +971,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteNormalFood",
             "PatrolCuteSpecialFood",
@@ -885,6 +993,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteAfterFeedRouter"
         ]
@@ -894,27 +1004,29 @@
         "template": "海星_加号.png",
         "threshold": 0.85,
         "roi": [
-            457,
-            216,
-            189,
-            186
+            450,
+            151,
+            199,
+            191
         ],
         "action": "Click",
         "target": [
-            579,
-            210,
-            196,
-            195
+            649,
+            204,
+            57,
+            91
         ],
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-萌海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
+            "Node.Action.Succeeded": "[巡检-萌海星] 检测到深海专用鱼食入口，已点击三种鱼食布局中的对应专用鱼食执行投放，正在验证结果。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteAfterFeedRouter"
         ]
@@ -927,6 +1039,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolCuteFeedReturnedToPanel",
@@ -951,6 +1065,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectGoodStarfishTab"
         ]
@@ -975,6 +1091,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyGoodStarfish"
         ],
@@ -1001,6 +1119,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodReplenish"
         ],
@@ -1028,6 +1148,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodFoodRouter"
         ],
@@ -1043,6 +1165,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodNormalFood",
             "PatrolGoodSpecialFood",
@@ -1063,6 +1187,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodAfterFeedRouter"
         ]
@@ -1072,27 +1198,29 @@
         "template": "海星_加号.png",
         "threshold": 0.85,
         "roi": [
-            457,
-            216,
-            189,
-            186
+            450,
+            151,
+            199,
+            191
         ],
         "action": "Click",
         "target": [
-            579,
-            210,
-            196,
-            195
+            649,
+            204,
+            57,
+            91
         ],
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-乖海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
+            "Node.Action.Succeeded": "[巡检-乖海星] 检测到深海专用鱼食入口，已点击三种鱼食布局中的对应专用鱼食执行投放，正在验证结果。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodAfterFeedRouter"
         ]
@@ -1105,6 +1233,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolGoodFeedReturnedToPanel",
@@ -1129,6 +1259,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectBrightStarfishTab"
         ]
@@ -1153,6 +1285,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyBrightStarfish"
         ],
@@ -1179,6 +1313,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightReplenish"
         ],
@@ -1206,6 +1342,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightFoodRouter"
         ],
@@ -1221,6 +1359,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightNormalFood",
             "PatrolBrightSpecialFood",
@@ -1241,6 +1381,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightAfterFeedRouter"
         ]
@@ -1250,27 +1392,29 @@
         "template": "海星_加号.png",
         "threshold": 0.85,
         "roi": [
-            457,
-            216,
-            189,
-            186
+            450,
+            151,
+            199,
+            191
         ],
         "action": "Click",
         "target": [
-            579,
-            210,
-            196,
-            195
+            649,
+            204,
+            57,
+            91
         ],
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-亮海星] 检测到深海专用鱼食入口，已执行第一格专用鱼食投放，正在验证结果。"
+            "Node.Action.Succeeded": "[巡检-亮海星] 检测到深海专用鱼食入口，已点击三种鱼食布局中的对应专用鱼食执行投放，正在验证结果。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightAfterFeedRouter"
         ]
@@ -1283,6 +1427,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolFoodPopupStillOpen",
             "PatrolBrightFeedReturnedToPanel",
@@ -1307,6 +1453,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolExitUniversalStarfish"
         ]
@@ -1345,6 +1493,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyManagementAfterStarfish"
         ],
@@ -1371,6 +1521,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolExitManagement"
         ],
@@ -1398,6 +1550,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyMainAfterCycle"
         ],
@@ -1413,6 +1567,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyMainTank1AfterCycle",
             "PatrolVerifyMainTank2AfterCycle",
@@ -1440,6 +1596,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
@@ -1464,6 +1622,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
@@ -1488,6 +1648,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolWaitLoop"
         ]
@@ -1501,6 +1663,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolTimerDue",
             "PatrolMagicSummonDue",
@@ -1521,6 +1685,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolStartRouter"
         ],

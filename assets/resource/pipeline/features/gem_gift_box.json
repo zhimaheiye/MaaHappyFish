@@ -7,6 +7,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "GemGiftBoxUnexpectedDialog",
             "GemGiftBoxRun",
             "GemGiftBoxOpenEntry",
@@ -48,6 +49,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "GemGiftBoxOpenEntry"
         ],
         "on_error": [
@@ -74,6 +76,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "GemGiftBoxRun"
         ],
         "on_error": [
@@ -101,6 +104,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "GemGiftBoxReturn"
         ],
         "on_error": [
@@ -217,6 +221,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "GemGiftBoxVerifyTank"
         ],
         "on_error": [
@@ -227,11 +232,21 @@
         "recognition": "TemplateMatch",
         "template": "主界面特征.png",
         "threshold": 0.7,
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "GemGiftBoxDoneAction",
         "timeout": 4000,
         "focus": {
             "Node.Action.Succeeded": "[宝石礼盒] 已确认返回主鱼缸，任务完成。"
         },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ],
         "on_error": [
             "GemGiftBoxAbort"
         ]

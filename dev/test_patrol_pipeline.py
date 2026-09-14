@@ -30,6 +30,8 @@ GLOBAL_HANDLERS = {
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
     "[JumpBack]GlobalNewsPopup",
+    "[JumpBack]GlobalLevelUpPopup",
+    "[JumpBack]PatrolShellEntryMisTouchPopup",
     "[JumpBack]PatrolShellPagePopup",
 }
 
@@ -82,14 +84,59 @@ class PatrolPipelineTest(unittest.TestCase):
                     self.assertNotIn("target", node, name)
 
     def test_open_shell_page_is_verified_before_clicking_return(self):
+        mis_touch_template_path = os.path.join(
+            ROOT, "assets", "resource", "image", "开贝壳_误触识别.png"
+        )
+        self.assertTrue(
+            os.path.isfile(mis_touch_template_path),
+            "开贝壳_误触识别.png 模板文件必须存在",
+        )
+
+        patrol_entry = self.pipeline["PatrolShellEntryMisTouchPopup"]
+        self.assertEqual(patrol_entry["recognition"], "TemplateMatch")
+        self.assertEqual(patrol_entry["template"], "开贝壳_误触识别.png")
+        self.assertEqual(patrol_entry["roi"], [498, 80, 280, 191])
+        self.assertEqual(patrol_entry["action"], "DoNothing")
+        self.assertNotIn("target", patrol_entry)
+        self.assertEqual(
+            business_next(patrol_entry), ["PatrolShellEntryMisTouchReturn"]
+        )
+
+        patrol_entry_return = self.pipeline["PatrolShellEntryMisTouchReturn"]
+        self.assertEqual(patrol_entry_return["recognition"], "OCR")
+        self.assertEqual(patrol_entry_return["expected"], "返回")
+        self.assertEqual(patrol_entry_return["roi"], [1, 0, 189, 119])
+        self.assertEqual(patrol_entry_return["action"], "Click")
+        self.assertNotIn("target", patrol_entry_return)
+
+        for node_name, node in self.pipeline.items():
+            successors = node.get("next", [])
+            if "[JumpBack]PatrolShellPagePopup" not in successors:
+                continue
+            self.assertIn(
+                "[JumpBack]PatrolShellEntryMisTouchPopup",
+                successors,
+                node_name,
+            )
+            self.assertLess(
+                successors.index("[JumpBack]PatrolShellEntryMisTouchPopup"),
+                successors.index("[JumpBack]PatrolShellPagePopup"),
+                node_name,
+            )
+
+        # 1-8. Verify 开贝壳_识别.png template and ROI [37, 68, 226, 142] across all 3 usage sites
+        shell_template_path = os.path.join(ROOT, "assets", "resource", "image", "开贝壳_识别.png")
+        self.assertTrue(os.path.isfile(shell_template_path), "开贝壳_识别.png 模板文件必须存在")
+
         handler = self.pipeline["PatrolShellPagePopup"]
         self.assertEqual(handler["recognition"], "TemplateMatch")
         self.assertEqual(handler["template"], "开贝壳_识别.png")
-        self.assertEqual(handler["roi"], [508, 70, 263, 201])
+        self.assertEqual(handler["roi"], [37, 68, 226, 142])
         self.assertEqual(handler["action"], "DoNothing")
         self.assertNotIn("target", handler)
         self.assertEqual(business_next(handler), ["PatrolShellPageReturn"])
 
+        # 9. 贝壳页面_返回.png 仍然只能在页面本体门禁之后点击
         return_node = self.pipeline["PatrolShellPageReturn"]
         self.assertEqual(return_node["recognition"], "TemplateMatch")
         self.assertEqual(return_node["template"], "贝壳页面_返回.png")
@@ -97,12 +144,7 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(return_node["action"], "Click")
         self.assertNotIn("target", return_node)
 
-        start_page = self.open_shell_pipeline["OpenShellStartPage"]
-        self.assertEqual(start_page["recognition"], "TemplateMatch")
-        self.assertEqual(start_page["template"], "开贝壳_识别.png")
-        self.assertEqual(start_page["roi"], [508, 70, 263, 201])
-        self.assertEqual(start_page["action"], "DoNothing")
-        self.assertEqual(business_next(start_page), ["OpenShellRoundStart"])
+        # OpenShellTask entry routing (supports deep resume at start page or entry from main tank)
         self.assertEqual(
             business_next(self.open_shell_pipeline["OpenShellTask"]),
             ["OpenShellStartPage", "OpenShellEntry", "OpenShellAbort"],
@@ -114,12 +156,89 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(entry["roi"], [289, 492, 168, 139])
         self.assertEqual(entry["action"], "Click")
         self.assertNotIn("target", entry)
-        self.assertEqual(business_next(entry), ["OpenShellStartPage"])
+        # 1. OpenShellEntry 的业务 next 不再直接是 OpenShellStartPage
+        self.assertNotIn("OpenShellStartPage", business_next(entry))
+        # 2. OpenShellEntry -> OpenShellEnter
+        self.assertEqual(business_next(entry), ["OpenShellEnter"])
+        self.assertEqual(entry.get("on_error"), ["OpenShellAbort"])
         self.assertTrue(
             os.path.isfile(
                 os.path.join(ROOT, "assets", "resource", "image", "开贝壳_入口.png")
             )
         )
+
+        # 3. OpenShellEnter: OCR, expected "^进入$", roi [271, 573, 101, 45], action Click
+        enter_node = self.open_shell_pipeline["OpenShellEnter"]
+        self.assertEqual(enter_node["recognition"], "OCR")
+        self.assertEqual(enter_node["expected"], "^进入$")
+        self.assertEqual(enter_node["roi"], [271, 573, 101, 45])
+        self.assertEqual(enter_node["action"], "Click")
+        self.assertNotIn("target", enter_node)
+        self.assertEqual(enter_node.get("on_error"), ["OpenShellAbort"])
+        # 4. OpenShellEnter -> OpenShellStartPage
+        self.assertEqual(business_next(enter_node), ["OpenShellStartPage"])
+
+        # 5. OpenShellStartPage ROI == [37, 68, 226, 142]
+        start_page = self.open_shell_pipeline["OpenShellStartPage"]
+        self.assertEqual(start_page["recognition"], "TemplateMatch")
+        self.assertEqual(start_page["template"], "开贝壳_识别.png")
+        self.assertEqual(start_page["roi"], [37, 68, 226, 142])
+        self.assertEqual(start_page["action"], "DoNothing")
+        self.assertEqual(business_next(start_page), ["OpenShellRoundStart"])
+
+        # 6. CollectFish.HandleShellPage ROI == [37, 68, 226, 142]
+        collect_handler = self.collect_fish_pipeline["HandleShellPage"]
+        self.assertEqual(collect_handler["template"], "开贝壳_识别.png")
+        self.assertEqual(collect_handler["roi"], [37, 68, 226, 142])
+        self.assertEqual(collect_handler["action"], "DoNothing")
+        self.assertEqual(business_next(collect_handler), ["HandleShellPageReturn"])
+
+        collect_return = self.collect_fish_pipeline["HandleShellPageReturn"]
+        self.assertEqual(collect_return["template"], "贝壳页面_返回.png")
+        self.assertEqual(collect_return["roi"], [0, 0, 250, 150])
+        self.assertEqual(collect_return["action"], "Click")
+        self.assertEqual(business_next(collect_return), ["ResumeHarvest"])
+
+        collect_entry = self.collect_fish_pipeline["HandleShellEntryMisTouch"]
+        self.assertEqual(collect_entry["template"], "开贝壳_误触识别.png")
+        self.assertEqual(collect_entry["roi"], [498, 80, 280, 191])
+        self.assertEqual(collect_entry["action"], "DoNothing")
+        self.assertEqual(
+            business_next(collect_entry), ["HandleShellEntryMisTouchReturn"]
+        )
+        collect_entry_return = self.collect_fish_pipeline[
+            "HandleShellEntryMisTouchReturn"
+        ]
+        self.assertEqual(collect_entry_return["recognition"], "OCR")
+        self.assertEqual(collect_entry_return["expected"], "返回")
+        self.assertEqual(collect_entry_return["roi"], [1, 0, 189, 119])
+        self.assertEqual(collect_entry_return["action"], "Click")
+        self.assertNotIn("target", collect_entry_return)
+        self.assertEqual(business_next(collect_entry_return), ["ResumeHarvest"])
+
+        for router_name in ("ResumeHarvest", "CheckDutyCycle"):
+            route = business_next(self.collect_fish_pipeline[router_name])
+            self.assertLess(
+                route.index("HandleShellEntryMisTouch"),
+                route.index("HandleShellPage"),
+            )
+
+        # 10. 原 OpenShell 后半段拓扑保持不变
+        self.assertEqual(business_next(self.open_shell_pipeline["OpenShellRoundStart"]), ["OpenShellOpenFirst"])
+        self.assertEqual(business_next(self.open_shell_pipeline["OpenShellOpenFirst"]), ["OpenShellResultRouter"])
+        self.assertEqual(
+            business_next(self.open_shell_pipeline["OpenShellResultRouter"]),
+            ["OpenShellOctopus", "OpenShellFinish", "OpenShellContinue"],
+        )
+        self.assertEqual(business_next(self.open_shell_pipeline["OpenShellContinue"]), ["OpenShellResultRouter"])
+        self.assertEqual(business_next(self.open_shell_pipeline["OpenShellOctopus"]), ["OpenShellFinish"])
+        self.assertEqual(business_next(self.open_shell_pipeline["OpenShellFinish"]), ["OpenShellConfirmReturn"])
+        self.assertEqual(business_next(self.open_shell_pipeline["OpenShellConfirmReturn"]), ["OpenShellLoopRouter"])
+        self.assertEqual(
+            business_next(self.open_shell_pipeline["OpenShellLoopRouter"]),
+            ["OpenShellShouldContinue", "OpenShellDone"],
+        )
+        self.assertEqual(business_next(self.open_shell_pipeline["OpenShellShouldContinue"]), ["OpenShellRoundStart"])
 
         done = self.open_shell_pipeline["OpenShellDone"]
         self.assertEqual(done["recognition"], "OCR")
@@ -135,20 +254,9 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(verify_main["action"], "DoNothing")
         self.assertEqual(verify_main["on_error"], ["OpenShellAbort"])
 
-        collect_handler = self.collect_fish_pipeline["HandleShellPage"]
-        self.assertEqual(collect_handler["template"], "开贝壳_识别.png")
-        self.assertEqual(collect_handler["roi"], [508, 70, 263, 201])
-        self.assertEqual(collect_handler["action"], "DoNothing")
-        self.assertEqual(business_next(collect_handler), ["HandleShellPageReturn"])
-
-        collect_return = self.collect_fish_pipeline["HandleShellPageReturn"]
-        self.assertEqual(collect_return["template"], "贝壳页面_返回.png")
-        self.assertEqual(collect_return["roi"], [0, 0, 250, 150])
-        self.assertEqual(collect_return["action"], "Click")
-        self.assertEqual(business_next(collect_return), ["ResumeHarvest"])
-
         for tank in (1, 2, 3):
             sweep = self.pipeline[f"PatrolSweepTank{tank}AfterBubble"]
+            self.assertIn("[JumpBack]PatrolShellEntryMisTouchPopup", sweep["next"])
             self.assertIn("[JumpBack]PatrolShellPagePopup", sweep["next"])
 
     def test_start_router_supports_known_resume_stages(self):
@@ -286,8 +394,13 @@ class PatrolPipelineTest(unittest.TestCase):
 
             special = self.pipeline[f"Patrol{key}SpecialFood"]
             self.assertEqual(special["template"], "海星_加号.png")
-            self.assertEqual(special["roi"], [457, 216, 189, 186])
-            self.assertEqual(special["target"], [579, 210, 196, 195])
+            self.assertEqual(special["roi"], [450, 151, 199, 191])
+            self.assertEqual(special["target"], [649, 204, 57, 91])
+            self.assertLessEqual(
+                special["roi"][0] + special["roi"][2],
+                special["target"][0],
+                f"{key} 的鱼食点击区不得与加号门禁重叠",
+            )
 
             after = self.pipeline[f"Patrol{key}AfterFeedRouter"]
             self.assertEqual(after["recognition"], "DirectHit")
@@ -383,6 +496,7 @@ class PatrolPipelineTest(unittest.TestCase):
             "PatrolMagicConfirmPopup": ("绿色勾选按钮.png", [751, 404, 153, 150]),
             "PatrolGemFusionOpenTreasure": ("右下角_宝箱.png", [1120, 562, 141, 141]),
             "PatrolGemFusionClickEntry": ("宝石融合入口.png", [632, 591, 135, 128]),
+            "PatrolGemFusionPutInStorage": ("宝石融合_产物识别.png", [172, 128, 230, 212]),
             "PatrolGemFusionVerifyPage": ("宝石融合页面.png", [549, 0, 178, 242]),
         }
         for node_name, (template, roi) in expected.items():
@@ -395,10 +509,17 @@ class PatrolPipelineTest(unittest.TestCase):
                 ),
                 template,
             )
-        self.assertEqual(
-            self.pipeline["PatrolGemFusionPutInStorage"]["roi"],
-            [498, 486, 283, 138],
-        )
+        product = self.pipeline["PatrolGemFusionPutInStorage"]
+        self.assertEqual(product["action"], "DoNothing")
+        self.assertEqual(business_next(product), ["PatrolGemFusionConfirmPutInStorage"])
+
+        store = self.pipeline["PatrolGemFusionConfirmPutInStorage"]
+        self.assertEqual(store["recognition"], "OCR")
+        self.assertEqual(store["expected"], "放入仓库")
+        self.assertEqual(store["roi"], [565, 537, 152, 42])
+        self.assertEqual(store["action"], "Click")
+        self.assertNotIn("target", store)
+        self.assertEqual(business_next(store), ["PatrolGemFusionVerifyPage"])
         self.assertEqual(
             self.pipeline["PatrolGemFusionClickSynthesize"]["roi"],
             [825, 556, 178, 140],
@@ -458,7 +579,8 @@ class PatrolPipelineTest(unittest.TestCase):
         for node_name, fragments in {
             "PatrolMagicRevealResult": ("上一轮", "揭晓"),
             "PatrolMagicConfirmPopup": ("已启动", "魔力召唤"),
-            "PatrolGemFusionPutInStorage": ("上一轮", "放入仓库"),
+            "PatrolGemFusionPutInStorage": ("上一轮", "产物"),
+            "PatrolGemFusionConfirmPutInStorage": ("放入仓库", "本轮合成"),
             "PatrolGemFusionClickSynthesize": ("已启动", "宝石融合"),
         }.items():
             focus = " ".join(self.pipeline[node_name].get("focus", {}).values())

@@ -11,7 +11,10 @@
 graph TD
     A[CollectFishTask (入口)] --> B[ResumeHarvest]
     B -->|DirectHit| C{分发判断}
-    C --> D[HandleShellPage 页面本体门禁]
+    C --> D0[HandleShellEntryMisTouch 第一层误触门禁]
+    D0 --> D1[OCR 点击左上角返回]
+    D1 --> B
+    C --> D[HandleShellPage 大章鱼主页门禁]
     D --> D2[HandleShellPageReturn 点击返回]
     D2 --> B
     C --> E[CloseFeedPopup]
@@ -24,7 +27,7 @@ graph TD
 - **核心识别**: `TemplateMatch` 金币气泡.png (`ROI: [428,126,679,360]`, `threshold: 0.75`)
 - **空中双倍收取**: 每次气泡点击后立即执行 `(221,663) -> (1007,663)` 水平滑动，整条轨迹限制在用户指定安全范围 `[201,630,826,66]` 内，再返回气泡识别循环。
 - **循环机制**: `ResumeHarvest` `timeout: -1` 为无底洞中转，保证 Pipeline 存活。
-- **误入开贝壳恢复**: 先在 `[508,70,263,201]` 识别 `开贝壳_识别.png` 确认大章鱼页面，再在 `[0,0,250,150]` 识别并点击 `贝壳页面_返回.png`；返回按钮模板不能单独充当页面门禁。
+- **误入开贝壳恢复**：第一层入口页在 `[498,80,280,191]` 识别 `开贝壳_误触识别.png`，命中后才在 `[1,0,189,119]` OCR 点击左上角“返回”；若已进入第二层大章鱼主页，则仍先在 `[37,68,226,142]` 识别 `开贝壳_识别.png`，再在 `[0,0,250,150]` 识别并点击 `贝壳页面_返回.png`。两层门禁互不替代，返回识别失败时都不盲点。
 
 ## 状态机设计 (CheckDutyCycleReco)
 - **实现层**: Python Custom Recognition (`my_reco.py`)
@@ -71,6 +74,8 @@ graph TD
 
 2026-09-12 已将误入开贝壳页的恢复拆为“页面本体确认 → 返回按钮点击”两步，避免鱼缸管理页的同款返回按钮被误认为大章鱼页面；已完成代码级验证，本次未做模拟器测试。
 
+2026-09-14 用户重新提供第一层入口页模板 `开贝壳_误触识别.png`。收鱼循环现先区分第一层误触页与第二层大章鱼主页：第一层 OCR 点击左上角返回，第二层沿用专用返回模板；代码级验证完成，本次未做模拟器测试。
+
 2026-09-12 新增独立实验任务 `ShakeGemCollectTestTask`（摇一摇收宝石（测试）），用于在主鱼缸验证 MuMu 原生后台 shake 连续模拟能否使鱼身上宝石脱落并由底部滑动收走；该实验任务完全独立，默认未勾选，严禁且未修改正式收鱼产物主干流水线。
 
 2026-09-12 正式支持收宝石双模式（IMAGE 图像识别 / SHAKE MuMu摇晃）：
@@ -83,4 +88,3 @@ graph TD
 - `assets/resource/pipeline/features/shake_gem_collect_test.json` — 摇一摇收宝石独立实验流水线
 - `agent/my_action.py` — `UnifiedShakeGemCollectAction` 摇晃与扫底动作、`SetGemCollectModeAction`
 - `agent/my_reco.py` — `CheckGemCollectModeReco` 模式识别器、`CheckDutyCycleReco` 状态机
-

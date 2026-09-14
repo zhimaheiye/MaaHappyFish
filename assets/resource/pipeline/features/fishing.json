@@ -3,11 +3,35 @@
         "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "ResetFishingStateAction",
+        "custom_action_param": {
+            "max_casts": 0,
+            "bite_mode": "ordinary",
+            "force_ordinary_bait": false
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FishingStartRouter"
+        ]
+    },
+    "FishingDailyTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "ResetFishingStateAction",
+        "custom_action_param": {
+            "max_casts": 5,
+            "bite_mode": "ordinary",
+            "force_ordinary_bait": true
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingStartRouter"
         ]
     },
@@ -19,10 +43,12 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitExhausted",
             "FishingStartAtPurchasePopup",
             "FishingStartAtCatchResult",
             "FishingStartAtWaitingForBite",
+            "FishingDailyReselectOrdinaryBait",
             "FishingStartAtReadyWithBait",
             "FishingStartAtNeedBait",
             "FishingStartAtLocationMap",
@@ -47,6 +73,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingDone"
         ]
     },
@@ -65,6 +92,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingCatchSuccess"
         ]
     },
@@ -84,6 +112,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingPostRoundRouter"
         ],
         "on_error": [
@@ -105,6 +134,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingRound"
         ]
     },
@@ -123,6 +153,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitRouter"
         ]
     },
@@ -141,6 +172,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingLocationRouter"
         ]
     },
@@ -160,6 +192,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingNavActivityGrid"
         ]
     },
@@ -179,6 +212,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingNavOpenAmusement"
         ]
     },
@@ -205,6 +239,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingNavActivityGrid"
         ]
     },
@@ -231,6 +266,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingLocationRouter"
         ]
     },
@@ -249,6 +285,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingSelectLocation_Xinghe"
         ]
     },
@@ -267,6 +304,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitRouter"
         ]
     },
@@ -285,6 +323,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitRouter"
         ]
     },
@@ -303,6 +342,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitRouter"
         ]
     },
@@ -321,6 +361,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitRouter"
         ]
     },
@@ -339,6 +380,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitRouter"
         ]
     },
@@ -357,6 +399,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitRouter"
         ]
     },
@@ -368,8 +411,10 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitExhausted",
             "FishingBaitPurchasePopup",
+            "FishingDailyReselectOrdinaryBait",
             "FishingBaitAlreadySelected",
             "FishingBaitNeedSelect",
             "FishingDone"
@@ -392,6 +437,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingDone"
         ]
     },
@@ -410,7 +456,26 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingRound"
+        ]
+    },
+    "FishingDailyReselectOrdinaryBait": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckFishingDailyReselectOrdinaryReco",
+        "action": "Click",
+        "post_delay": 1500,
+        "focus": {
+            "Node.Recognition.Succeeded": "[钓鱼达人] 日常收尾已确认当前鱼饵状态，正在切换为普通饵食。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FishingBaitExhausted",
+            "FishingSelectCheeseBait"
         ]
     },
     "FishingBaitNeedSelect": {
@@ -435,6 +500,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitExhausted",
             "FishingSelectCheeseBait"
         ]
@@ -449,13 +515,15 @@
             100
         ],
         "threshold": 0.85,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "FishingSelectOrdinaryBaitAction",
         "post_delay": 1500,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitVerifyReady"
         ]
     },
@@ -474,6 +542,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingRound"
         ]
     },
@@ -493,6 +562,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingPostRoundRouter"
         ],
         "on_error": [
@@ -511,6 +581,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitExhausted",
             "FishingCatchSuccess",
             "FishingPostRoundCheckReady",
@@ -539,6 +610,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingLoopRouter"
         ]
     },
@@ -557,6 +629,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingLoopRouter"
         ]
     },
@@ -569,6 +642,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingPostRoundRouter"
         ]
     },
@@ -580,8 +654,10 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitExhausted",
             "FishingLoopCheckLimit",
+            "FishingDailyReselectOrdinaryBait",
             "FishingLoopHasBait",
             "FishingLoopNeedBait",
             "FishingDone"
@@ -596,6 +672,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingDone"
         ]
     },
@@ -614,6 +691,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingRound"
         ]
     },
@@ -632,6 +710,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingBaitRouter"
         ]
     },
@@ -654,6 +733,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingDone"
         ]
     },
@@ -678,6 +758,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "FishingVerifyExitToTank"
         ],
         "on_error": [
@@ -698,6 +779,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailyRoutineReturnIfActive",
             "DailyRoutineStandaloneDone"
         ],

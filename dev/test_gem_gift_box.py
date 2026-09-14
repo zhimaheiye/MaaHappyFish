@@ -18,6 +18,7 @@ GLOBAL_HANDLERS = {
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
     "[JumpBack]GlobalNewsPopup",
+    "[JumpBack]GlobalLevelUpPopup",
 }
 
 
@@ -56,6 +57,12 @@ def test_pipeline_contract():
     assert pipeline["GemGiftBoxRun"]["custom_action"] == "GemGiftBoxExchangeAllAction"
     assert business_next(pipeline["GemGiftBoxRun"]) == ["GemGiftBoxReturn"]
     assert business_next(pipeline["GemGiftBoxReturn"]) == ["GemGiftBoxVerifyTank"]
+    assert pipeline["GemGiftBoxVerifyTank"]["action"] == "Custom"
+    assert pipeline["GemGiftBoxVerifyTank"]["custom_action"] == "GemGiftBoxDoneAction"
+    assert business_next(pipeline["GemGiftBoxVerifyTank"]) == [
+        "DailyRoutineReturnIfActive",
+        "DailyRoutineStandaloneDone",
+    ]
 
 
 def test_card_click_uses_recipe_and_ok_midpoint():

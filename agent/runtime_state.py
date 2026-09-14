@@ -53,14 +53,16 @@ romantic_house_state = {
 
 daily_routine_state = {
     "active": False,
-    "step": "INIT",  # "FREE_GIFT" | "REINDEER_FISH" | "BAND_FISH" | "GOLDEN_DOLPHIN" | "FISHING" | "ROMANTIC_HOUSE" | "ALL_DONE"
+    "step": "INIT",  # "FREE_GIFT" | "REINDEER_FISH" | "GOLD_SHELL_COUPON" | "BAND_FISH" | "GOLDEN_DOLPHIN" | "FISHING" | "GEM_GIFT_BOX" | "ROMANTIC_HOUSE" | "ALL_DONE"
     "queue": [],     # 待执行的后续子任务序列
     "tasks": {
         "FreeGift": {"status": "IDLE"},
         "ReindeerFish": {"status": "IDLE"},
+        "GoldShellCoupon": {"status": "IDLE"},
         "BandFish": {"status": "IDLE", "stage": "PASS1"},
         "GoldenDolphin": {"status": "IDLE"},
         "Fishing": {"status": "IDLE"},
+        "GemGiftBox": {"status": "IDLE"},
         "RomanticHouse": {"status": "IDLE"},
     },
 }
@@ -68,7 +70,9 @@ daily_routine_state = {
 fishing_state = {
     "current_task_id": None,
     "cast_count": 0,
-    "max_casts": 5,
+    "max_casts": 0,  # 0 = 不限次数，直到鱼饵耗尽/无法继续
+    "bite_mode": "ordinary",  # ordinary = 早期形态加速；special = 旧版严格形态
+    "force_ordinary_bait": False,
     "fish_caught": 0,
     "status": "IDLE",  # "DONE" | "NO_STAMINA"
 }
@@ -89,3 +93,11 @@ gem_collect_state = {
     "mode": "IMAGE",  # "IMAGE" | "SHAKE"
 }
 
+mobile_ad_state = {
+    "completed_cycles": 0,
+    "max_cycles": 3,
+    "reward_recorded": False,
+    "log_tag": "手机看广告",
+    "stop_count": 0,
+    "max_stops_per_ad": 5,
+}

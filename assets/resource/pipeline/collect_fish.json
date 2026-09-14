@@ -15,6 +15,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "CollectFishSetGemCollectMode",
             "ResumeHarvest"
         ]
@@ -31,6 +32,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ResumeHarvest"
         ]
     },
@@ -43,9 +45,11 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "CheckScreenStall",
             "HandleCloseAnnouncement",
             "HandleEnterGame",
+            "HandleShellEntryMisTouch",
             "HandleShellPage",
             "CloseFeedPopup",
             "TriggerStarfishFeed",
@@ -79,6 +83,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ResumeHarvest"
         ]
     },
@@ -94,6 +99,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ResumeHarvest"
         ]
     },
@@ -108,6 +114,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ResumeHarvest"
         ]
     },
@@ -150,6 +157,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ResumeHarvest"
         ]
     },
@@ -171,8 +179,10 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "HandleCloseAnnouncement",
             "HandleEnterGame",
+            "HandleShellEntryMisTouch",
             "HandleShellPage",
             "CloseFeedPopup",
             "TriggerStarfishFeed",
@@ -199,6 +209,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "OpenSettingsForStarfish"
         ]
     },
@@ -225,18 +236,19 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ResumeHarvest"
         ]
     },
-    "HandleShellPage": {
+    "HandleShellEntryMisTouch": {
         "recognition": "TemplateMatch",
-        "template": "开贝壳_识别.png",
+        "template": "开贝壳_误触识别.png",
         "threshold": 0.8,
         "roi": [
-            508,
-            70,
-            263,
-            201
+            498,
+            80,
+            280,
+            191
         ],
         "action": "DoNothing",
         "timeout": -1,
@@ -245,6 +257,52 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "HandleShellEntryMisTouchReturn"
+        ]
+    },
+    "HandleShellEntryMisTouchReturn": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "timeout": -1,
+        "focus": {
+            "Node.Action.Succeeded": "[收鱼] 检测到误触开贝壳入口页，已点击左上角返回并继续收取产物。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "ResumeHarvest"
+        ]
+    },
+    "HandleShellPage": {
+        "recognition": "TemplateMatch",
+        "template": "开贝壳_识别.png",
+        "threshold": 0.8,
+        "roi": [
+            37,
+            68,
+            226,
+            142
+        ],
+        "action": "DoNothing",
+        "timeout": -1,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "HandleShellPageReturn"
         ]
     },
@@ -266,6 +324,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ResumeHarvest"
         ]
     },
@@ -278,6 +337,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DismissFishBannerIfOpen",
             "ClickSettingsIcon"
         ],
@@ -302,6 +362,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ClickSettingsIcon"
         ]
     },
@@ -321,6 +382,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "VerifyTankSettings"
         ],
         "on_error": [
@@ -344,6 +406,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "SelectCuteStarfish"
         ],
         "on_error": [
@@ -367,6 +430,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "VerifyStarfishPanel"
         ],
         "on_error": [
@@ -390,6 +454,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ClickReplenishFood"
         ],
         "on_error": [
@@ -413,6 +478,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ClickFishFoodBag"
         ],
         "on_error": [
@@ -437,6 +503,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "CheckFoodFull"
         ],
         "on_error": [
@@ -464,6 +531,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "StarfishReturnFirst"
         ],
         "on_error": [
@@ -483,6 +551,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "StarfishReturnFirst"
         ]
     },
@@ -499,6 +568,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "StarfishReturnFirst"
         ]
     },
@@ -519,6 +589,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "StarfishReturnSecond"
         ],
         "on_error": [
@@ -542,6 +613,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ResumeHarvest"
         ],
         "on_error": [
@@ -557,6 +629,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DismissFishBannerIfOpen_Standalone",
             "ClickSettingsIcon_Standalone"
         ]
@@ -578,6 +651,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ClickSettingsIcon_Standalone"
         ]
     },
@@ -597,6 +671,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "VerifyTankSettings_Standalone"
         ],
         "on_error": [
@@ -620,6 +695,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "SelectCuteStarfish_Standalone"
         ],
         "on_error": [
@@ -643,6 +719,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "VerifyStarfishPanel_Standalone"
         ],
         "on_error": [
@@ -666,6 +743,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ClickReplenishFood_Standalone"
         ],
         "on_error": [
@@ -689,6 +767,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ClickFishFoodBag_Standalone"
         ],
         "on_error": [
@@ -713,6 +792,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "CheckFoodFull_Standalone"
         ],
         "on_error": [
@@ -740,6 +820,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "StarfishReturnFirst_Standalone"
         ],
         "on_error": [
@@ -759,6 +840,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "StarfishReturnFirst_Standalone"
         ]
     },
@@ -775,6 +857,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "StarfishReturnFirst_Standalone"
         ]
     },
@@ -795,6 +878,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "StarfishReturnSecond_Standalone"
         ],
         "on_error": [

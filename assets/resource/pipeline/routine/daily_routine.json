@@ -9,6 +9,11 @@
         "action": "DoNothing",
         "enabled": false
     },
+    "DailyRoutineEnableGoldShellCoupon": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineEnableBandFish": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -29,6 +34,11 @@
         "action": "DoNothing",
         "enabled": false
     },
+    "DailyRoutineEnableGemGiftBox": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineEnableRomanticHouse": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -43,6 +53,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailyRoutineDispatcher"
         ]
     },
@@ -54,12 +65,15 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailyRoutineStepFreeGift",
             "DailyRoutineStepReindeerFish",
+            "DailyRoutineStepGoldShellCoupon",
             "DailyRoutineStepBandFishPass1",
             "DailyRoutineStepGoldenDolphin",
             "DailyRoutineStepShakeGame",
             "DailyRoutineStepFishing",
+            "DailyRoutineStepGemGiftBox",
             "DailyRoutineStepRomanticHouse",
             "DailyRoutineStepBandFishPass2",
             "DailyRoutineStepAllDone"
@@ -77,6 +91,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailyFreeGiftTask"
         ]
     },
@@ -92,7 +107,24 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishGiftTask"
+        ]
+    },
+    "DailyRoutineStepGoldShellCoupon": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "GOLD_SHELL_COUPON"
+        },
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponTask"
         ]
     },
     "DailyRoutineStepBandFishPass1": {
@@ -107,6 +139,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "BandFishStartRouter"
         ]
     },
@@ -122,6 +155,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "GoldenDolphinTask"
         ]
     },
@@ -137,6 +171,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ShakeGameTask"
         ]
     },
@@ -152,7 +187,24 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
-            "FishingTask"
+            "[JumpBack]GlobalLevelUpPopup",
+            "FishingDailyTask"
+        ]
+    },
+    "DailyRoutineStepGemGiftBox": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "GEM_GIFT_BOX"
+        },
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GemGiftBoxTask"
         ]
     },
     "DailyRoutineStepRomanticHouse": {
@@ -167,6 +219,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "RomanticHouseStartRouter"
         ]
     },
@@ -182,6 +235,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailyRoutineBandFishPass2CheckSkip",
             "DailyRoutineBandFishPass2Run"
         ]
@@ -196,6 +250,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailyRoutineDispatcher"
         ]
     },
@@ -208,6 +263,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "BandFishStartRouter"
         ]
     },
@@ -229,6 +285,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailyRoutineDispatcher"
         ]
     },

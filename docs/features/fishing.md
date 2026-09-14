@@ -2,11 +2,11 @@
 
 ## 1. 业务目标与完整产品定位
 
-- **功能定位**：自动前往指定钓场，智能检查并选择黄色奶酪（普通饵食），完成自动甩杆、高速咬钩 QTE 识别、精准收杆与结算奖励领取；在鱼饵耗尽或达到硬安全上限后自动优雅退出。
+- **功能定位**：自动前往指定钓场，完成甩杆、咬钩 QTE 识别、收杆与奖励领取。独立任务可沿用玩家已经选好的鱼饵持续钓到鱼饵耗尽，并可选择普通饵食快速模式或美味饵食稳健模式；日常收尾固定使用普通饵食并钓 5 杆。
 - **阶段演化**：Phase 1 导航已作为正式任务的前半流程，整体任务直接以「钓鱼达人」对外交付。
 - **红线约束与零鱼饵安全纪律**：
   - 未经用户授权严禁真实甩杆消耗鱼饵；
-  - 任务内置单次运行 `max_casts = 5` 双重硬保护（Action 拦截 + Reco 拦截），防止 UI/OCR 异常导致鱼饵超额消耗；
+  - 日常收尾使用 `max_casts = 5` 双重硬保护（Action 拦截 + Reco 拦截）；独立任务使用 `max_casts = 0` 表示不限次数，以鱼饵耗尽/无法继续作为正常终态；
   - 严禁任何形式的自动购买/代币补充行为，无鱼饵时安全退出（`FishingDone`）。
 
 ---
@@ -16,15 +16,18 @@
 任务基于「最深已知阶段优先（Deepest-First）」原则，支持从以下 9 个已知阶段自适应恢复，无需强行倒退回第一步：
 
 ```text
-FishingTask (入口，重置 cast_count=0)
+FishingTask (独立入口：重置计数、不限杆数、读取饵食适配模式)
+FishingDailyTask (日常入口：重置计数、普通饵食、固定 5 杆)
     ↓
 FishingStartRouter (最深已知阶段优先路由，按真实截屏自适应恢复)
     ├─ [最深/终态] 鱼饵已用尽 ─────────> FishingBaitExhausted (模板、ROI [8,369,196,153]) ──> FishingDone
     ├─ 1. [最深/模态] 误入鱼饵购买弹窗 ──> FishingStartAtPurchasePopup (模板匹配右上角红色×) ─> 点击×关闭 ──> FishingBaitRouter
     ├─ 2. 处于结算弹窗 ───────────────> FishingStartAtCatchResult (OCR "恭喜您获得") ─────────> 自动点击「领取」 ─> FishingLoopRouter
     ├─ 3. [特殊] 已甩杆等待咬钩 ───────> FishingStartAtWaitingForBite (OCR "收杆") ──────────> 进入 WatchOnly 高速监听 ─> FishingPostRoundRouter
-    ├─ 4. 已选鱼饵可直接甩杆 ─────────> FishingStartAtReadyWithBait (OCR "更换鱼饵") ─────────> FishingRound (自动钓鱼)
-    ├─ 5. 未选鱼饵场景 ───────────────> FishingStartAtNeedBait (OCR "选择鱼饵") ──────────────> 打开选饵抽屉 ─> 选黄色奶酪 ─> FishingRound
+    ├─ 4. 已选鱼饵可直接甩杆 ─────────> 独立任务：沿用当前鱼饵进入 FishingRound
+    │                                      日常收尾：识别“更换鱼饵”后重选黄色奶酪再进入 FishingRound
+    ├─ 5. 未选鱼饵场景 ───────────────> 普通模式：打开选饵抽屉 ─> 选黄色奶酪 ─> FishingRound
+    │                                      美味模式：不代替玩家选饵，安全退出
     ├─ 6. 钓鱼地点选择大地图 ─────────> FishingStartAtLocationMap (OCR "钓鱼达人") ──────────> 选配置地点 ─> FishingBaitRouter
     ├─ 7. 2×6 游乐园活动弹窗 ──────────> FishingStartAtActivityGrid (模板匹配鱼竿) ───────────> 点击进入大地图
     └─ 8. [最浅] 自身水族箱主界面 ───────> FishingStartAtOwnTank (模板匹配主界面) ─────────────> 点击摩天轮进入游乐园
@@ -42,14 +45,17 @@ FishingStartRouter (最深已知阶段优先路由，按真实截屏自适应恢
 FishingBaitRouter
     ├─ BaitExhausted (模板匹配“鱼饵已用尽”) ─> FishingDone (正常终止)
     ├─ PurchasePopup (模板匹配红色×) ─────> FishingBaitPurchasePopup (点击×关闭弹窗并返回)
-    ├─ AlreadySelected (OCR "更换鱼饵") ──> FishingRound
-    ├─ NeedSelect (OCR "选择鱼饵") ────────> OpenBaitPicker ──> SelectCheese (点击黄色奶酪) ──> VerifyReady ──> FishingRound
+    ├─ AlreadySelected (OCR "更换鱼饵") ──> 独立任务：FishingRound
+    │                                         日常收尾：FishingDailyReselectOrdinaryBait ─> SelectCheese ─> FishingRound
+    ├─ NeedSelect (OCR "选择鱼饵") ────────> 普通模式：OpenBaitPicker ─> SelectCheese ─> VerifyReady ─> FishingRound
+    │                                         美味模式：FishingDone（要求玩家启动前已选好美味饵食）
     └─ NoBait ─────────────────────────────> FishingDone (安全退出)
 
 FishingRound
     ↓ (执行单次甩杆，触控保持 60ms 确保必触发，cast_count += 1)
-FishingCastAndBiteQTEAction (EmulatorExtras 高频抓帧 + 双阶段 ColorGeometry 检测)
-    ↓ (完整形态优先；3 秒后同时允许渐入早期形态，首次命中立即收杆)
+FishingCastAndBiteQTEAction (EmulatorExtras 高频抓帧 + 可选 ColorGeometry 策略)
+    ↓ 普通模式：完整形态优先，3 秒后兼容渐入早期形态
+    ↓ 美味模式：仅旧版完整形态，避免鱼饵自身红色触发早期形态误报
 FishingPostRoundRouter
     ├─ BaitExhausted (模板匹配“鱼饵已用尽”) ─> FishingDone
     ├─ CatchSuccess (OCR "恭喜您获得") ──> 点击「领取」 (642, 584) ──> post_delay ──> FishingLoopRouter
@@ -58,7 +64,7 @@ FishingPostRoundRouter
 
 FishingLoopRouter
     ├─ 鱼饵已用尽 (模板、优先于普通循环) ───> FishingDone
-    ├─ 检查上限 (cast_count >= 5) ────────> FishingDone
+    ├─ 检查上限 (max_casts > 0 且 cast_count >= max_casts) ─> FishingDone
     ├─ 仍有鱼饵 (OCR "更换鱼饵") ──────────> FishingRound (开启下一杆)
     ├─ 需选鱼饵 (OCR "选择鱼饵") ──────────> FishingBaitRouter
     └─ 其它/无饵 ──────────────────────────> FishingDone
@@ -78,9 +84,10 @@ FishingLoopRouter
 3. **误入购买弹窗恢复 (Purchase Safety Guard)**：
    - 购买弹窗属于遮挡模态页面，若被用户或其他偶发操作打开，状态机最高优先级触发 `FishingBaitPurchasePopup`（模板匹配右上角 `鱼饵购买弹窗_关闭.png`）；
    - **唯一合法动作为点击右上角红圈白 × 关闭弹窗**，严禁点击任何货币、商品、确认按键；关闭后安全返回选饵路由。
-4. **硬安全上限 (`max_casts = 5`)**：
-   - Action 层：`FishingCastAndBiteQTEAction` 在发送点击前检查 `cast_count >= 5`，超限立即拦截并返回 `False`；
-   - Reco 层：`CheckFishingCastLimitReco` 在 Pipeline 循环处判定是否达标，达标直接跳转至 `FishingDone`。
+4. **按入口隔离次数**：
+   - 日常收尾从 `FishingDailyTask` 启动，固定 `max_casts = 5`、`bite_mode = ordinary`、`force_ordinary_bait = true`；若现场已有其他鱼饵，先以 OCR“更换鱼饵”为门禁点击实际命中位置，再选择黄色奶酪；Action 与 Reco 共同拦截第 6 杆；
+   - 独立任务从 `FishingTask` 启动，固定 `max_casts = 0`（不限次数），不会命中杆数上限，持续到鱼饵耗尽或无法继续；
+   - `0` 是明确的“不限次数”标记，不参与 `cast_count >= max_casts` 比较。
 
 ---
 
@@ -104,13 +111,14 @@ FishingLoopRouter
 - 用户实测 5 次机会中仅 2 次成功、3 次空杆。对应日志显示五杆均检测到感叹号并完成收杆触控，因此问题不像是“完全漏截图”，更可能是严格检测到完整形态时已经偏晚。
 - 本次实际控制器已使用 `EmulatorExtras`；连接测试截图约 45ms，五轮动作日志折算约 25～30 FPS。Maa 当前版本将 `EmulatorExtras` 标为 Very Fast；`RawByNetcat` 为 Fast 且兼容性低，`RawWithGzip` 为 Medium，`Encode` 为 Slow。当前不建议为了该问题从 `EmulatorExtras` 切换到后三者。
 - 离线逐帧回放中，旧严格检测首命中为第 436 帧；放宽后的渐入早期形态检测可在第 432 帧命中，提前约 84ms，同时现有钓场与甩杆前负样本仍保持零误报。
-- 正常甩杆前三秒仍只允许严格形态，避开甩杆动画；三秒后启用早期形态。中途恢复已经由页面状态确认处于等待咬钩阶段，因此立即允许早期形态。
+- 普通饵食模式：正常甩杆前三秒仍只允许严格形态，避开甩杆动画；三秒后启用早期形态。中途恢复已经由页面状态确认处于等待咬钩阶段，因此立即允许早期形态。
+- 美味饵食模式：恢复 `dc85c8f` 时期的旧策略，全程只接受完整感叹号，不启用渐入早期形态，避免美味饵食本身的红色元素与放宽条件混淆。该模式不自动替用户选择鱼饵，需在钓场预先选好美味饵食。
 - 新日志会输出实际 FPS、平均截图耗时、平均检测耗时与命中阶段，供下一次机会判断瓶颈是否仍在截图。
-- **实机状态：尚未复测。** 当前只确认离线样本提前命中，不能据此宣布成功率已经改善；用户之后测试性能变好或仍有空杆时继续更新本节。
+- **实机状态：双模式本次未做模拟器测试。** 普通模式保留原离线提前命中证据；美味模式依据 Git 历史恢复旧版严格分支并完成代码级验证，实际成功率仍由用户后续自然运行观察。
 
 ## 7. 日常收尾参数兼容
 
-`DailyRoutineTask` 已增加“钓鱼地点”选项，复用独立 `FishingTask` 的星河、冰川、宫殿温泉、魔法塔楼、大戏台和星空湖六个选项；只有勾选钓鱼达人时该选择才会被实际使用。
+`DailyRoutineTask` 继续共享六个“钓鱼地点”选项，但调度器改为进入专用 `FishingDailyTask`：无论现场是否已有其他鱼饵、独立任务上一次选择了何种适配模式，日常收尾都会在“更换鱼饵”视觉门禁通过后重选普通黄色奶酪，使用普通饵食快速识别并最多钓 5 杆。独立 `FishingTask` 新增“饵食适配模式”，默认普通饵食快速模式，可切换美味饵食稳健模式，并持续运行到鱼饵耗尽。
 
 ## 8. 退出契约与 2026-09-13 修复
 

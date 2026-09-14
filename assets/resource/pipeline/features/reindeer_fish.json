@@ -7,6 +7,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishStartRouter"
         ]
     },
@@ -19,6 +20,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishRewardReturn",
             "ReindeerFishCollectAll",
             "ReindeerFishReplyAll",
@@ -41,7 +43,8 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
-            "ReindeerFishCommonBack"
+            "[JumpBack]GlobalLevelUpPopup",
+            "ReindeerFishAfterCollectRouter"
         ]
     },
     "ReindeerFishDirectGift": {
@@ -54,6 +57,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishCommonBack"
         ],
         "focus": {
@@ -71,16 +75,49 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
-            "ReindeerFishRewardReturn"
+            "[JumpBack]GlobalLevelUpPopup",
+            "ReindeerFishAfterCollectRouter"
         ],
         "focus": {
-            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已点击一键收取，等待奖励返回按钮"
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已点击一键收取，进入收取后状态判断"
+        }
+    },
+    "ReindeerFishAfterCollectRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "ReindeerFishRewardReturn",
+            "ReindeerFishReplyAll"
+        ],
+        "on_error": [
+            "ReindeerFishAfterCollectNoReply"
+        ]
+    },
+    "ReindeerFishAfterCollectNoReply": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "ReindeerFishCommonBack"
+        ],
+        "focus": {
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 收取后未检测到一键回礼，准备返回"
         }
     },
     "ReindeerFishReplyAll": {
         "recognition": "OCR",
         "expected": "一键回礼",
-        "roi": [480, 562, 232, 143],
+        "roi": [545, 611, 121, 45],
         "action": "Click",
         "post_delay": 1000,
         "next": [
@@ -88,6 +125,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishAfterReplyRouter"
         ],
         "focus": {
@@ -103,6 +141,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishDirectGift",
             "ReindeerFishCommonBack"
         ],
@@ -121,6 +160,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishStartRouter"
         ]
     },
@@ -136,6 +176,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishEnterFromGrid"
         ]
     },
@@ -150,6 +191,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishStartRouter"
         ],
         "on_error": [
@@ -167,6 +209,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishVerifyTank"
         ]
     },
@@ -183,6 +226,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailyRoutineReturnIfActive",
             "DailyRoutineStandaloneDone"
         ],

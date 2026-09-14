@@ -2,6 +2,7 @@ import sys, os, glob, cv2, time, json
 import numpy as np
 
 sys.path.append("agent")
+import my_action as my_action_module
 from my_action import (
     detect_bite_color_geo_strict,
     FishingCastAndBiteQTEAction,
@@ -12,7 +13,7 @@ from my_action import (
 from my_reco import CheckFishingCastLimitReco
 
 print("================================================================================")
-print("=== Phase 2C 全量综合零鱼饵验证套件 (A ~ H 八大核心验证) ===")
+print("=== Phase 2C 全量综合零鱼饵验证套件 (A ~ I 九项核心验证) ===")
 print("================================================================================")
 
 # ------------------------------------------------------------------------------
@@ -162,7 +163,11 @@ print("  >>> Test G PASS: 超时流安全退出，绝无第二次甩杆！")
 
 # Test H: max_casts=5 硬上限保护
 print(f"  Test H (max_casts=5 硬拦截):")
-ResetFishingStateAction().run(MockContext(None), MockArg())
+ResetFishingStateAction().run(
+    MockContext(None), MockArg('{"max_casts": 5, "bite_mode": "special"}')
+)
+assert fishing_state["max_casts"] == 5
+assert fishing_state["bite_mode"] == "special"
 fishing_state["cast_count"] = 5  # 模拟已达到 5 次
 mock_h = MockController([normal_full, bite_full])
 res_h = FishingCastAndBiteQTEAction().run(MockContext(mock_h), MockArg('{"timeout": 1.0}'))
@@ -177,6 +182,42 @@ print(f"    CheckFishingCastLimitReco 判定: {limit_hit}")
 assert limit_hit is not None
 print("  >>> Test H PASS: 第 6 次甩杆被 Action 与 Reco 双重硬拦截！")
 
+# Test I: 独立任务不限次数 + 普通/特殊饵食识别策略分流
+print(f"  Test I (不限次数与双饵食识别策略):")
+ResetFishingStateAction().run(
+    MockContext(None), MockArg('{"max_casts": 0, "bite_mode": "special"}')
+)
+fishing_state["cast_count"] = 500
+assert reco.analyze(MockContext(mock_h), MockArg()) is None
+
+original_detector = my_action_module.detect_bite_color_geo_strict
+detector_calls = []
+
+def fake_detector(crop, early=False):
+    detector_calls.append(early)
+    return (early, {"stage": "early"} if early else None)
+
+try:
+    my_action_module.detect_bite_color_geo_strict = fake_detector
+    mock_special = MockController([normal_full])
+    fishing_state["bite_mode"] = "special"
+    assert my_action_module._watch_bite_and_reel(
+        mock_special, [380, 260, 480, 300], 1134, 578, 0.05, time.perf_counter() - 4.0
+    ) is False
+    assert True not in detector_calls
+
+    detector_calls.clear()
+    mock_ordinary = MockController([normal_full])
+    fishing_state["bite_mode"] = "ordinary"
+    assert my_action_module._watch_bite_and_reel(
+        mock_ordinary, [380, 260, 480, 300], 1134, 578, 0.05, time.perf_counter() - 4.0
+    ) is True
+    assert True in detector_calls
+finally:
+    my_action_module.detect_bite_color_geo_strict = original_detector
+
+print("  >>> Test I PASS: 不限次数不触发上限；特殊模式仅严格识别，普通模式保留早期识别！")
+
 print("\n================================================================================")
-print("=== A ~ H 全部验证 100% 通过！Phase 2C Candidate Ready！===")
+print("=== A ~ I 全部验证 100% 通过！Phase 2C Candidate Ready！===")
 print("================================================================================")

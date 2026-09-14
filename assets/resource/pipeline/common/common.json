@@ -8,6 +8,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "CloseAnnouncement",
             "ClickEnterGame",
             "ConfirmMainScreen"
@@ -24,6 +25,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "CloseAnnouncement",
             "ClickEnterGame",
             "ConfirmMainScreen"
@@ -40,6 +42,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "CloseAnnouncement",
             "ConfirmMainScreen"
         ]
@@ -58,6 +61,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "DailySignNoPopup"
         ]
     },
@@ -149,6 +153,34 @@
         "action": "Click",
         "post_delay": 500,
         "focus": "检测到快报页面弹出，已识别并点击关闭，继续当前任务"
+    },
+    "GlobalLevelUpPopup": {
+        "recognition": "TemplateMatch",
+        "template": "升级弹窗_识别.png",
+        "roi": [
+            200,
+            348,
+            378,
+            185
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "next": [
+            "GlobalLevelUpConfirm"
+        ]
+    },
+    "GlobalLevelUpConfirm": {
+        "recognition": "OCR",
+        "expected": "太好了",
+        "roi": [
+            957,
+            627,
+            125,
+            47
+        ],
+        "action": "Click",
+        "post_delay": 500,
+        "focus": "检测到升级弹窗，已识别并点击“太好了”，继续当前任务"
     },
     "DailySignNoPopup": {
         "recognition": "DirectHit",

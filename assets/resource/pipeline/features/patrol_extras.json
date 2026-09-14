@@ -17,6 +17,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicOpenTreasure"
         ],
         "on_error": [
@@ -44,6 +45,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicClickEntry"
         ],
         "on_error": [
@@ -71,6 +73,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicVerifyPage"
         ],
         "on_error": [
@@ -96,6 +99,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicConfirmPopup",
             "PatrolMagicRevealResult",
             "PatrolMagicClickAdvanced",
@@ -125,6 +129,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicConfirmRevealedResult"
         ],
         "on_error": [
@@ -151,6 +156,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicClickAdvanced"
         ],
         "on_error": [
@@ -178,6 +184,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicConfirmPopup"
         ],
         "on_error": [
@@ -205,6 +212,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicReturn"
         ],
         "on_error": [
@@ -222,6 +230,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicReturn"
         ]
     },
@@ -245,6 +254,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolVerifyMainAfterCycle"
         ],
         "on_error": [
@@ -276,6 +286,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionOpenTreasure"
         ],
         "on_error": [
@@ -303,6 +314,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionClickEntry"
         ],
         "on_error": [
@@ -330,6 +342,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionPageRouter"
         ],
         "on_error": [
@@ -345,31 +358,60 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionPutInStorage",
             "PatrolGemFusionVerifyPage",
             "PatrolGemFusionAbort"
         ]
     },
     "PatrolGemFusionPutInStorage": {
-        "recognition": "OCR",
-        "expected": "放入仓库",
+        "recognition": "TemplateMatch",
+        "template": "宝石融合_产物识别.png",
+        "threshold": 0.8,
         "roi": [
-            498,
-            486,
-            283,
-            138
+            172,
+            128,
+            230,
+            212
         ],
-        "action": "Click",
-        "post_delay": 1500,
+        "action": "DoNothing",
         "timeout": 4500,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-宝石融合] 发现上一轮融合结果，已放入仓库，继续检查下一轮。"
+            "Node.Action.Succeeded": "[巡检-宝石融合] 识别到上一轮融合产物，准备放入仓库。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolGemFusionConfirmPutInStorage"
+        ],
+        "on_error": [
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "PatrolGemFusionConfirmPutInStorage": {
+        "recognition": "OCR",
+        "expected": "放入仓库",
+        "roi": [
+            565,
+            537,
+            152,
+            42
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 4500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检-宝石融合] 已将上一轮融合产物放入仓库，继续本轮合成。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionVerifyPage"
         ],
         "on_error": [
@@ -396,6 +438,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionClickSynthesize",
             "PatrolGemFusionAlreadyRunning"
         ],
@@ -423,6 +466,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionReturn"
         ],
         "on_error": [
@@ -440,6 +484,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionReturn"
         ]
     },
@@ -463,6 +508,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionReturnRouter"
         ],
         "on_error": [
@@ -478,6 +524,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolVerifyMainTank1AfterCycle",
             "PatrolVerifyMainTank2AfterCycle",
             "PatrolVerifyMainTank3AfterCycle",
@@ -505,6 +552,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionReturnAgain"
         ],
         "on_error": [
@@ -531,6 +579,7 @@
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "PatrolVerifyMainAfterCycle"
         ],
         "on_error": [

@@ -477,6 +477,7 @@ dev/exploration/friend_gem_state_now.png
 dev/exploration/golden_dolphin/
 dev/exploration/romantic_house/
 dev/exploration/sea_otter_gem/
+dev/evidence/
 dev/analyze_*.py
 dev/back_to_list_now.py
 dev/benchmark_*.py

@@ -1,7 +1,7 @@
 # 日常收尾总控任务 (docs/features/daily-routine.md)
 
-**最后更新**: 2026-09-12
-**版本**: v8 (摇一摇小游戏接入与独立/日常收尾双出口路由架构)
+**最后更新**: 2026-09-14
+**版本**: v9 (日常钓鱼固定普通饵食 5 杆，与独立不限次数模式隔离)
 **状态**: 已实现串行容器、自由多选组合与乐队鱼异步调度；已落地双出口路由消除独立运行超时失败。
 
 ---
@@ -11,15 +11,17 @@
 开心水族箱小助手中存在多个每日固定执行的维护与活动任务：
 - **每日免费礼包** (`DailyFreeGiftTask`)
 - **驯鹿鱼送收礼物** (`ReindeerFishGiftTask`)
+- **兑换金贝壳券** (`GoldShellCouponTask`)
 - **乐队鱼演出** (`BandFishTask`)
 - **金海豚小游戏** (`GoldenDolphinTask`)
 - **摇一摇小游戏** (`ShakeGameTask`)
 - **钓鱼达人** (`FishingTask`)
+- **宝石礼盒兑换** (`GemGiftBoxTask`)
 - **浪漫满屋** (`RomanticHouseTask`)
 
 在 Phase 2 中，【日常收尾】(`DailyRoutineTask`) 明确降级为确定性的**“串行任务容器”**：
 1. **自由多选组合**：用户可在 MFAAvalonia 界面中按需自由勾选任意子任务组合；
-2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请，再执行每日免费礼包、驯鹿鱼送收礼物、金海豚、摇一摇、钓鱼达人、浪漫满屋等其他已勾选任务，最后执行乐队鱼 Pass 2 回访演出；
+2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请，再执行每日免费礼包、驯鹿鱼送收礼物、兑换金贝壳券、金海豚、摇一摇、钓鱼达人、宝石礼盒兑换、浪漫满屋等其他已勾选任务，最后执行乐队鱼 Pass 2 回访演出；
 3. **安全退出保障**：每个子任务执行结束（成功、次数用尽、体力不足等）后，必须 100% 返回主鱼缸珊瑚，方可推进下一任务；
 4. **两阶段异步执行**：乐队鱼 Pass 1 / Pass 2 已接入调度；中间任务的执行时间用于等待人机好友接受邀请。
 
@@ -30,20 +32,22 @@
 ### 1. 界面选项声明 (`interface.json`)
 在 `interface.json` 的 `DailyRoutineTask` 下配置 `checkbox` 类型的任务选项 `日常收尾任务`：
 - **类型**: `"type": "checkbox"`
-- **默认值**: 保留原四项默认选择；新增“每日免费礼包”和“驯鹿鱼送收礼物”默认不勾选，由用户主动开启。
+- **默认值**: 保留原四项默认选择（乐队鱼、金海豚、摇一摇、钓鱼达人）；新增“每日免费礼包”、“驯鹿鱼送收礼物”、“兑换金贝壳券”与“宝石礼盒兑换”默认不勾选，由用户按需主动开启。
 - **Cases 与 Pipeline Override**:
   每个 case 独立覆盖 pipeline 中的专有使能节点，互不冲突：
   - `每日免费礼包` → `DailyRoutineEnableFreeGift: { "enabled": true }`
   - `驯鹿鱼送收礼物` → `DailyRoutineEnableReindeerFish: { "enabled": true }`
+  - `兑换金贝壳券` → `DailyRoutineEnableGoldShellCoupon: { "enabled": true }`
   - `乐队鱼` $\rightarrow$ `DailyRoutineEnableBandFish: { "enabled": true }`
   - `金海豚` $\rightarrow$ `DailyRoutineEnableGoldenDolphin: { "enabled": true }`
   - `摇一摇` $\rightarrow$ `DailyRoutineEnableShakeGame: { "enabled": true }`
   - `钓鱼达人` $\rightarrow$ `DailyRoutineEnableFishing: { "enabled": true }`
+  - `宝石礼盒兑换` $\rightarrow$ `DailyRoutineEnableGemGiftBox: { "enabled": true }`
   - `浪漫满屋` $\rightarrow$ `DailyRoutineEnableRomanticHouse: { "enabled": true }`
 
 ### 2. 独立调试入口管理
 - **浪漫满屋 (`RomanticHouseTask`)**：因功能已全面测试完毕并达成 100% 闭环，从三份 `interface.json` 的任务列表中移除独立入口，统一通过日常收尾入口运行；
-- **保留独立入口**：`BandFishTask`、`GoldenDolphinTask`、`ShakeGameTask`、`FishingTask` 保留在 `interface.json` 中，供后续专项调试使用。
+- **保留独立入口**：`BandFishTask`、`GoldenDolphinTask`、`ShakeGameTask`、`FishingTask`、`GemGiftBoxTask`、`GoldShellCouponTask` 保留在 `interface.json` 中，供后续专项调试使用。
 - **共享子任务参数**：`DailyRoutineTask` 同时显示“乐队鱼乐章”和“钓鱼地点”；勾选钓鱼达人时，日常收尾会沿用与独立 `FishingTask` 相同的六地点 Pipeline Override。
 
 ---
@@ -58,28 +62,34 @@ flowchart TD
     %% 步骤分发
     Dispatcher -- step=FREE_GIFT --> FG[DailyFreeGiftTask: 每日免费礼包]
     Dispatcher -- step=REINDEER_FISH --> RF[ReindeerFishGiftTask: 驯鹿鱼送收礼物]
+    Dispatcher -- step=GOLD_SHELL_COUPON --> GSC[GoldShellCouponTask: 兑换金贝壳券]
     Dispatcher -- step=BAND_FISH_PASS1 --> BF[BandFishStartRouter: 乐队鱼]
     Dispatcher -- step=GOLDEN_DOLPHIN --> GD[GoldenDolphinTask: 金海豚]
     Dispatcher -- step=SHAKE_GAME --> SG[ShakeGameTask: 摇一摇]
-    Dispatcher -- step=FISHING --> FI[FishingTask: 钓鱼达人]
+    Dispatcher -- step=FISHING --> FI[FishingDailyTask: 普通饵食、固定 5 杆]
+    Dispatcher -- step=GEM_GIFT_BOX --> GGB[GemGiftBoxTask: 宝石礼盒兑换七配方]
     Dispatcher -- step=ROMANTIC_HOUSE --> RH[RomanticHouseStartRouter: 浪漫满屋]
     Dispatcher -- step=ALL_DONE --> Finish[DailyRoutineFinishAction: 汇总报告并结束]
 
     %% 退出与队列推进
     FG --> FG_Exit[识别回到鱼缸 -> DailyFreeGiftDoneAction]
     RF --> RF_Exit[识别回到鱼缸 -> ReindeerFishDoneAction]
+    GSC --> GSC_Exit[GoldShellCouponVerifyTank: 回主鱼缸 -> GoldShellCouponDoneAction]
     BF --> BF_Exit[BandFishExitToTankAction: 回主鱼缸 -> advance_daily_routine_step]
     GD --> GD_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
     SG --> SG_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
     FI --> FI_Exit[FishingExitToTankAction: 回主鱼缸 -> advance_daily_routine_step]
+    GGB --> GGB_Exit[GemGiftBoxVerifyTank: 回主鱼缸 -> GemGiftBoxDoneAction]
     RH --> RH_Exit[RomanticHouseExitToTankAction: 珊瑚回主鱼缸 -> advance_daily_routine_step]
 
     FG_Exit --> Dispatcher
     RF_Exit --> Dispatcher
+    GSC_Exit --> Dispatcher
     BF_Exit --> Dispatcher
     GD_Exit --> Dispatcher
     SG_Exit --> Dispatcher
     FI_Exit --> Dispatcher
+    GGB_Exit --> Dispatcher
     RH_Exit --> Dispatcher
 
     %% 保留的两阶段拓扑 (Pass 2)
@@ -102,9 +112,12 @@ flowchart TD
       "tasks": {
           "FreeGift": {"status": "IDLE"},
           "ReindeerFish": {"status": "IDLE"},
+          "GoldShellCoupon": {"status": "IDLE"},
           "BandFish": {"status": "IDLE", "stage": "PASS1"},
           "GoldenDolphin": {"status": "IDLE"},
+          "ShakeGame": {"status": "IDLE"},
           "Fishing": {"status": "IDLE"},
+          "GemGiftBox": {"status": "IDLE"},
           "RomanticHouse": {"status": "IDLE"},
       },
   }
@@ -117,8 +130,12 @@ flowchart TD
   - 若 `queue` 已空，置 `step = "ALL_DONE"`；
 - **`InitDailyRoutineAction`**:
   - 优先解析 `custom_action_param`（支持单元测试与直接调用）；
-  - 否则通过 `context.get_node_data()` 读取 6 个 `DailyRoutineEnable*` 节点的 `enabled` 状态；
-  - 按固定顺序组装待执行队列，无勾选时直接跳过至 `ALL_DONE`；
+  - 否则通过 `context.get_node_data()` 读取 9 个 `DailyRoutineEnable*` 节点的 `enabled` 状态；
+  - 按固定顺序组装待执行队列（`BAND_FISH_PASS1` $\rightarrow$ `FREE_GIFT` $\rightarrow$ `REINDEER_FISH` $\rightarrow$ `GOLD_SHELL_COUPON` $\rightarrow$ `GOLDEN_DOLPHIN` $\rightarrow$ `SHAKE_GAME` $\rightarrow$ `FISHING` $\rightarrow$ `GEM_GIFT_BOX` $\rightarrow$ `ROMANTIC_HOUSE` $\rightarrow$ `BAND_FISH_PASS2`），无勾选时直接跳过至 `ALL_DONE`；
+- **`GoldShellCouponDoneAction`**:
+  - 主鱼缸验证成功后调用 `advance_daily_routine_step("GoldShellCoupon", "DONE")`，推进流水线经双出口路由返回 `DailyRoutineDispatcher`。
+- **`GemGiftBoxDoneAction`**:
+  - 主鱼缸验证成功后调用 `advance_daily_routine_step("GemGiftBox", "DONE")`，推进流水线经双出口路由返回 `DailyRoutineDispatcher`。
 - **`RomanticHouseExitToTankAction`**:
   - 标记 `RomanticHouse` 状态为 `DONE`，调用 `advance_daily_routine_step`，推进流水线回到 `DailyRoutineDispatcher`。
 
@@ -127,15 +144,17 @@ flowchart TD
 | --- | --- | --- |
 | **每日免费礼包** | 领取成功或识别到已售罄 | OCR 点击充值页左上角“返回”，模板确认鱼缸后推进队列 |
 | **驯鹿鱼送收礼物** | 一键收取，或一键回礼后直接返回/直接赠送 | OCR 点击通用返回，模板确认鱼缸后推进队列 |
+| **兑换金贝壳券** | 完成兑换或复核未识别到兑换按钮 | 状态驱动两级返回：金贝壳主页返回 $\rightarrow$ 模板确认退回分类页 $\rightarrow$ 分类页返回 $\rightarrow$ 模板确认回到主鱼缸，触发 `GoldShellCouponDoneAction` |
 | **乐队鱼** | 邀请完成或无空位 | `BandFishExitToTankAction`：点击左上角返回 `(91, 46)` + 保底关闭面板 `(640, 150)` |
 | **金海豚** | 每局结束后未满 3 局则重进；第 3 局完成或机会耗尽 | `GoldenDolphinExitAction` 记录局数并以 `NEXT_ROUND` 重进；`NO_STAMINA` 作为正常业务状态推进队列 |
 | **摇一摇** | 每局结束后未满 3 局则重进；第 3 局完成或次数耗尽 | `ShakeGameExitAction` 记录局数并重进；`NO_STAMINA` 正常推进队列；退出后接入双出口路由 |
-| **钓鱼达人** | 5杆完成，或在钓场/选饵抽屉识别 `钓鱼达人_鱼饵已用尽.png` | `FishingDone` 识别 `钓鱼达人_退出.png` 后，由 `FishingExitToTankAction` 点击实际命中框中心；再以 `主界面特征.png` 确认回到主鱼缸后推进队列，验证失败即停止 |
+| **钓鱼达人** | `FishingDailyTask` 固定普通饵食快速模式；若已有其他鱼饵则在 OCR“更换鱼饵”门禁后重选黄色奶酪；5 杆完成，或识别 `钓鱼达人_鱼饵已用尽.png` | `FishingDone` 识别 `钓鱼达人_退出.png` 后，由 `FishingExitToTankAction` 点击实际命中框中心；再以 `主界面特征.png` 确认回到主鱼缸后推进队列，验证失败即停止 |
+| **宝石礼盒兑换** | 7 个等级配方巡检并兑换/跳过完毕 | `GemGiftBoxVerifyTank` 命中 `主界面特征.png` 后触发 `GemGiftBoxDoneAction` 推进队列并接入双出口路由 |
 | **浪漫满屋** | 10次点赞完成或已满 | 双级心形关闭 `(1197, 57)` + 状态验证回主鱼缸珊瑚 + `RomanticHouseExitToTankAction` |
 
 ### 4. 独立运行与日常收尾双出口路由架构 (Dual-Exit Routing Contract)
 
-开心水族箱存在多个既可作为**独立任务**单独勾选运行，又可作为**日常收尾子任务**串行调度的功能（如摇一摇、金海豚、钓鱼达人等）。
+开心水族箱存在多个既可作为**独立任务**单独勾选运行，又可作为**日常收尾子任务**串行调度的功能（如摇一摇、金海豚、钓鱼达人、宝石礼盒兑换等）。
 
 #### 根因与设计原则
 - **问题根因**：若各子任务在返回主鱼缸确认后，终态节点硬编码指向 `DailyRoutineDispatcher`，在独立运行模式下（`daily_routine_state["active"] == False`），进入 Dispatcher 后的所有 Step 判定条件均不满足，MaaFramework 持续重试 20 秒超时后触发 `NextList.Failed`，最终在 UI 判定为任务运行失败；
@@ -143,7 +162,7 @@ flowchart TD
 - **双出口分流规范**：所有子任务终态节点统一接入共享双出口路由：
 
 ```text
-子任务终态节点 (如 ShakeGameVerifyTank / GoldenDolphinDone)
+子任务终态节点 (如 ShakeGameVerifyTank / GoldenDolphinDone / GemGiftBoxVerifyTank)
                      │
                      ▼
         ┌────────────────────────────┐
@@ -200,7 +219,7 @@ DailyRoutineDispatcher        任务成功正常退出 (ret=true)
 python dev/test_daily_routine_scheduler.py
 ```
 覆盖用例：
-1. **组合 1（全选）**: 乐队鱼 Pass 1 $\rightarrow$ 每日免费礼包 $\rightarrow$ 驯鹿鱼送收礼物 $\rightarrow$ 金海豚 $\rightarrow$ 钓鱼达人 $\rightarrow$ 浪漫满屋 $\rightarrow$ 乐队鱼 Pass 2 $\rightarrow$ ALL_DONE
+1. **组合 1（全选）**: 乐队鱼 Pass 1 $\rightarrow$ 每日免费礼包 $\rightarrow$ 驯鹿鱼送收礼物 $\rightarrow$ 金海豚 $\rightarrow$ 摇一摇 $\rightarrow$ 钓鱼达人 $\rightarrow$ 宝石礼盒兑换 $\rightarrow$ 浪漫满屋 $\rightarrow$ 乐队鱼 Pass 2 $\rightarrow$ ALL_DONE
 2. **组合 2（仅浪漫满屋）**: 浪漫满屋 $\rightarrow$ ALL_DONE
 3. **仅每日免费礼包**: FREE_GIFT $\rightarrow$ ALL_DONE
 4. **仅驯鹿鱼送收礼物**: REINDEER_FISH $\rightarrow$ ALL_DONE
@@ -208,12 +227,13 @@ python dev/test_daily_routine_scheduler.py
 6. **组合 4（浪漫满屋 + 钓鱼达人）**: 钓鱼达人 $\rightarrow$ 浪漫满屋 $\rightarrow$ ALL_DONE
 7. **组合 5（空勾选）**: 直接跳过 $\rightarrow$ ALL_DONE
 8. **组合 6（仅乐队鱼）**: Pass 1 $\rightarrow$ Pass 2 $\rightarrow$ ALL_DONE
-9. **Pipeline 拓扑与分支检查**: 校验 6 个 Enable 节点、8 个 Dispatcher 候选，以及每日礼包和驯鹿鱼的分支契约
-10. **UI Pipeline Override 节点读取**: 模拟 MFA 传入 override 的完整流转
-11. **独立执行保护**: `active=False` 时各子任务退出互不影响
-12. **乐队鱼运行模式分流**: 日常模式返回调度器；独立待接受状态退出重进；独立完成状态正常结束
-13. **金海豚连续执行**: 两次 `NEXT_ROUND` 后第 3 局 `DONE`；任意入口 `NO_STAMINA` 均正常推进下一任务
-14. **钓鱼耗尽兼容**: 精确模板与 ROI 在开始、选饵、等待结算和循环阶段均优先识别；命中后复用右上角退出和主鱼缸确认链
+9. **组合 7（仅宝石礼盒兑换）**: GEM_GIFT_BOX $\rightarrow$ ALL_DONE
+10. **Pipeline 拓扑与分支检查**: 校验 8 个 Enable 节点、9 个 Dispatcher 候选（含 `GEM_GIFT_BOX`），以及每日礼包、驯鹿鱼、宝石礼盒兑换的分支契约
+11. **UI Pipeline Override 节点读取与契约测试**: 模拟 MFA 传入 override 的完整流转，覆盖 6 种日常收尾勾选 cases
+12. **独立执行保护**: `active=False` 时各子任务退出互不影响（`GemGiftBoxVerifyTank` 双出口分流至 `DailyRoutineStandaloneDone`）
+13. **乐队鱼运行模式分流**: 日常模式返回调度器；独立待接受状态退出重进；独立完成状态正常结束
+14. **金海豚连续执行**: 两次 `NEXT_ROUND` 后第 3 局 `DONE`；任意入口 `NO_STAMINA` 均正常推进下一任务
+15. **钓鱼耗尽兼容**: 精确模板与 ROI 在开始、选饵、等待结算和循环阶段均优先识别；命中后复用右上角退出和主鱼缸确认链
 
 #### 乐队鱼异步实机测试状态（2026-09-08）
 

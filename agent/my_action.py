@@ -30,6 +30,7 @@ try:
         golden_dolphin_state,
         shake_game_state,
         gem_collect_state,
+        mobile_ad_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -44,6 +45,7 @@ except ImportError:
         golden_dolphin_state,
         shake_game_state,
         gem_collect_state,
+        mobile_ad_state,
     )
 
 try:
@@ -656,7 +658,11 @@ def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start, early_af
             detection_start = time.perf_counter()
             hit, _ = detect_bite_color_geo_strict(crop)
             detection_stage = "完整形态"
-            if not hit and time.perf_counter() - t_start >= early_after_sec:
+            if (
+                not hit
+                and fishing_state.get("bite_mode", "ordinary") == "ordinary"
+                and time.perf_counter() - t_start >= early_after_sec
+            ):
                 hit, _ = detect_bite_color_geo_strict(crop, early=True)
                 detection_stage = "渐入早期形态"
             detection_seconds += time.perf_counter() - detection_start
@@ -704,7 +710,7 @@ def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start, early_af
 class FishingCastAndBiteQTEAction(CustomAction):
     """
     钓鱼达人 QTE 自动甩收杆自定义动作:
-    1. 严格上限保护: 检查 max_casts=5 硬限制；
+    1. 可选上限保护: max_casts > 0 时检查硬限制，0 表示持续到鱼饵耗尽；
     2. 执行单次甩杆 (保持 60ms 触控确保模拟器触发)；
     3. 调用原生截屏 (~55 FPS) + 轻量 Color+Geometry 检测 (~1ms)；
     4. 首次命中感叹号即刻下发固定坐标收杆点击，控制权交还 Pipeline。
@@ -726,7 +732,8 @@ class FishingCastAndBiteQTEAction(CustomAction):
             btn_x = safe_int(param.get("btn_x"), 1134)
             btn_y = safe_int(param.get("btn_y"), 578)
 
-            if fishing_state["cast_count"] >= fishing_state["max_casts"]:
+            max_casts = fishing_state.get("max_casts", 0)
+            if max_casts > 0 and fishing_state["cast_count"] >= max_casts:
                 print(f"[钓鱼达人QTE] 拦截: 已达最大施放次数上限 ({fishing_state['cast_count']}/{fishing_state['max_casts']})，安全停止", flush=True)
                 return False
 
@@ -750,7 +757,13 @@ class FishingCastAndBiteQTEAction(CustomAction):
 
             fishing_state["cast_count"] += 1
             t_cast_done = time.perf_counter()
-            print(f"[钓鱼达人QTE] 甩杆已完成 (当前第 {fishing_state['cast_count']}/{fishing_state['max_casts']} 次，耗时 {(t_cast_done - t_cast_start)*1000:.1f}ms)，进入高速抓帧监听...", flush=True)
+            limit_text = str(max_casts) if max_casts > 0 else "不限"
+            mode_text = "普通饵食快速模式" if fishing_state.get("bite_mode") == "ordinary" else "特殊饵食稳健模式"
+            print(
+                f"[钓鱼达人QTE] 甩杆已完成 (当前第 {fishing_state['cast_count']}/{limit_text} 次，"
+                f"{mode_text}，耗时 {(t_cast_done - t_cast_start)*1000:.1f}ms)，进入高速抓帧监听...",
+                flush=True,
+            )
 
             return _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_cast_done)
         except Exception as e:
@@ -801,16 +814,59 @@ class FishingWatchBiteOnlyAction(CustomAction):
 class ResetFishingStateAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            max_casts = safe_int(param.get("max_casts"), 0, min_val=0, max_val=9999)
+            bite_mode = str(param.get("bite_mode", "ordinary")).strip().lower()
+            if bite_mode not in ("ordinary", "special"):
+                bite_mode = "ordinary"
+            force_raw = param.get("force_ordinary_bait", False)
+            force_ordinary_bait = force_raw is True or str(force_raw).strip().lower() in (
+                "1", "true", "yes", "on"
+            )
+
             task_detail = getattr(argv, "task_detail", None)
             task_id = int(task_detail.task_id) if task_detail and hasattr(task_detail, "task_id") else None
             fishing_state["current_task_id"] = task_id
             fishing_state["cast_count"] = 0
+            fishing_state["max_casts"] = max_casts
+            fishing_state["bite_mode"] = bite_mode
+            fishing_state["force_ordinary_bait"] = force_ordinary_bait
             fishing_state["fish_caught"] = 0
-            print(f"[钓鱼达人] 状态已重置: cast_count=0 (task_id: {task_id})", flush=True)
+            fishing_state["status"] = "IDLE"
+            limit_text = str(max_casts) if max_casts > 0 else "不限（直到鱼饵耗尽）"
+            mode_text = "普通饵食快速模式" if bite_mode == "ordinary" else "特殊饵食稳健模式（旧版严格识别）"
+            print(
+                f"[钓鱼达人] 状态已重置: cast_count=0, max_casts={limit_text}, "
+                f"bite_mode={mode_text}, force_ordinary_bait={force_ordinary_bait} (task_id: {task_id})",
+                flush=True,
+            )
             return True
         except Exception as e:
             traceback.print_exc()
             print(f"[钓鱼达人] 重置状态异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("FishingSelectOrdinaryBaitAction")
+class FishingSelectOrdinaryBaitAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[钓鱼达人] 错误: 选择普通饵食时未获取到 Controller", flush=True)
+                return False
+            box = tuple(int(value) for value in argv.box)
+            if len(box) != 4 or box[2] <= 0 or box[3] <= 0:
+                print("[钓鱼达人] ERROR: 普通饵食模板未返回有效识别框，拒绝点击", flush=True)
+                return False
+            bait_x, bait_y = _box_center(box)
+            ctrl.post_click(bait_x, bait_y).wait()
+            fishing_state["force_ordinary_bait"] = False
+            print(f"[钓鱼达人] 已点击识别到的普通黄色奶酪 ({bait_x}, {bait_y})", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[钓鱼达人] 选择普通饵食异常: {e}", flush=True)
             return False
 
 
@@ -1980,7 +2036,7 @@ class BandFishExitToTankAction(CustomAction):
 class FishingExitToTankAction(CustomAction):
     """
     钓鱼达人结算并安全返回主鱼缸动作:
-    1. 判断业务状态: cast_count >= max_casts 判定为 DONE，否则判定为 NO_STAMINA (鱼饵耗尽/购买弹窗关闭);
+    1. 判断业务状态: 不限次数任务或已达 max_casts 判定为 DONE，否则判定为 NO_STAMINA;
     2. 若处于 DailyRoutineTask 流程中，同步状态并推进至 BAND_FISH_PASS2;
     3. 当前节点以用户提供的退出按钮模板确认钓场状态，点击实际命中框中心；由 Pipeline 再确认主鱼缸。
     """
@@ -2001,8 +2057,8 @@ class FishingExitToTankAction(CustomAction):
             exit_x, exit_y = _box_center(exit_box)
 
             casts = fishing_state.get("cast_count", 0)
-            max_c = fishing_state.get("max_casts", 5)
-            if casts >= max_c:
+            max_c = fishing_state.get("max_casts", 0)
+            if max_c == 0 or casts >= max_c:
                 biz_status = "DONE"
             else:
                 biz_status = "NO_STAMINA"
@@ -3018,24 +3074,28 @@ class InitDailyRoutineAction(CustomAction):
             daily_routine_state["tasks"] = {
                 "FreeGift": {"status": "IDLE"},
                 "ReindeerFish": {"status": "IDLE"},
+                "GoldShellCoupon": {"status": "IDLE"},
                 "BandFish": {"status": "IDLE", "stage": "PASS1"},
                 "GoldenDolphin": {"status": "IDLE"},
                 "ShakeGame": {"status": "IDLE"},
                 "Fishing": {"status": "IDLE"},
+                "GemGiftBox": {"status": "IDLE"},
                 "RomanticHouse": {"status": "IDLE"},
             }
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "band_fish", "golden_dolphin", "shake_game", "fishing", "romantic_house"))
+            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "gold_shell_coupon", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "romantic_house"))
 
             if has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
+                enable_gsc = bool(param.get("gold_shell_coupon", False))
                 enable_bf = bool(param.get("band_fish", False))
                 enable_gd = bool(param.get("golden_dolphin", False))
                 enable_sg = bool(param.get("shake_game", False))
                 enable_fi = bool(param.get("fishing", False))
+                enable_ggb = bool(param.get("gem_gift_box", False))
                 enable_rh = bool(param.get("romantic_house", False))
             else:
                 # 2. 从 pipeline override 中的 Enable 节点读取配置
@@ -3048,10 +3108,12 @@ class InitDailyRoutineAction(CustomAction):
 
                 enable_fg = _is_node_enabled("DailyRoutineEnableFreeGift")
                 enable_rf = _is_node_enabled("DailyRoutineEnableReindeerFish")
+                enable_gsc = _is_node_enabled("DailyRoutineEnableGoldShellCoupon")
                 enable_bf = _is_node_enabled("DailyRoutineEnableBandFish")
                 enable_gd = _is_node_enabled("DailyRoutineEnableGoldenDolphin")
                 enable_sg = _is_node_enabled("DailyRoutineEnableShakeGame")
                 enable_fi = _is_node_enabled("DailyRoutineEnableFishing")
+                enable_ggb = _is_node_enabled("DailyRoutineEnableGemGiftBox")
                 enable_rh = _is_node_enabled("DailyRoutineEnableRomanticHouse")
 
             # 3. 按固定安全顺序构建待执行队列。
@@ -3063,12 +3125,16 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("FREE_GIFT")
             if enable_rf:
                 queue.append("REINDEER_FISH")
+            if enable_gsc:
+                queue.append("GOLD_SHELL_COUPON")
             if enable_gd:
                 queue.append("GOLDEN_DOLPHIN")
             if enable_sg:
                 queue.append("SHAKE_GAME")
             if enable_fi:
                 queue.append("FISHING")
+            if enable_ggb:
+                queue.append("GEM_GIFT_BOX")
             if enable_rh:
                 queue.append("ROMANTIC_HOUSE")
             if enable_bf:
@@ -3078,10 +3144,12 @@ class InitDailyRoutineAction(CustomAction):
             print("[日常收尾] DailyRoutineTask 初始化成功，勾选子任务配置:", flush=True)
             print(f"  - 每日免费礼包 : {'[ON]' if enable_fg else '[OFF]'}", flush=True)
             print(f"  - 驯鹿鱼送收礼 : {'[ON]' if enable_rf else '[OFF]'}", flush=True)
+            print(f"  - 兑换金贝壳券 : {'[ON]' if enable_gsc else '[OFF]'}", flush=True)
             print(f"  - 乐队鱼演出   : {'[ON]' if enable_bf else '[OFF]'}", flush=True)
             print(f"  - 金海豚小游戏 : {'[ON]' if enable_gd else '[OFF]'}", flush=True)
             print(f"  - 摇一摇小游戏 : {'[ON]' if enable_sg else '[OFF]'}", flush=True)
             print(f"  - 钓鱼达人     : {'[ON]' if enable_fi else '[OFF]'}", flush=True)
+            print(f"  - 宝石礼盒兑换 : {'[ON]' if enable_ggb else '[OFF]'}", flush=True)
             print(f"  - 浪漫满屋     : {'[ON]' if enable_rh else '[OFF]'}", flush=True)
             print("=" * 60, flush=True)
 
@@ -3128,6 +3196,39 @@ class ReindeerFishDoneAction(CustomAction):
             return False
 
 
+@AgentServer.custom_action("GemGiftBoxDoneAction")
+class GemGiftBoxDoneAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            print("[宝石礼盒] 已确认返回鱼缸，继续日常收尾", flush=True)
+            advance_daily_routine_step("GemGiftBox", "DONE")
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[宝石礼盒] 完成状态写入异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("GoldShellCouponDoneAction")
+class GoldShellCouponDoneAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            print("[兑换金贝壳券] 已确认返回鱼缸，继续日常收尾", flush=True)
+            if daily_routine_state.get("active"):
+                # 幂等保护：仅当当前 step 确为 GOLD_SHELL_COUPON 且状态未为 DONE 时推进
+                current_step = daily_routine_state.get("step")
+                task_status = daily_routine_state.get("tasks", {}).get("GoldShellCoupon", {}).get("status")
+                if current_step == "GOLD_SHELL_COUPON" and task_status != "DONE":
+                    advance_daily_routine_step("GoldShellCoupon", "DONE")
+                else:
+                    print(f"[兑换金贝壳券] 幂等守卫生效：忽略重复或非本阶段推进请求 (step={current_step}, status={task_status})", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[兑换金贝壳券] 完成状态写入异常: {e}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("DailyRoutineSkipBandFishPass2Action")
 class DailyRoutineSkipBandFishPass2Action(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -3169,20 +3270,24 @@ class DailyRoutineFinishAction(CustomAction):
             tasks = daily_routine_state.get("tasks", {})
             fg_st = tasks.get("FreeGift", {}).get("status", "SKIPPED")
             rf_st = tasks.get("ReindeerFish", {}).get("status", "SKIPPED")
+            gsc_st = tasks.get("GoldShellCoupon", {}).get("status", "SKIPPED")
             bf_st = tasks.get("BandFish", {}).get("status", "SKIPPED")
             gd_st = tasks.get("GoldenDolphin", {}).get("status", "SKIPPED")
             sg_st = tasks.get("ShakeGame", {}).get("status", "SKIPPED")
             fi_st = tasks.get("Fishing", {}).get("status", "SKIPPED")
+            ggb_st = tasks.get("GemGiftBox", {}).get("status", "SKIPPED")
             rh_st = tasks.get("RomanticHouse", {}).get("status", "SKIPPED")
 
             print("=" * 60, flush=True)
             print("  【日常收尾 DailyRoutineTask】全部勾选子任务执行完毕！", flush=True)
             print(f"  - 每日免费礼包 (FreeGift)     : {fg_st}", flush=True)
             print(f"  - 驯鹿鱼送收礼 (ReindeerFish) : {rf_st}", flush=True)
+            print(f"  - 兑换金贝壳券 (GoldShellCoupon) : {gsc_st}", flush=True)
             print(f"  - 乐队鱼演出 (BandFish)       : {bf_st}", flush=True)
             print(f"  - 金海豚小游戏 (GoldenDolphin) : {gd_st}", flush=True)
             print(f"  - 摇一摇小游戏 (ShakeGame)     : {sg_st}", flush=True)
             print(f"  - 钓鱼达人 (Fishing)          : {fi_st}", flush=True)
+            print(f"  - 宝石礼盒兑换 (GemGiftBox)   : {ggb_st}", flush=True)
             print(f"  - 浪漫满屋 (RomanticHouse)    : {rh_st}", flush=True)
             print("=" * 60, flush=True)
 
@@ -3968,3 +4073,94 @@ class UnifiedShakeGemCollectAction(CustomAction):
             traceback.print_exc()
             print(f"[统一摇晃收宝] 异常: {e}", flush=True)
             return False
+
+
+@AgentServer.custom_action("MobileAdResetStateAction")
+class MobileAdResetStateAction(CustomAction):
+    """
+    重置手机/模拟器看广告共享运行时状态并解析任务选项:
+    - 重置 completed_cycles = 0;
+    - 重置 reward_recorded = False;
+    - 解析 max_cycles (默认 3 轮);
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        max_cycles = safe_int(param.get("max_cycles", 3), 3)
+        log_tag = str(param.get("log_tag") or "手机看广告")
+        mobile_ad_state["completed_cycles"] = 0
+        mobile_ad_state["reward_recorded"] = False
+        mobile_ad_state["max_cycles"] = max_cycles
+        mobile_ad_state["log_tag"] = log_tag
+        print(f"[{log_tag}] 任务初始化，目标看广告轮数: {max_cycles} 轮", flush=True)
+        return True
+
+
+@AgentServer.custom_action("MobileAdRecordRewardAction")
+class MobileAdRecordRewardAction(CustomAction):
+    """
+    当识别到最终奖励弹窗时执行（严格幂等）:
+    1. 幂等防护: 若当前奖励弹窗已被记录 (reward_recorded == True)，跳过计数;
+    2. 若未记录: completed_cycles += 1, reward_recorded = True;
+    3. 尝试截屏 OCR 观测背景中的周期进度标记 (如 (1/20), (10/10) 等，仅作日志观测);
+    4. 打印当前进度日志与下一步操作提示。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        max_cycles = mobile_ad_state.get("max_cycles", 3)
+        log_tag = mobile_ad_state.get("log_tag", "手机看广告")
+
+        # 1. 尝试截屏并 OCR 观测背景中的周期进度标记 (如 (1/20), (10/10) 等)
+        try:
+            ctrl = getattr(getattr(context, "tasker", None), "controller", None)
+            if ctrl is not None:
+                img_job = ctrl.post_screencap().wait()
+                img = img_job.get()
+                if img is not None:
+                    h, w = img.shape[:2]
+                    scale_x = w / 1600.0
+                    scale_y = h / 720.0
+                    x1 = int(1250 * scale_x)
+                    y1 = int(500 * scale_y)
+                    x2 = int(1450 * scale_x)
+                    y2 = int(650 * scale_y)
+                    crop = img[y1:y2, x1:x2]
+                    from rapidocr_onnxruntime import RapidOCR
+                    ocr = RapidOCR()
+                    res, _ = ocr(crop)
+                    if res:
+                        txt = "".join(r[1] for r in res)
+                        m = re.search(r"(\d+/\d+)", txt)
+                        if m:
+                            print(f"[{log_tag}][观测] 当前页面奖励进度: {m.group(1)}", flush=True)
+        except Exception:
+            pass
+
+        # 2. 幂等检查：同一个奖励弹窗即使被重新接管，也绝不重复计数
+        if mobile_ad_state.get("reward_recorded", False):
+            curr = mobile_ad_state.get("completed_cycles", 0)
+            print(f"[{log_tag}] 当前奖励弹窗已经计数 (第 {curr}/{max_cycles} 轮)，跳过重复记录", flush=True)
+            return True
+
+        mobile_ad_state["completed_cycles"] = mobile_ad_state.get("completed_cycles", 0) + 1
+        mobile_ad_state["reward_recorded"] = True
+        curr = mobile_ad_state["completed_cycles"]
+
+        print(f"[{log_tag}] 广告完成进度: 第 {curr}/{max_cycles} 轮", flush=True)
+        if curr >= max_cycles:
+            print(f"[{log_tag}] 已达到单次任务设定的安全上限 ({max_cycles} 轮)，准备关闭弹窗结束任务。", flush=True)
+        else:
+            print(f"[{log_tag}] 准备拉起第 {curr + 1} 轮广告...", flush=True)
+
+        return True
+
+
+@AgentServer.custom_action("MobileAdOnAdStartAction")
+class MobileAdOnAdStartAction(CustomAction):
+    """
+    当手机或模拟器确认新广告已启动播放时执行:
+    重置 reward_recorded = False，使后续新的最终奖励弹窗能够正常计数。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        mobile_ad_state["reward_recorded"] = False
+        log_tag = mobile_ad_state.get("log_tag", "手机看广告")
+        print(f"[{log_tag}] 新广告已确认启动播放，重置奖励弹窗记录标记", flush=True)
+        return True

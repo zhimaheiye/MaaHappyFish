@@ -8,6 +8,7 @@ GLOBAL_HANDLERS = [
     "[JumpBack]GlobalDailySignPopup",
     "[JumpBack]GlobalSpecialOfferPopup",
     "[JumpBack]GlobalNewsPopup",
+    "[JumpBack]GlobalLevelUpPopup",
 ]
 HANDLER_NODES = {
     "GlobalActivityPagePopup",
@@ -15,7 +16,9 @@ HANDLER_NODES = {
     "GlobalDailySignClaim",
     "GlobalSpecialOfferPopup",
     "GlobalNewsPopup",
+    "GlobalLevelUpPopup",
 }
+ISOLATED_PIPELINES = {"mobile_ads.json", "emulator_ads.json"}
 ATOMIC_NEXT_NODES = {
     "ClickFishBubble",
     "PatrolCollectTank1Bubble",
@@ -96,8 +99,24 @@ def run_tests():
     assert news_close["action"] == "Click"
     assert "target" not in news_close
 
+    level_up = pipeline["GlobalLevelUpPopup"]
+    assert level_up["recognition"] == "TemplateMatch"
+    assert level_up["template"] == "升级弹窗_识别.png"
+    assert level_up["roi"] == [200, 348, 378, 185]
+    assert level_up["action"] == "DoNothing"
+    assert level_up["next"] == ["GlobalLevelUpConfirm"]
+
+    level_up_confirm = pipeline["GlobalLevelUpConfirm"]
+    assert level_up_confirm["recognition"] == "OCR"
+    assert level_up_confirm["expected"] == "太好了"
+    assert level_up_confirm["roi"] == [957, 627, 125, 47]
+    assert level_up_confirm["action"] == "Click"
+    assert "target" not in level_up_confirm
+
     missing = []
     for name, node in pipeline.items():
+        if locations[name].name in ISOLATED_PIPELINES:
+            continue
         successors = node.get("next")
         if name in HANDLER_NODES or name in ATOMIC_NEXT_NODES or not successors:
             continue
@@ -114,10 +133,14 @@ def run_tests():
         "特惠礼包_识别.png",
         "特惠礼包_关闭.png",
         "快报页面_关闭.png",
+        "升级弹窗_识别.png",
     ):
         assert (image_dir / template).is_file(), f"missing template: {template}"
 
-    print("[PASS] global activity-page, daily-sign, special-offer, and news handlers")
+    print(
+        "[PASS] global activity-page, daily-sign, special-offer, news, "
+        "and level-up handlers"
+    )
 
 
 if __name__ == "__main__":

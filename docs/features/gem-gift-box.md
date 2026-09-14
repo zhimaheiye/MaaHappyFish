@@ -56,13 +56,25 @@ GemGiftBoxTask
 - 兑换按钮：OCR `^[兑兌][换換]$`，ROI `[789,486,169,131]`，严格避免误点“今日已兑换”计数文字。
 - 确定按钮：OCR `^确定$`，ROI `[557,568,178,135]`。
 
-## 结束契约
+## 结束契约与日常收尾集成
 
-七个等级均完成本轮检查（可兑换项尽量兑换，已满项跳过，不可兑换项记录后跳过）后，OCR 点击左上角通用返回；只有 `主界面特征.png` 命中后任务才算完成。任何页面门禁、弹窗、按钮或结果复核失败都会进入 `GemGiftBoxAbort` 安全停止。
+七个等级均完成本轮检查（可兑换项尽量兑换，已满项跳过，不可兑换项记录后跳过）后，OCR 点击左上角通用返回；在 `GemGiftBoxVerifyTank` 节点中通过 `主界面特征.png` 确认回到主鱼缸。
+
+### 双出口路由契约 (Dual-Exit Routing)
+为兼顾独立运行与日常收尾总控调用，`GemGiftBoxVerifyTank` 采用标准化双出口分流：
+1. 触发 `GemGiftBoxDoneAction`：若日常收尾处于激活状态，安全推进日常收尾步骤并将 `GemGiftBox` 状态标记为 `DONE`；
+2. 随后通过双出口分流：
+   - `DailyRoutineReturnIfActive`：在 `daily_routine_state["active"] == True` 时流转回 `DailyRoutineDispatcher` 继续推进下一子任务（`RomanticHouseTask`）；
+   - `DailyRoutineStandaloneDone`：在独立运行（`active == False`）时直接作为叶子节点正常成功退出（`ret=true`），绝不硬编码跌入未激活的 Dispatcher 引起超时判负。
+
+### 日常收尾集成说明
+- **运行顺序 (方案 A)**：`FISHING` $\rightarrow$ **`GEM_GIFT_BOX`** $\rightarrow$ `ROMANTIC_HOUSE`；
+- **默认勾选状态**：默认**不勾选**（不进入 `interface.json` 的 `default_case`），需由用户在 UI 的日常收尾任务选项中主动勾选启用；
+- **独立任务保留**：`interface.json` 中完整保留 `GemGiftBoxTask` 独立入口，支持单独勾选运行与调试。
 
 ## 代码级验证
 
-`python dev/test_gem_gift_box.py` 覆盖：
+`python dev/test_gem_gift_box.py` 与 `python dev/test_daily_routine_scheduler.py` 覆盖：
 
 - 用户提供模板和 ROI；
 - 实机页面标题中的 `鱼` 字门禁，以及基准卡片中点 `(360,215)`；
@@ -70,4 +82,6 @@ GemGiftBoxTask
 - 七个配方身份顺序；
 - 已完成卡片即使 OK 仍存在也不会重复兑换；
 - 未完成卡片固定执行 9 次加号并在确认后更新到 `10/10`；
-- 下半页滚动查找 36、41、46 级配方。
+- 下半页滚动查找 36、41、46 级配方；
+- `GemGiftBoxVerifyTank` 双出口与 `GemGiftBoxDoneAction` 契约；
+- 日常收尾中仅勾选宝石礼盒、全选包含宝石礼盒、以及 6 种组合 case 契约校验。

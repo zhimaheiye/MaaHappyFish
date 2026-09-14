@@ -1,0 +1,246 @@
+{
+    "EmulatorAdTask": {
+        "action": "Custom",
+        "custom_action": "MobileAdResetStateAction",
+        "custom_action_param": {
+            "max_cycles": 3,
+            "log_tag": "模拟器看广告"
+        },
+        "next": [
+            "EmulatorAdRouter"
+        ]
+    },
+    "EmulatorAdRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "EmulatorAdRewardPopup",
+            "EmulatorAdStopEnabled",
+            "EmulatorAdStopDisabled",
+            "EmulatorAdClosePage",
+            "EmulatorAdCenter",
+            "EmulatorAdWaitForClose"
+        ]
+    },
+    "EmulatorAdCenter": {
+        "recognition": "TemplateMatch",
+        "template": "看视频赚大奖.png",
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 15000,
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 已点击“看视频赚大奖”，正在等待广告结束。"
+        },
+        "next": [
+            "EmulatorAdMarkStarted"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
+        ]
+    },
+    "EmulatorAdMarkStarted": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "MobileAdOnAdStartAction",
+        "next": [
+            "EmulatorAdWaitForClose"
+        ]
+    },
+    "EmulatorAdWaitForClose": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 广告仍在播放，等待可识别的关闭按钮。"
+        },
+        "next": [
+            "EmulatorAdClosePage"
+        ]
+    },
+    "EmulatorAdClosePage": {
+        "recognition": "TemplateMatch",
+        "template": "看广告页面_关闭.png",
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 80000,
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 已识别并关闭广告页面，正在等待转盘状态。"
+        },
+        "next": [
+            "EmulatorAdPostAdRouter"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
+        ]
+    },
+    "EmulatorAdStopEnabled": {
+        "recognition": "TemplateMatch",
+        "template": "停止按钮_可点击.png",
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2500,
+        "timeout": 15000,
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 转盘停止按钮可用，已点击停止并等待奖励。"
+        },
+        "next": [
+            "EmulatorAdPostStopRouter"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
+        ]
+    },
+    "EmulatorAdStopDisabled": {
+        "recognition": "TemplateMatch",
+        "template": "停止按钮_不可点击.png",
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "post_delay": 800,
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 转盘停止按钮暂不可用，正在等待。"
+        },
+        "next": [
+            "EmulatorAdPostStopRouter"
+        ]
+    },
+    "EmulatorAdPostAdRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 20000,
+        "next": [
+            "EmulatorAdRewardPopup",
+            "EmulatorAdStopEnabled",
+            "EmulatorAdStopDisabled"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
+        ]
+    },
+    "EmulatorAdPostStopRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 20000,
+        "next": [
+            "EmulatorAdRewardPopup",
+            "EmulatorAdStopEnabled",
+            "EmulatorAdStopDisabled"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
+        ]
+    },
+    "EmulatorAdRewardPopup": {
+        "recognition": "TemplateMatch",
+        "template": "下一段视频_对号.png",
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "threshold": 0.8,
+        "action": "Custom",
+        "custom_action": "MobileAdRecordRewardAction",
+        "timeout": 10000,
+        "next": [
+            "EmulatorAdCheckContinueCondition",
+            "EmulatorAdContinue"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
+        ]
+    },
+    "EmulatorAdCheckContinueCondition": {
+        "recognition": "Custom",
+        "custom_recognition": "MobileAdCheckCycleLimitReco",
+        "custom_recognition_param": {
+            "max_cycles": 3
+        },
+        "action": "DoNothing",
+        "next": [
+            "EmulatorAdCloseRewardAndDone"
+        ]
+    },
+    "EmulatorAdContinue": {
+        "recognition": "TemplateMatch",
+        "template": "下一段视频_对号.png",
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 15000,
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 已点击下一段视频对号，正在启动下一轮广告。"
+        },
+        "next": [
+            "EmulatorAdMarkStarted"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
+        ]
+    },
+    "EmulatorAdCloseRewardAndDone": {
+        "recognition": "TemplateMatch",
+        "template": "看广告页面_关闭.png",
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 10000,
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 已达到设定轮数并关闭页面，本次任务完成。"
+        },
+        "next": [
+            "EmulatorAdDone"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
+        ]
+    },
+    "EmulatorAdDone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
+    },
+    "EmulatorAdAbort": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 页面门禁或关键按钮未通过，已安全停止且未继续点击。"
+        }
+    }
+}

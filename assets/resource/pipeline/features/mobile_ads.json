@@ -1,0 +1,238 @@
+{
+    "MobileAdTask": {
+        "action": "Custom",
+        "custom_action": "MobileAdResetStateAction",
+        "custom_action_param": {
+            "max_cycles": 3
+        },
+        "next": [
+            "MobileAdRouter"
+        ]
+    },
+    "MobileAdRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "MobileAdVerifyRewardPopup",
+            "MobileAdWheelStop",
+            "MobileAdEndcard",
+            "MobileAdPlaying",
+            "MobileAdPlayingByOCR",
+            "MobileAdCenter",
+            "MobileAdCenterByOCR"
+        ]
+    },
+    "MobileAdCenter": {
+        "recognition": "TemplateMatch",
+        "template": "mobile_ads/看视频赚大奖_入口.png",
+        "roi": [
+            990,
+            500,
+            140,
+            110
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2500,
+        "timeout": 15000,
+        "next": [
+            "MobileAdPlaying",
+            "MobileAdPlayingByOCR",
+            "MobileAdEndcard"
+        ]
+    },
+    "MobileAdCenterByOCR": {
+        "recognition": "OCR",
+        "expected": [
+            "看视频",
+            "赚大奖"
+        ],
+        "roi": [
+            980,
+            480,
+            160,
+            140
+        ],
+        "action": "Click",
+        "post_delay": 2500,
+        "timeout": 15000,
+        "next": [
+            "MobileAdPlaying",
+            "MobileAdPlayingByOCR",
+            "MobileAdEndcard"
+        ]
+    },
+    "MobileAdPlaying": {
+        "recognition": "TemplateMatch",
+        "template": "mobile_ads/广告播放中_右上角胶囊.png",
+        "roi": [
+            1350,
+            10,
+            240,
+            80
+        ],
+        "threshold": 0.65,
+        "action": "Custom",
+        "custom_action": "MobileAdOnAdStartAction",
+        "timeout": 80000,
+        "next": [
+            "MobileAdEndcard"
+        ]
+    },
+    "MobileAdPlayingByOCR": {
+        "recognition": "OCR",
+        "expected": [
+            "获得奖励",
+            "广告",
+            "安装",
+            "跳过"
+        ],
+        "roi": [
+            10,
+            10,
+            500,
+            120
+        ],
+        "action": "Custom",
+        "custom_action": "MobileAdOnAdStartAction",
+        "timeout": 80000,
+        "next": [
+            "MobileAdEndcard"
+        ]
+    },
+    "MobileAdEndcard": {
+        "recognition": "TemplateMatch",
+        "template": "mobile_ads/广告结束页_关闭.png",
+        "roi": [
+            1515,
+            20,
+            75,
+            70
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 20000,
+        "next": [
+            "MobileAdPostReturnRouter"
+        ]
+    },
+    "MobileAdPostReturnRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 20000,
+        "next": [
+            "MobileAdWheelStop",
+            "MobileAdVerifyRewardPopup"
+        ]
+    },
+    "MobileAdWheelStop": {
+        "recognition": "OCR",
+        "expected": [
+            "^停止$"
+        ],
+        "roi": [
+            980,
+            480,
+            160,
+            140
+        ],
+        "action": "Click",
+        "post_delay": 3500,
+        "timeout": 15000,
+        "next": [
+            "MobileAdWheelStopAgain",
+            "MobileAdVerifyRewardPopup"
+        ]
+    },
+    "MobileAdWheelStopAgain": {
+        "recognition": "OCR",
+        "expected": [
+            "^停止$"
+        ],
+        "roi": [
+            980,
+            480,
+            160,
+            140
+        ],
+        "action": "Click",
+        "post_delay": 3500,
+        "timeout": 15000,
+        "next": [
+            "MobileAdWheelStopAgain",
+            "MobileAdVerifyRewardPopup"
+        ]
+    },
+    "MobileAdVerifyRewardPopup": {
+        "recognition": "OCR",
+        "expected": [
+            "恭喜你获得如下奖励",
+            "要继续观看下一段视频吗",
+            "继续观看下一段视频"
+        ],
+        "roi": [
+            600,
+            200,
+            400,
+            280
+        ],
+        "timeout": 10000,
+        "action": "Custom",
+        "custom_action": "MobileAdRecordRewardAction",
+        "next": [
+            "MobileAdCheckContinueCondition",
+            "MobileAdClickContinueCheck"
+        ]
+    },
+    "MobileAdCheckContinueCondition": {
+        "recognition": "Custom",
+        "custom_recognition": "MobileAdCheckCycleLimitReco",
+        "custom_recognition_param": {
+            "max_cycles": 3
+        },
+        "action": "DoNothing",
+        "next": [
+            "MobileAdCloseRewardPopupAndDone"
+        ]
+    },
+    "MobileAdCloseRewardPopupAndDone": {
+        "recognition": "TemplateMatch",
+        "template": "mobile_ads/奖励弹窗_关闭.png",
+        "roi": [
+            840,
+            455,
+            100,
+            110
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1500,
+        "next": [
+            "MobileAdDone"
+        ]
+    },
+    "MobileAdClickContinueCheck": {
+        "recognition": "TemplateMatch",
+        "template": "mobile_ads/奖励弹窗_继续观看.png",
+        "roi": [
+            930,
+            455,
+            120,
+            130
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2000,
+        "timeout": 15000,
+        "next": [
+            "MobileAdPlaying",
+            "MobileAdPlayingByOCR",
+            "MobileAdEndcard"
+        ]
+    },
+    "MobileAdDone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
+    }
+}
