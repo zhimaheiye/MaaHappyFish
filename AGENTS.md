@@ -33,10 +33,12 @@
 | 维护"乐队鱼演出"邀请与演出活动 | `docs/features/band-fish.md` |
 | 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
 | 维护"金海豚小游戏"活动自动化 | `docs/features/golden-dolphin.md` |
+| 维护"公主任务"三档奖励领取 | `docs/features/princess-task.md` |
 | 维护"摇一摇小游戏"活动自动化 | `docs/features/shake-game.md` |
 | 维护"驯鹿鱼送收礼物"日常子任务 | `docs/features/reindeer-fish.md` |
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
 | 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |
+| 当且仅当项目版本号达到 1.0.0 正式完结发版时触发小红书抽奖活动 | `docs/v1.0-rednote-lottery.md`（仅在版本号达到 1.0.0 时触发，其余所有版本绝对不触发） |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 
 ## 新 Agent 对话接手顺序（必须执行）
@@ -242,3 +244,8 @@ MaaHappyFish 采用 MFAAvalonia 原生支持的二合一整包（UI + MaaFW + Ag
 4. **用户环境保护原则（电脑非纯测试机）**：
    - 任何操作前执行“三确认”：确认操作对象、确认当前窗口、确认当前设备；
    - 发现连续失败、环境不确定或工具异常时，立即触发熔断，停止执行，向 GPT/用户汇报后依规恢复。
+
+### v1.0.0 完结里程碑触发门禁 (Milestone Trigger Gate: v1.0.0 Only)
+
+- **唯一触发条件**：当且仅当本项目版本号正式推进至 **`1.0.0`**（即工具 1.0 版本正式完结发版）时，才触发执行本地文档 `docs/v1.0-rednote-lottery.md` 中的小红书抽奖活动流程。
+- **严格禁止提前触发**：在版本号未达到 `1.0.0`（例如处于当前所有 `0.x.x` 阶段）时，任何 Agent 或自动化工作流**绝对不得提前触发、引用或执行该文件**。

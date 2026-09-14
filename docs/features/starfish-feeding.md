@@ -11,35 +11,39 @@
 
 ## 执行流程 (Workflow)
 
+### 1. 通用三海星喂食主流程（CollectFish 与 Patrol 统一规范）
+
+无论单鱼缸模式还是双鱼缸轮换模式，均统一通过鱼缸管理页通用入口，一次喂满三只海星：
+
 ```text
 TriggerStarfishFeed
   ↓
-OpenSettingsForStarfish
+CollectFishOpenManagement (点击鱼缸管理扳手 [1200, 360, 80, 80])
   ↓
-DismissFishBannerIfOpen (4500ms post_delay 等待 UI 自然恢复)
+CollectFishVerifyManagement (校验进入鱼缸管理页，匹配 鱼缸管理_进入.png)
   ↓
-ClickSettingsIcon
+CollectFishOpenUniversalStarfish (OCR 识别并点击 "海星" [700, 30, 150, 70])
   ↓
-VerifyTankSettings (OCR 校验已进入鱼缸设置页)
+CollectFishVerifyStarfishPage (OCR 校验 "海星" 标题页)
   ↓
-SelectCuteStarfish (在前 7 个宠物位置内 OCR 识别“海星”并点击)
+CollectFishFeedCuteStarfish (OCR 识别并点击 "萌海星" [100, 80, 1080, 560])
+  ↓ 点击 "补充" → 点击第一格普通鱼食袋 → 校验装满 → 返回海星列表
+CollectFishFeedWellBehavedStarfish (OCR 识别并点击 "乖海星" [100, 80, 1080, 560])
+  ↓ 点击 "补充" → 点击第一格普通鱼食袋 → 校验装满 → 返回海星列表
+CollectFishFeedBrightStarfish (OCR 识别并点击 "亮海星" [100, 80, 1080, 560])
+  ↓ 点击 "补充" → 点击第一格普通鱼食袋 → 校验装满 → 返回海星列表
+CollectFishStarfishReturnToManagement (点击返回至鱼缸管理)
   ↓
-VerifyStarfishPanel (OCR 校验已打开海星面板)
+CollectFishStarfishReturnToTank (点击返回确认回到鱼缸主界面)
   ↓
-ClickReplenishFood (OCR 识别 "补充")
-  ↓
-ClickFishFoodBag (TemplateMatch 普通鱼食袋.png, 固定点击第一格鱼食)
-  ↓
-CheckFoodFull (TemplateMatch 鱼食已装满.png 校验进度条右侧填满)
-  ├── 校验成功 → 播报 "鱼食补充成功！进度条已加满"
-  └── 校验失败 → 播报 "提示：未检测到鱼食加满，请检查背包"
-  ↓
-StarfishReturnFirst (返回1)
-  ↓
-StarfishReturnSecond (返回2)
+CollectFishAfterStarfishRouter (状态机校准当前单调槽位与期望目标缸)
   ↓
 ResumeHarvest (万能返回节点)
 ```
+
+### 2. 旧版右上角齿轮单海星流程（已弃用）
+
+原有的 `OpenSettingsForStarfish` 齿轮路径（仅喂食当前鱼缸萌海星）已正式被上述通用三海星流程取代，消除不同缸海星存粮不均的问题。
 
 ## 防误触机制
 
@@ -112,11 +116,19 @@ ResumeHarvest (万能返回节点)
     2. 引入 `CheckFoodFull` 节点，通过 `TemplateMatch` 匹配 `鱼食已装满.png`（橙色进度条右侧圆弧饱满状态），成功装满即在 UI 日志面板输出 `[海星喂食] 鱼食补充成功！进度条已加满，海星存粮充沛！`；若未满则触发 `NotifyFoodNotFull` 提示检查背包。
 - **回归**: 形成【点击加号 → 视觉校验装满 → 状态回执播报 → 安全返回】的完整闭环。
 
+### 2026-09-14 · 收鱼产物重构为通用三海星喂食
+- **重构**: 将 `CollectFishTask` 内部旧有的齿轮单海星喂食链路全面重构为鱼缸管理页通用入口链路；
+- **全量覆盖**: 依次进入萌海星、乖海星、亮海星面板完成鱼食补充与进度条满仓校验；
+- **自适应目标缸**: 喂食完成后由 `CollectFishAfterStarfishRouter` 重新评估物理单调时间片，自动将目标缸校准至当前时刻对应的正确鱼缸序号，彻底消除了海星喂食打乱双缸轮换节奏的隐患。
+
 ## 当前状态
 
-- **状态**: 生产就绪，具备进度条回执校验闭环。
+- **状态**: 生产就绪，具备多海星顺序投喂与进度条回执校验闭环。
 - **关键文件**:
     - `agent/my_reco.py` (`CheckStarfishTimerReco`)
-    - `assets/resource/pipeline/collect_fish.json` (`ClickFishFoodBag` -> `CheckFoodFull`)
+    - `agent/my_action.py` (`CollectFishAfterStarfishAction`)
+    - `assets/resource/pipeline/collect_fish.json` (`CollectFishOpenManagement` -> `FeedCute/WellBehaved/Bright` -> `CollectFishAfterStarfishRouter`)
     - `assets/resource/image/鱼食已装满.png`
     - `assets/resource/image/普通鱼食袋.png`
+    - `assets/resource/image/patrol/鱼缸管理_扳手.png`
+

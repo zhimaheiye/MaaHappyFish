@@ -31,6 +31,8 @@ try:
         shake_game_state,
         gem_collect_state,
         mobile_ad_state,
+        collect_fish_state,
+        starfish_timer_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -46,6 +48,8 @@ except ImportError:
         shake_game_state,
         gem_collect_state,
         mobile_ad_state,
+        collect_fish_state,
+        starfish_timer_state,
     )
 
 try:
@@ -2377,7 +2381,13 @@ class GemGiftBoxExchangeAllAction(CustomAction):
 # 金海豚小游戏基础设施与 Action 拆分 (Phase 2A-1)
 # ==============================================================================
 
-GOLDEN_DOLPHIN_HEART_FALLBACK_DELAY_SECONDS = 1.0
+GOLDEN_DOLPHIN_REWARD_ORDER = ("xp", "heart", "gem", "coin")
+GOLDEN_DOLPHIN_REWARD_NAMES = {
+    "xp": "经验星",
+    "heart": "爱心",
+    "gem": "宝石",
+    "coin": "贝币",
+}
 
 def _get_golden_dolphin_templates():
     """统一解析并加载金海豚关键视觉模板"""
@@ -2404,43 +2414,97 @@ def _get_golden_dolphin_templates():
             return None
         return cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
 
-    star_templates = tuple(
-        template
-        for template in (_load_tpl("金海豚_经验星1.png"), _load_tpl("金海豚_经验星2.png"))
-        if template is not None and template.size > 0
-    )
+    def _load_templates(*names: str):
+        return tuple(
+            template
+            for template in (_load_tpl(name) for name in names)
+            if template is not None and template.size > 0
+        )
+
+    reward_templates = {
+        "xp": _load_templates("金海豚_经验星1.png", "金海豚_经验星2.png"),
+        "heart": _load_templates("金海豚_爱心.png"),
+        "gem": _load_templates(
+            "金海豚_宝石1.png",
+            "金海豚_宝石2.png",
+            "金海豚_宝石3.png",
+            "金海豚_宝石4.png",
+        ),
+        "coin": _load_templates(
+            "金海豚_贝币.png",
+            "金海豚_贝币1.png",
+            "金海豚_贝币2.png",
+        ),
+    }
     return {
         "tpl_dir": tpl_dir,
         "entrance": _load_tpl("游乐园入口.png"),
         "dolphin": _load_tpl("金海豚_图标.png"),
         "confirm": _load_tpl("金海豚_确定按钮.png"),
-        "coin": _load_tpl("金海豚_贝币.png"),
-        "heart": _load_tpl("金海豚_爱心.png"),
-        "stars": star_templates,
+        "main": _load_tpl("主界面特征.png"),
+        "rewards": reward_templates,
+        "coins": reward_templates["coin"],
+        "hearts": reward_templates["heart"],
+        "gems": reward_templates["gem"],
+        "stars": reward_templates["xp"],
         "cancel": _load_tpl("金海豚_结束取消.png"),
     }
 
 
-def _find_golden_dolphin_coin(frame, template, threshold: float = 0.70):
-    """返回模板识别到的贝币中心与置信度；未命中时不猜坐标。"""
-    if frame is None or template is None or template.size == 0:
-        return None
+def _find_golden_dolphin_template_targets(frame, templates, threshold: float = 0.70):
+    """在完整画面识别同类奖励的全部模板变体，并合并同一目标的重复命中。"""
+    if isinstance(templates, np.ndarray):
+        templates = (templates,)
+    templates = tuple(
+        template for template in (templates or ())
+        if template is not None and template.size > 0
+    )
+    if frame is None or not templates:
+        return []
     if frame.shape[:2] != (720, 1280):
         frame = cv2.resize(frame, (1280, 720))
-    roi_top, roi_bottom = 120, 650
-    search = frame[roi_top:roi_bottom]
-    template_h, template_w = template.shape[:2]
-    if template_h > search.shape[0] or template_w > search.shape[1]:
-        return None
-    result = cv2.matchTemplate(search, template, cv2.TM_CCOEFF_NORMED)
-    _, score, _, location = cv2.minMaxLoc(result)
-    if score < threshold:
-        return None
-    return (
-        location[0] + template_w // 2,
-        roi_top + location[1] + template_h // 2,
-        float(score),
-    )
+
+    raw = []
+    for template in templates:
+        template_h, template_w = template.shape[:2]
+        if template_h > frame.shape[0] or template_w > frame.shape[1]:
+            continue
+        result = cv2.matchTemplate(frame, template, cv2.TM_CCOEFF_NORMED)
+        ys, xs = np.where(result >= threshold)
+        raw.extend(
+            (
+                int(x + template_w // 2),
+                int(y + template_h // 2),
+                float(result[y, x]),
+                template_w,
+                template_h,
+            )
+            for y, x in zip(ys, xs)
+        )
+
+    candidates = []
+    for x, y, score, width, height in sorted(raw, key=lambda item: item[2], reverse=True):
+        if any(
+            abs(x - selected_x) < max(width, selected_width) * 0.65
+            and abs(y - selected_y) < max(height, selected_height) * 0.65
+            for selected_x, selected_y, _, selected_width, selected_height in candidates
+        ):
+            continue
+        candidates.append((x, y, score, width, height))
+    return [
+        (x, y, score)
+        for x, y, score, _, _ in sorted(
+            candidates,
+            key=lambda candidate: (candidate[1], candidate[2]),
+            reverse=True,
+        )
+    ]
+
+
+def _find_golden_dolphin_coin(frame, templates, threshold: float = 0.70):
+    """兼容旧调用：返回全屏识别到的首个贝币；未命中时不猜坐标。"""
+    candidates = _find_golden_dolphin_template_targets(frame, templates, threshold)
+    return candidates[0] if candidates else None
 
 
 def _find_golden_dolphin_xp(frame, templates):
@@ -2501,59 +2565,29 @@ def _find_golden_dolphin_xp(frame, templates):
     return sorted(candidates, key=lambda candidate: (candidate[1], candidate[2]), reverse=True)
 
 
-def _find_golden_dolphin_hearts(frame, template, threshold: float = 0.70):
-    """在完整画面识别爱心并合并同一目标周围的重复命中。"""
-    if frame is None or template is None or template.size == 0:
-        return []
-    if frame.shape[:2] != (720, 1280):
-        frame = cv2.resize(frame, (1280, 720))
-    template_h, template_w = template.shape[:2]
-    if template_h > frame.shape[0] or template_w > frame.shape[1]:
-        return []
-
-    result = cv2.matchTemplate(frame, template, cv2.TM_CCOEFF_NORMED)
-    ys, xs = np.where(result >= threshold)
-    raw = sorted(
-        (
-            (int(x + template_w // 2), int(y + template_h // 2), float(result[y, x]))
-            for y, x in zip(ys, xs)
-        ),
-        key=lambda candidate: candidate[2],
-        reverse=True,
-    )
-    candidates = []
-    for candidate in raw:
-        x, y, _ = candidate
-        if any(
-            abs(x - selected_x) < template_w * 0.65
-            and abs(y - selected_y) < template_h * 0.65
-            for selected_x, selected_y, _ in candidates
-        ):
-            continue
-        candidates.append(candidate)
-    return sorted(candidates, key=lambda candidate: (candidate[1], candidate[2]), reverse=True)
+def _find_golden_dolphin_hearts(frame, templates, threshold: float = 0.70):
+    return _find_golden_dolphin_template_targets(frame, templates, threshold)
 
 
 def _select_golden_dolphin_frame_targets(
     frame,
-    coin_template,
-    star_templates,
-    heart_template,
-    xp_started: bool,
-    xp_quiet_seconds: float,
+    reward_templates,
+    priority: str = "xp",
 ):
-    """每帧优先全屏经验；XP 阶段静默一段时间后用全屏爱心补充。"""
-    xp_candidates = _find_golden_dolphin_xp(frame, star_templates)
-    if xp_candidates:
-        return "xp", xp_candidates[:4]
-    if not xp_started:
-        coin = _find_golden_dolphin_coin(frame, coin_template)
-        if coin is not None:
-            return "coin", [coin]
-    elif xp_quiet_seconds >= GOLDEN_DOLPHIN_HEART_FALLBACK_DELAY_SECONDS:
-        heart_candidates = _find_golden_dolphin_hearts(frame, heart_template)
-        if heart_candidates:
-            return "heart", heart_candidates[:4]
+    """同一帧先找用户最高优先级；未命中就立即检查其余奖励。"""
+    if priority not in GOLDEN_DOLPHIN_REWARD_ORDER:
+        priority = "xp"
+    search_order = (priority,) + tuple(
+        category for category in GOLDEN_DOLPHIN_REWARD_ORDER if category != priority
+    )
+    for category in search_order:
+        templates = reward_templates.get(category, ())
+        if category == "xp":
+            candidates = _find_golden_dolphin_xp(frame, templates)
+        else:
+            candidates = _find_golden_dolphin_template_targets(frame, templates)
+        if candidates:
+            return category, candidates[:4]
     return "wait", []
 
 
@@ -2588,6 +2622,73 @@ def _find_green_check(img):
                 if M["m00"] > 0:
                     return int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
     return None
+
+
+def _match_golden_dolphin_template(frame, template):
+    """返回模板最高分和中心点；只负责识别，不提供固定坐标兜底。"""
+    if frame is None or template is None or template.size == 0:
+        return 0.0, None
+    if frame.shape[:2] != (720, 1280):
+        frame = cv2.resize(frame, (1280, 720))
+    result = cv2.matchTemplate(frame, template, cv2.TM_CCOEFF_NORMED)
+    _, score, _, location = cv2.minMaxLoc(result)
+    return float(score), (
+        location[0] + template.shape[1] // 2,
+        location[1] + template.shape[0] // 2,
+    )
+
+
+def _return_golden_dolphin_to_tank(ctrl, templates, timeout: float = 8.0):
+    """从结算页或已确认的游乐园面板安全归位，并以主界面模板作为成功门禁。"""
+    tpl_main = templates.get("main")
+    tpl_cancel = templates.get("cancel")
+    tpl_dolphin = templates.get("dolphin")
+    if tpl_main is None or tpl_cancel is None or tpl_dolphin is None:
+        print("[金海豚退出] ERROR: 缺少归位所需视觉模板，安全终止", flush=True)
+        return False
+
+    deadline = time.monotonic() + timeout
+    last_action_at = 0.0
+    last_scores = (0.0, 0.0, 0.0)
+    while time.monotonic() < deadline:
+        frame = _capture_720p(ctrl)
+        if frame is None:
+            time.sleep(0.2)
+            continue
+
+        main_score, _ = _match_golden_dolphin_template(frame, tpl_main)
+        cancel_score, cancel_center = _match_golden_dolphin_template(frame, tpl_cancel)
+        panel_score, _ = _match_golden_dolphin_template(frame, tpl_dolphin)
+        last_scores = (main_score, cancel_score, panel_score)
+        if main_score >= 0.70:
+            print(f"[金海豚退出] 已确认返回主鱼缸 (score={main_score:.3f})", flush=True)
+            return True
+
+        now = time.monotonic()
+        if now - last_action_at >= 0.8 and cancel_score >= 0.70 and cancel_center:
+            print(
+                f"[金海豚退出] 识别到结算取消按钮 (score={cancel_score:.3f})，"
+                f"点击 {cancel_center}",
+                flush=True,
+            )
+            ctrl.post_click(*cancel_center).wait()
+            last_action_at = now
+        elif now - last_action_at >= 0.8 and panel_score >= 0.70:
+            print(
+                f"[金海豚退出] 已确认仍在游乐园面板 (score={panel_score:.3f})，收起面板后验证鱼缸",
+                flush=True,
+            )
+            ctrl.post_click(640, 150).wait()
+            last_action_at = now
+        time.sleep(0.35)
+
+    main_score, cancel_score, panel_score = last_scores
+    print(
+        "[金海豚退出] ERROR: 归位超时，未确认主鱼缸，"
+        f"main={main_score:.3f}, result={cancel_score:.3f}, panel={panel_score:.3f}",
+        flush=True,
+    )
+    return False
 
 
 @AgentServer.custom_action("GoldenDolphinNavigationAction")
@@ -2632,7 +2733,9 @@ class GoldenDolphinNavigationAction(CustomAction):
             gc_init = _find_green_check(screen)
             res_c_init = cv2.matchTemplate(screen, tpl_confirm, cv2.TM_CCOEFF_NORMED) if tpl_confirm is not None else None
             vc_init = cv2.minMaxLoc(res_c_init)[1] if res_c_init is not None else 0
-            already_in_popup = (gc_init is not None or vc_init >= 0.70)
+            # 绿色区域只能辅助定位按钮，不能单独证明弹窗存在；结算页或奖励动画
+            # 也可能出现绿色目标，曾因此把结算页误判成“次数耗尽”弹窗。
+            already_in_popup = (vc_init >= 0.70)
 
             screen_confirm = None
             has_confirm = False
@@ -2782,6 +2885,9 @@ class GoldenDolphinNavigationAction(CustomAction):
                     ctrl.post_click(btn_cx, btn_cy).wait()
                     time.sleep(1.0)
 
+                if not _return_golden_dolphin_to_tank(ctrl, tpls):
+                    golden_dolphin_state["status"] = "FAILED"
+                    return False
                 golden_dolphin_state["status"] = "NO_STAMINA"
                 return True
 
@@ -2802,10 +2908,23 @@ class GoldenDolphinNavigationAction(CustomAction):
 class GoldenDolphinInitAction(CustomAction):
     """为本次任务重置三局连续执行状态。"""
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        params = parse_dict_param(getattr(argv, "custom_action_param", None))
+        reward_priority = str(params.get("reward_priority", "xp")).strip().lower()
+        if reward_priority not in GOLDEN_DOLPHIN_REWARD_ORDER:
+            print(
+                f"[金海豚] 未知奖励优先级 {reward_priority!r}，回退为经验星",
+                flush=True,
+            )
+            reward_priority = "xp"
         golden_dolphin_state["status"] = "IDLE"
         golden_dolphin_state["completed_rounds"] = 0
         golden_dolphin_state["max_rounds"] = 3
-        print("[金海豚] 任务开始：计划连续执行 3 局；中途无次数则正常结束", flush=True)
+        golden_dolphin_state["reward_priority"] = reward_priority
+        print(
+            f"[金海豚] 任务开始：计划连续执行 3 局；最高优先级={GOLDEN_DOLPHIN_REWARD_NAMES[reward_priority]}；"
+            "中途无次数则正常结束",
+            flush=True,
+        )
         return True
 
 
@@ -2814,8 +2933,8 @@ class GoldenDolphinPlayGameAction(CustomAction):
     """
     金海豚小游戏拾取动作 (职责 2):
     仅负责游戏画面内的微观交互:
-    1. 经验星出现前持续识别并点击贝币
-    2. 首次识别到经验星后执行高频批量拾取
+    1. 全屏识别经验星、爱心、宝石、贝币
+    2. 每帧优先点击用户选择的奖励，未命中时立即点击其余已识别奖励
     3. 游戏结束弹窗监听
     不包含：游乐园导航、返回鱼缸归位
     """
@@ -2827,37 +2946,38 @@ class GoldenDolphinPlayGameAction(CustomAction):
                 return False
 
             tpls = _get_golden_dolphin_templates()
-            tpl_coin = tpls.get("coin")
-            tpl_heart = tpls.get("heart")
-            tpl_stars = tpls.get("stars", ())
+            reward_templates = tpls.get("rewards", {})
             tpl_cancel = tpls.get("cancel")
+            priority = str(golden_dolphin_state.get("reward_priority", "xp")).lower()
+            if priority not in GOLDEN_DOLPHIN_REWARD_ORDER:
+                priority = "xp"
 
-            if tpl_coin is None or tpl_coin.size == 0:
-                print("[金海豚游戏] ERROR: 缺少金海豚_贝币.png，安全终止任务", flush=True)
-                return False
-            if len(tpl_stars) < 2:
-                print("[金海豚游戏] ERROR: 金海豚_经验星1.png / 经验星2.png 未完整加载，安全终止任务", flush=True)
-                return False
-            if tpl_heart is None or tpl_heart.size == 0:
-                print("[金海豚游戏] ERROR: 缺少金海豚_爱心.png，安全终止任务", flush=True)
+            expected_template_counts = {"xp": 2, "heart": 1, "gem": 4, "coin": 3}
+            missing_categories = [
+                GOLDEN_DOLPHIN_REWARD_NAMES[category]
+                for category, expected_count in expected_template_counts.items()
+                if len(reward_templates.get(category, ())) < expected_count
+            ]
+            if missing_categories:
+                print(
+                    f"[金海豚游戏] ERROR: 奖励模板未完整加载：{', '.join(missing_categories)}，安全终止任务",
+                    flush=True,
+                )
                 return False
 
             print(
-                "[金海豚游戏] 当前策略：先点贝币；XP 阶段全屏经验优先，连续 1 秒无经验时全屏点爱心补充",
+                f"[金海豚游戏] 当前策略：全屏识别四类奖励；最高优先级="
+                f"{GOLDEN_DOLPHIN_REWARD_NAMES[priority]}；未命中时同一帧立即处理其他奖励",
                 flush=True,
             )
             t_game_start = time.monotonic()
             game_done = False
-            coin_clicks = 0
-            xp_clicks = 0
-            heart_clicks = 0
+            reward_clicks = {category: 0 for category in GOLDEN_DOLPHIN_REWARD_ORDER}
             loop_count = 0
-            xp_started = False
-            last_xp_seen_at = None
 
             while time.monotonic() - t_game_start < 55.0:
                 if _task_cancelled(context):
-                    print("[金海豚游戏] 收到停止请求，立即停止经验点击", flush=True)
+                    print("[金海豚游戏] 收到停止请求，立即停止奖励点击", flush=True)
                     return False
                 elapsed = time.monotonic() - t_game_start
                 img = _capture_720p(ctrl)
@@ -2866,7 +2986,7 @@ class GoldenDolphinPlayGameAction(CustomAction):
                     continue
                 loop_count += 1
 
-                # 结算模板只需降频轮询，避免它阻塞每一帧经验检测。
+                # 结算模板只需降频轮询，避免它阻塞每一帧奖励检测。
                 if elapsed > 20.0 and loop_count % 5 == 0 and tpl_cancel is not None:
                     res_cancel = cv2.matchTemplate(img, tpl_cancel, cv2.TM_CCOEFF_NORMED)
                     _, max_cancel, _, loc_cancel = cv2.minMaxLoc(res_cancel)
@@ -2875,61 +2995,31 @@ class GoldenDolphinPlayGameAction(CustomAction):
                         game_done = True
                         break
 
-                now = time.monotonic()
-                xp_quiet_seconds = (now - last_xp_seen_at) if last_xp_seen_at is not None else 0.0
                 phase, candidates = _select_golden_dolphin_frame_targets(
-                    img, tpl_coin, tpl_stars, tpl_heart, xp_started, xp_quiet_seconds
+                    img, reward_templates, priority
                 )
-                if phase == "xp":
-                    last_xp_seen_at = now
-                    if not xp_started:
-                        xp_started = True
-                        print(
-                            f"[金海豚游戏] 首次识别到经验星，停止点击贝币并切换为高频经验收集；"
-                            f"此前点击贝币 {coin_clicks} 次",
-                            flush=True,
-                        )
+                if phase != "wait":
                     for target_x, target_y, _ in candidates:
                         if _task_cancelled(context):
-                            print("[金海豚游戏] 收到停止请求，立即停止经验点击", flush=True)
+                            print("[金海豚游戏] 收到停止请求，立即停止奖励点击", flush=True)
                             return False
                         ctrl.post_click(target_x, target_y)
-                        xp_clicks += 1
-                    time.sleep(0.01)
-                elif phase == "heart":
-                    for target_x, target_y, _ in candidates:
-                        if _task_cancelled(context):
-                            print("[金海豚游戏] 收到停止请求，立即停止爱心点击", flush=True)
-                            return False
-                        ctrl.post_click(target_x, target_y)
-                        heart_clicks += 1
-                    if heart_clicks == len(candidates) or heart_clicks % 20 == 0:
+                        reward_clicks[phase] += 1
+                    if reward_clicks[phase] == len(candidates) or reward_clicks[phase] % 20 == 0:
                         print(
-                            f"[金海豚游戏] 已连续 {xp_quiet_seconds:.1f} 秒未识别到经验，"
-                            f"点击爱心补充 (累计 {heart_clicks} 次)",
+                            f"[金海豚游戏] 点击{GOLDEN_DOLPHIN_REWARD_NAMES[phase]} "
+                            f"(累计 {reward_clicks[phase]} 次)",
                             flush=True,
                         )
                     time.sleep(0.01)
-                elif phase == "coin":
-                    coin_x, coin_y, score = candidates[0]
-                    job = ctrl.post_click(coin_x, coin_y)
-                    if job:
-                        job.wait()
-                    coin_clicks += 1
-                    if coin_clicks == 1 or coin_clicks % 10 == 0:
-                        print(
-                            f"[金海豚游戏] 经验星尚未出现，持续点击识别到的贝币 "
-                            f"(第 {coin_clicks} 次, score={score:.3f})",
-                            flush=True,
-                        )
-                    time.sleep(0.02)
 
             duration = time.monotonic() - t_game_start
             average_fps = loop_count / duration if duration > 0 else 0.0
             print(
                 f"[金海豚游戏] 小游戏循环完成 (耗时 {duration:.1f}s, 检测 {loop_count} 帧/{average_fps:.1f} FPS, "
-                f"点击贝币 {coin_clicks} 次, 点击 XP {xp_clicks} 次, 点击爱心 {heart_clicks} 次, "
-                f"XP阶段={xp_started}, 弹窗就绪={game_done})",
+                f"点击经验星 {reward_clicks['xp']} 次, 点击爱心 {reward_clicks['heart']} 次, "
+                f"点击宝石 {reward_clicks['gem']} 次, 点击贝币 {reward_clicks['coin']} 次, "
+                f"最高优先级={GOLDEN_DOLPHIN_REWARD_NAMES[priority]}, 弹窗就绪={game_done})",
                 flush=True,
             )
             return True
@@ -2958,31 +3048,11 @@ class GoldenDolphinExitAction(CustomAction):
             tpls = _get_golden_dolphin_templates()
             tpl_cancel = tpls.get("cancel")
 
-            # 1. 尝试识别结算弹窗中的取消按钮并点击
-            job = ctrl.post_screencap()
-            if job: job.wait()
-            sc = job.get() if job else None
-
-            exited = False
-            if sc is not None and tpl_cancel is not None:
-                if sc.shape[0] != 720 or sc.shape[1] != 1280:
-                    sc = cv2.resize(sc, (1280, 720))
-                res_cancel = cv2.matchTemplate(sc, tpl_cancel, cv2.TM_CCOEFF_NORMED)
-                _, max_cancel, _, loc_cancel = cv2.minMaxLoc(res_cancel)
-                if max_cancel >= 0.70:
-                    cancel_x = loc_cancel[0] + tpl_cancel.shape[1] // 2
-                    cancel_y = loc_cancel[1] + tpl_cancel.shape[0] // 2
-                    print(f"[金海豚退出] 识别到结算取消按钮 (score={max_cancel:.3f})，点击 ({cancel_x}, {cancel_y})", flush=True)
-                    ctrl.post_click(cancel_x, cancel_y).wait()
-                    time.sleep(1.8)
-                    exited = True
-
-            if not exited:
-                print("[金海豚退出] 未检出明确结算按钮，执行保底点击 (850, 574) 与 (640, 150)...", flush=True)
-                ctrl.post_click(850, 574).wait()
-                time.sleep(1.5)
-                ctrl.post_click(640, 150).wait()
-                time.sleep(1.0)
+            # 结算页可能比游戏循环结束稍晚出现。必须等到真实页面可识别并确认
+            # 回到主鱼缸后才记为完成，禁止未命中模板时盲点并提前推进日常收尾。
+            if tpl_cancel is None or not _return_golden_dolphin_to_tank(ctrl, tpls, timeout=10.0):
+                golden_dolphin_state["status"] = "FAILED"
+                return False
 
             status = _complete_golden_dolphin_round()
             completed = golden_dolphin_state["completed_rounds"]
@@ -4163,4 +4233,212 @@ class MobileAdOnAdStartAction(CustomAction):
         mobile_ad_state["reward_recorded"] = False
         log_tag = mobile_ad_state.get("log_tag", "手机看广告")
         print(f"[{log_tag}] 新广告已确认启动播放，重置奖励弹窗记录标记", flush=True)
+        return True
+
+
+@AgentServer.custom_action("SetCollectFishTankModeAction")
+class SetCollectFishTankModeAction(CustomAction):
+    """
+    设置收鱼鱼缸模式: 'single' | 'dual'
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        mode = str(param.get("tank_mode", "single")).lower()
+        collect_fish_state["tank_mode"] = mode
+        task_id = argv.task_detail.task_id if argv.task_detail else None
+        collect_fish_state["task_id"] = task_id
+        collect_fish_state["is_inited"] = False
+        collect_fish_state["dual_start_time"] = 0.0
+        collect_fish_state["last_switch_slot"] = -1
+        collect_fish_state["initial_feed_done"] = False
+        collect_fish_state["pending_target_tank"] = None
+        collect_fish_state["switch_retry_count"] = 0
+        collect_fish_state["starfish_entry_retry_count"] = 0
+        starfish_timer_state["task_id"] = None
+        starfish_timer_state["last_feed_time"] = 0.0
+        starfish_timer_state["attempt_in_progress"] = False
+        starfish_timer_state["retry_not_before"] = 0.0
+        mode_desc = "双鱼缸轮换（1缸与2缸）" if mode == "dual" else "当前单鱼缸"
+        print(f"[收鱼产物] 当前鱼缸模式设置为: {mode_desc}", flush=True)
+        return True
+
+
+@AgentServer.custom_action("CollectFishResetStarfishEntryAction")
+class CollectFishResetStarfishEntryAction(CustomAction):
+    """每轮海星喂食开始时重置入口重试计数。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        collect_fish_state["starfish_entry_retry_count"] = 0
+        return True
+
+
+@AgentServer.custom_action("CollectFishStarfishEntryRetryAction")
+class CollectFishStarfishEntryRetryAction(CustomAction):
+    """记录入口失败；是否继续由对应 Recognition 决定。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        retries = collect_fish_state.get("starfish_entry_retry_count", 0) + 1
+        collect_fish_state["starfish_entry_retry_count"] = retries
+        print(f"[收鱼-海星] 进入鱼缸管理未通过验证 ({retries}/3)，重新确认当前鱼缸", flush=True)
+        return True
+
+
+@AgentServer.custom_action("CollectFishStarfishEntryFailedAction")
+class CollectFishStarfishEntryFailedAction(CustomAction):
+    """海星流程失败后释放计时器，短暂退避并继续收宝主流程。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(getattr(argv, "custom_action_param", None))
+        message = str(
+            param.get("message")
+            or "[收鱼-海星] 无法进入鱼缸管理，本轮跳过海星喂食，继续收宝。"
+        )
+        starfish_timer_state["attempt_in_progress"] = False
+        starfish_timer_state["retry_not_before"] = time.time() + 60.0
+        print(message, flush=True)
+        return True
+
+
+@AgentServer.custom_action("SetCollectFishSwitchIntervalAction")
+class SetCollectFishSwitchIntervalAction(CustomAction):
+    """
+    设置双缸轮换切换间隔（秒）
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        interval = safe_float(param.get("switch_interval", 120.0), 120.0)
+        collect_fish_state["switch_interval_sec"] = interval
+        mins = interval / 60.0
+        print(f"[收鱼-双缸] 双缸切换间隔设置为: {interval} 秒 ({mins:.1f} 分钟)", flush=True)
+        return True
+
+
+@AgentServer.custom_action("CollectFishDualStartAction")
+class CollectFishDualStartAction(CustomAction):
+    """
+    双缸模式启动归一完成:
+    已验证位于鱼缸 1，正式记录 dual_start_time (monotonic) 为 t0，
+    开始双缸轮换主循环。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        collect_fish_state["dual_start_time"] = time.monotonic()
+        collect_fish_state["current_tank"] = 1
+        collect_fish_state["last_switch_slot"] = 0
+        collect_fish_state["is_inited"] = True
+        collect_fish_state["switch_retry_count"] = 0
+        collect_fish_state["pending_target_tank"] = None
+        interval = int(collect_fish_state.get("switch_interval_sec", 120))
+        print("=" * 55, flush=True)
+        print(f"[收鱼-双缸] 已归一到鱼缸 1，双缸轮换计时开始（间隔 {interval} 秒）。", flush=True)
+        print("=" * 55, flush=True)
+        return True
+
+
+@AgentServer.custom_action("CollectFishSingleStartAction")
+class CollectFishSingleStartAction(CustomAction):
+    """
+    单缸模式启动就绪:
+    记录当前所在鱼缸并开始主循环。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        tank = safe_int(param.get("tank", 1), 1)
+        collect_fish_state["current_tank"] = tank
+        collect_fish_state["is_inited"] = True
+        collect_fish_state["switch_retry_count"] = 0
+        print(f"[收鱼-单缸] 单鱼缸模式就绪，当前位于鱼缸 {tank}，开始收宝", flush=True)
+        return True
+
+
+@AgentServer.custom_action("CollectFishRecordSwitchedTankAction")
+class CollectFishRecordSwitchedTankAction(CustomAction):
+    """
+    切缸成功后记录状态:
+    更新 current_tank，重置重试计数，计算最新 slot。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        target_tank = safe_int(param.get("target_tank", 1), 1)
+        collect_fish_state["current_tank"] = target_tank
+        collect_fish_state["switch_retry_count"] = 0
+        collect_fish_state["pending_target_tank"] = None
+
+        dual_start = collect_fish_state.get("dual_start_time", 0.0)
+        if dual_start > 0:
+            now = time.monotonic()
+            elapsed = max(0.0, now - dual_start)
+            interval = max(10.0, float(collect_fish_state.get("switch_interval_sec", 120.0)))
+            slot = int(elapsed // interval)
+            collect_fish_state["last_switch_slot"] = slot
+        elif collect_fish_state.get("tank_mode") == "dual":
+            collect_fish_state["dual_start_time"] = time.monotonic()
+            collect_fish_state["last_switch_slot"] = 0
+            collect_fish_state["is_inited"] = True
+
+        print(f"[收鱼-双缸] 已从上一鱼缸成功切换并确认进入鱼缸 {target_tank}，继续收宝", flush=True)
+        return True
+
+
+@AgentServer.custom_action("CollectFishSwitchRetryAction")
+class CollectFishSwitchRetryAction(CustomAction):
+    """
+    切缸重试计数器:
+    若连续 3 次未能识别到目标鱼缸编号，安全停止任务。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        collect_fish_state["switch_retry_count"] = collect_fish_state.get("switch_retry_count", 0) + 1
+        retries = collect_fish_state["switch_retry_count"]
+        print(f"[收鱼-双缸] 切缸验证未通过 (第 {retries}/3 次重试)...", flush=True)
+        if retries >= 3:
+            print("[收鱼-双缸] 错误: 切缸连续 3 次验证失败，触发安全停止！", flush=True)
+            return False
+        return True
+
+
+@AgentServer.custom_action("CollectFishAfterStarfishAction")
+class CollectFishAfterStarfishAction(CustomAction):
+    """
+    通用三海星喂食完成返回主鱼缸后执行:
+    - 单缸模式: 保持原鱼缸，继续收宝;
+    - 双缸模式: 重新依据 monotonic 绝对时间计算 expected_tank。
+      若当前鱼缸与 expected_tank 一致，继续收宝;
+      若当前鱼缸 != expected_tank (海星喂食耗时跨过了切缸时间窗口)，标记需要切缸。
+    """
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        collect_fish_state["initial_feed_done"] = True
+        collect_fish_state["starfish_entry_retry_count"] = 0
+        starfish_timer_state["last_feed_time"] = time.time()
+        starfish_timer_state["attempt_in_progress"] = False
+        starfish_timer_state["retry_not_before"] = 0.0
+        param = parse_dict_param(argv.custom_action_param)
+        returned_tank = safe_int(param.get("returned_tank", 1), 1)
+
+        mode = collect_fish_state.get("tank_mode", "single")
+        if mode != "dual":
+            collect_fish_state["current_tank"] = returned_tank
+            print(f"[收鱼-海星] 三只海星处理完成，已返回原鱼缸 {returned_tank}", flush=True)
+            return True
+
+        # 双缸模式: 检查当前时间是否已跨越切缸窗口
+        dual_start = collect_fish_state.get("dual_start_time", 0.0)
+        if dual_start <= 0:
+            collect_fish_state["current_tank"] = returned_tank
+            return True
+
+        now = time.monotonic()
+        elapsed = max(0.0, now - dual_start)
+        interval = max(10.0, float(collect_fish_state.get("switch_interval_sec", 120.0)))
+        slot = int(elapsed // interval)
+        expected_tank = 1 if (slot % 2 == 0) else 2
+
+        collect_fish_state["current_tank"] = returned_tank
+        if returned_tank == expected_tank:
+            print(f"[收鱼-海星] 三只海星处理完成，已返回鱼缸 {returned_tank} (仍在当前时间窗口内，slot={slot})", flush=True)
+        else:
+            collect_fish_state["pending_target_tank"] = expected_tank
+            print(
+                f"[收鱼-双缸] 海星操作跨过切缸边界 (slot={slot}, 已挂机 {int(elapsed)} 秒)，"
+                f"当前位于鱼缸 {returned_tank}，需纠正切换至鱼缸 {expected_tank}",
+                flush=True,
+            )
         return True

@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.5",
+    "version": "0.5.6",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -88,15 +88,21 @@
             "description": "周六、周日从主鱼缸、好友列表或海牛先生页面启动，连续喂食至识别到刷新体力后返回主鱼缸。"
         },
         {
+            "name": "公主任务",
+            "entry": "PrincessTask",
+            "default_check": false,
+            "description": "从主鱼缸或公主任务页面启动，按从下到上的顺序检查三个奖励位置，分别处理领取成功或失败结果，最后安全返回鱼缸。"
+        },
+        {
             "name": "收鱼产物",
             "entry": "CollectFishTask",
             "default_check": true,
-            "description": "在当前单个鱼缸内循环收宝，支持持续运行或按间隔激活，并可定时为当前鱼缸海星喂食",
+            "description": "循环收宝任务，支持单鱼缸持续/休眠收宝，或在 1 缸与 2 缸之间按间隔轮换收宝；并定时统一为三只海星补充鱼食",
             "option": [
-                "挂机鱼食计算",
-                "巡检收宝间隔",
+                "收鱼鱼缸模式",
                 "喂食间隔",
-                "收宝石方式"
+                "收宝石方式",
+                "挂机鱼食计算"
             ]
         },
         {
@@ -129,9 +135,10 @@
             "name": "钓鱼达人",
             "entry": "FishingTask",
             "default_check": false,
-            "description": "自动前往指定钓场，选择奶酪鱼饵并完成自动甩杆、咬钩识别、收杆和奖励领取；鱼饵耗尽后自动结束（支持任意中间页面断点续跑）。",
+            "description": "自动前往指定钓场；若已选鱼饵则沿用当前鱼饵持续垂钓，直到鱼饵耗尽或无法继续。普通饵食使用快速识别，美味饵食可切换为旧版稳健识别。",
             "option": [
-                "钓鱼地点"
+                "钓鱼地点",
+                "钓鱼饵食适配模式"
             ]
         },
         {
@@ -157,6 +164,7 @@
             "option": [
                 "日常收尾任务",
                 "乐队鱼乐章",
+                "金海豚奖励优先级",
                 "钓鱼地点"
             ]
         },
@@ -164,7 +172,10 @@
             "name": "金海豚小游戏",
             "entry": "GoldenDolphinTask",
             "default_check": false,
-            "description": "自动进入游乐园金海豚小游戏，高频抓帧检测并点击掉落的XP经验星奖励，次数耗尽或结束后安全返回鱼缸。"
+            "description": "自动进入游乐园金海豚小游戏，全屏识别爱心、宝石、贝币和经验星；优先点击所选奖励，未识别到时立即点击其他奖励，次数耗尽或结束后安全返回鱼缸。",
+            "option": [
+                "金海豚奖励优先级"
+            ]
         },
         {
             "name": "摇一摇小游戏",
@@ -289,10 +300,112 @@
                 }
             }
         },
+        "收鱼鱼缸模式": {
+            "type": "select",
+            "label": "收鱼鱼缸模式",
+            "description": "选择在当前单个鱼缸挂机，或在鱼缸 1 和鱼缸 2 之间按设定间隔交替轮换（双缸模式固定持续实时收宝）",
+            "default_case": "当前单鱼缸",
+            "cases": [
+                {
+                    "name": "当前单鱼缸",
+                    "option": [
+                        "巡检收宝间隔"
+                    ],
+                    "pipeline_override": {
+                        "CollectFishSetTankMode": {
+                            "custom_action_param": {
+                                "tank_mode": "single"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "双鱼缸轮换（1缸与2缸）",
+                    "option": [
+                        "双缸切换间隔"
+                    ],
+                    "pipeline_override": {
+                        "CollectFishSetTankMode": {
+                            "custom_action_param": {
+                                "tank_mode": "dual"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "双缸切换间隔": {
+            "type": "select",
+            "label": "双缸切换间隔",
+            "description": "仅在「双鱼缸轮换」模式下生效，设置鱼缸 1 与鱼缸 2 之间的切换周期",
+            "default_case": "2分钟",
+            "cases": [
+                {
+                    "name": "30秒(测试用)",
+                    "pipeline_override": {
+                        "CollectFishSetSwitchInterval": {
+                            "custom_action_param": {
+                                "switch_interval": 30
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "1分钟",
+                    "pipeline_override": {
+                        "CollectFishSetSwitchInterval": {
+                            "custom_action_param": {
+                                "switch_interval": 60
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "1.5分钟",
+                    "pipeline_override": {
+                        "CollectFishSetSwitchInterval": {
+                            "custom_action_param": {
+                                "switch_interval": 90
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "2分钟",
+                    "pipeline_override": {
+                        "CollectFishSetSwitchInterval": {
+                            "custom_action_param": {
+                                "switch_interval": 120
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "3分钟",
+                    "pipeline_override": {
+                        "CollectFishSetSwitchInterval": {
+                            "custom_action_param": {
+                                "switch_interval": 180
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "5分钟",
+                    "pipeline_override": {
+                        "CollectFishSetSwitchInterval": {
+                            "custom_action_param": {
+                                "switch_interval": 300
+                            }
+                        }
+                    }
+                }
+            ]
+        },
         "巡检收宝间隔": {
             "type": "select",
             "label": "单缸收宝间隔",
-            "description": "设置当前单个鱼缸每隔多久激活一次收宝(每次收宝2分钟)；选「持续实时」则不间断收宝",
+            "description": "【仅当前单鱼缸模式生效】设置当前鱼缸每隔多久激活一次收宝(每次收宝2分钟)；选「持续实时」则不间断收宝。双鱼缸轮换模式固定持续实时，本项不生效。",
             "default_case": "持续实时",
             "cases": [
                 {
@@ -628,6 +741,95 @@
                             "next": [
                                 "FishingSelectLocation_Xingkonghu"
                             ]
+                        }
+                    }
+                }
+            ]
+        },
+        "钓鱼饵食适配模式": {
+            "type": "select",
+            "label": "饵食适配模式",
+            "description": "普通饵食保留渐入早期形态的快速识别；美味饵食恢复旧版仅识别完整感叹号，避免鱼饵自身红色造成过早收杆。美味饵食请先在钓场手动选好再启动任务。",
+            "default_case": "普通饵食（快速）",
+            "cases": [
+                {
+                    "name": "普通饵食（快速）",
+                    "pipeline_override": {
+                        "FishingTask": {
+                            "custom_action_param": {
+                                "max_casts": 0,
+                                "bite_mode": "ordinary",
+                                "force_ordinary_bait": false
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "美味饵食（稳健）",
+                    "pipeline_override": {
+                        "FishingTask": {
+                            "custom_action_param": {
+                                "max_casts": 0,
+                                "bite_mode": "special",
+                                "force_ordinary_bait": false
+                            }
+                        },
+                        "FishingBaitNeedSelect": {
+                            "action": "DoNothing",
+                            "focus": {
+                                "Node.Recognition.Succeeded": "[钓鱼达人] 美味饵食稳健模式要求先手动选择鱼饵；当前未选择，安全退出钓场。"
+                            },
+                            "next": [
+                                "FishingDone"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        "金海豚奖励优先级": {
+            "type": "select",
+            "label": "奖励最高优先级",
+            "description": "每帧优先识别并点击所选奖励；未识别到时立即处理其他已识别奖励，不额外等待",
+            "default_case": "经验星",
+            "cases": [
+                {
+                    "name": "经验星",
+                    "pipeline_override": {
+                        "GoldenDolphinTask": {
+                            "custom_action_param": {
+                                "reward_priority": "xp"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "爱心",
+                    "pipeline_override": {
+                        "GoldenDolphinTask": {
+                            "custom_action_param": {
+                                "reward_priority": "heart"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "宝石",
+                    "pipeline_override": {
+                        "GoldenDolphinTask": {
+                            "custom_action_param": {
+                                "reward_priority": "gem"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "贝币",
+                    "pipeline_override": {
+                        "GoldenDolphinTask": {
+                            "custom_action_param": {
+                                "reward_priority": "coin"
+                            }
                         }
                     }
                 }

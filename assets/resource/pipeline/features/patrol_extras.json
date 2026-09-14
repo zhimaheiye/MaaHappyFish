@@ -528,6 +528,7 @@
             "PatrolVerifyMainTank1AfterCycle",
             "PatrolVerifyMainTank2AfterCycle",
             "PatrolVerifyMainTank3AfterCycle",
+            "PatrolGemFusionConfirmPutInStorage",
             "PatrolGemFusionStillOnPage",
             "PatrolGemFusionAbort"
         ]

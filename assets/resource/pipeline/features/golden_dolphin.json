@@ -3,6 +3,9 @@
         "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "GoldenDolphinInitAction",
+        "focus": {
+            "Node.Action.Succeeded": "[金海豚] 任务开始：按所选奖励优先级执行，最多连续 3 局"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",

@@ -81,6 +81,7 @@ golden_dolphin_state = {
     "status": "IDLE",  # "READY_TO_PLAY" | "NEXT_ROUND" | "DONE" | "NO_STAMINA" | "FAILED"
     "completed_rounds": 0,
     "max_rounds": 3,
+    "reward_priority": "xp",  # "xp" | "heart" | "gem" | "coin"
 }
 
 shake_game_state = {
@@ -100,4 +101,26 @@ mobile_ad_state = {
     "log_tag": "手机看广告",
     "stop_count": 0,
     "max_stops_per_ad": 5,
+}
+
+collect_fish_state = {
+    "tank_mode": "single",            # "single" | "dual"
+    "switch_interval_sec": 120.0,     # 双缸切换间隔（秒）
+    "current_tank": 1,                # 当前所在或预期的鱼缸编号 (1 或 2)
+    "dual_start_time": 0.0,           # 双缸轮换正式 t0（monotonic 秒）
+    "last_switch_slot": -1,           # 上次执行切缸的 slot
+    "is_inited": False,               # 是否已完成启动归一与首喂
+    "task_id": None,                  # 当前任务 ID
+    "switch_retry_count": 0,          # 切缸重试次数
+    "starfish_entry_retry_count": 0,  # 海星入口连续失败次数
+    "pending_target_tank": None,      # 切缸过程中目标鱼缸
+    "initial_feed_done": False,       # 启动首轮喂食是否已完成
+}
+
+starfish_timer_state = {
+    "task_id": None,
+    "last_feed_time": 0.0,
+    "interval_seconds": 600.0,
+    "attempt_in_progress": False,
+    "retry_not_before": 0.0,
 }

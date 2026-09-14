@@ -85,8 +85,8 @@ def run_tests():
     assert 480 <= dx <= 520 and 540 <= dy <= 580, f"Dolphin target out of bounds: ({dx}, {dy})"
     print(f"[PASS] Check 4: 游乐园面板就绪状态识别 (score={max_vd_grid:.3f} at ({dx}, {dy}))")
 
-    # 5. 验证用户现场实拍: 机会耗尽提示弹窗，精准命中绿色对号中心 (829, 494) 而非 (800, 435)
-    user_screen = cv2.imdecode(np.fromfile("C:/Users/sxy10/.gemini/antigravity/brain/65c155de-1230-4b2a-9733-2a78a0f09e43/.user_uploaded/media_1788689852954.jpg", dtype=np.uint8), cv2.IMREAD_COLOR)
+    # 5. 验证项目留存实拍：提示弹窗精准命中绿色对号中心，不依赖个人临时目录。
+    user_screen = cv2.imdecode(np.fromfile("dev/exploration/golden_dolphin/02_confirm_popup.png", dtype=np.uint8), cv2.IMREAD_COLOR)
     user_720 = cv2.resize(user_screen, (1280, 720))
 
     # HSV 绿色对号检测
@@ -103,7 +103,7 @@ def run_tests():
                 found_gc = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
                 break
     assert found_gc is not None, "Failed to find green check on user exhausted popup!"
-    assert 815 <= found_gc[0] <= 845 and 480 <= found_gc[1] <= 510, f"Green check out of bounds: {found_gc}"
+    assert 810 <= found_gc[0] <= 840 and 465 <= found_gc[1] <= 495, f"Green check out of bounds: {found_gc}"
     print(f"[PASS] Check 5: 用户实拍现场精准锁定绿色对号中心 -> ({found_gc[0]}, {found_gc[1]}) (彻底规避旧坐标 (800, 435))")
 
     # 6. 验证模板匹配在用户实拍上的高置信度 (>= 0.80)
@@ -112,7 +112,7 @@ def run_tests():
     assert max_vc_u >= 0.80, f"Template match failed on user exhausted screen: {max_vc_u:.3f}"
     btn_x = loc_c_u[0] + tpl_confirm.shape[1] // 2
     btn_y = loc_c_u[1] + tpl_confirm.shape[0] // 2
-    assert 815 <= btn_x <= 845 and 480 <= btn_y <= 510
+    assert 810 <= btn_x <= 840 and 465 <= btn_y <= 495
     print(f"[PASS] Check 6: 优化后金海豚_确定按钮模板实测命中 -> score={max_vc_u:.3f}, 中心=({btn_x}, {btn_y})")
 
     # 7. 静态代码审计确认

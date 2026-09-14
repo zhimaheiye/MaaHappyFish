@@ -1,29 +1,79 @@
-# 功能档案：收鱼产物与单缸巡检收宝 (collect-fish.md)
+# 功能档案：收鱼产物与单/双缸收宝 (collect-fish.md)
 
-> 本文只描述当前单个鱼缸的挂机收宝。依次切换 1/2/3 缸收宝并统一喂海星的新任务见 `docs/features/patrol.md`。
+> 本文描述「收鱼产物」挂机收宝任务。支持「当前单鱼缸」挂机（支持占空比休眠）与「双鱼缸轮换（1缸与2缸）」持续实时收宝，两者均统一集成鱼缸管理页通用三海星喂食。若需依次切换 1/2/3 缸并带每小时扩展等复杂日常巡视，见 `docs/features/patrol.md`。
 
 ## 功能概述与设计目标
-- **核心目标**: 持续或周期性自动收取鱼类产出的金币/宝石。
-- **运行模式**: 支持无间断实时收取，或按“占空比”周期休眠后集中收取（降低资源占用）。
+- **核心目标**: 持续或周期性自动收取鱼类产出的金币/宝石，并定时通过鱼缸管理页通用入口喂满三只海星（萌海星、乖海星、亮海星）。
+- **运行模式**:
+  1. **当前单鱼缸（默认）**: 保持在当前鱼缸内收宝。支持无间断实时收取，或按“占空比”（`CheckDutyCycle`）周期休眠后集中收取（降低资源占用）。
+  2. **双鱼缸轮换（1缸与2缸）**: 在 1 缸与 2 缸之间按设定的时间间隔（如 30秒/1分钟/1.5分钟/2分钟[默认]/3分钟/5分钟）自动来回切换收宝。**双缸模式固定持续实时收宝**（跳过 `CheckDutyCycle` 休眠），最大化高产鱼的收宝频率。
+- **通用海星喂食**: 无论单缸还是双缸模式，海星喂食统一通过“鱼缸管理 → 海星 → 萌海星/乖海星/亮海星”入口一次喂满三只海星，不再使用旧版右上角齿轮单个海星喂食。
+
+## 核心状态机与单调时间片调度设计
+
+双鱼缸轮换模式必须保证无论中途插入海星喂食耗时多久，或者发生页面瞬时重试，都能严格对齐到物理时间轴：
+
+1. **基准时间锚点 ($t_0$)**：
+   - 任务启动时，首先执行通用三海星喂食（若启用了海星喂食且尚未初次喂食）；
+   - 随后切至 1 缸并完成主界面数字校验；
+   - 确认处于 1 缸后，调用 `CollectFishDualStartAction` 记录当前单调时钟基准时间 $t_0 = \text{time.monotonic()}$，初始化当前槽位 $slot = 0$、目标缸 $current\_tank = 1$。
+2. **单调时间片计算公式**：
+   $$slot = \left\lfloor \frac{\text{now} - t_0}{\text{switch\_interval}} \right\rfloor$$
+   $$\text{expected\_tank} = 1 \quad (\text{若 } slot \bmod 2 == 0) \quad \text{else} \quad 2$$
+3. **状态驱动切换与防追赶**：
+   - 每次收宝主循环中，`CheckCollectFishTankSwitchReco` 计算当前时刻的 $\text{expected\_tank}$；
+   - 只有当 $current\_tank \ne \text{expected\_tank}$ 时才触发切缸，严禁简单的布尔反转（toggle）；
+   - 当海星喂食跨越了一个或多个时间片边界时，喂食结束后由 `CollectFishAfterStarfishAction` 立即重新评估当前时刻的 $\text{expected\_tank}$。若发现跨边界，立即标记切缸需求并在返回鱼缸后由状态机顺滑过渡到当前时刻对应的目标鱼缸，绝对不会发生多重连环切换或死循环。
 
 ## Pipeline 节点拓扑图
 ```mermaid
 graph TD
-    A[CollectFishTask (入口)] --> B[ResumeHarvest]
-    B -->|DirectHit| C{分发判断}
-    C --> D0[HandleShellEntryMisTouch 第一层误触门禁]
-    D0 --> D1[OCR 点击左上角返回]
-    D1 --> B
-    C --> D[HandleShellPage 大章鱼主页门禁]
-    D --> D2[HandleShellPageReturn 点击返回]
-    D2 --> B
-    C --> E[CloseFeedPopup]
-    C --> F[TriggerStarfishFeed]
-    C --> G[CheckDutyCycle]
-    C --> H[ClickFishBubble]
-    H --> S[鱼缸底部安全区从左到右滑动]
-    S --> B
+    A[CollectFishTask (入口)] --> SetParam[设置模式与间隔]
+    SetParam --> StartRouter{CollectFishStartRouter}
+    StartRouter -->|双缸模式且未初始化| Normalize[CollectFishDualStartNormalize 归一化至1缸]
+    Normalize --> StartDual[CollectFishDualStartAction 记录t0]
+    StartRouter -->|单缸模式| StartSingle[CollectFishSingleStartAction]
+    StartDual --> ResumeHarvest[ResumeHarvest]
+    StartSingle --> ResumeHarvest
+
+    ResumeHarvest -->|DirectHit| Dist{分发判断}
+    Dist --> FeedTrigger{TriggerStarfishFeed 海星喂食到期}
+    FeedTrigger --> OpenMgmt[CollectFishOpenManagement 鱼缸管理]
+    OpenMgmt --> VerifyMgmt[CollectFishVerifyManagement]
+    VerifyMgmt --> StarfishPage[CollectFishOpenUniversalStarfish]
+    StarfishPage --> Feed3[顺序喂食 萌/乖/亮 三海星]
+    Feed3 --> ReturnMgmt[CollectFishStarfishReturnToManagement]
+    ReturnMgmt --> ReturnTank[CollectFishStarfishReturnToTank]
+    ReturnTank --> StarfishRouter[CollectFishAfterStarfishRouter 识别返回缸号]
+    StarfishRouter --> PostRouter[CollectFishAfterStarfishPostRouter]
+    PostRouter -->|未初始化 is_inited=False| NeedsInit[CollectFishAfterStarfishNeedsInitialization]
+    NeedsInit --> StartRouter
+    PostRouter -->|已初始化 is_inited=True| ResumeHarvest
+
+    Dist --> TankSwitch{CollectFishCheckTankSwitch 切缸到期}
+    TankSwitch --> SwitchRouter{CollectFishSwitchTankRouter}
+    SwitchRouter -->|目标=2缸| SwTo2[CollectFishSwitchToTank2Target]
+    SwitchRouter -->|目标=1缸| SwTo1[CollectFishSwitchToTank1Target]
+    SwTo2 & SwTo1 --> OpenPicker[CollectFishOpenTankPicker 打开选缸列表]
+    OpenPicker --> SelectTarget[CollectFishSelectTargetTankEntry 点击目标缸条目]
+    SelectTarget --> VerifyTarget[CollectFishVerifyTargetTank 校验主界面鱼缸数字]
+    VerifyTarget -->|成功| RecordTank[CollectFishRecordSwitchedTankAction 更新缸号并清零重试]
+    VerifyTarget -->|失败| RetrySwitch[CollectFishSwitchRetryAction 重试/3次熔断]
+    RecordTank --> ResumeHarvest
+
+    Dist --> D0[HandleShellEntryMisTouch 第一层误触门禁]
+    Dist --> D[HandleShellPage 大章鱼主页门禁]
+    Dist --> E[CloseFeedPopup]
+    Dist --> Duty[CheckDutyCycle 单缸占空比休眠]
+    Dist --> Shake[CollectFishShakeGem 摇一摇收宝]
+    Dist --> Bubble[ClickFishBubble 点击气泡]
+    Bubble --> Slide[鱼缸底部安全区滑动]
+    Slide --> ResumeHarvest
 ```
+- **双鱼缸视觉门禁与安全机制**：
+  - 切缸严格按照：点击当前鱼缸序号进入选缸列表 $\rightarrow$ OCR 选中目标序号条目（`[200, 240, 480, 260]`） $\rightarrow$ 校验主界面右上角鱼缸序号（`[1130, 23, 75, 45]`）。
+  - **杜绝盲点固定坐标**：前置状态未达成或列表未打开绝不盲目下发点击。
+  - **3次重试安全熔断**：切缸验证若连续失败 3 次，`CollectFishSwitchRetryAction` 触发 `StopTask` 停止任务并报错，杜绝死循环卡死。
 - **核心识别**: `TemplateMatch` 金币气泡.png (`ROI: [428,126,679,360]`, `threshold: 0.75`)
 - **空中双倍收取**: 每次气泡点击后立即执行 `(221,663) -> (1007,663)` 水平滑动，整条轨迹限制在用户指定安全范围 `[201,630,826,66]` 内，再返回气泡识别循环。
 - **循环机制**: `ResumeHarvest` `timeout: -1` 为无底洞中转，保证 Pipeline 存活。
@@ -64,13 +114,25 @@ graph TD
 - **边界**：该保护防止“假运行”，不认定某一张启动图是原始退出原因，也不会尝试盲目点击重启游戏。
 
 ## 当前状态与未完成项
-- **状态**: 生产就绪，核心功能与 UI 日志均已验证。
+- **状态**: 生产就绪，核心功能、双缸轮换、通用海星喂食与 UI 日志均已通过代码级验证。
 - **已完成**:
   - [x] 收鱼产物无限循环
-  - [x] 巡检收宝 IDLE/ACTIVE 状态机
+  - [x] 巡检收宝 IDLE/ACTIVE 状态机（当前单鱼缸模式专享）
+  - [x] 双鱼缸轮换（1缸与2缸）单调时间片调度与持续实时收宝
+  - [x] 鱼缸管理页通用三海星喂食集成（萌海星 → 乖海星 → 亮海星）
+  - [x] 海星喂食后跨时间片边界自适应校准与防追赶恢复
   - [x] MFA UI 日志面板动态状态播报（focus 注入机制）
   - [x] 播报节流（每 60 秒最多一次）
 - **本任务不包含**: 鱼苗养殖、宝石兑换、任何付费操作；宝石礼盒兑换由独立 `GemGiftBoxTask` 负责。
+
+2026-09-14 正式支持「双鱼缸轮换（1缸与2缸）」与通用三海星喂食：
+- 增设「收鱼鱼缸模式」配置（默认「当前单鱼缸」，可选「双鱼缸轮换（1缸与2缸）」）；界面通过 ProjectInterface case 子选项联动显隐，单缸模式只显示「单缸收宝间隔」，双缸模式只显示「双缸切换间隔」（30秒/1分钟/1.5分钟/2分钟[默认]/3分钟/5分钟），公共参数保持显示；
+- 单缸模式保留原逻辑与 `CheckDutyCycle` 占空比休眠；双缸模式固定持续实时收宝（跳过 `CheckDutyCycle`）；
+- 严格基于单调时间 $slot = \lfloor(now - t_0)/interval\rfloor$ 判定期望鱼缸，彻底杜绝状态乱翻；
+- 喂食流程统一重构为经由鱼缸管理页顺序喂满萌海星、乖海星、亮海星；喂食后自动比对当前时刻单调槽位完成目标缸补偿校准；
+- 修复首轮海星喂食绕过双缸初始化问题：海星退出后经由 `CollectFishAfterStarfishPostRouter`，未初始化（`CheckCollectFishNeedsInitReco` 命中）严格导回 `CollectFishStartCheckMode` 执行归一与 $t_0$ 打桩，已初始化（挂机中周期喂食）直通 `ResumeHarvest` 保持 $t_0$；
+- 切缸过程落实严格前置门禁：选缸列表打开确认、目标序号条目 OCR 定位点击、主界面右上角鱼缸数字识别验证；连续 3 次失败安全熔断；
+- 专属测试套件 `dev/test_collect_fish_dual_tank.py` 20 项测试用例（覆盖 12 大典型场景、拓扑契约及 Case A~F 闭环全覆盖）100% 通过；代码级验证完成，本次未做模拟器测试。
 
 2026-09-12 已将误入开贝壳页的恢复拆为“页面本体确认 → 返回按钮点击”两步，避免鱼缸管理页的同款返回按钮被误认为大章鱼页面；已完成代码级验证，本次未做模拟器测试。
 
@@ -84,7 +146,9 @@ graph TD
 - 2026-09-12 第二轮优化：增加每次摇晃后的充分沉降等待（`GEM_SHAKE_SETTLE_DELAY_SECONDS = 1.5s`）以及循环完成后的最终沉降等待（`GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS = 1.5s`），给空中飘落的宝石留出充足物理下落时间后再执行底部扫宝，彻底解决过早切缸导致宝石未收完的问题。
 
 ## 关键文件入口
-- `assets/resource/pipeline/collect_fish.json` — Pipeline 拓扑（含 focus 静态配置）
+- `assets/resource/pipeline/collect_fish.json` — Pipeline 拓扑（含双缸切缸、通用海星喂食与 focus 静态配置）
 - `assets/resource/pipeline/features/shake_gem_collect_test.json` — 摇一摇收宝石独立实验流水线
-- `agent/my_action.py` — `UnifiedShakeGemCollectAction` 摇晃与扫底动作、`SetGemCollectModeAction`
-- `agent/my_reco.py` — `CheckGemCollectModeReco` 模式识别器、`CheckDutyCycleReco` 状态机
+- `agent/runtime_state.py` — `collect_fish_state` 状态容器（模式、间隔、基准时间 $t_0$、当前缸等）
+- `agent/my_action.py` — 双缸启动记录、缸号记录、重试熔断及海星喂食后状态校准
+- `agent/my_reco.py` — `CheckCollectFishTankSwitchReco` 切缸单调时钟判断、`CheckDutyCycleReco` 单缸占空比、`CheckCollectFishNeedsInitReco` 启动初始化检测
+- `dev/test_collect_fish_dual_tank.py` — 双鱼缸轮换与通用海星喂食专属单测（20 项测试，含 Case A~F 闭环门禁）

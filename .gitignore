@@ -504,3 +504,6 @@ dev/save_*.py
 dev/step_*.py
 dev/tap_*.py
 dev/verify_*.py
+
+# v1.0.0 milestone documents (local only)
+docs/v1.0-rednote-lottery.md

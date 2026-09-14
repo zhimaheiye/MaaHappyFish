@@ -1,7 +1,13 @@
 import json
+import sys
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from agent import my_reco
 
@@ -37,7 +43,7 @@ class PatrolTimerTest(unittest.TestCase):
             last_cycle_time=0.0,
             interval_seconds=1800.0,
             last_ui_log_time=0.0,
-            ui_log_interval=60.0,
+            ui_log_interval=300.0,
             wait_focus_visible=False,
             cycle_in_progress=False,
         )
@@ -63,21 +69,21 @@ class PatrolTimerTest(unittest.TestCase):
         with patch.object(
             my_reco.time,
             "time",
-            side_effect=[100.0, 101.0, 160.0, 161.0],
+            side_effect=[100.0, 101.0, 400.0, 401.0],
         ):
-            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 300)))
-            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 300)))
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 600)))
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 600)))
             self.assertEqual(
                 self.context.pipeline["PatrolWaitLoop"]["focus"],
                 {},
             )
-            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 300)))
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 600)))
             heartbeat = self.context.pipeline["PatrolWaitLoop"]["focus"][
                 "Node.Action.Succeeded"
             ]
             self.assertIn("正在等待", heartbeat)
-            self.assertIn("剩余约 240 秒", heartbeat)
-            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 300)))
+            self.assertIn("剩余约 300 秒", heartbeat)
+            self.assertIsNone(self.recognition.analyze(self.context, make_argv(1, 600)))
             self.assertEqual(
                 self.context.pipeline["PatrolWaitLoop"]["focus"],
                 {},

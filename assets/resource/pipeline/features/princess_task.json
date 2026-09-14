@@ -1,0 +1,433 @@
+{
+    "PrincessTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessStartRouter"
+        ]
+    },
+    "PrincessStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessPageReady",
+            "PrincessOpenEntry"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessOpenEntry": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_入口.png",
+        "roi": [29, 264, 50, 37],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 已点击鱼缸入口，正在确认公主任务页面。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessPageReady"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessPageReady": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_识别.png",
+        "roi": [512, 62, 253, 143],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[公主任务] 已确认公主任务页面，开始依次检查三个奖励位置。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessBottomRouter"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessBottomRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessClaimBottom",
+            "PrincessMiddleRouter"
+        ]
+    },
+    "PrincessClaimBottom": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_领取奖励.png",
+        "roi": [1041, 533, 36, 42],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 600,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 已点击第 1 个奖励位置，正在判断领取结果。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessBottomResultRouter"
+        ]
+    },
+    "PrincessBottomResultRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessBottomSuccess",
+            "PrincessBottomFailure"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessBottomSuccess": {
+        "recognition": "OCR",
+        "expected": "^开心收下$",
+        "roi": [586, 518, 102, 32],
+        "action": "Click",
+        "post_delay": 700,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessPageAfterBottom"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessBottomFailure": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_领取失败.png",
+        "roi": [804, 461, 46, 41],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 700,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessPageAfterBottom"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessPageAfterBottom": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_识别.png",
+        "roi": [512, 62, 253, 143],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessMiddleRouter"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessMiddleRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessClaimMiddle",
+            "PrincessTopRouter"
+        ]
+    },
+    "PrincessClaimMiddle": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_领取奖励.png",
+        "roi": [1044, 432, 36, 42],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 600,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 已点击第 2 个奖励位置，正在判断领取结果。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessMiddleResultRouter"
+        ]
+    },
+    "PrincessMiddleResultRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessMiddleSuccess",
+            "PrincessMiddleFailure"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessMiddleSuccess": {
+        "recognition": "OCR",
+        "expected": "^开心收下$",
+        "roi": [586, 518, 102, 32],
+        "action": "Click",
+        "post_delay": 700,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessPageAfterMiddle"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessMiddleFailure": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_领取失败.png",
+        "roi": [804, 461, 46, 41],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 700,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessPageAfterMiddle"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessPageAfterMiddle": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_识别.png",
+        "roi": [512, 62, 253, 143],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTopRouter"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessTopRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessClaimTop",
+            "PrincessExit"
+        ]
+    },
+    "PrincessClaimTop": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_领取奖励.png",
+        "roi": [1045, 316, 36, 42],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 600,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 已点击第 3 个奖励位置，正在判断领取结果。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTopResultRouter"
+        ]
+    },
+    "PrincessTopResultRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTopSuccess",
+            "PrincessTopFailure"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessTopSuccess": {
+        "recognition": "OCR",
+        "expected": "^开心收下$",
+        "roi": [586, 518, 102, 32],
+        "action": "Click",
+        "post_delay": 700,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessPageAfterTop"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessTopFailure": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_领取失败.png",
+        "roi": [804, 461, 46, 41],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 700,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessPageAfterTop"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessPageAfterTop": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_识别.png",
+        "roi": [512, 62, 253, 143],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessExit"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessExit": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_退出.png",
+        "roi": [1068, 121, 37, 39],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 三个奖励位置均已检查，正在确认返回鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessVerifyTank"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[公主任务] 已确认返回主鱼缸，任务完成。"
+        },
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 页面门禁或领取结果未通过，已安全停止且未继续点击。"
+        }
+    }
+}

@@ -21,6 +21,18 @@ from agent.my_action import (
     ShakeGemCollectDoneAction,
 )
 
+GLOBAL_POPUP_HANDLERS = {
+    "[JumpBack]GlobalActivityPagePopup",
+    "[JumpBack]GlobalDailySignPopup",
+    "[JumpBack]GlobalSpecialOfferPopup",
+    "[JumpBack]GlobalNewsPopup",
+    "[JumpBack]GlobalLevelUpPopup",
+}
+
+
+def business_next(node):
+    return [name for name in node.get("next", []) if name not in GLOBAL_POPUP_HANDLERS]
+
 
 class TestShakeGemCollectTaskStructure(unittest.TestCase):
     """测试实验任务结构独立性与原收宝石逻辑完整性"""
@@ -90,13 +102,13 @@ class TestShakeGemCollectTaskStructure(unittest.TestCase):
         self.assertEqual(verify_node.get("recognition"), "TemplateMatch")
         self.assertEqual(verify_node.get("template"), "主界面特征.png")
         self.assertEqual(verify_node.get("action"), "DoNothing")
-        self.assertEqual(verify_node.get("next"), ["ShakeGemCollectActionNode"])
+        self.assertEqual(business_next(verify_node), ["ShakeGemCollectActionNode"])
 
         # 动作节点
         action_node = data["ShakeGemCollectActionNode"]
         self.assertEqual(action_node.get("action"), "Custom")
         self.assertEqual(action_node.get("custom_action"), "ShakeGemCollectAction")
-        self.assertEqual(action_node.get("next"), ["ShakeGemCollectSweepBottom"])
+        self.assertEqual(business_next(action_node), ["ShakeGemCollectSweepBottom"])
 
         # 底部滑动节点完全复用原参数
         sweep_node = data["ShakeGemCollectSweepBottom"]
@@ -104,7 +116,7 @@ class TestShakeGemCollectTaskStructure(unittest.TestCase):
         self.assertEqual(sweep_node.get("begin"), [221, 663])
         self.assertEqual(sweep_node.get("end"), [1007, 663])
         self.assertEqual(sweep_node.get("duration"), 250)
-        self.assertEqual(sweep_node.get("next"), ["ShakeGemCollectTestDone"])
+        self.assertEqual(business_next(sweep_node), ["ShakeGemCollectTestDone"])
 
         # 完成节点
         done_node = data["ShakeGemCollectTestDone"]
@@ -302,4 +314,3 @@ class TestShakeGemCollectActionLogic(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

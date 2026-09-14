@@ -354,11 +354,12 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank1",
             "PatrolCollectTank1ShakeGem",
             "PatrolCollectTank1Bubble"
         ],
         "on_error": [
-            "PatrolOpenPickerAfterTank1"
+            "PatrolPreSwitchCheckTank1"
         ]
     },
     "PatrolCollectTank1ShakeGem": {
@@ -393,10 +394,11 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank1",
             "PatrolCollectTank1Bubble"
         ],
         "on_error": [
-            "PatrolOpenPickerAfterTank1"
+            "PatrolPreSwitchCheckTank1"
         ]
     },
     "PatrolCollectTank1Bubble": {
@@ -432,6 +434,107 @@
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank1ImageWindow"
+        ]
+    },
+    "PatrolStarfishPetPanelMisTouchTank1": {
+        "recognition": "OCR",
+        "expected": "[萌乖亮]海星",
+        "roi": [
+            80,
+            70,
+            800,
+            100
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到鱼缸 1 误入海星宠物页，准备返回鱼缸 1。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelReturnTank1"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolStarfishPetPanelReturnTank1": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到误入海星宠物页，已点击返回，正在恢复鱼缸 1。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank1AfterStarfishMisTouch"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyTank1AfterStarfishMisTouch": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认恢复至鱼缸 1，重新开始 30 秒观察窗口。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank1ImageWindow"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolPreSwitchCheckTank1": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank1",
+            "PatrolOpenPickerAfterTank1",
+            "PatrolAbortNavigation"
         ]
     },
     "PatrolOpenPickerAfterTank1": {
@@ -532,11 +635,12 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank2",
             "PatrolCollectTank2ShakeGem",
             "PatrolCollectTank2Bubble"
         ],
         "on_error": [
-            "PatrolOpenPickerAfterTank2"
+            "PatrolPreSwitchCheckTank2"
         ]
     },
     "PatrolCollectTank2ShakeGem": {
@@ -571,10 +675,11 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank2",
             "PatrolCollectTank2Bubble"
         ],
         "on_error": [
-            "PatrolOpenPickerAfterTank2"
+            "PatrolPreSwitchCheckTank2"
         ]
     },
     "PatrolCollectTank2Bubble": {
@@ -610,6 +715,107 @@
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank2ImageWindow"
+        ]
+    },
+    "PatrolStarfishPetPanelMisTouchTank2": {
+        "recognition": "OCR",
+        "expected": "[萌乖亮]海星",
+        "roi": [
+            80,
+            70,
+            800,
+            100
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到鱼缸 2 误入海星宠物页，准备返回鱼缸 2。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelReturnTank2"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolStarfishPetPanelReturnTank2": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到误入海星宠物页，已点击返回，正在恢复鱼缸 2。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank2AfterStarfishMisTouch"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyTank2AfterStarfishMisTouch": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认恢复至鱼缸 2，重新开始 30 秒观察窗口。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank2ImageWindow"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolPreSwitchCheckTank2": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank2",
+            "PatrolOpenPickerAfterTank2",
+            "PatrolAbortNavigation"
         ]
     },
     "PatrolOpenPickerAfterTank2": {
@@ -710,11 +916,12 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank3",
             "PatrolCollectTank3ShakeGem",
             "PatrolCollectTank3Bubble"
         ],
         "on_error": [
-            "PatrolOpenManagement"
+            "PatrolPreManagementCheckTank3"
         ]
     },
     "PatrolCollectTank3ShakeGem": {
@@ -749,10 +956,11 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank3",
             "PatrolCollectTank3Bubble"
         ],
         "on_error": [
-            "PatrolOpenManagement"
+            "PatrolPreManagementCheckTank3"
         ]
     },
     "PatrolCollectTank3Bubble": {
@@ -788,6 +996,107 @@
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCollectTank3ImageWindow"
+        ]
+    },
+    "PatrolStarfishPetPanelMisTouchTank3": {
+        "recognition": "OCR",
+        "expected": "[萌乖亮]海星",
+        "roi": [
+            80,
+            70,
+            800,
+            100
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到鱼缸 3 误入海星宠物页，准备返回鱼缸 3。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelReturnTank3"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolStarfishPetPanelReturnTank3": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 检测到误入海星宠物页，已点击返回，正在恢复鱼缸 3。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank3AfterStarfishMisTouch"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolVerifyTank3AfterStarfishMisTouch": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 已确认恢复至鱼缸 3，重新开始 30 秒观察窗口。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolCollectTank3ImageWindow"
+        ],
+        "on_error": [
+            "PatrolAbortNavigation"
+        ]
+    },
+    "PatrolPreManagementCheckTank3": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolStarfishPetPanelMisTouchTank3",
+            "PatrolOpenManagement",
+            "PatrolAbortNavigation"
         ]
     },
     "PatrolOpenManagement": {

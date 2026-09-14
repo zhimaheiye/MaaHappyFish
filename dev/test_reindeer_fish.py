@@ -43,10 +43,10 @@ def test_topology_contracts():
     no_reply_next = [n for n in no_reply.get("next", []) if not n.startswith("[JumpBack]")]
     assert no_reply_next == ["ReindeerFishCommonBack"], f"AfterCollectNoReply.next unexpected: {no_reply_next}"
 
-    # 5. ReplyAll ROI 与精确识别
+    # 5. ReplyAll 使用现场 OCR 的稳定子串与用户给定 ROI
     reply_all = pdata["ReindeerFishReplyAll"]
-    assert reply_all["roi"] == [545, 611, 121, 45], f"ReplyAll ROI expected [545, 611, 121, 45], got {reply_all['roi']}"
-    assert reply_all["expected"] == "一键回礼"
+    assert reply_all["roi"] == [537, 611, 128, 44], f"ReplyAll ROI expected [537, 611, 128, 44], got {reply_all['roi']}"
+    assert reply_all["expected"] == "键回礼"
 
     # 6. StartRouter 保留纯回礼直接入口
     start_next = [n for n in pdata["ReindeerFishStartRouter"].get("next", []) if not n.startswith("[JumpBack]")]
@@ -64,7 +64,7 @@ class MockMaaSimulator:
 
     def run(self, start_node, frame_generator):
         """
-        frame_generator: 生成每一帧可见的元素集合 set[str]，例如 {"键收取"} 或 {"一键回礼"} 或 {"返回"}
+        frame_generator: 生成每一帧可见的元素集合 set[str]，例如 {"键收取"} 或 {"键回礼"} 或 {"返回"}
         返回执行过的业务节点名称列表
         """
         current_node = start_node
@@ -186,7 +186,7 @@ def test_cases():
         if "ReindeerFishRewardReturn" not in history:
             return {"ReindeerFishRewardReturn"}  # 奖励弹窗中间返回
         if "ReindeerFishReplyAll" not in history:
-            return {"一键回礼"}  # 关闭弹窗后出现一键回礼
+            return {"键回礼"}  # 现场 OCR 会漏掉首字“一”
         # 回礼后无直接赠送弹窗，点左上角返回
         return {"ReindeerFishCommonBack"}
 
@@ -209,7 +209,7 @@ def test_cases():
         if "ReindeerFishCollectAll" not in history:
             return {"键收取"}
         if "ReindeerFishReplyAll" not in history:
-            return {"一键回礼"}  # 无弹窗，直接就是一键回礼
+            return {"键回礼"}  # 无弹窗，直接就是一键回礼
         return {"ReindeerFishCommonBack"}
 
     hist4 = sim.run("ReindeerFishStartRouter", frames_case_4)
@@ -230,7 +230,7 @@ def test_cases():
         if "ReindeerFishReplyAll" not in history:
             if elapsed_ms < 1500:
                 return {"ReindeerFishCommonBack"}  # 还在网络请求/重绘中，页面上只有通用返回，无回礼
-            return {"一键回礼"}  # 稍后出现
+            return {"键回礼"}  # 稍后出现
         return {"ReindeerFishCommonBack"}
 
     hist5 = sim.run("ReindeerFishStartRouter", frames_case_5)
@@ -247,7 +247,7 @@ def test_cases():
         if "ReindeerFishCommonBack" in history:
             return {"主界面特征.png"}
         if "ReindeerFishReplyAll" not in history:
-            return {"一键回礼"}  # 初始即回礼
+            return {"键回礼"}  # 初始即回礼
         return {"ReindeerFishCommonBack"}
 
     hist6 = sim.run("ReindeerFishStartRouter", frames_case_6)

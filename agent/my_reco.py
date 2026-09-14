@@ -26,6 +26,8 @@ try:
         shake_game_state,
         gem_collect_state,
         mobile_ad_state,
+        collect_fish_state,
+        starfish_timer_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -39,20 +41,18 @@ except ImportError:
         shake_game_state,
         gem_collect_state,
         mobile_ad_state,
+        collect_fish_state,
+        starfish_timer_state,
     )
 
-timer_state = {
-    "task_id": None,
-    "last_feed_time": 0.0,
-    "interval_seconds": 600.0,
-}
+timer_state = starfish_timer_state
 
 patrol_timer_state = {
     "task_id": None,
     "last_cycle_time": 0.0,
     "interval_seconds": 1800.0,
     "last_ui_log_time": 0.0,
-    "ui_log_interval": 60.0,
+    "ui_log_interval": 300.0,
     "wait_focus_visible": False,
     "cycle_in_progress": False,
 }
@@ -239,14 +239,12 @@ class CheckStarfishTimerReco(CustomRecognition):
     ) -> Optional[RectType]:
         global timer_state
 
-        param = argv.custom_recognition_param
-        if isinstance(param, str) and param:
-            try:
-                p = json.loads(param)
-                if "interval" in p:
-                    timer_state["interval_seconds"] = float(p["interval"])
-            except Exception:
-                pass
+        param = parse_dict_param(argv.custom_recognition_param)
+        if "interval" in param:
+            timer_state["interval_seconds"] = safe_float(
+                param.get("interval"),
+                timer_state["interval_seconds"],
+            )
 
         interval = timer_state["interval_seconds"]
         task_id = argv.task_detail.task_id
@@ -255,27 +253,37 @@ class CheckStarfishTimerReco(CustomRecognition):
 
         if is_new_task:
             timer_state["task_id"] = task_id
-            timer_state["last_feed_time"] = now
+            timer_state["last_feed_time"] = 0.0
+            timer_state["attempt_in_progress"] = False
+            timer_state["retry_not_before"] = 0.0
 
         if interval <= 0:
             return None
 
-        elapsed = now - timer_state["last_feed_time"]
+        if timer_state.get("attempt_in_progress", False):
+            return None
 
-        if is_new_task or elapsed >= interval:
+        if now < timer_state.get("retry_not_before", 0.0):
+            return None
+
+        last_feed_time = timer_state.get("last_feed_time", 0.0)
+        is_initial_feed = last_feed_time <= 0
+        elapsed = now - last_feed_time if last_feed_time > 0 else 0.0
+
+        if is_initial_feed or elapsed >= interval:
             mins = int(interval / 60) if interval >= 60 else int(interval)
             unit = "分钟" if interval >= 60 else "秒"
             print("=" * 55, flush=True)
-            if is_new_task:
-                print("[海星喂食] 任务已启动，先执行一次自动补充鱼食。", flush=True)
+            if is_initial_feed:
+                print("[海星喂食] 首轮喂食尚未完成，正在自动补充鱼食。", flush=True)
             else:
                 print(f"[海星喂食] 定时已达! 距上次喂食 {int(elapsed)} 秒 (设定间隔: {int(interval)} 秒)", flush=True)
             print("[海星喂食] 正在触发海星自动补充鱼食...", flush=True)
             print("=" * 55, flush=True)
-            timer_state["last_feed_time"] = now
+            timer_state["attempt_in_progress"] = True
             feed_msg = (
                 "[海星喂食] 任务已启动，正在先补充一次鱼食..."
-                if is_new_task
+                if is_initial_feed
                 else f"[海星喂食] 设定间隔({mins}{unit})已到达，正在自动补充鱼食..."
             )
             try:
@@ -290,6 +298,16 @@ class CheckStarfishTimerReco(CustomRecognition):
                 pass
             return (0, 0, 10, 10)
 
+        return None
+
+
+@AgentServer.custom_recognition("CheckCollectFishStarfishEntryRetryReco")
+class CheckCollectFishStarfishEntryRetryReco(CustomRecognition):
+    """入口失败不足 3 次时允许重新确认当前鱼缸并重试。"""
+
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if collect_fish_state.get("starfish_entry_retry_count", 0) < 3:
+            return (0, 0, 10, 10)
         return None
 
 
@@ -313,6 +331,10 @@ class CheckDutyCycleReco(CustomRecognition):
                     duty_state["active_duration"] = float(p["active_duration"])
             except Exception:
                 pass
+
+        # 双鱼缸轮换模式固定持续实时收宝，跳过 CheckDutyCycle 的休眠占空比
+        if collect_fish_state.get("tank_mode") == "dual":
+            return None
 
         idle_interval = duty_state["idle_interval"]
         active_duration = duty_state["active_duration"]
@@ -996,3 +1018,103 @@ class CheckExchangeDisappearedReco(CustomRecognition):
         except Exception as e:
             print(f"[兑换金贝壳券] 检查兑换按钮消失状态异常: {e}", flush=True)
             return None
+
+
+@AgentServer.custom_recognition("CheckCollectFishTankSwitchReco")
+class CheckCollectFishTankSwitchReco(CustomRecognition):
+    """
+    检查是否到达双缸轮换切缸时间窗口:
+    仅在 tank_mode == "dual" 且已初始化启动时生效。
+    基于 monotonic 绝对时钟计算当前时间窗口 slot:
+    slot = int((now - dual_start_time) // switch_interval_sec)
+    expected_tank = 1 if (slot % 2 == 0) else 2
+    若当前所在鱼缸 current_tank != expected_tank，则返回 (0, 0, 10, 10) 触发切缸。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if collect_fish_state.get("tank_mode") != "dual":
+            return None
+
+        if not collect_fish_state.get("is_inited"):
+            return None
+
+        dual_start = collect_fish_state.get("dual_start_time", 0.0)
+        if dual_start <= 0:
+            return None
+
+        now = time.monotonic()
+        elapsed = max(0.0, now - dual_start)
+        interval = max(10.0, float(collect_fish_state.get("switch_interval_sec", 120.0)))
+        slot = int(elapsed // interval)
+        expected_tank = 1 if (slot % 2 == 0) else 2
+
+        current_tank = collect_fish_state.get("current_tank", 1)
+        if current_tank == expected_tank:
+            return None
+
+        # 需要切缸
+        collect_fish_state["pending_target_tank"] = expected_tank
+        print("-" * 55, flush=True)
+        print(
+            f"[收鱼-双缸] 时间窗口变更 (slot={slot}, 已挂机 {int(elapsed)} 秒)，"
+            f"当前位于鱼缸 {current_tank}，准备切换至目标鱼缸 {expected_tank}...",
+            flush=True,
+        )
+        print("-" * 55, flush=True)
+        return (0, 0, 10, 10)
+
+
+@AgentServer.custom_recognition("CheckCollectFishTargetTankReco")
+class CheckCollectFishTargetTankReco(CustomRecognition):
+    """
+    在切缸路由中判断目标鱼缸:
+    参数 {"target_tank": 1 | 2}
+    当 pending_target_tank 或 expected_tank 等于 target_tank 时返回 (0, 0, 10, 10)。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        param = parse_dict_param(argv.custom_recognition_param)
+        target_tank = safe_int(param.get("target_tank", 1), 1)
+
+        pending = collect_fish_state.get("pending_target_tank")
+        if pending is None:
+            dual_start = collect_fish_state.get("dual_start_time", 0.0)
+            if dual_start > 0:
+                now = time.monotonic()
+                elapsed = max(0.0, now - dual_start)
+                interval = max(10.0, float(collect_fish_state.get("switch_interval_sec", 120.0)))
+                slot = int(elapsed // interval)
+                pending = 1 if (slot % 2 == 0) else 2
+            else:
+                pending = 1
+
+        if pending == target_tank:
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckCollectFishTankModeReco")
+class CheckCollectFishTankModeReco(CustomRecognition):
+    """
+    判断当前收鱼模式是否为指定模式:
+    参数 {"mode": "single" | "dual"}
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        param = parse_dict_param(argv.custom_recognition_param)
+        expected_mode = str(param.get("mode", "single")).lower()
+        current_mode = str(collect_fish_state.get("tank_mode", "single")).lower()
+        if current_mode == expected_mode:
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckCollectFishNeedsInitReco")
+class CheckCollectFishNeedsInitReco(CustomRecognition):
+    """
+    检查收鱼产物任务是否尚未完成启动初始化:
+    纯读识别器，判断 collect_fish_state["is_inited"] 是否为 False。
+    - 若尚未初始化 (False)，返回 (0, 0, 10, 10) 导向初始化流程；
+    - 若已完成初始化 (True)，返回 None 直通继续收宝 (ResumeHarvest)。
+    """
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if not collect_fish_state.get("is_inited", False):
+            return (0, 0, 10, 10)
+        return None

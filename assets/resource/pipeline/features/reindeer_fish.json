@@ -116,8 +116,8 @@
     },
     "ReindeerFishReplyAll": {
         "recognition": "OCR",
-        "expected": "一键回礼",
-        "roi": [545, 611, 121, 45],
+        "expected": "键回礼",
+        "roi": [537, 611, 128, 44],
         "action": "Click",
         "post_delay": 1000,
         "next": [

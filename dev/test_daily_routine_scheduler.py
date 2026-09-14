@@ -163,14 +163,37 @@ def test_pipeline_topology():
     assert raw_interfaces[0] == raw_interfaces[1] == raw_interfaces[2]
     interface = json.loads(raw_interfaces[0].decode("utf-8"))
     tasks = {task["entry"]: task for task in interface["task"]}
-    assert "钓鱼地点" in tasks["FishingTask"]["option"]
+    assert tasks["FishingTask"]["option"] == ["钓鱼地点", "钓鱼饵食适配模式"]
     assert "钓鱼地点" in tasks["DailyRoutineTask"]["option"]
+    fishing_mode = interface["option"]["钓鱼饵食适配模式"]
+    assert fishing_mode["default_case"] == "普通饵食（快速）"
+    mode_cases = {case["name"]: case for case in fishing_mode["cases"]}
+    assert set(mode_cases) == {"普通饵食（快速）", "美味饵食（稳健）"}
+    ordinary_param = mode_cases["普通饵食（快速）"]["pipeline_override"]["FishingTask"]["custom_action_param"]
+    assert ordinary_param == {
+        "max_casts": 0,
+        "bite_mode": "ordinary",
+        "force_ordinary_bait": False,
+    }
+    special_override = mode_cases["美味饵食（稳健）"]["pipeline_override"]
+    assert special_override["FishingTask"]["custom_action_param"] == {
+        "max_casts": 0,
+        "bite_mode": "special",
+        "force_ordinary_bait": False,
+    }
+    assert special_override["FishingBaitNeedSelect"]["action"] == "DoNothing"
+    assert special_override["FishingBaitNeedSelect"]["next"] == ["FishingDone"]
+    assert pdata["FishingDailyTask"]["custom_action_param"] == {
+        "max_casts": 5,
+        "bite_mode": "ordinary",
+        "force_ordinary_bait": True,
+    }
     routine_cases = {
         case["name"] for case in interface["option"]["日常收尾任务"]["cases"]
     }
     assert "驯鹿鱼送收礼物" in routine_cases
     assert "宝石礼盒兑换" in routine_cases
-    print("[PASS] 日常收尾钓鱼地点选项与子任务选项，与 interface.json 同步")
+    print("[PASS] 独立钓鱼双饵食模式、日常固定普通饵食及三份 interface.json 同步")
 
     # 7. 鱼饵耗尽是钓场内的正常终态：各运行阶段都应优先识别，并复用既有安全退出链。
     exhausted = pdata["FishingBaitExhausted"]
@@ -222,8 +245,9 @@ def test_pipeline_topology():
     ]
     assert pdata["ReindeerFishAfterCollectRouter"]["on_error"] == ["ReindeerFishAfterCollectNoReply"]
     assert business_next(pdata["ReindeerFishAfterCollectNoReply"]) == ["ReindeerFishCommonBack"]
-    assert pdata["ReindeerFishReplyAll"]["expected"] == "一键回礼"
-    assert pdata["ReindeerFishReplyAll"]["roi"] == [545, 611, 121, 45]
+    # 2026-09-15 现场 OCR 把“一键回礼”稳定识别为“键回礼”；使用共同稳定子串。
+    assert pdata["ReindeerFishReplyAll"]["expected"] == "键回礼"
+    assert pdata["ReindeerFishReplyAll"]["roi"] == [537, 611, 128, 44]
     assert pdata["ReindeerFishDirectGift"]["expected"] == "直接赠送"
     assert "roi" not in pdata["ReindeerFishDirectGift"]
     assert pdata["ReindeerFishCommonBack"]["expected"] == "返回"

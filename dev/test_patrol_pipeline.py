@@ -41,7 +41,8 @@ def business_next(node):
 
 
 def load_image(path):
-    return cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+    with open(path, "rb") as f:
+        return cv2.imdecode(np.frombuffer(f.read(), dtype=np.uint8), cv2.IMREAD_UNCHANGED)
 
 
 def template_score(screen, template, roi):
@@ -281,9 +282,9 @@ class PatrolPipelineTest(unittest.TestCase):
             self.assertEqual(window["timeout"], 30000)
             self.assertIn(f"PatrolCollectTank{tank}Bubble", window["next"])
             expected_next = (
-                f"PatrolOpenPickerAfterTank{tank}"
+                f"PatrolPreSwitchCheckTank{tank}"
                 if tank < 3
-                else "PatrolOpenManagement"
+                else "PatrolPreManagementCheckTank3"
             )
             self.assertEqual(window["on_error"], [expected_next])
             self.assertEqual(image_window["recognition"], "DirectHit")
@@ -587,23 +588,57 @@ class PatrolPipelineTest(unittest.TestCase):
             for fragment in fragments:
                 self.assertIn(fragment, focus, node_name)
 
-    def test_gem_fusion_return_retries_only_after_page_reconfirmation(self):
+    def test_gem_fusion_return_router_prioritizes_put_in_storage_and_fallbacks(self):
         first_return = self.pipeline["PatrolGemFusionReturn"]
         self.assertEqual(business_next(first_return), ["PatrolGemFusionReturnRouter"])
         self.assertIn("第一次返回", " ".join(first_return["focus"].values()))
 
         router = self.pipeline["PatrolGemFusionReturnRouter"]
         router_next = business_next(router)
+
+        # Case 1: 第一次返回后若已回鱼缸，MainTank 优先级高于后续页面处理，不进入 PutInStorage
+        main_tanks = [
+            "PatrolVerifyMainTank1AfterCycle",
+            "PatrolVerifyMainTank2AfterCycle",
+            "PatrolVerifyMainTank3AfterCycle",
+        ]
+        self.assertEqual(router_next[:3], main_tanks)
+        for tank in main_tanks:
+            self.assertLess(router_next.index(tank), router_next.index("PatrolGemFusionConfirmPutInStorage"))
+
+        # Case 2 & Case 3: 未回鱼缸时，优先检测【放入仓库】，位于 StillOnPage 之前
         self.assertEqual(
-            router_next[:3],
+            router_next[3:],
             [
-                "PatrolVerifyMainTank1AfterCycle",
-                "PatrolVerifyMainTank2AfterCycle",
-                "PatrolVerifyMainTank3AfterCycle",
+                "PatrolGemFusionConfirmPutInStorage",
+                "PatrolGemFusionStillOnPage",
+                "PatrolGemFusionAbort",
             ],
         )
-        self.assertEqual(router_next[3:], ["PatrolGemFusionStillOnPage", "PatrolGemFusionAbort"])
+        self.assertLess(
+            router_next.index("PatrolGemFusionConfirmPutInStorage"),
+            router_next.index("PatrolGemFusionStillOnPage"),
+        )
 
+        # Case 4: 领取奖励后复用现有融合链 (ConfirmPutInStorage -> VerifyPage -> Synthesize/Running -> Return)
+        confirm_store = self.pipeline["PatrolGemFusionConfirmPutInStorage"]
+        self.assertEqual(confirm_store["recognition"], "OCR")
+        self.assertEqual(confirm_store["expected"], "放入仓库")
+        self.assertEqual(confirm_store["roi"], [565, 537, 152, 42])
+        self.assertEqual(confirm_store["action"], "Click")
+        self.assertEqual(business_next(confirm_store), ["PatrolGemFusionVerifyPage"])
+
+        verify_page = self.pipeline["PatrolGemFusionVerifyPage"]
+        verify_next = business_next(verify_page)
+        self.assertIn("PatrolGemFusionClickSynthesize", verify_next)
+        self.assertIn("PatrolGemFusionAlreadyRunning", verify_next)
+        self.assertEqual(business_next(self.pipeline["PatrolGemFusionClickSynthesize"]), ["PatrolGemFusionReturn"])
+        self.assertEqual(business_next(self.pipeline["PatrolGemFusionAlreadyRunning"]), ["PatrolGemFusionReturn"])
+
+        # 防死循环断言：PutInStorage 链路中确认入库后必须推进到 VerifyPage，不直接循环回 ReturnRouter
+        self.assertNotIn("PatrolGemFusionReturnRouter", business_next(confirm_store))
+
+        # Case 5: 无奖励但仍在融合页时，走 StillOnPage -> ReturnAgain -> MainTank Verify
         still_page = self.pipeline["PatrolGemFusionStillOnPage"]
         self.assertEqual(still_page["recognition"], "TemplateMatch")
         self.assertEqual(still_page["template"], "宝石融合页面.png")
@@ -616,6 +651,24 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(retry["expected"], "返回")
         self.assertEqual(retry["action"], "Click")
         self.assertEqual(business_next(retry), ["PatrolVerifyMainAfterCycle"])
+
+        # Case 6: 未知状态安全熔断 (Abort)
+        self.assertEqual(router_next[-1], "PatrolGemFusionAbort")
+        self.assertEqual(self.pipeline["PatrolGemFusionAbort"]["action"], "StopTask")
+
+        # Case 7: 魔力召唤业务链保持完好且未被修改
+        magic_due = self.pipeline["PatrolMagicSummonDue"]
+        self.assertIn("PatrolMagicOpenTreasure", business_next(magic_due))
+        magic_router = self.pipeline["PatrolMagicVerifyPage"]
+        self.assertEqual(
+            business_next(magic_router),
+            [
+                "PatrolMagicConfirmPopup",
+                "PatrolMagicRevealResult",
+                "PatrolMagicClickAdvanced",
+                "PatrolMagicAlreadyRunning",
+            ],
+        )
 
     def test_management_resume_accepts_any_main_tank_on_exit(self):
         next_nodes = self.pipeline["PatrolVerifyMainAfterCycle"]["next"]
@@ -646,6 +699,124 @@ class PatrolPipelineTest(unittest.TestCase):
             ["魔力召唤", "宝石融合"],
         )
 
+    def test_starfish_mis_touch_recovery_topology_for_all_tanks(self):
+        """Case 1, Case 2, Case 3: Verify mis-touch recovery chain for Tank 1, 2, 3."""
+        for tank in (1, 2, 3):
+            mis_touch = self.pipeline[f"PatrolStarfishPetPanelMisTouchTank{tank}"]
+            ret_node = self.pipeline[f"PatrolStarfishPetPanelReturnTank{tank}"]
+            verify_node = self.pipeline[f"PatrolVerifyTank{tank}AfterStarfishMisTouch"]
+
+            # Recognition & gating
+            self.assertEqual(mis_touch["recognition"], "OCR")
+            self.assertEqual(mis_touch["expected"], "[萌乖亮]海星")
+            self.assertEqual(mis_touch["roi"], [80, 70, 800, 100])
+            self.assertEqual(mis_touch["action"], "DoNothing")
+            self.assertEqual(business_next(mis_touch), [f"PatrolStarfishPetPanelReturnTank{tank}"])
+
+            # Return click
+            self.assertEqual(ret_node["recognition"], "OCR")
+            self.assertEqual(ret_node["expected"], "返回")
+            self.assertEqual(ret_node["roi"], [1, 0, 189, 119])
+            self.assertEqual(ret_node["action"], "Click")
+            self.assertEqual(business_next(ret_node), [f"PatrolVerifyTank{tank}AfterStarfishMisTouch"])
+
+            # Verify tank identity
+            self.assertEqual(verify_node["recognition"], "TemplateMatch")
+            self.assertEqual(verify_node["template"], f"patrol/鱼缸{tank}_主页面编号.png")
+            self.assertEqual(verify_node["threshold"], 0.85)
+            self.assertEqual(verify_node["roi"], [40, 32, 45, 48])
+            self.assertEqual(verify_node["action"], "DoNothing")
+
+            # Returns to ImageWindow to restart 30s observation
+            self.assertEqual(business_next(verify_node), [f"PatrolCollectTank{tank}ImageWindow"])
+            self.assertEqual(self.pipeline[f"PatrolCollectTank{tank}ImageWindow"]["timeout"], 30000)
+
+    def test_starfish_mis_touch_priority_over_bubble_and_timeout(self):
+        """Case 4: In PatrolCollectTankXImageWindow.next and PatrolCollectTankX.next, mis-touch precedes bubble."""
+        for tank in (1, 2, 3):
+            for node_name in (f"PatrolCollectTank{tank}", f"PatrolCollectTank{tank}ImageWindow"):
+                next_nodes = self.pipeline[node_name]["next"]
+                mis_touch_idx = next_nodes.index(f"PatrolStarfishPetPanelMisTouchTank{tank}")
+                bubble_idx = next_nodes.index(f"PatrolCollectTank{tank}Bubble")
+                self.assertLess(mis_touch_idx, bubble_idx, f"{node_name} must prioritize mis-touch over bubble")
+
+    def test_starfish_mis_touch_does_not_falsely_match_generic_page(self):
+        """Case 5: Mis-touch recognition requires unique starfish tab pattern [萌乖亮]海星, not bare 返回."""
+        for tank in (1, 2, 3):
+            mis_touch = self.pipeline[f"PatrolStarfishPetPanelMisTouchTank{tank}"]
+            self.assertNotEqual(mis_touch["expected"], "返回")
+            self.assertIn("海星", mis_touch["expected"])
+            self.assertIn(mis_touch["roi"][1], range(50, 120))
+
+    def test_normal_patrol_starfish_feeding_isolated_from_mis_touch(self):
+        """Case 6: Normal starfish feeding business pipeline does not route through mis-touch recovery nodes."""
+        normal_chain = [
+            "PatrolOpenManagement",
+            "PatrolVerifyManagement",
+            "PatrolOpenUniversalStarfish",
+            "PatrolSelectCuteStarfishTab",
+            "PatrolCuteFeedCheck",
+            "PatrolSelectGoodStarfishTab",
+            "PatrolGoodFeedCheck",
+            "PatrolSelectBrightStarfishTab",
+            "PatrolBrightFeedCheck",
+            "PatrolExitUniversalStarfish",
+            "PatrolVerifyManagementAfterStarfish",
+            "PatrolExitManagement",
+        ]
+        mis_touch_names = {
+            f"PatrolStarfishPetPanelMisTouchTank{i}" for i in (1, 2, 3)
+        } | {
+            f"PatrolStarfishPetPanelReturnTank{i}" for i in (1, 2, 3)
+        }
+        for node_name in normal_chain:
+            if node_name in self.pipeline:
+                node = self.pipeline[node_name]
+                for nxt in node.get("next", []):
+                    self.assertNotIn(nxt, mis_touch_names, f"{node_name} must not route to mis-touch nodes")
+        for name in mis_touch_names:
+            self.assertNotIn(name, GLOBAL_HANDLERS)
+
+    def test_pre_switch_state_protection_and_abort_fallback(self):
+        """Case 7: Before opening picker or management, verify tank page; recovery or abort if not main tank."""
+        for tank in (1, 2):
+            pre_switch = self.pipeline[f"PatrolPreSwitchCheckTank{tank}"]
+            self.assertEqual(pre_switch["recognition"], "DirectHit")
+            next_nodes = business_next(pre_switch)
+            self.assertEqual(
+                next_nodes,
+                [
+                    f"PatrolStarfishPetPanelMisTouchTank{tank}",
+                    f"PatrolOpenPickerAfterTank{tank}",
+                    "PatrolAbortNavigation",
+                ],
+            )
+            picker_node = self.pipeline[f"PatrolOpenPickerAfterTank{tank}"]
+            self.assertEqual(picker_node["recognition"], "TemplateMatch")
+            self.assertEqual(picker_node["template"], f"patrol/鱼缸{tank}_主页面编号.png")
+            self.assertEqual(picker_node["threshold"], 0.85)
+
+        pre_mgmt = self.pipeline["PatrolPreManagementCheckTank3"]
+        self.assertEqual(pre_mgmt["recognition"], "DirectHit")
+        self.assertEqual(
+            business_next(pre_mgmt),
+            [
+                "PatrolStarfishPetPanelMisTouchTank3",
+                "PatrolOpenManagement",
+                "PatrolAbortNavigation",
+            ],
+        )
+
+    def test_no_error_handling_loops_in_patrol_collect(self):
+        """Case 8: Ensure no on_error loops (e.g. ImageWindow -> on_error -> ImageWindow)."""
+        for tank in (1, 2, 3):
+            image_window = self.pipeline[f"PatrolCollectTank{tank}ImageWindow"]
+            self.assertNotIn(f"PatrolCollectTank{tank}ImageWindow", image_window.get("on_error", []))
+            for err_target in image_window.get("on_error", []):
+                target_node = self.pipeline.get(err_target, {})
+                self.assertNotIn(f"PatrolCollectTank{tank}ImageWindow", target_node.get("on_error", []))
+
 
 if __name__ == "__main__":
     unittest.main()
+

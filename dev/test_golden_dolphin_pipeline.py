@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-GoldenDolphin Pipeline 拓扑与路由状态机测试套件 (Phase 2A-2)
-验证:
-1. features/golden_dolphin.json 6 个节点结构完整性与连接关系
-2. CheckGoldenDolphinCanPlayReco 状态分支断言
-3. 贝币启动、XP/爱心优先级、连续三局与日常收尾联动推进
-"""
+"""GoldenDolphin Pipeline、奖励优先级与日常收尾路由静态测试。"""
+import json
 import os
 import sys
-import json
+from types import SimpleNamespace
 
 import cv2
 import numpy as np
@@ -18,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from agent.runtime_state import golden_dolphin_state, daily_routine_state
 from agent.my_reco import CheckGoldenDolphinCanPlayReco, CheckGoldenDolphinRepeatReco
 from agent.my_action import (
-    GOLDEN_DOLPHIN_HEART_FALLBACK_DELAY_SECONDS,
+    GOLDEN_DOLPHIN_REWARD_ORDER,
     GoldenDolphinInitAction,
     GoldenDolphinNavigationAction,
     GoldenDolphinPlayGameAction,
@@ -27,16 +22,23 @@ from agent.my_action import (
     _complete_golden_dolphin_round,
     advance_daily_routine_step,
     _find_golden_dolphin_coin,
-    _find_golden_dolphin_hearts,
+    _find_golden_dolphin_template_targets,
     _find_golden_dolphin_xp,
     _get_golden_dolphin_templates,
+    _return_golden_dolphin_to_tank,
     _select_golden_dolphin_frame_targets,
 )
 
 
+def _place_template(canvas, template, left, top):
+    height, width = template.shape[:2]
+    canvas[top:top + height, left:left + width] = template
+    return left + width // 2, top + height // 2
+
+
 def run_tests():
     print('=' * 65)
-    print('  GoldenDolphin Pipeline Topology & Routing Test Suite')
+    print('  GoldenDolphin Pipeline Topology & Reward Priority Tests')
     print('=' * 65)
 
     print("\n--- Test 1: Pipeline JSON Topology ---")
@@ -52,10 +54,11 @@ def run_tests():
         'GoldenDolphinRepeat',
         'GoldenDolphinDone',
     ]
-    for n in expected_nodes:
-        assert n in pipe, f'Missing node: {n}'
+    for node in expected_nodes:
+        assert node in pipe, f'Missing node: {node}'
     business_next = lambda node: [name for name in pipe[node]['next'] if not name.startswith('[JumpBack]Global')]
     assert pipe['GoldenDolphinTask']['custom_action'] == 'GoldenDolphinInitAction'
+    assert '任务开始' in pipe['GoldenDolphinTask']['focus']['Node.Action.Succeeded']
     assert business_next('GoldenDolphinTask') == ['GoldenDolphinNavigation']
     assert business_next('GoldenDolphinNavigation') == ['GoldenDolphinPlayGame', 'GoldenDolphinDone']
     assert pipe['GoldenDolphinNavigation']['custom_action'] == 'GoldenDolphinNavigationAction'
@@ -72,58 +75,54 @@ def run_tests():
 
     print("\n--- Test 2: CheckGoldenDolphinCanPlayReco 状态分支裁决 ---")
     reco = CheckGoldenDolphinCanPlayReco()
+    for status, expected in (
+        ('READY_TO_PLAY', (0, 0, 10, 10)),
+        ('NO_STAMINA', None),
+        ('FAILED', None),
+        ('IDLE', None),
+    ):
+        golden_dolphin_state['status'] = status
+        assert reco.analyze(None, None) == expected
+    print('[PASS] Check 2: CheckGoldenDolphinCanPlayReco 状态分支判定正确！')
 
-    golden_dolphin_state['status'] = 'READY_TO_PLAY'
-    res_ready = reco.analyze(None, None)
-    assert res_ready == (0, 0, 10, 10), f'READY_TO_PLAY should match: {res_ready}'
+    print("\n--- Test 3: 四类奖励模板完整加载 ---")
+    templates = _get_golden_dolphin_templates()
+    rewards = templates['rewards']
+    assert tuple(rewards) == GOLDEN_DOLPHIN_REWARD_ORDER
+    assert {category: len(items) for category, items in rewards.items()} == {
+        'xp': 2,
+        'heart': 1,
+        'gem': 4,
+        'coin': 3,
+    }
+    print('[PASS] Check 3: 经验星/爱心/宝石/贝币全部模板变体已加载！')
 
-    golden_dolphin_state['status'] = 'NO_STAMINA'
-    res_no = reco.analyze(None, None)
-    assert res_no is None, f'NO_STAMINA should not match: {res_no}'
+    print("\n--- Test 4: 四类奖励均使用全屏识别 ---")
+    for category in ('heart', 'gem', 'coin'):
+        template = rewards[category][0]
+        height, width = template.shape[:2]
+        canvas = np.zeros((720, 1280, 3), dtype=np.uint8)
+        expected_centers = [
+            _place_template(canvas, template, 2, 2),
+            _place_template(canvas, template, 1280 - width - 2, 720 - height - 2),
+        ]
+        candidates = _find_golden_dolphin_template_targets(canvas, rewards[category])
+        for expected_x, expected_y in expected_centers:
+            assert any(
+                abs(x - expected_x) <= 1 and abs(y - expected_y) <= 1
+                for x, y, _ in candidates
+            ), f'{category} full-screen match missing at {(expected_x, expected_y)}'
 
-    golden_dolphin_state['status'] = 'FAILED'
-    res_fail = reco.analyze(None, None)
-    assert res_fail is None, f'FAILED should not match: {res_fail}'
+    coin_template = rewards['coin'][0]
+    coin_canvas = np.zeros((720, 1280, 3), dtype=np.uint8)
+    expected_coin = _place_template(coin_canvas, coin_template, 320, 5)
+    assert _find_golden_dolphin_coin(coin_canvas, rewards['coin'])[:2] == expected_coin
+    print('[PASS] Check 4: 爱心、宝石、贝币可在完整 1280×720 画面识别！')
 
-    golden_dolphin_state['status'] = 'IDLE'
-    res_idle = reco.analyze(None, None)
-    assert res_idle is None, f'IDLE should not match: {res_idle}'
-    print('[PASS] Check 2: CheckGoldenDolphinCanPlayReco 4 种状态分支判定 100% 正确！')
-
-    print("\n--- Test 3: 贝币持续点击与经验阶段切换 ---")
-    coin = _get_golden_dolphin_templates()["coin"]
-    assert coin is not None and coin.size > 0, "金海豚_贝币.png must load"
-    coin_h, coin_w = coin.shape[:2]
-    canvas = np.zeros((720, 1280, 3), dtype=np.uint8)
-    left, top = 320, 260
-    canvas[top:top + coin_h, left:left + coin_w] = coin
-    match = _find_golden_dolphin_coin(canvas, coin)
-    assert match is not None
-    assert match[:2] == (left + coin_w // 2, top + coin_h // 2)
-
-    stars = _get_golden_dolphin_templates()["stars"]
-    assert len(stars) == 2, "金海豚_经验星1.png and 金海豚_经验星2.png must both load"
-    heart = _get_golden_dolphin_templates()["heart"]
-    assert heart is not None and heart.size > 0, "金海豚_爱心.png must load"
-    phase_1, targets_1 = _select_golden_dolphin_frame_targets(canvas, coin, stars, heart, False, 0.0)
-    phase_2, targets_2 = _select_golden_dolphin_frame_targets(canvas, coin, stars, heart, False, 0.0)
-    assert phase_1 == phase_2 == "coin"
-    assert targets_1[0][:2] == targets_2[0][:2] == match[:2]
-
-    phase_after_xp, targets_after_xp = _select_golden_dolphin_frame_targets(canvas, coin, stars, heart, True, 0.0)
-    assert phase_after_xp == "wait" and targets_after_xp == []
-    assert _find_golden_dolphin_coin(np.zeros_like(canvas), coin) is None
-    top_bar = np.zeros_like(canvas)
-    top_bar[10:10 + coin_h, left:left + coin_w] = coin
-    assert _find_golden_dolphin_coin(top_bar, coin) is None
-    print('[PASS] Check 3: XP 出现前可逐帧重复选择贝币；进入 XP 阶段后不再选择贝币！')
-
-    print("\n--- Test 4: 经验区域检测回归 ---")
+    print("\n--- Test 5: 经验星全屏区域检测回归 ---")
     recorded = cv2.imread("dev/exploration/golden_dolphin/03_middle_falling_dense.png")
-    candidates = _find_golden_dolphin_xp(recorded, stars)
+    candidates = _find_golden_dolphin_xp(recorded, rewards['xp'])
     assert candidates, "recorded XP frame should contain at least one candidate"
-    phase_xp, selected_xp = _select_golden_dolphin_frame_targets(recorded, coin, stars, heart, False, 0.0)
-    assert phase_xp == "xp" and 1 <= len(selected_xp) <= 4
     source_x, source_y, _ = candidates[0]
     for target_y in (100, 620):
         shifted = cv2.warpAffine(
@@ -133,38 +132,54 @@ def run_tests():
             borderMode=cv2.BORDER_CONSTANT,
             borderValue=0,
         )
-        shifted_candidates = _find_golden_dolphin_xp(shifted, stars)
+        shifted_candidates = _find_golden_dolphin_xp(shifted, rewards['xp'])
         assert any(abs(x - source_x) <= 2 and abs(y - target_y) <= 2 for x, y, _ in shifted_candidates)
-    print(f'[PASS] Check 4: 经验星在完整 1280×720 画面内不受纵向 ROI 限制！')
+    print('[PASS] Check 5: 经验星在完整 1280×720 画面内不受纵向 ROI 限制！')
 
-    print("\n--- Test 5: XP 优先与全屏爱心补充 ---")
-    heart_h, heart_w = heart.shape[:2]
-    heart_canvas = np.zeros((720, 1280, 3), dtype=np.uint8)
-    heart_positions = [(7, 5), (1200, 680)]
-    for left, top in heart_positions:
-        heart_canvas[top:top + heart_h, left:left + heart_w] = heart
-    heart_candidates = _find_golden_dolphin_hearts(heart_canvas, heart)
-    assert any(abs(x - (7 + heart_w // 2)) <= 1 and abs(y - (5 + heart_h // 2)) <= 1 for x, y, _ in heart_candidates)
-    assert any(abs(x - (1200 + heart_w // 2)) <= 1 and abs(y - (680 + heart_h // 2)) <= 1 for x, y, _ in heart_candidates)
+    print("\n--- Test 6: 可选最高优先级与同帧立即兜底 ---")
+    all_rewards = recorded.copy()
+    placements = {'heart': (10, 10), 'gem': (900, 20), 'coin': (600, 640)}
+    for category, (left, top) in placements.items():
+        template = rewards[category][0]
+        height, width = template.shape[:2]
+        _place_template(all_rewards, template, min(left, 1280 - width), min(top, 720 - height))
+    for priority in GOLDEN_DOLPHIN_REWARD_ORDER:
+        selected, targets = _select_golden_dolphin_frame_targets(all_rewards, rewards, priority)
+        assert selected == priority and targets, f'{priority} should win when selected and visible'
 
-    phase_early, targets_early = _select_golden_dolphin_frame_targets(
-        heart_canvas, coin, stars, heart, True, GOLDEN_DOLPHIN_HEART_FALLBACK_DELAY_SECONDS - 0.01
-    )
-    assert phase_early == "wait" and targets_early == []
-    phase_heart, targets_heart = _select_golden_dolphin_frame_targets(
-        heart_canvas, coin, stars, heart, True, GOLDEN_DOLPHIN_HEART_FALLBACK_DELAY_SECONDS
-    )
-    assert phase_heart == "heart" and len(targets_heart) == 2
+    gem_only = np.zeros((720, 1280, 3), dtype=np.uint8)
+    _place_template(gem_only, rewards['gem'][0], 500, 250)
+    selected, targets = _select_golden_dolphin_frame_targets(gem_only, rewards, 'xp')
+    assert selected == 'gem' and targets, 'missing XP must fall back to another reward in the same call/frame'
+    print('[PASS] Check 6: 四类均可设为最高优先级；首选未命中时无 1 秒等待并立即兜底！')
 
-    xp_with_heart = recorded.copy()
-    xp_with_heart[5:5 + heart_h, 7:7 + heart_w] = heart
-    phase_priority, _ = _select_golden_dolphin_frame_targets(
-        xp_with_heart, coin, stars, heart, True, GOLDEN_DOLPHIN_HEART_FALLBACK_DELAY_SECONDS + 1.0
-    )
-    assert phase_priority == "xp", "经验与爱心同时出现时必须优先经验"
-    print('[PASS] Check 5: XP 与爱心均全屏识别；等待阈值后才点爱心，且 XP 始终优先！')
+    print("\n--- Test 7: UI 参数与初始化状态 ---")
+    interface_paths = [
+        os.path.join('assets', 'interface.json'),
+        os.path.join('client', 'interface.json'),
+        os.path.join('client_avalonia', 'interface.json'),
+    ]
+    raw_interfaces = [open(path, 'rb').read() for path in interface_paths]
+    assert raw_interfaces[0] == raw_interfaces[1] == raw_interfaces[2]
+    interface = json.loads(raw_interfaces[0].decode('utf-8'))
+    option_name = '金海豚奖励优先级'
+    task_by_entry = {task['entry']: task for task in interface['task']}
+    assert option_name in task_by_entry['GoldenDolphinTask']['option']
+    assert option_name in task_by_entry['DailyRoutineTask']['option']
+    option = interface['option'][option_name]
+    assert option['default_case'] == '经验星'
+    assert {
+        case['name']: case['pipeline_override']['GoldenDolphinTask']['custom_action_param']['reward_priority']
+        for case in option['cases']
+    } == {'经验星': 'xp', '爱心': 'heart', '宝石': 'gem', '贝币': 'coin'}
 
-    print("\n--- Test 6: 连续三局状态与无次数正常调度 ---")
+    GoldenDolphinInitAction().run(None, SimpleNamespace(custom_action_param='{"reward_priority":"gem"}'))
+    assert golden_dolphin_state['reward_priority'] == 'gem'
+    GoldenDolphinInitAction().run(None, SimpleNamespace(custom_action_param='{"reward_priority":"unknown"}'))
+    assert golden_dolphin_state['reward_priority'] == 'xp'
+    print('[PASS] Check 7: 独立任务/日常收尾均展示参数，默认经验星且非法值安全回退！')
+
+    print("\n--- Test 8: 连续三局状态与无次数正常调度 ---")
     GoldenDolphinInitAction().run(None, None)
     assert golden_dolphin_state['completed_rounds'] == 0
     assert _complete_golden_dolphin_round() == 'NEXT_ROUND'
@@ -177,17 +192,14 @@ def run_tests():
     golden_dolphin_state['status'] = 'DONE'
     assert repeat_reco.analyze(None, None) is None
 
-    print("\n--- Test 7: GoldenDolphinDoneAction 调度分离与独立保护 ---")
-    # 7.1 独立运行 (active=False)
+    print("\n--- Test 9: GoldenDolphinDoneAction 调度分离与独立保护 ---")
     daily_routine_state['active'] = False
     daily_routine_state['queue'] = []
     golden_dolphin_state['status'] = 'DONE'
     done_act = GoldenDolphinDoneAction()
     done_act.run(None, None)
-    assert len(daily_routine_state['queue']) == 0, 'Standalone should not advance daily routine'
-    print('[PASS] Check 3a: 独立运行保护验证通过：未激活时不触碰日常收尾调度！')
+    assert not daily_routine_state['queue'], 'Standalone should not advance daily routine'
 
-    # 7.2 日常收尾联动 (active=True)
     daily_routine_state['active'] = True
     daily_routine_state['tasks']['GoldenDolphin'] = {'status': 'IDLE'}
     daily_routine_state['queue'] = ['FISHING']
@@ -195,16 +207,55 @@ def run_tests():
     done_act.run(None, None)
     assert daily_routine_state['tasks']['GoldenDolphin']['status'] == 'DONE'
     assert daily_routine_state['step'] == 'FISHING'
-    print('[PASS] Check 3b: 日常收尾联动验证通过：按序推进至下一任务 FISHING！')
 
-    daily_routine_state['active'] = True
     daily_routine_state['tasks']['GoldenDolphin'] = {'status': 'IDLE'}
     daily_routine_state['queue'] = ['FISHING']
     golden_dolphin_state['status'] = 'NO_STAMINA'
     done_act.run(None, None)
     assert daily_routine_state['tasks']['GoldenDolphin']['status'] == 'NO_STAMINA'
     assert daily_routine_state['step'] == 'FISHING'
-    print('[PASS] Check 7c: 无游戏次数按正常业务状态进入下一任务，不作为错误处理！')
+    print('[PASS] Check 9: 独立运行、日常收尾与无次数路由均正确！')
+
+    print("\n--- Test 10: 结算页归位门禁回归 ---")
+    game_ending = cv2.imread('dev/exploration/golden_dolphin/03_game_ending_stage.png')
+    game_over = cv2.imread('dev/exploration/golden_dolphin/04_game_over.png')
+    main_tank = cv2.imread('dev/exploration/golden_dolphin/05_after_cancel.png')
+    assert game_ending is not None and game_over is not None and main_tank is not None
+
+    class _FakeJob:
+        def __init__(self, value=None):
+            self.value = value
+
+        def wait(self):
+            return self
+
+        def get(self):
+            return self.value
+
+    class _FakeController:
+        def __init__(self):
+            self.frames = [game_ending, game_over]
+            self.frame_index = 0
+            self.clicks = []
+
+        def post_screencap(self):
+            frame = self.frames[self.frame_index]
+            if self.frame_index < len(self.frames) - 1:
+                self.frame_index += 1
+            return _FakeJob(frame)
+
+        def post_click(self, x, y):
+            self.clicks.append((x, y))
+            self.frames = [main_tank]
+            self.frame_index = 0
+            return _FakeJob()
+
+    fake_ctrl = _FakeController()
+    assert _return_golden_dolphin_to_tank(fake_ctrl, templates, timeout=3.0)
+    assert fake_ctrl.clicks
+    cancel_x, cancel_y = fake_ctrl.clicks[0]
+    assert 830 <= cancel_x <= 910 and 550 <= cancel_y <= 600
+    print('[PASS] Check 10: 结算按钮出现较晚时会按模板点击，并在主鱼缸门禁通过后才推进！')
 
     print("\nALL GOLDEN DOLPHIN PIPELINE TESTS PASSED 100%!")
 
