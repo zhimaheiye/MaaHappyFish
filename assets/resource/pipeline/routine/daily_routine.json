@@ -39,6 +39,11 @@
         "action": "DoNothing",
         "enabled": false
     },
+    "DailyRoutineEnableGemOrder": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineEnableRomanticHouse": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -54,6 +59,16 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineInitLog"
+        ]
+    },
+    "DailyRoutineInitLog": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 已读取子任务选择，准备开始执行。"
+        },
+        "next": [
             "DailyRoutineDispatcher"
         ]
     },
@@ -74,6 +89,7 @@
             "DailyRoutineStepShakeGame",
             "DailyRoutineStepFishing",
             "DailyRoutineStepGemGiftBox",
+            "DailyRoutineStepGemOrder",
             "DailyRoutineStepRomanticHouse",
             "DailyRoutineStepBandFishPass2",
             "DailyRoutineStepAllDone"
@@ -86,6 +102,9 @@
             "expected_step": "FREE_GIFT"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：每日免费礼包。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -102,6 +121,9 @@
             "expected_step": "REINDEER_FISH"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：驯鹿鱼送收礼物。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -118,6 +140,9 @@
             "expected_step": "GOLD_SHELL_COUPON"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：兑换金贝壳券。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -134,6 +159,9 @@
             "expected_step": "BAND_FISH_PASS1"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：乐队鱼首次检查。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -150,6 +178,9 @@
             "expected_step": "GOLDEN_DOLPHIN"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：金海豚小游戏。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -166,6 +197,9 @@
             "expected_step": "SHAKE_GAME"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：摇一摇小游戏。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -182,6 +216,9 @@
             "expected_step": "FISHING"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：钓鱼达人。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -198,6 +235,9 @@
             "expected_step": "GEM_GIFT_BOX"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：宝石礼盒兑换。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -207,6 +247,25 @@
             "GemGiftBoxTask"
         ]
     },
+    "DailyRoutineStepGemOrder": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "GEM_ORDER"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：宝石订单。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GemOrderTask"
+        ]
+    },
     "DailyRoutineStepRomanticHouse": {
         "recognition": "Custom",
         "custom_recognition": "CheckDailyRoutineStepReco",
@@ -214,6 +273,9 @@
             "expected_step": "ROMANTIC_HOUSE"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：浪漫满屋。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -230,6 +292,9 @@
             "expected_step": "BAND_FISH_PASS2"
         },
         "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始回访：乐队鱼演出结果。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -274,7 +339,10 @@
             "expected_step": "ALL_DONE"
         },
         "action": "Custom",
-        "custom_action": "DailyRoutineFinishAction"
+        "custom_action": "DailyRoutineFinishAction",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 所有已选子任务均已流转完成。"
+        }
     },
     "DailyRoutineReturnIfActive": {
         "recognition": "Custom",

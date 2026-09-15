@@ -158,10 +158,34 @@ def install_agent():
     )
 
 
+def install_icon():
+    if os_name == "android":
+        return
+
+    source_icon = working_dir / "happyfish.ico"
+    target_dir = install_path / "Assets"
+    target_icon = target_dir / "logo.ico"
+
+    if not source_icon.exists():
+        raise FileNotFoundError(f"Project icon not found: {source_icon}")
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source_icon, target_icon)
+
+
+def install_default_instance():
+    """为新安装包写入默认任务列表预设；更新时 MFA 会保留用户现有 config。"""
+    target = install_path / "config" / "instances" / "default.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(working_dir / "assets" / "default_instance.json", target)
+
+
 if __name__ == "__main__":
     install_deps()
     install_resource()
     install_chores()
     install_agent()
+    install_icon()
+    install_default_instance()
 
     print(f"Install to {install_path} successfully.")

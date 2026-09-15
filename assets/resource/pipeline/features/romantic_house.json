@@ -56,7 +56,8 @@
             200
         ],
         "threshold": 0.65,
-        "timeout": 6000,
+        "rate_limit": 200,
+        "timeout": 30000,
         "action": "Click",
         "post_delay": 2000,
         "next": [

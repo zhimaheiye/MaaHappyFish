@@ -260,11 +260,21 @@
         "recognition": "TemplateMatch",
         "template": "主界面特征.png",
         "threshold": 0.7,
-        "action": "DoNothing",
-        "timeout": 5000,
+        "action": "Custom",
+        "custom_action": "GemOrderDoneAction",
+        "timeout": 8000,
         "focus": {
             "Node.Action.Succeeded": "[宝石订单] 已确认返回主鱼缸，任务完成。"
         },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ],
         "on_error": [
             "GemOrderAbort"
         ]

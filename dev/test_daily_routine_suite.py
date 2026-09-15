@@ -7,7 +7,7 @@
 3. CheckDailyRoutineStepReco 步骤路由器识别
 4. BandFishExitToTankAction 两阶段流转 (Pass1 -> Dolphin, Pass2 -> AllDone)
 5. GoldenDolphinTaskAction 次数耗尽(NO_STAMINA)与正常完成(DONE)几何/语义判定
-6. FishingExitToTankAction 甩杆上限(DONE)与鱼饵耗尽(NO_STAMINA)流转
+6. FishingExitToTankAction 双层退出与 FishingDoneAction 回缸后状态流转
 7. CheckBandFishPass2NeededReco / CheckBandFishPass2SkipReco 跳过与回访双向判定
 8. DailyRoutineSkipBandFishPass2Action 与 DailyRoutineFinishAction 结算闭环
 """
@@ -140,16 +140,20 @@ def run_tests():
     # -------------------------------------------------------------
     # Test 4: FishingExitToTankAction - NO_STAMINA 与 DONE 两种流转
     # -------------------------------------------------------------
-    print("\n[Test 4] 验证 FishingExitToTankAction 业务状态流转")
+    print("\n[Test 4] 验证 FishingExitToTankAction 双层退出与回缸后业务状态流转")
     fish_exit = registered_actions["FishingExitToTankAction"]
+    fish_done = registered_actions["FishingDoneAction"]
     fishing_pipeline = json.loads(
         Path("assets/resource/pipeline/features/fishing.json").read_text(encoding="utf-8")
     )
-    assert fishing_pipeline["FishingDone"]["next"][-1] == "FishingVerifyExitToTank"
+    assert fishing_pipeline["FishingDone"]["next"][-1] == "FishingExitLocationMap"
     assert fishing_pipeline["FishingDone"]["recognition"] == "TemplateMatch"
     assert fishing_pipeline["FishingDone"]["template"] == "钓鱼达人_退出.png"
     assert fishing_pipeline["FishingDone"]["roi"] == [1152, 0, 128, 125]
     assert "target" not in fishing_pipeline["FishingDone"]
+    assert fishing_pipeline["FishingExitLocationMap"]["template"] == "钓鱼达人_退出.png"
+    assert fishing_pipeline["FishingExitLocationMap"]["action"] == "Click"
+    assert fishing_pipeline["FishingExitLocationMap"]["next"][-1] == "FishingVerifyExitToTank"
     verify_exit = fishing_pipeline["FishingVerifyExitToTank"]
     assert verify_exit["template"] == "主界面特征.png"
     assert verify_exit["next"][-2:] == ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"]
@@ -168,6 +172,9 @@ def run_tests():
     assert ctx.tasker.controller.clicks[-1:] == [(1216, 62)]
     assert (50, 45) not in ctx.tasker.controller.clicks
     assert (640, 150) not in ctx.tasker.controller.clicks
+    assert runtime_state.fishing_state["status"] != "NO_STAMINA"
+    success = fish_done.run(ctx, DummyArg())
+    assert success is True
     assert runtime_state.fishing_state["status"] == "NO_STAMINA"
     assert runtime_state.daily_routine_state["tasks"]["Fishing"]["status"] == "NO_STAMINA"
     assert runtime_state.daily_routine_state["step"] == "BAND_FISH_PASS2"
@@ -176,9 +183,13 @@ def run_tests():
 
     # 4.2 甩杆满额 (满5杆)
     runtime_state.fishing_state["cast_count"] = 5
+    runtime_state.daily_routine_state["step"] = "FISHING"
+    runtime_state.daily_routine_state["queue"] = []
     success = fish_exit.run(ctx, fish_exit_arg)
     assert success is True
     assert ctx.tasker.controller.clicks[-1:] == [(1216, 62)]
+    success = fish_done.run(ctx, DummyArg())
+    assert success is True
     assert runtime_state.fishing_state["status"] == "DONE"
     assert runtime_state.daily_routine_state["tasks"]["Fishing"]["status"] == "DONE"
     print("  >>> PASS: 甩杆满额正常退出，标记为 DONE！")

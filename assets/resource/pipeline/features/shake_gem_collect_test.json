@@ -56,7 +56,27 @@
         "duration": 250,
         "post_delay": 500,
         "focus": {
-            "Node.Action.Succeeded": "[摇一摇收宝石] 摇晃结束，已执行底部滑动收宝。"
+            "Node.Action.Succeeded": "[摇一摇收宝石] 已完成左到右扫底，准备反向扫回。"
+        },
+        "next": [
+            "ShakeGemCollectSweepBottomBack"
+        ]
+    },
+    "ShakeGemCollectSweepBottomBack": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [
+            1007,
+            663
+        ],
+        "end": [
+            221,
+            663
+        ],
+        "duration": 250,
+        "post_delay": 500,
+        "focus": {
+            "Node.Action.Succeeded": "[摇一摇收宝石] 摇晃结束，已完成双向底部滑动收宝。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",

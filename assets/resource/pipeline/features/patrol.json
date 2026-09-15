@@ -426,6 +426,17 @@
         "duration": 250,
         "post_delay": 120,
         "next": [
+            "PatrolSweepTank1BackAfterBubble"
+        ]
+    },
+    "PatrolSweepTank1BackAfterBubble": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [1007, 663],
+        "end": [221, 663],
+        "duration": 250,
+        "post_delay": 120,
+        "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -707,6 +718,17 @@
         "duration": 250,
         "post_delay": 120,
         "next": [
+            "PatrolSweepTank2BackAfterBubble"
+        ]
+    },
+    "PatrolSweepTank2BackAfterBubble": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [1007, 663],
+        "end": [221, 663],
+        "duration": 250,
+        "post_delay": 120,
+        "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
@@ -985,6 +1007,17 @@
         "action": "Swipe",
         "begin": [221, 663],
         "end": [1007, 663],
+        "duration": 250,
+        "post_delay": 120,
+        "next": [
+            "PatrolSweepTank3BackAfterBubble"
+        ]
+    },
+    "PatrolSweepTank3BackAfterBubble": {
+        "recognition": "DirectHit",
+        "action": "Swipe",
+        "begin": [1007, 663],
+        "end": [221, 663],
         "duration": 250,
         "post_delay": 120,
         "next": [

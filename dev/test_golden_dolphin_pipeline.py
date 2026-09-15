@@ -95,6 +95,8 @@ def run_tests():
         'gem': 4,
         'coin': 3,
     }
+    assert len(templates['activation_coin']) == 1
+    assert np.array_equal(templates['activation_coin'][0], rewards['coin'][0])
     print('[PASS] Check 3: 经验星/爱心/宝石/贝币全部模板变体已加载！')
 
     print("\n--- Test 4: 四类奖励均使用全屏识别 ---")

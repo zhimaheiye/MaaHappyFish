@@ -95,6 +95,7 @@ class TestShakeGemCollectTaskStructure(unittest.TestCase):
         self.assertIn("ShakeGemCollectVerifyTank", data)
         self.assertIn("ShakeGemCollectActionNode", data)
         self.assertIn("ShakeGemCollectSweepBottom", data)
+        self.assertIn("ShakeGemCollectSweepBottomBack", data)
         self.assertIn("ShakeGemCollectTestDone", data)
 
         # 主鱼缸状态校验门禁
@@ -116,7 +117,13 @@ class TestShakeGemCollectTaskStructure(unittest.TestCase):
         self.assertEqual(sweep_node.get("begin"), [221, 663])
         self.assertEqual(sweep_node.get("end"), [1007, 663])
         self.assertEqual(sweep_node.get("duration"), 250)
-        self.assertEqual(business_next(sweep_node), ["ShakeGemCollectTestDone"])
+        self.assertEqual(business_next(sweep_node), ["ShakeGemCollectSweepBottomBack"])
+        reverse_sweep = data["ShakeGemCollectSweepBottomBack"]
+        self.assertEqual(reverse_sweep.get("action"), "Swipe")
+        self.assertEqual(reverse_sweep.get("begin"), [1007, 663])
+        self.assertEqual(reverse_sweep.get("end"), [221, 663])
+        self.assertEqual(reverse_sweep.get("duration"), 250)
+        self.assertEqual(business_next(reverse_sweep), ["ShakeGemCollectTestDone"])
 
         # 完成节点
         done_node = data["ShakeGemCollectTestDone"]

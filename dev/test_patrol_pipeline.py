@@ -256,9 +256,9 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(verify_main["on_error"], ["OpenShellAbort"])
 
         for tank in (1, 2, 3):
-            sweep = self.pipeline[f"PatrolSweepTank{tank}AfterBubble"]
-            self.assertIn("[JumpBack]PatrolShellEntryMisTouchPopup", sweep["next"])
-            self.assertIn("[JumpBack]PatrolShellPagePopup", sweep["next"])
+            reverse_sweep = self.pipeline[f"PatrolSweepTank{tank}BackAfterBubble"]
+            self.assertIn("[JumpBack]PatrolShellEntryMisTouchPopup", reverse_sweep["next"])
+            self.assertIn("[JumpBack]PatrolShellPagePopup", reverse_sweep["next"])
 
     def test_start_router_supports_known_resume_stages(self):
         next_nodes = self.pipeline["PatrolStartRouter"]["next"]
@@ -293,11 +293,18 @@ class PatrolPipelineTest(unittest.TestCase):
             self.assertEqual(image_window["on_error"], [expected_next])
             self.assertEqual(bubble["roi"], [0, 100, 1280, 560])
             sweep_name = f"PatrolSweepTank{tank}AfterBubble"
+            reverse_sweep_name = f"PatrolSweepTank{tank}BackAfterBubble"
             self.assertEqual(business_next(bubble), [sweep_name])
             self.assertEqual(
                 business_next(self.pipeline[sweep_name]),
+                [reverse_sweep_name],
+            )
+            self.assertEqual(
+                business_next(self.pipeline[reverse_sweep_name]),
                 [f"PatrolCollectTank{tank}ImageWindow"],
             )
+            self.assertEqual(self.pipeline[reverse_sweep_name]["begin"], [1007, 663])
+            self.assertEqual(self.pipeline[reverse_sweep_name]["end"], [221, 663])
 
     def test_shake_mode_falls_back_to_image_recognition_before_switching_tanks(self):
         for tank in (1, 2, 3):
@@ -819,4 +826,3 @@ class PatrolPipelineTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -20,6 +20,7 @@ on:
       - "**.py"
       - "tools/collect_test_report.ps1"
       - "tools/collect-test-report.cmd"
+      - "happyfish.ico"
   pull_request:
     branches:
       - "**"
@@ -29,6 +30,7 @@ on:
       - "**.py"
       - "tools/collect_test_report.ps1"
       - "tools/collect-test-report.cmd"
+      - "happyfish.ico"
   workflow_dispatch:
 
 permissions:

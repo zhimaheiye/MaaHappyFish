@@ -29,7 +29,7 @@ GemOrderTask
   -> 其他状态：GemOrderAbort
 
 GemOrderRouter
-  -> OCR 命中 10/10：GemOrderExit -> GemOrderVerifyTank
+  -> OCR 命中 10/10：GemOrderExit -> GemOrderVerifyTank -> 日常/独立双出口
   -> 特殊订单对号：GemOrderComplete -> 重新确认订单页
   -> 普通订单对号：GemOrderComplete -> 重新确认订单页
   -> 两种对号均未命中且“丢弃”存在：GemOrderDiscard -> GemOrderConfirmDiscard -> 重新确认订单页
@@ -43,7 +43,7 @@ GemOrderRouter
 - 特殊订单和普通订单的对号是状态门禁，不直接点击；任一模板命中后均复用同一个 OCR“完成”按钮。
 - 只有两个可完成对号均未命中时，才允许点击订单页的第一次“丢弃”；随后必须在确认弹窗 `[603,460,85,32]` 再次 OCR 识别并点击“丢弃”。
 - 每次“完成”或确认“丢弃”后必须重新识别 `宝石订单_识别.png`，确认页面仍正确再进入下一轮。
-- 退出使用 `宝石订单_退出.png` 的真实匹配位置，最终以 `主界面特征.png` 确认回到鱼缸；页面或按钮门禁失败时立即停止，禁止固定坐标盲点。
+- 退出使用 `宝石订单_退出.png` 的真实匹配位置，最终以 `主界面特征.png` 确认回到鱼缸并执行 `GemOrderDoneAction`；日常模式推进队列，独立模式进入成功叶子节点。页面或按钮门禁失败时立即停止，禁止固定坐标盲点。
 - 所有可恢复节点优先接入活动页、签到、特惠礼包、快报和升级弹窗五类全局处理，关闭后继续当前流程。
 
 ## 2026-09-13 丢弃确认 OCR 修复
@@ -62,3 +62,5 @@ GemOrderRouter
 - `python dev/test_update_contract.py`
 
 本轮仅执行代码级验证，不操作模拟器；MFA 实机命中率和页面切换时序由后续自然运行验证。
+
+2026-09-15 修复独立运行结束报错：旧 `GemOrderVerifyTank` 是无后继的普通识别节点，未承担统一完成/分流语义；现与其他日常子任务一致，在确认主鱼缸后调用完成动作，并接入 `DailyRoutineReturnIfActive` / `DailyRoutineStandaloneDone` 双出口。同时“宝石订单”已作为默认不勾选项加入日常收尾，顺序位于宝石礼盒之后、浪漫满屋之前。

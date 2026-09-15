@@ -26,6 +26,7 @@ from agent.my_action import (
     GoldShellCouponDoneAction,
     ShakeGameDoneAction,
     GemGiftBoxDoneAction,
+    GemOrderDoneAction,
     DailyRoutineFinishAction,
     RomanticHouseExitToTankAction,
 )
@@ -71,7 +72,7 @@ def test_pipeline_topology():
         with open(pf, "r", encoding="utf-8") as f:
             pdata.update(json.load(f))
 
-    # 1. 验证 9 个 Enable 节点存在
+    # 1. 验证 10 个 Enable 节点存在
     for en in [
         "DailyRoutineEnableFreeGift",
         "DailyRoutineEnableReindeerFish",
@@ -81,11 +82,12 @@ def test_pipeline_topology():
         "DailyRoutineEnableShakeGame",
         "DailyRoutineEnableFishing",
         "DailyRoutineEnableGemGiftBox",
+        "DailyRoutineEnableGemOrder",
         "DailyRoutineEnableRomanticHouse",
     ]:
         assert en in pdata, f"Missing enable node: {en}"
         assert pdata[en].get("enabled") is False, f"{en} default should be enabled: false"
-    print("[PASS] 9 个 DailyRoutineEnable* 节点配置正确 (默认 enabled: false)")
+    print("[PASS] 10 个 DailyRoutineEnable* 节点配置正确 (默认 enabled: false)")
 
     # 2. 验证 Dispatcher 候选
     disp = pdata.get("DailyRoutineDispatcher", {})
@@ -99,6 +101,7 @@ def test_pipeline_topology():
         "DailyRoutineStepShakeGame",
         "DailyRoutineStepFishing",
         "DailyRoutineStepGemGiftBox",
+        "DailyRoutineStepGemOrder",
         "DailyRoutineStepRomanticHouse",
         "DailyRoutineStepBandFishPass2",
         "DailyRoutineStepAllDone",
@@ -125,6 +128,7 @@ def test_pipeline_topology():
     assert business_next(pdata["ReindeerFishVerifyTank"]) == dual_exit, "ReindeerFishVerifyTank 未接入双出口路由"
     assert business_next(pdata["GoldShellCouponVerifyTank"]) == dual_exit, "GoldShellCouponVerifyTank 未接入双出口路由"
     assert business_next(pdata["GemGiftBoxVerifyTank"]) == dual_exit, "GemGiftBoxVerifyTank 未接入双出口路由"
+    assert business_next(pdata["GemOrderVerifyTank"]) == dual_exit, "GemOrderVerifyTank 未接入双出口路由"
     assert business_next(pdata["RomanticHouseDone"]) == dual_exit, "RomanticHouseDone 未接入双出口路由"
     print("[PASS] 摇一摇、金海豚、钓鱼达人、免费礼包、驯鹿鱼、金贝壳券、宝石礼盒、浪漫满屋 均已接入双出口路由")
 
@@ -165,6 +169,7 @@ def test_pipeline_topology():
     tasks = {task["entry"]: task for task in interface["task"]}
     assert tasks["FishingTask"]["option"] == ["钓鱼地点", "钓鱼饵食适配模式"]
     assert "钓鱼地点" in tasks["DailyRoutineTask"]["option"]
+    assert "钓鱼饵食适配模式" in tasks["DailyRoutineTask"]["option"]
     fishing_mode = interface["option"]["钓鱼饵食适配模式"]
     assert fishing_mode["default_case"] == "普通饵食（快速）"
     mode_cases = {case["name"]: case for case in fishing_mode["cases"]}
@@ -175,6 +180,7 @@ def test_pipeline_topology():
         "bite_mode": "ordinary",
         "force_ordinary_bait": False,
     }
+    assert mode_cases["普通饵食（快速）"]["pipeline_override"]["DailyRoutineStepFishing"]["next"] == ["FishingDailyTask"]
     special_override = mode_cases["美味饵食（稳健）"]["pipeline_override"]
     assert special_override["FishingTask"]["custom_action_param"] == {
         "max_casts": 0,
@@ -183,16 +189,23 @@ def test_pipeline_topology():
     }
     assert special_override["FishingBaitNeedSelect"]["action"] == "DoNothing"
     assert special_override["FishingBaitNeedSelect"]["next"] == ["FishingDone"]
+    assert special_override["DailyRoutineStepFishing"]["next"] == ["FishingDailySpecialTask"]
     assert pdata["FishingDailyTask"]["custom_action_param"] == {
         "max_casts": 5,
         "bite_mode": "ordinary",
         "force_ordinary_bait": True,
+    }
+    assert pdata["FishingDailySpecialTask"]["custom_action_param"] == {
+        "max_casts": 0,
+        "bite_mode": "special",
+        "force_ordinary_bait": False,
     }
     routine_cases = {
         case["name"] for case in interface["option"]["日常收尾任务"]["cases"]
     }
     assert "驯鹿鱼送收礼物" in routine_cases
     assert "宝石礼盒兑换" in routine_cases
+    assert "宝石订单" in routine_cases
     print("[PASS] 独立钓鱼双饵食模式、日常固定普通饵食及三份 interface.json 同步")
 
     # 7. 鱼饵耗尽是钓场内的正常终态：各运行阶段都应优先识别，并复用既有安全退出链。
@@ -215,11 +228,14 @@ def test_pipeline_topology():
         "FishingBaitExhausted",
         "FishingSelectCheeseBait",
     ]
-    assert business_next(pdata["FishingDone"]) == ["FishingVerifyExitToTank"]
+    assert business_next(pdata["FishingDone"]) == ["FishingExitLocationMap"]
     assert pdata["FishingDone"]["recognition"] == "TemplateMatch"
     assert pdata["FishingDone"]["template"] == "钓鱼达人_退出.png"
     assert pdata["FishingDone"]["roi"] == [1152, 0, 128, 125]
     assert "target" not in pdata["FishingDone"]
+    assert business_next(pdata["FishingExitLocationMap"]) == ["FishingVerifyExitToTank"]
+    assert pdata["FishingExitLocationMap"]["action"] == "Click"
+    assert "target" not in pdata["FishingExitLocationMap"]
     assert os.path.isfile(os.path.join("assets", "resource", "image", "钓鱼达人_退出.png"))
     assert business_next(pdata["FishingVerifyExitToTank"]) == dual_exit
     print("[PASS] 鱼饵耗尽模板在四个钓场路由中优先命中，并复用右上角退出与主鱼缸确认链")
@@ -285,6 +301,7 @@ def simulate_flow(config_param):
         "SHAKE_GAME": ("ShakeGame", "DONE"),
         "FISHING": ("Fishing", "DONE"),
         "GEM_GIFT_BOX": ("GemGiftBox", "DONE"),
+        "GEM_ORDER": ("GemOrder", "DONE"),
         "ROMANTIC_HOUSE": ("RomanticHouse", "DONE"),
         "BAND_FISH_PASS2": ("BandFish", "DONE"),
     }
@@ -327,6 +344,11 @@ def simulate_flow(config_param):
             loops += 1
             continue
 
+        if cur_step == "GEM_ORDER":
+            assert GemOrderDoneAction().run(ctx, arg) is True
+            loops += 1
+            continue
+
         task_name, biz_st = step_mapping[cur_step]
         advance_daily_routine_step(task_name, biz_st)
         loops += 1
@@ -346,6 +368,7 @@ def test_combination_1():
         "shake_game": True,
         "fishing": True,
         "gem_gift_box": True,
+        "gem_order": True,
         "romantic_house": True,
     }
     steps = simulate_flow(config)
@@ -358,6 +381,7 @@ def test_combination_1():
         "SHAKE_GAME",
         "FISHING",
         "GEM_GIFT_BOX",
+        "GEM_ORDER",
         "ROMANTIC_HOUSE",
         "BAND_FISH_PASS2",
         "ALL_DONE",
@@ -380,6 +404,14 @@ def test_gem_gift_box_only():
     expected = ["GEM_GIFT_BOX", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 宝石礼盒兑换可独立启用并正常推进: {' -> '.join(steps)}")
+
+
+def test_gem_order_only():
+    print("--- [Check 3F: 仅宝石订单] ---")
+    steps = simulate_flow({"gem_order": True})
+    expected = ["GEM_ORDER", "ALL_DONE"]
+    assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
+    print(f"[PASS] 宝石订单可独立启用并正常推进: {' -> '.join(steps)}")
 
 
 def test_shake_game_only():
@@ -591,6 +623,7 @@ def test_architecture_contract_no_hardcoded_dispatcher():
         "daily_free_gift.json": "DailyFreeGiftVerifyTank",
         "reindeer_fish.json": "ReindeerFishVerifyTank",
         "gem_gift_box.json": "GemGiftBoxVerifyTank",
+        "gem_order.json": "GemOrderVerifyTank",
         "romantic_house.json": "RomanticHouseDone",
     }
     for fname, exit_node in subtask_files.items():
@@ -794,6 +827,7 @@ def main():
     test_gold_shell_coupon_only()
     test_shake_game_only()
     test_gem_gift_box_only()
+    test_gem_order_only()
     test_combination_3()
     test_combination_4()
     test_combination_5_empty()

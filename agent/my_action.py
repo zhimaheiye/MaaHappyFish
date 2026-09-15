@@ -2039,10 +2039,10 @@ class BandFishExitToTankAction(CustomAction):
 @AgentServer.custom_action("FishingExitToTankAction")
 class FishingExitToTankAction(CustomAction):
     """
-    钓鱼达人结算并安全返回主鱼缸动作:
-    1. 判断业务状态: 不限次数任务或已达 max_casts 判定为 DONE，否则判定为 NO_STAMINA;
-    2. 若处于 DailyRoutineTask 流程中，同步状态并推进至 BAND_FISH_PASS2;
-    3. 当前节点以用户提供的退出按钮模板确认钓场状态，点击实际命中框中心；由 Pipeline 再确认主鱼缸。
+    点击当前页面真实识别到的钓鱼达人退出按钮。
+
+    钓场退出后会先回到地点页，因此这里只负责第一次点击，不提前把
+    日常收尾推进到下一项；最终状态由 FishingDoneAction 在确认主鱼缸后写入。
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
@@ -2060,32 +2060,42 @@ class FishingExitToTankAction(CustomAction):
                 return False
             exit_x, exit_y = _box_center(exit_box)
 
-            casts = fishing_state.get("cast_count", 0)
-            max_c = fishing_state.get("max_casts", 0)
-            if max_c == 0 or casts >= max_c:
-                biz_status = "DONE"
-            else:
-                biz_status = "NO_STAMINA"
-            fishing_state["status"] = biz_status
-
-            if daily_routine_state.get("active"):
-                daily_routine_state["tasks"]["Fishing"]["status"] = biz_status
-                print(f"[日常收尾] 钓鱼达人 状态沉淀: {biz_status} (已完成 {casts}/{max_c} 杆)", flush=True)
-                advance_daily_routine_step("Fishing", biz_status)
-
             print(
-                f"[钓鱼退出] 业务状态: {biz_status}，点击识别到的退出按钮 "
-                f"({exit_x}, {exit_y}) 返回鱼缸...",
+                f"[钓鱼退出] 点击识别到的钓场退出按钮 ({exit_x}, {exit_y})，准备返回地点页...",
                 flush=True,
             )
             ctrl.post_click(exit_x, exit_y).wait()
             time.sleep(1.8)
 
-            print("[钓鱼退出] 已点击模板命中的钓场退出按钮，正在验证是否返回主鱼缸...", flush=True)
+            print("[钓鱼退出] 已退出钓场，正在识别地点页退出按钮...", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
             print(f"[钓鱼退出] 异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("FishingDoneAction")
+class FishingDoneAction(CustomAction):
+    """确认已经回到主鱼缸后沉淀钓鱼结果，并按独立/日常模式结束。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            casts = fishing_state.get("cast_count", 0)
+            max_casts = fishing_state.get("max_casts", 0)
+            status = "DONE" if max_casts == 0 or casts >= max_casts else "NO_STAMINA"
+            fishing_state["status"] = status
+            print(
+                f"[钓鱼退出] 已确认返回主鱼缸；业务状态={status}，完成杆数={casts}/"
+                f"{'不限' if max_casts == 0 else max_casts}",
+                flush=True,
+            )
+            if daily_routine_state.get("active"):
+                advance_daily_routine_step("Fishing", status)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[钓鱼退出] 完成状态写入异常: {e}", flush=True)
             return False
 
 
@@ -2421,6 +2431,7 @@ def _get_golden_dolphin_templates():
             if template is not None and template.size > 0
         )
 
+    activation_coin = _load_templates("金海豚_贝币.png")
     reward_templates = {
         "xp": _load_templates("金海豚_经验星1.png", "金海豚_经验星2.png"),
         "heart": _load_templates("金海豚_爱心.png"),
@@ -2443,6 +2454,7 @@ def _get_golden_dolphin_templates():
         "confirm": _load_tpl("金海豚_确定按钮.png"),
         "main": _load_tpl("主界面特征.png"),
         "rewards": reward_templates,
+        "activation_coin": activation_coin,
         "coins": reward_templates["coin"],
         "hearts": reward_templates["heart"],
         "gems": reward_templates["gem"],
@@ -2971,11 +2983,12 @@ class GoldenDolphinPlayGameAction(CustomAction):
                 flush=True,
             )
             t_game_start = time.monotonic()
+            active_start = None
             game_done = False
             reward_clicks = {category: 0 for category in GOLDEN_DOLPHIN_REWARD_ORDER}
             loop_count = 0
 
-            while time.monotonic() - t_game_start < 55.0:
+            while time.monotonic() - t_game_start < 75.0:
                 if _task_cancelled(context):
                     print("[金海豚游戏] 收到停止请求，立即停止奖励点击", flush=True)
                     return False
@@ -2995,9 +3008,34 @@ class GoldenDolphinPlayGameAction(CustomAction):
                         game_done = True
                         break
 
-                phase, candidates = _select_golden_dolphin_frame_targets(
-                    img, reward_templates, priority
-                )
+                if active_start is None:
+                    has_regular_reward = any(
+                        _find_golden_dolphin_xp(img, reward_templates.get("xp", ()))
+                        if category == "xp"
+                        else _find_golden_dolphin_template_targets(
+                            img, reward_templates.get(category, ())
+                        )
+                        for category in ("xp", "heart", "gem")
+                    )
+                    if has_regular_reward:
+                        active_start = time.monotonic()
+                        print(
+                            "[金海豚游戏] 已识别到非贝币奖励，隐藏启动阶段完成；"
+                            "切换为四类奖励连续点击模式",
+                            flush=True,
+                        )
+                    else:
+                        phase = "coin"
+                        candidates = _find_golden_dolphin_template_targets(
+                            img, tpls.get("activation_coin", ())
+                        )[:4]
+                        if not candidates:
+                            phase = "wait"
+
+                if active_start is not None:
+                    phase, candidates = _select_golden_dolphin_frame_targets(
+                        img, reward_templates, priority
+                    )
                 if phase != "wait":
                     for target_x, target_y, _ in candidates:
                         if _task_cancelled(context):
@@ -3013,6 +3051,13 @@ class GoldenDolphinPlayGameAction(CustomAction):
                         )
                     time.sleep(0.01)
 
+                if active_start is not None and time.monotonic() - active_start >= 45.0:
+                    print(
+                        "[金海豚游戏] ERROR: 正式掉落阶段已超过 45 秒仍未识别到结算页，安全停止",
+                        flush=True,
+                    )
+                    return False
+
             duration = time.monotonic() - t_game_start
             average_fps = loop_count / duration if duration > 0 else 0.0
             print(
@@ -3022,6 +3067,9 @@ class GoldenDolphinPlayGameAction(CustomAction):
                 f"最高优先级={GOLDEN_DOLPHIN_REWARD_NAMES[priority]}, 弹窗就绪={game_done})",
                 flush=True,
             )
+            if not game_done:
+                print("[金海豚游戏] ERROR: 未确认结算页，拒绝进入退出动作", flush=True)
+                return False
             return True
         except Exception as e:
             traceback.print_exc()
@@ -3033,7 +3081,7 @@ class GoldenDolphinPlayGameAction(CustomAction):
 class GoldenDolphinExitAction(CustomAction):
     """
     金海豚退出与归位动作 (职责 3):
-    1. 点击结算取消按钮 (或保底点击)
+    1. 只点击实际识别到的结算取消按钮
     2. 关闭潜在浮层，确认回到主鱼缸
     3. 记录已完成局数；未满 3 局设置 NEXT_ROUND，否则设置 DONE
     注意: 不负责推进日常收尾调度 (解耦设计)
@@ -3050,7 +3098,7 @@ class GoldenDolphinExitAction(CustomAction):
 
             # 结算页可能比游戏循环结束稍晚出现。必须等到真实页面可识别并确认
             # 回到主鱼缸后才记为完成，禁止未命中模板时盲点并提前推进日常收尾。
-            if tpl_cancel is None or not _return_golden_dolphin_to_tank(ctrl, tpls, timeout=10.0):
+            if tpl_cancel is None or not _return_golden_dolphin_to_tank(ctrl, tpls, timeout=15.0):
                 golden_dolphin_state["status"] = "FAILED"
                 return False
 
@@ -3150,12 +3198,13 @@ class InitDailyRoutineAction(CustomAction):
                 "ShakeGame": {"status": "IDLE"},
                 "Fishing": {"status": "IDLE"},
                 "GemGiftBox": {"status": "IDLE"},
+                "GemOrder": {"status": "IDLE"},
                 "RomanticHouse": {"status": "IDLE"},
             }
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "gold_shell_coupon", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "romantic_house"))
+            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "gold_shell_coupon", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house"))
 
             if has_param:
                 enable_fg = bool(param.get("free_gift", False))
@@ -3166,6 +3215,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_sg = bool(param.get("shake_game", False))
                 enable_fi = bool(param.get("fishing", False))
                 enable_ggb = bool(param.get("gem_gift_box", False))
+                enable_go = bool(param.get("gem_order", False))
                 enable_rh = bool(param.get("romantic_house", False))
             else:
                 # 2. 从 pipeline override 中的 Enable 节点读取配置
@@ -3184,6 +3234,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_sg = _is_node_enabled("DailyRoutineEnableShakeGame")
                 enable_fi = _is_node_enabled("DailyRoutineEnableFishing")
                 enable_ggb = _is_node_enabled("DailyRoutineEnableGemGiftBox")
+                enable_go = _is_node_enabled("DailyRoutineEnableGemOrder")
                 enable_rh = _is_node_enabled("DailyRoutineEnableRomanticHouse")
 
             # 3. 按固定安全顺序构建待执行队列。
@@ -3205,6 +3256,8 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("FISHING")
             if enable_ggb:
                 queue.append("GEM_GIFT_BOX")
+            if enable_go:
+                queue.append("GEM_ORDER")
             if enable_rh:
                 queue.append("ROMANTIC_HOUSE")
             if enable_bf:
@@ -3220,6 +3273,7 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 摇一摇小游戏 : {'[ON]' if enable_sg else '[OFF]'}", flush=True)
             print(f"  - 钓鱼达人     : {'[ON]' if enable_fi else '[OFF]'}", flush=True)
             print(f"  - 宝石礼盒兑换 : {'[ON]' if enable_ggb else '[OFF]'}", flush=True)
+            print(f"  - 宝石订单     : {'[ON]' if enable_go else '[OFF]'}", flush=True)
             print(f"  - 浪漫满屋     : {'[ON]' if enable_rh else '[OFF]'}", flush=True)
             print("=" * 60, flush=True)
 
@@ -3232,6 +3286,27 @@ class InitDailyRoutineAction(CustomAction):
                 daily_routine_state["queue"] = []
                 daily_routine_state["step"] = "ALL_DONE"
                 print("[日常收尾] 未勾选任何日常子任务，直接跳过并完成", flush=True)
+
+            task_labels = (
+                ("每日免费礼包", enable_fg), ("驯鹿鱼送收礼物", enable_rf),
+                ("兑换金贝壳券", enable_gsc), ("乐队鱼", enable_bf),
+                ("金海豚", enable_gd), ("摇一摇", enable_sg),
+                ("钓鱼达人", enable_fi), ("宝石礼盒兑换", enable_ggb),
+                ("宝石订单", enable_go), ("浪漫满屋", enable_rh),
+            )
+            selected = "、".join(label for label, enabled in task_labels if enabled) or "无"
+            skipped = "、".join(label for label, enabled in task_labels if not enabled) or "无"
+            ui_message = (
+                f"[日常收尾] 已选择：{selected}；因未勾选跳过：{skipped}。"
+            )
+            try:
+                context.override_pipeline({
+                    "DailyRoutineInitLog": {
+                        "focus": {"Node.Action.Succeeded": ui_message}
+                    }
+                })
+            except Exception:
+                pass
 
             return True
         except Exception as e:
@@ -3276,6 +3351,22 @@ class GemGiftBoxDoneAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[宝石礼盒] 完成状态写入异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("GemOrderDoneAction")
+class GemOrderDoneAction(CustomAction):
+    """宝石订单确认回到主鱼缸后，按独立/日常模式完成或推进队列。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            print("[宝石订单] 已确认返回鱼缸，任务完成", flush=True)
+            if daily_routine_state.get("active"):
+                advance_daily_routine_step("GemOrder", "DONE")
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[宝石订单] 完成状态写入异常: {e}", flush=True)
             return False
 
 
@@ -3346,6 +3437,7 @@ class DailyRoutineFinishAction(CustomAction):
             sg_st = tasks.get("ShakeGame", {}).get("status", "SKIPPED")
             fi_st = tasks.get("Fishing", {}).get("status", "SKIPPED")
             ggb_st = tasks.get("GemGiftBox", {}).get("status", "SKIPPED")
+            go_st = tasks.get("GemOrder", {}).get("status", "SKIPPED")
             rh_st = tasks.get("RomanticHouse", {}).get("status", "SKIPPED")
 
             print("=" * 60, flush=True)
@@ -3358,6 +3450,7 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 摇一摇小游戏 (ShakeGame)     : {sg_st}", flush=True)
             print(f"  - 钓鱼达人 (Fishing)          : {fi_st}", flush=True)
             print(f"  - 宝石礼盒兑换 (GemGiftBox)   : {ggb_st}", flush=True)
+            print(f"  - 宝石订单 (GemOrder)         : {go_st}", flush=True)
             print(f"  - 浪漫满屋 (RomanticHouse)    : {rh_st}", flush=True)
             print("=" * 60, flush=True)
 
@@ -3990,12 +4083,19 @@ SWEEP_BOTTOM_POST_DELAY_SECONDS = 0.12
 
 
 def perform_fish_tank_bottom_sweep(ctrl, post_delay_seconds: float = SWEEP_BOTTOM_POST_DELAY_SECONDS) -> None:
-    """在鱼缸底部执行扫底收宝滑动 (221, 663) -> (1007, 663)，耗时 250ms"""
+    """在鱼缸底部执行左到右、再右到左的双向往复扫底。"""
     ctrl.post_swipe(
         SWEEP_BOTTOM_BEGIN[0],
         SWEEP_BOTTOM_BEGIN[1],
         SWEEP_BOTTOM_END[0],
         SWEEP_BOTTOM_END[1],
+        SWEEP_BOTTOM_DURATION_MS,
+    ).wait()
+    ctrl.post_swipe(
+        SWEEP_BOTTOM_END[0],
+        SWEEP_BOTTOM_END[1],
+        SWEEP_BOTTOM_BEGIN[0],
+        SWEEP_BOTTOM_BEGIN[1],
         SWEEP_BOTTOM_DURATION_MS,
     ).wait()
     if post_delay_seconds > 0:

@@ -87,6 +87,12 @@ def run_tests():
     assert business_next(pipeline["GemOrderAllIssued"]) == ["GemOrderExit"]
     assert business_next(pipeline["GemOrderExit"]) == ["GemOrderVerifyTank"]
     assert pipeline["GemOrderVerifyTank"]["template"] == "主界面特征.png"
+    assert pipeline["GemOrderVerifyTank"]["action"] == "Custom"
+    assert pipeline["GemOrderVerifyTank"]["custom_action"] == "GemOrderDoneAction"
+    assert business_next(pipeline["GemOrderVerifyTank"]) == [
+        "DailyRoutineReturnIfActive",
+        "DailyRoutineStandaloneDone",
+    ]
     assert pipeline["GemOrderAbort"]["action"] == "StopTask"
 
     interface_paths = [

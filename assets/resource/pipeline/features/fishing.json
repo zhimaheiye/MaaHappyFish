@@ -35,6 +35,27 @@
             "FishingStartRouter"
         ]
     },
+    "FishingDailySpecialTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "ResetFishingStateAction",
+        "custom_action_param": {
+            "max_casts": 0,
+            "bite_mode": "special",
+            "force_ordinary_bait": false
+        },
+        "focus": {
+            "Node.Action.Succeeded": "[钓鱼达人] 日常收尾使用美味饵食稳健模式，不限制杆数；请手动停止任务。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FishingStartRouter"
+        ]
+    },
     "FishingStartRouter": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -116,7 +137,7 @@
             "FishingPostRoundRouter"
         ],
         "on_error": [
-            "FishingSafeAbort"
+            "FishingPostRoundRouter"
         ]
     },
     "FishingStartAtReadyWithBait": {
@@ -566,7 +587,7 @@
             "FishingPostRoundRouter"
         ],
         "on_error": [
-            "FishingSafeAbort"
+            "FishingPostRoundRouter"
         ]
     },
     "FishingSafeAbort": {
@@ -637,6 +658,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "post_delay": 1000,
+        "max_hit": 15,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -644,6 +666,9 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "FishingPostRoundRouter"
+        ],
+        "on_error": [
+            "FishingDone"
         ]
     },
     "FishingLoopRouter": {
@@ -749,9 +774,37 @@
         "threshold": 0.75,
         "action": "Custom",
         "custom_action": "FishingExitToTankAction",
-        "timeout": 3000,
+        "timeout": 8000,
         "focus": {
             "Node.Recognition.Succeeded": "[钓鱼退出] 已识别钓场右上角退出按钮，正在点击模板命中位置。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FishingExitLocationMap"
+        ],
+        "on_error": [
+            "FishingExitFailed"
+        ]
+    },
+    "FishingExitLocationMap": {
+        "recognition": "TemplateMatch",
+        "template": "钓鱼达人_退出.png",
+        "roi": [
+            1152,
+            0,
+            128,
+            125
+        ],
+        "threshold": 0.75,
+        "action": "Click",
+        "post_delay": 1800,
+        "timeout": 8000,
+        "focus": {
+            "Node.Action.Succeeded": "[钓鱼退出] 已确认地点页并点击右上角退出，正在验证主鱼缸。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -769,8 +822,9 @@
         "recognition": "TemplateMatch",
         "template": "主界面特征.png",
         "threshold": 0.7,
-        "action": "DoNothing",
-        "timeout": 3000,
+        "action": "Custom",
+        "custom_action": "FishingDoneAction",
+        "timeout": 8000,
         "focus": {
             "Node.Action.Succeeded": "[钓鱼退出] 已确认返回主鱼缸，继续后续任务。"
         },

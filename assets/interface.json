@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.6",
+    "version": "0.5.7",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -160,12 +160,13 @@
             "name": "日常收尾",
             "entry": "DailyRoutineTask",
             "default_check": false,
-            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（每日免费礼包、驯鹿鱼送收礼物、乐队鱼、金海豚、摇一摇、钓鱼达人、浪漫满屋），每个子任务结束后均安全返回主鱼缸。",
+            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（含宝石礼盒、宝石订单等），明确记录每项开始、完成和未勾选跳过原因；每个子任务结束后均安全返回主鱼缸。",
             "option": [
                 "日常收尾任务",
                 "乐队鱼乐章",
                 "金海豚奖励优先级",
-                "钓鱼地点"
+                "钓鱼地点",
+                "钓鱼饵食适配模式"
             ]
         },
         {
@@ -208,13 +209,42 @@
             "name": "手机看广告",
             "entry": "MobileAdTask",
             "default_check": false,
-            "description": "专为 Android 真实手机环境（1600x720 等比缩放）打造的看广告与转盘领奖自动化，按配置轮数连续执行。",
+            "description": "仅用于通过 ADB 连接电脑的 Android 真实手机；当前只按用户设备 2400x1080 横屏画面等比缩放到 1600x720 后适配。未适配其他分辨率、厂商广告页或按钮布局，识别和点击可能失败；不适用于 MuMu 模拟器。新安装默认任务列表不显示，可从“添加任务”手动加入。",
             "option": [
                 "手机广告轮数"
             ]
         }
     ],
-
+    "preset": [
+        {
+            "name": "MaaHappyFishDefault",
+            "label": "默认任务列表",
+            "description": "新安装使用的默认列表；手机看广告因仅适配特定真实手机环境，需从添加任务中手动加入。",
+            "task": [
+                { "name": "启动游戏", "enabled": false },
+                { "name": "日常签到", "enabled": false },
+                { "name": "开贝壳", "enabled": false },
+                { "name": "宝石礼盒兑换", "enabled": false },
+                { "name": "宝石订单", "enabled": false },
+                { "name": "好友摸宝", "enabled": false },
+                { "name": "海牛先生", "enabled": false },
+                { "name": "公主任务", "enabled": false },
+                { "name": "收鱼产物", "enabled": true },
+                { "name": "多鱼缸巡检", "enabled": false },
+                { "name": "海星喂食(单次)", "enabled": false },
+                { "name": "购买鱼食", "enabled": false },
+                { "name": "钓鱼达人", "enabled": false },
+                { "name": "海獭摸宝", "enabled": false },
+                { "name": "乐队鱼演出", "enabled": false },
+                { "name": "日常收尾", "enabled": false },
+                { "name": "金海豚小游戏", "enabled": false },
+                { "name": "摇一摇小游戏", "enabled": false },
+                { "name": "摇一摇收宝石（测试）", "enabled": false },
+                { "name": "兑换金贝壳券", "enabled": false },
+                { "name": "模拟器看广告", "enabled": false }
+            ]
+        }
+    ],
     "option": {
         "开贝壳次数": {
             "type": "input",
@@ -761,6 +791,11 @@
                                 "bite_mode": "ordinary",
                                 "force_ordinary_bait": false
                             }
+                        },
+                        "DailyRoutineStepFishing": {
+                            "next": [
+                                "FishingDailyTask"
+                            ]
                         }
                     }
                 },
@@ -773,6 +808,11 @@
                                 "bite_mode": "special",
                                 "force_ordinary_bait": false
                             }
+                        },
+                        "DailyRoutineStepFishing": {
+                            "next": [
+                                "FishingDailySpecialTask"
+                            ]
                         },
                         "FishingBaitNeedSelect": {
                             "action": "DoNothing",
@@ -1153,6 +1193,14 @@
                     "name": "宝石礼盒兑换",
                     "pipeline_override": {
                         "DailyRoutineEnableGemGiftBox": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "宝石订单",
+                    "pipeline_override": {
+                        "DailyRoutineEnableGemOrder": {
                             "enabled": true
                         }
                     }

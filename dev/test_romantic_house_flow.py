@@ -70,6 +70,11 @@ def evaluate_candidates(candidate_nodes, img):
 
 def run_tests():
     print("=" * 70)
+
+    wait_bubble = pipeline["RomanticHouseWaitBubble"]
+    assert wait_bubble["template"] == "浪漫满屋_气泡.png"
+    assert wait_bubble["timeout"] == 30000
+    assert wait_bubble["rate_limit"] == 200
     print("【浪漫满屋退出修复】状态确认链深度验证")
     print("=" * 70)
 

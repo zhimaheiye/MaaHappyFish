@@ -114,7 +114,11 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
             shake_name = f"PatrolCollectTank{tank}ShakeGem"
             shake_def = self.patrol_pipeline[shake_name]
             image_window = f"PatrolCollectTank{tank}ImageWindow"
-            expected_next = f"PatrolOpenPickerAfterTank{tank}" if tank < 3 else "PatrolOpenManagement"
+            expected_next = (
+                f"PatrolPreSwitchCheckTank{tank}"
+                if tank < 3
+                else "PatrolPreManagementCheckTank3"
+            )
             self.assertEqual(shake_def["next"][-1], image_window)
             self.assertEqual(self.patrol_pipeline[image_window]["on_error"], [expected_next])
             # 无不受控的旁路直接跳转
@@ -137,6 +141,13 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
             self.assertEqual(sweep_node["action"], "Swipe")
             self.assertEqual(sweep_node["begin"], [221, 663])
             self.assertEqual(sweep_node["end"], [1007, 663])
+            self.assertEqual(
+                [name for name in sweep_node["next"] if not name.startswith("[JumpBack]")],
+                [f"PatrolSweepTank{tank}BackAfterBubble"],
+            )
+            reverse_sweep = self.patrol_pipeline[f"PatrolSweepTank{tank}BackAfterBubble"]
+            self.assertEqual(reverse_sweep["begin"], [1007, 663])
+            self.assertEqual(reverse_sweep["end"], [221, 663])
             self.assertEqual(sweep_node["duration"], 250)
 
     def test_friend_gem_pipeline_structure(self):
@@ -320,13 +331,13 @@ class TestUnifiedGemCollectExecutor(unittest.TestCase):
         return_called[0] = True
         self.assertTrue(res)
 
-        # 检验严格执行序列: 3 组 (shake -> 沉降等待 -> sweep -> sweep后置延时) + 1 组 final (最终沉降等待 -> sweep -> sweep后置延时)
+        # 检验严格执行序列: 每次 sweep 都是左到右再右到左，之后才执行后置延时。
         # cycles=3, delay_between=0.2 (2 steps of 0.10s sleep), final_delay=0.3 (3 steps of 0.10s sleep), sweep post_delay=0.12s
         expected_events = [
-            "shake", "sleep_0.10", "sleep_0.10", "sweep", f"sleep_{SWEEP_BOTTOM_POST_DELAY_SECONDS:.2f}",
-            "shake", "sleep_0.10", "sleep_0.10", "sweep", f"sleep_{SWEEP_BOTTOM_POST_DELAY_SECONDS:.2f}",
-            "shake", "sleep_0.10", "sleep_0.10", "sweep", f"sleep_{SWEEP_BOTTOM_POST_DELAY_SECONDS:.2f}",
-            "sleep_0.10", "sleep_0.10", "sleep_0.10", "sweep", f"sleep_{SWEEP_BOTTOM_POST_DELAY_SECONDS:.2f}",
+            "shake", "sleep_0.10", "sleep_0.10", "sweep", "sweep", f"sleep_{SWEEP_BOTTOM_POST_DELAY_SECONDS:.2f}",
+            "shake", "sleep_0.10", "sleep_0.10", "sweep", "sweep", f"sleep_{SWEEP_BOTTOM_POST_DELAY_SECONDS:.2f}",
+            "shake", "sleep_0.10", "sleep_0.10", "sweep", "sweep", f"sleep_{SWEEP_BOTTOM_POST_DELAY_SECONDS:.2f}",
+            "sleep_0.10", "sleep_0.10", "sleep_0.10", "sweep", "sweep", f"sleep_{SWEEP_BOTTOM_POST_DELAY_SECONDS:.2f}",
         ]
         self.assertEqual(events, expected_events)
 
@@ -413,7 +424,7 @@ class TestUnifiedGemCollectExecutor(unittest.TestCase):
         sleep_count = [0]
         def cancel_at_final_sleep(sec):
             sleep_count[0] += 1
-            # 2 个 cycle，每个 cycle 包含 1 次沉降 sleep(0.1) 和 1 次 sweep 后的 post_delay sleep(0.12)
+            # 2 个 cycle，每个 cycle 包含 1 次沉降 sleep(0.1) 和双向 sweep 后的 post_delay sleep(0.12)
             # 共 4 次 sleep。第 5 次 sleep 为进入 final 沉降等待时的第 1 次 sleep
             if sleep_count[0] >= 5:
                 mock_context.tasker.stopping = True
@@ -427,8 +438,8 @@ class TestUnifiedGemCollectExecutor(unittest.TestCase):
         )
         self.assertFalse(res)
         self.assertEqual(mock_shake.call_count, 2)
-        # 只执行了 2 次普通 sweep，最终 sweep 因取消被拦截，总数仍为 2（而不是 3）
-        self.assertEqual(mock_ctrl.post_swipe.call_count, 2)
+        # 已执行 2 轮双向普通 sweep，最终双向 sweep 因取消被拦截。
+        self.assertEqual(mock_ctrl.post_swipe.call_count, 4)
 
 
 if __name__ == "__main__":

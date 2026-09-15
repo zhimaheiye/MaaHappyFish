@@ -64,11 +64,11 @@ GemGiftBoxTask
 为兼顾独立运行与日常收尾总控调用，`GemGiftBoxVerifyTank` 采用标准化双出口分流：
 1. 触发 `GemGiftBoxDoneAction`：若日常收尾处于激活状态，安全推进日常收尾步骤并将 `GemGiftBox` 状态标记为 `DONE`；
 2. 随后通过双出口分流：
-   - `DailyRoutineReturnIfActive`：在 `daily_routine_state["active"] == True` 时流转回 `DailyRoutineDispatcher` 继续推进下一子任务（`RomanticHouseTask`）；
+   - `DailyRoutineReturnIfActive`：在 `daily_routine_state["active"] == True` 时流转回 `DailyRoutineDispatcher`；若已勾选宝石订单则继续 `GemOrderTask`，否则按队列进入下一项；
    - `DailyRoutineStandaloneDone`：在独立运行（`active == False`）时直接作为叶子节点正常成功退出（`ret=true`），绝不硬编码跌入未激活的 Dispatcher 引起超时判负。
 
 ### 日常收尾集成说明
-- **运行顺序 (方案 A)**：`FISHING` $\rightarrow$ **`GEM_GIFT_BOX`** $\rightarrow$ `ROMANTIC_HOUSE`；
+- **运行顺序**：`FISHING` $\rightarrow$ **`GEM_GIFT_BOX`** $\rightarrow$ `GEM_ORDER` $\rightarrow$ `ROMANTIC_HOUSE`（只执行实际勾选项）；
 - **默认勾选状态**：默认**不勾选**（不进入 `interface.json` 的 `default_case`），需由用户在 UI 的日常收尾任务选项中主动勾选启用；
 - **独立任务保留**：`interface.json` 中完整保留 `GemGiftBoxTask` 独立入口，支持单独勾选运行与调试。
 
