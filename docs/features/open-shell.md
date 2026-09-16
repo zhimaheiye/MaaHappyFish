@@ -44,6 +44,9 @@ OpenShellLoopRouter (循环路由器)
     └─ 轮次已达 (>= N) ─> OpenShellDone (OCR 点击左上角“返回”)
                                       ↓
                           OpenShellVerifyMainAfterDone (确认主鱼缸后完成)
+                                      ↓
+                          GreenWildDailyBuyFishEntry（仅绿野寻仙踪日常待买鱼时）
+                          OpenShellStandaloneComplete（独立开贝壳到此结束）
 ```
 
 ---

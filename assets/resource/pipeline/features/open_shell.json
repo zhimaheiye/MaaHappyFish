@@ -290,9 +290,22 @@
         "focus": {
             "Node.Action.Succeeded": "[开贝壳] 已确认返回主鱼缸，任务完成。"
         },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyBuyFishEntry",
+            "OpenShellStandaloneComplete"
+        ],
         "on_error": [
             "OpenShellAbort"
         ]
+    },
+    "OpenShellStandaloneComplete": {
+        "recognition": "DirectHit",
+        "action": "DoNothing"
     },
     "OpenShellAbort": {
         "recognition": "DirectHit",

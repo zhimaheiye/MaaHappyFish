@@ -28,6 +28,7 @@ try:
         mobile_ad_state,
         collect_fish_state,
         starfish_timer_state,
+        green_wild_daily_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -43,6 +44,7 @@ except ImportError:
         mobile_ad_state,
         collect_fish_state,
         starfish_timer_state,
+        green_wild_daily_state,
     )
 
 timer_state = starfish_timer_state
@@ -818,6 +820,18 @@ class CheckDailyRoutineActiveReco(CustomRecognition):
         return None
 
 
+@AgentServer.custom_recognition("CheckGreenWildDailyPendingReco")
+class CheckGreenWildDailyPendingReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if not daily_routine_state.get("active"):
+            return None
+        if daily_routine_state.get("step") != "GREEN_WILD_DAILY":
+            return None
+        if green_wild_daily_state.get("pending_buy_fish"):
+            return (0, 0, 10, 10)
+        return None
+
+
 @AgentServer.custom_recognition("CheckDailyRoutineStepReco")
 class CheckDailyRoutineStepReco(CustomRecognition):
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
@@ -965,34 +979,29 @@ class MobileAdCheckCycleLimitReco(CustomRecognition):
 class CheckGoldShellPageReco(CustomRecognition):
     """
     金贝壳主页专属门禁：
-    1. 负向门禁：若贝壳分类页特征命中（小章鱼或 [904, 579, 108, 40] '进入'），绝不能误判为金贝壳主页 (Case 1 核心保障)；
-    2. 负向门禁：若主鱼缸特征命中，绝不能误判为金贝壳主页；
-    3. 正向门禁：必须存在左上角返回按钮 (Template 贝壳页面_返回.png 或 OCR '返回' [0, 0, 189, 146])；
-    4. 专属验证：在分类页特征彻底消失且存在返回按钮的前提下，确认处于金贝壳场景。
+    1. 正向门禁：必须命中 `金贝壳_识别.png`（ROI [515,360,232,195]）；
+    2. 负向门禁：贝壳分类页小章鱼、分类页“进入”、主鱼缸特征命中时一律拒绝；
+    3. 仅有左上角返回按钮不能当作金贝壳主页，避免海星宠物页等误判。
     """
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
         try:
-            # 1. 负向门禁：分类页小章鱼命中 -> 绝非金贝壳主页 (Case 1)
+            gold_res = context.run_recognition("GoldShellCouponGoldPageIdentity", argv.image)
+            if not gold_res or not gold_res.hit:
+                return None
+
             cat_res = context.run_recognition("GoldShellCouponVerifyCategoryPage", argv.image)
             if cat_res and cat_res.hit:
                 return None
 
-            # 2. 负向门禁：分类页进入按钮命中 -> 绝非金贝壳主页
             enter_res = context.run_recognition("GoldShellCouponEnterGold", argv.image)
             if enter_res and enter_res.hit:
                 return None
 
-            # 3. 负向门禁：主界面特征命中 -> 绝非金贝壳主页
             tank_res = context.run_recognition("GoldShellCouponVerifyTankInternal", argv.image)
             if tank_res and tank_res.hit:
                 return None
 
-            # 4. 正向门禁：左上角返回按钮必须存在
-            back_res = context.run_recognition("GoldShellCouponReturnButtonCheck", argv.image)
-            if not back_res or not back_res.hit:
-                return None
-
-            box = tuple(int(v) for v in back_res.box) if back_res.box else (0, 0, 189, 146)
+            box = tuple(int(v) for v in gold_res.box) if gold_res.box else (515, 360, 232, 195)
             return box
         except Exception as e:
             print(f"[兑换金贝壳券] 金贝壳主页专属门禁识别异常: {e}", flush=True)

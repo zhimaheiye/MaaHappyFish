@@ -50,47 +50,48 @@ def run_tests():
         "roi": [512, 62, 253, 143],
         "action": "DoNothing",
     })
-
-    slots = [
-        ("Bottom", [1041, 533, 36, 42], "Middle"),
-        ("Middle", [1044, 432, 36, 42], "Top"),
-        ("Top", [1045, 316, 36, 42], "Exit"),
+    assert business_next(pipeline["PrincessPageReady"]) == ["PrincessClaimRouter"]
+    assert business_next(pipeline["PrincessClaimRouter"]) == [
+        "PrincessClaimReward",
+        "PrincessExit",
     ]
-    for name, roi, next_name in slots:
-        router = pipeline[f"Princess{name}Router"]
-        next_node = f"Princess{next_name}Router" if next_name != "Exit" else "PrincessExit"
-        assert business_next(router) == [f"PrincessClaim{name}", next_node]
 
-        claim = pipeline[f"PrincessClaim{name}"]
-        assert claim["recognition"] == "TemplateMatch"
-        assert claim["template"] == "公主任务_领取奖励.png"
-        assert claim["roi"] == roi
-        assert claim["action"] == "Click"
-        assert "target" not in claim
+    claim = pipeline["PrincessClaimReward"]
+    assert claim["recognition"] == "TemplateMatch"
+    assert claim["template"] == "公主任务_领取奖励.png"
+    assert claim["roi"] == [1028, 290, 62, 288]
+    assert claim["action"] == "Click"
+    assert "target" not in claim
+    assert claim.get("max_hit") == 6
+    assert business_next(claim) == ["PrincessClaimResultRouter"]
 
-        result_router = pipeline[f"Princess{name}ResultRouter"]
-        assert business_next(result_router) == [
-            f"Princess{name}Success",
-            f"Princess{name}Failure",
-        ]
+    assert business_next(pipeline["PrincessClaimResultRouter"]) == [
+        "PrincessClaimSuccess",
+        "PrincessClaimFailure",
+    ]
+    success = pipeline["PrincessClaimSuccess"]
+    assert success["recognition"] == "OCR"
+    assert success["expected"] == "^开心收下$"
+    assert success["roi"] == [586, 518, 102, 32]
+    assert success["action"] == "Click"
+    assert "target" not in success
+    assert business_next(success) == ["PrincessPageAfterClaim"]
 
-        success = pipeline[f"Princess{name}Success"]
-        assert success["recognition"] == "OCR"
-        assert success["expected"] == "^开心收下$"
-        assert success["roi"] == [586, 518, 102, 32]
-        assert success["action"] == "Click"
-        assert "target" not in success
+    failure = pipeline["PrincessClaimFailure"]
+    assert failure["template"] == "公主任务_领取失败.png"
+    assert failure["action"] == "Click"
+    assert "target" not in failure
+    assert business_next(pipeline["PrincessPageAfterClaim"]) == ["PrincessClaimRouter"]
 
-        failure = pipeline[f"Princess{name}Failure"]
-        assert failure["recognition"] == "TemplateMatch"
-        assert failure["template"] == "公主任务_领取失败.png"
-        assert failure["roi"] == [804, 461, 46, 41]
-        assert failure["action"] == "Click"
-        assert "target" not in failure
-
-        page = pipeline[f"PrincessPageAfter{name}"]
-        assert page["template"] == "公主任务_识别.png"
-        assert page["roi"] == [512, 62, 253, 143]
+    for gone in (
+        "PrincessClaimBottom",
+        "PrincessClaimMiddle",
+        "PrincessClaimTop",
+        "PrincessBottomRouter",
+        "PrincessMiddleRouter",
+        "PrincessTopRouter",
+    ):
+        assert gone not in pipeline
 
     exit_node = pipeline["PrincessExit"]
     assert exit_node["template"] == "公主任务_退出.png"
@@ -137,7 +138,7 @@ def run_tests():
     assert princess_tasks[0]["name"] == "公主任务"
     assert princess_tasks[0]["default_check"] is False
 
-    print("[PASS] PrincessTask topology, branches, ROI, assets, and interface contract")
+    print("[PASS] PrincessTask column-claim topology, ROI, assets, and interface contract")
 
 
 if __name__ == "__main__":

@@ -115,6 +115,10 @@ def run_tests():
     assert "target" not in pipeline["BuyFishFoodOpenStore"]
     assert pipeline["BuyFishFoodQuantity"]["only_rec"] is True
     assert "」" in pipeline["BuyFishFoodQuantity"]["expected"]
+    assert pipeline["BuyFishFoodQuantity"]["roi"] == [892, 345, 125, 92]
+    assert "鱼食" not in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
+    assert pipeline["BuyFishFoodStartAtDetail"]["expected"] == "廉价.*鱼食"
+    assert pipeline["BuyFishFoodDetailIdentity"]["expected"] == "廉价.*鱼食"
 
     original_sleep = actions.time.sleep
     actions.time.sleep = lambda _seconds: None
@@ -160,6 +164,10 @@ def run_tests():
         find_arg = SimpleNamespace(custom_action_param={"max_scrolls": 2})
         assert actions.FindCheapFishFoodAction().run(find_context, find_arg) is True
         assert find_context.tasker.controller.clicks == [(320, 320)]
+
+        already_detail = Context("detail")
+        assert actions.FindCheapFishFoodAction().run(already_detail, find_arg) is True
+        assert already_detail.tasker.controller.clicks == []
 
         missing_context = Context("store", target_visible=False)
         assert actions.FindCheapFishFoodAction().run(missing_context, find_arg) is False

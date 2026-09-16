@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.7",
+    "version": "0.5.8",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -88,10 +88,16 @@
             "description": "周六、周日从主鱼缸、好友列表或海牛先生页面启动，连续喂食至识别到刷新体力后返回主鱼缸。"
         },
         {
+            "name": "绿野寻仙踪",
+            "entry": "GreenWildTask",
+            "default_check": false,
+            "description": "从主鱼缸点击绿野寻仙踪入口，打开任务后一键领取，再返回鱼缸。"
+        },
+        {
             "name": "公主任务",
             "entry": "PrincessTask",
             "default_check": false,
-            "description": "从主鱼缸或公主任务页面启动，按从下到上的顺序检查三个奖励位置，分别处理领取成功或失败结果，最后安全返回鱼缸。"
+            "description": "从主鱼缸或公主任务页面启动，在右侧奖励列 [1028,290,62,288] 内查找可领取礼盒并点击命中位置，分别处理领取成功或失败结果，最后安全返回鱼缸。"
         },
         {
             "name": "收鱼产物",
@@ -228,6 +234,7 @@
                 { "name": "宝石订单", "enabled": false },
                 { "name": "好友摸宝", "enabled": false },
                 { "name": "海牛先生", "enabled": false },
+                { "name": "绿野寻仙踪", "enabled": false },
                 { "name": "公主任务", "enabled": false },
                 { "name": "收鱼产物", "enabled": true },
                 { "name": "多鱼缸巡检", "enabled": false },
@@ -1153,6 +1160,14 @@
                     "name": "兑换金贝壳券",
                     "pipeline_override": {
                         "DailyRoutineEnableGoldShellCoupon": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "绿野寻仙踪日常",
+                    "pipeline_override": {
+                        "DailyRoutineEnableGreenWildDaily": {
                             "enabled": true
                         }
                     }

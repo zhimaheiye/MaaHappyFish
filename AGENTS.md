@@ -33,7 +33,8 @@
 | 维护"乐队鱼演出"邀请与演出活动 | `docs/features/band-fish.md` |
 | 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
 | 维护"金海豚小游戏"活动自动化 | `docs/features/golden-dolphin.md` |
-| 维护"公主任务"三档奖励领取 | `docs/features/princess-task.md` |
+| 维护"公主任务"奖励列领取 | `docs/features/princess-task.md` |
+| 维护"绿野寻仙踪"入口/任务/返回与日常开贝壳买鱼 | `docs/features/green-wild.md` |
 | 维护"摇一摇小游戏"活动自动化 | `docs/features/shake-game.md` |
 | 维护"驯鹿鱼送收礼物"日常子任务 | `docs/features/reindeer-fish.md` |
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
@@ -216,9 +217,9 @@ MaaHappyFish 采用 MFAAvalonia 原生支持的二合一整包（UI + MaaFW + Ag
    - `interface.json` 中的 `github` 字段必须为纯文本 URL（如 `"github": "https://github.com/zhimaheiye/MaaHappyFish"`），严禁末尾斜杠，严禁写成 markdown 链接格式 `[https://...]`。
    - 三份 `interface.json`（`assets/`、`client/`、`client_avalonia/`）必须保持版本号与内容字节级完全一致。
 2. **整包原子覆盖契约（Full Package Update）**：
-   - 发行包包含根目录核心应用文件（`MFAAvalonia.exe`、`MaaFramework.dll` 等），触发 MFA 的二合一整包覆盖机制（`ContainsCoreApplicationFiles`）。
+   - 发行包包含根目录核心应用文件（`MaaHappyFish.exe`、`MFAAvalonia.dll`、`MaaFramework.dll` 等），触发 MFA 的二合一整包覆盖机制（`ContainsCoreApplicationFiles`）。
    - 第一阶段清理旧 `resource/` 与 `agent/` 并覆盖至数据目录；第二阶段覆盖安装目录中的所有程序与 `python/` 环境文件。
-   - 运行中的 `MFAAvalonia.exe` 通过热替换重命名为 `.backupMFA` 并自动重启生效。
+   - 运行中的启动文件通过热替换重命名为 `.backupMFA` 并自动重启生效。
 3. **用户配置非破坏性契约（Non-Destructive User Config）**：
    - 用户的本地设置（`config/`、`logs/`、`debug/`、设备连接与绑定状态）受保护，更新流程绝不覆盖或擦除。
 4. **CI 门禁与发布防线**：

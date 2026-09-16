@@ -1,8 +1,8 @@
 # 日常收尾总控任务 (docs/features/daily-routine.md)
 
-**最后更新**: 2026-09-15
-**版本**: v10（日常流转日志、宝石订单与双钓饵策略）
-**状态**: 已实现串行容器、自由多选组合、逐项日志、宝石订单及乐队鱼异步调度；已落地双出口路由消除独立运行超时失败。
+**最后更新**: 2026-09-16
+**版本**: v11（绿野寻仙踪日常：开贝壳一次 + 买一条贝币鱼）
+**状态**: 已实现串行容器、自由多选组合、逐项日志、宝石订单、绿野寻仙踪日常及乐队鱼异步调度；已落地双出口路由消除独立运行超时失败。
 
 ---
 
@@ -12,6 +12,7 @@
 - **每日免费礼包** (`DailyFreeGiftTask`)
 - **驯鹿鱼送收礼物** (`ReindeerFishGiftTask`)
 - **兑换金贝壳券** (`GoldShellCouponTask`)
+- **绿野寻仙踪日常** (`GreenWildDailyTask`)
 - **乐队鱼演出** (`BandFishTask`)
 - **金海豚小游戏** (`GoldenDolphinTask`)
 - **摇一摇小游戏** (`ShakeGameTask`)
@@ -22,7 +23,7 @@
 
 在 Phase 2 中，【日常收尾】(`DailyRoutineTask`) 明确降级为确定性的**“串行任务容器”**：
 1. **自由多选组合**：用户可在 MFAAvalonia 界面中按需自由勾选任意子任务组合；
-2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请，再执行每日免费礼包、驯鹿鱼送收礼物、兑换金贝壳券、金海豚、摇一摇、钓鱼达人、宝石礼盒兑换、宝石订单、浪漫满屋等其他已勾选任务，最后执行乐队鱼 Pass 2 回访演出；
+2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请，再执行每日免费礼包、驯鹿鱼送收礼物、兑换金贝壳券、绿野寻仙踪日常、金海豚、摇一摇、钓鱼达人、宝石礼盒兑换、宝石订单、浪漫满屋等其他已勾选任务，最后执行乐队鱼 Pass 2 回访演出；
 3. **安全退出保障**：每个子任务执行结束（成功、次数用尽、体力不足等）后，必须 100% 返回主鱼缸珊瑚，方可推进下一任务；
 4. **两阶段异步执行**：乐队鱼 Pass 1 / Pass 2 已接入调度；中间任务的执行时间用于等待人机好友接受邀请。
 
@@ -33,12 +34,13 @@
 ### 1. 界面选项声明 (`interface.json`)
 在 `interface.json` 的 `DailyRoutineTask` 下配置 `checkbox` 类型的任务选项 `日常收尾任务`：
 - **类型**: `"type": "checkbox"`
-- **默认值**: 保留原五项默认选择（乐队鱼、金海豚、摇一摇、钓鱼达人、浪漫满屋）；“每日免费礼包”、“驯鹿鱼送收礼物”、“兑换金贝壳券”、“宝石礼盒兑换”与“宝石订单”默认不勾选，由用户按需主动开启。
+- **默认值**: 保留原五项默认选择（乐队鱼、金海豚、摇一摇、钓鱼达人、浪漫满屋）；“每日免费礼包”、“驯鹿鱼送收礼物”、“兑换金贝壳券”、“绿野寻仙踪日常”、“宝石礼盒兑换”与“宝石订单”默认不勾选，由用户按需主动开启。
 - **Cases 与 Pipeline Override**:
   每个 case 独立覆盖 pipeline 中的专有使能节点，互不冲突：
   - `每日免费礼包` → `DailyRoutineEnableFreeGift: { "enabled": true }`
   - `驯鹿鱼送收礼物` → `DailyRoutineEnableReindeerFish: { "enabled": true }`
   - `兑换金贝壳券` → `DailyRoutineEnableGoldShellCoupon: { "enabled": true }`
+  - `绿野寻仙踪日常` → `DailyRoutineEnableGreenWildDaily: { "enabled": true }`
   - `乐队鱼` $\rightarrow$ `DailyRoutineEnableBandFish: { "enabled": true }`
   - `金海豚` $\rightarrow$ `DailyRoutineEnableGoldenDolphin: { "enabled": true }`
   - `摇一摇` $\rightarrow$ `DailyRoutineEnableShakeGame: { "enabled": true }`
@@ -66,6 +68,7 @@ flowchart TD
     Dispatcher -- step=FREE_GIFT --> FG[DailyFreeGiftTask: 每日免费礼包]
     Dispatcher -- step=REINDEER_FISH --> RF[ReindeerFishGiftTask: 驯鹿鱼送收礼物]
     Dispatcher -- step=GOLD_SHELL_COUPON --> GSC[GoldShellCouponTask: 兑换金贝壳券]
+    Dispatcher -- step=GREEN_WILD_DAILY --> GWD[GreenWildDailyTask: 开贝壳一次后买一条贝币鱼]
     Dispatcher -- step=BAND_FISH_PASS1 --> BF[BandFishStartRouter: 乐队鱼]
     Dispatcher -- step=GOLDEN_DOLPHIN --> GD[GoldenDolphinTask: 金海豚]
     Dispatcher -- step=SHAKE_GAME --> SG[ShakeGameTask: 摇一摇]
@@ -79,6 +82,7 @@ flowchart TD
     FG --> FG_Exit[识别回到鱼缸 -> DailyFreeGiftDoneAction]
     RF --> RF_Exit[识别回到鱼缸 -> ReindeerFishDoneAction]
     GSC --> GSC_Exit[GoldShellCouponVerifyTank: 回主鱼缸 -> GoldShellCouponDoneAction]
+    GWD --> GWD_Exit[GreenWildDailyVerifyTank: 回主鱼缸 -> GreenWildDailyDoneAction]
     BF --> BF_Exit[BandFishExitToTankAction: 回主鱼缸 -> advance_daily_routine_step]
     GD --> GD_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
     SG --> SG_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
@@ -90,6 +94,7 @@ flowchart TD
     FG_Exit --> Dispatcher
     RF_Exit --> Dispatcher
     GSC_Exit --> Dispatcher
+    GWD_Exit --> Dispatcher
     BF_Exit --> Dispatcher
     GD_Exit --> Dispatcher
     SG_Exit --> Dispatcher

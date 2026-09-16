@@ -7,7 +7,7 @@
 - Node.js 22+
 - MuMu 模拟器 v5+，默认 ADB 地址 `127.0.0.1:16416`
 
-本地运行入口为 `client_avalonia/MFAAvalonia.exe`。该目录只用于调试，不提交到 Git。
+本地运行入口为 `client_avalonia/MaaHappyFish.exe`。该目录只用于调试，不提交到 Git。
 
 ## 目录分工
 

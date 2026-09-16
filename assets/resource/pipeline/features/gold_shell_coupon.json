@@ -15,7 +15,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[兑换金贝壳券] 启动步骤恢复路由（因金贝壳主页专属视觉模板未录入，暂停金贝壳直接恢复，严格按分类页 -> 主鱼缸入口降级执行）。"
+            "Node.Action.Succeeded": "[兑换金贝壳券] 启动步骤恢复路由（金贝壳主页优先，其次分类页、主鱼缸入口；若误入海星宠物页则先返回鱼缸）。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -23,10 +23,19 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponVerifyGoldPage",
             "GoldShellCouponVerifyCategoryPage",
             "GoldShellCouponEntry",
+            "GoldShellCouponStarfishMisTouch",
             "GoldShellCouponAbort"
         ]
+    },
+    "GoldShellCouponGoldPageIdentity": {
+        "recognition": "TemplateMatch",
+        "template": "金贝壳_识别.png",
+        "threshold": 0.8,
+        "roi": [515, 360, 232, 195],
+        "action": "DoNothing"
     },
     "GoldShellCouponEntry": {
         "recognition": "TemplateMatch",
@@ -81,7 +90,7 @@
             "GoldShellCouponEnterGold"
         ],
         "on_error": [
-            "GoldShellCouponAbort"
+            "GoldShellCouponStarfishMisTouch"
         ]
     },
     "GoldShellCouponEnterGold": {
@@ -205,7 +214,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[兑换金贝壳券] 兑换点击完毕，正在核实兑换结果（弹窗/按钮消失/未生效）。"
+            "Node.Action.Succeeded": "[兑换金贝壳券] 兑换点击完毕，优先识别消耗确认对号；确认弹窗期间兑换按钮仍在是正常的。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -213,9 +222,76 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponConfirmPopup",
+            "GoldShellCouponGreatButton",
             "GoldShellCouponRewardPopup",
             "GoldShellCouponExchangeDisappeared",
             "GoldShellCouponExchangeVerifyFailed"
+        ]
+    },
+    "GoldShellCouponConfirmPopup": {
+        "recognition": "TemplateMatch",
+        "template": "绿色勾选按钮.png",
+        "threshold": 0.8,
+        "roi": [
+            751,
+            404,
+            153,
+            150
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 已点击消耗确认弹窗对号，正在识别太好了结算按钮。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponPostConfirmRouter"
+        ]
+    },
+    "GoldShellCouponPostConfirmRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 已确认消耗，正在点击太好了关闭结算弹窗。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponGreatButton",
+            "GoldShellCouponRewardPopup",
+            "GoldShellCouponExchangeDisappeared",
+            "GoldShellCouponExchangeVerifyFailed"
+        ]
+    },
+    "GoldShellCouponGreatButton": {
+        "recognition": "OCR",
+        "expected": "^太好了$",
+        "roi": [568, 512, 153, 51],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 已点击太好了，准备两次返回鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponReturnCategory"
+        ],
+        "on_error": [
+            "GoldShellCouponAbort"
         ]
     },
     "GoldShellCouponRewardPopup": {
@@ -258,7 +334,7 @@
         "recognition": "DirectHit",
         "action": "StopTask",
         "focus": {
-            "Node.Action.Succeeded": "[兑换金贝壳券] 兑换未生效：兑换按钮依然存在且未检测到结算弹窗，终止任务防止假完成。"
+            "Node.Action.Succeeded": "[兑换金贝壳券] 兑换未生效：未出现确认对号或结算弹窗，且兑换按钮仍在，终止任务防止假完成。"
         }
     },
     "GoldShellCouponReturnCategory": {
@@ -367,6 +443,50 @@
             "[JumpBack]GlobalLevelUpPopup",
             "DailyRoutineReturnIfActive",
             "DailyRoutineStandaloneDone"
+        ],
+        "on_error": [
+            "GoldShellCouponAbort"
+        ]
+    },
+    "GoldShellCouponStarfishMisTouch": {
+        "recognition": "OCR",
+        "expected": "[萌乖亮]海星",
+        "roi": [80, 70, 800, 100],
+        "action": "DoNothing",
+        "max_hit": 2,
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 检测到误入海星宠物页，准备点击返回。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponStarfishReturn"
+        ],
+        "on_error": [
+            "GoldShellCouponAbort"
+        ]
+    },
+    "GoldShellCouponStarfishReturn": {
+        "recognition": "OCR",
+        "expected": "^返回$",
+        "roi": [1, 0, 189, 119],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3500,
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 已从海星宠物页点击返回，重新确认鱼缸后继续兑换。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponRouter"
         ],
         "on_error": [
             "GoldShellCouponAbort"

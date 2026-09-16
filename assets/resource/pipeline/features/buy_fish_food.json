@@ -32,7 +32,7 @@
     },
     "BuyFishFoodStartAtDetail": {
         "recognition": "OCR",
-        "expected": "廉价鱼食",
+        "expected": "廉价.*鱼食",
         "roi": [
             200,
             180,
@@ -213,7 +213,7 @@
     },
     "BuyFishFoodPurchaseOnDetail": {
         "recognition": "OCR",
-        "expected": "廉价鱼食",
+        "expected": "廉价.*鱼食",
         "roi": [
             200,
             180,
@@ -246,7 +246,7 @@
     },
     "BuyFishFoodStoreItemIdentity": {
         "recognition": "OCR",
-        "expected": "成长豆|鱼食|糖",
+        "expected": "成长豆|糖",
         "roi": [
             0,
             120,
@@ -268,7 +268,7 @@
     },
     "BuyFishFoodDetailIdentity": {
         "recognition": "OCR",
-        "expected": "廉价鱼食",
+        "expected": "廉价.*鱼食",
         "roi": [
             200,
             180,
@@ -302,13 +302,13 @@
     },
     "BuyFishFoodQuantity": {
         "recognition": "OCR",
-        "expected": "^(?:[1-9]\\d{0,2}|」)$",
+        "expected": "^(?:[1-9]\\d{0,2}|」|丨)$",
         "only_rec": true,
         "roi": [
-            880,
-            320,
-            150,
-            130
+            892,
+            345,
+            125,
+            92
         ],
         "action": "DoNothing"
     },
@@ -339,7 +339,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[购买鱼食] 页面门禁未通过，任务已安全停止"
+            "Node.Action.Succeeded": "[购买鱼食] 购买流程未完成，已安全停止。请查看识别日志。"
         }
     }
 }

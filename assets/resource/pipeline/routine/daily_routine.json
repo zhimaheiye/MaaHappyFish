@@ -14,6 +14,11 @@
         "action": "DoNothing",
         "enabled": false
     },
+    "DailyRoutineEnableGreenWildDaily": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineEnableBandFish": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -84,6 +89,7 @@
             "DailyRoutineStepFreeGift",
             "DailyRoutineStepReindeerFish",
             "DailyRoutineStepGoldShellCoupon",
+            "DailyRoutineStepGreenWildDaily",
             "DailyRoutineStepBandFishPass1",
             "DailyRoutineStepGoldenDolphin",
             "DailyRoutineStepShakeGame",
@@ -150,6 +156,25 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "GoldShellCouponTask"
+        ]
+    },
+    "DailyRoutineStepGreenWildDaily": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "GREEN_WILD_DAILY"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：绿野寻仙踪日常。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyTask"
         ]
     },
     "DailyRoutineStepBandFishPass1": {

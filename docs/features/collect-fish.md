@@ -142,8 +142,9 @@ graph TD
 
 2026-09-12 正式支持收宝石双模式（IMAGE 图像识别 / SHAKE MuMu摇晃）：
 - 默认保持 `IMAGE` 图像识别模式，气泡检测与点击不变，底部收取统一升级为双向往复滑动；
-- 选择 `SHAKE` 模式时，任务入口设置 `gem_collect_state["mode"] = "SHAKE"`，流水线在 `ClickFishBubble` 前命中 `CollectFishShakeGem`，执行严格交替的高频摇晃与双向扫底收宝循环（5 次摇晃 + 6 轮双向扫底补刀），连续 3 次失败安全熔断。
+- 选择 `SHAKE` 模式时，任务入口设置 `gem_collect_state["mode"] = "SHAKE"`，流水线在 `ClickFishBubble` 前命中 `CollectFishShakeGem`，执行严格交替的高频摇晃与双向扫底收宝循环（5 次摇晃 + 6 轮双向扫底补刀）。MuMuManager shake RPC 超时 5 秒；连续 3 次失败时跳过本轮剩余摇晃并扫底，然后继续挂机，不再把整次收鱼任务判失败。
 - 2026-09-12 第二轮优化：增加每次摇晃后的充分沉降等待（`GEM_SHAKE_SETTLE_DELAY_SECONDS = 1.5s`）以及循环完成后的最终沉降等待（`GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS = 1.5s`），给空中飘落的宝石留出充足物理下落时间后再执行底部扫宝，彻底解决过早切缸导致宝石未收完的问题。
+- 2026-09-16：v0.4.4 现场日志确认挂机两次「任务失败：收鱼产物」均由 `MuMuManager` shake RPC 连续 2 秒超时触发硬熔断。挂机路径超时改为 5 秒；连续 3 次失败改为跳过本轮剩余摇晃并扫底后继续 `ResumeHarvest`，不再中断整次收鱼。
 
 ## 关键文件入口
 - `assets/resource/pipeline/collect_fish.json` — Pipeline 拓扑（含双缸切缸、通用海星喂食与 focus 静态配置）

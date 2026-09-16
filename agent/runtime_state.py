@@ -53,12 +53,13 @@ romantic_house_state = {
 
 daily_routine_state = {
     "active": False,
-    "step": "INIT",  # "FREE_GIFT" | "REINDEER_FISH" | "GOLD_SHELL_COUPON" | "BAND_FISH" | "GOLDEN_DOLPHIN" | "FISHING" | "GEM_GIFT_BOX" | "GEM_ORDER" | "ROMANTIC_HOUSE" | "ALL_DONE"
+    "step": "INIT",  # "FREE_GIFT" | "REINDEER_FISH" | "GOLD_SHELL_COUPON" | "GREEN_WILD_DAILY" | "BAND_FISH" | "GOLDEN_DOLPHIN" | "FISHING" | "GEM_GIFT_BOX" | "GEM_ORDER" | "ROMANTIC_HOUSE" | "ALL_DONE"
     "queue": [],     # 待执行的后续子任务序列
     "tasks": {
         "FreeGift": {"status": "IDLE"},
         "ReindeerFish": {"status": "IDLE"},
         "GoldShellCoupon": {"status": "IDLE"},
+        "GreenWildDaily": {"status": "IDLE"},
         "BandFish": {"status": "IDLE", "stage": "PASS1"},
         "GoldenDolphin": {"status": "IDLE"},
         "ShakeGame": {"status": "IDLE"},
@@ -67,6 +68,10 @@ daily_routine_state = {
         "GemOrder": {"status": "IDLE"},
         "RomanticHouse": {"status": "IDLE"},
     },
+}
+
+green_wild_daily_state = {
+    "pending_buy_fish": False,
 }
 
 fishing_state = {

@@ -14,6 +14,7 @@ HANDLER_NODES = {
     "GlobalActivityPagePopup",
     "GlobalDailySignPopup",
     "GlobalDailySignClaim",
+    "GlobalDailySignClaimByOcr",
     "GlobalSpecialOfferPopup",
     "GlobalNewsPopup",
     "GlobalLevelUpPopup",
@@ -21,9 +22,39 @@ HANDLER_NODES = {
 ISOLATED_PIPELINES = {"mobile_ads.json", "emulator_ads.json"}
 ATOMIC_NEXT_NODES = {
     "ClickFishBubble",
+    "SweepFishTankBottomAfterBubble",
     "PatrolCollectTank1Bubble",
+    "PatrolSweepTank1AfterBubble",
     "PatrolCollectTank2Bubble",
+    "PatrolSweepTank2AfterBubble",
     "PatrolCollectTank3Bubble",
+    "PatrolSweepTank3AfterBubble",
+    "ShakeGemCollectSweepBottom",
+}
+INTERNAL_CHAIN_NODES = {
+    "CollectFishDualStartAtTank1",
+    "CollectFishDualStartAtTank2",
+    "CollectFishDualStartAtTank3",
+    "CollectFishDualStartAtPicker",
+    "CollectFishVerifyTank1MainDualStart",
+    "CollectFishSingleStartTank1",
+    "CollectFishSingleStartTank2",
+    "CollectFishSingleStartTank3",
+    "CollectFishSingleStartFallback",
+    "CollectFishStarfishEntryUnknown",
+    "CollectFishStarfishEntryRetry",
+    "CollectFishStarfishEntryRetryRouter",
+    "CollectFishStarfishEntryCanRetry",
+    "CollectFishStarfishEntryFailed",
+    "CollectFishStarfishEntryFailedNeedsInitialization",
+    "CollectFishExitManagementFail",
+    "CollectFishStarfishFlowFailed",
+    "CollectFishSwitchToTank2Target",
+    "CollectFishVerifyTank2Main",
+    "CollectFishSwitchToTank1Target",
+    "CollectFishVerifyTank1Main",
+    "CollectFishSwitchRetry",
+    "DailyRoutineInitLog",
 }
 
 
@@ -57,8 +88,18 @@ def run_tests():
     claim = pipeline["GlobalDailySignClaim"]
     assert claim["template"] == "签到_点击.png"
     assert claim["action"] == "Click"
+    assert claim["roi"] == [0, 400, 1280, 320]
     assert "target" not in claim
     assert claim["next"] == ["GlobalDailySignClose", "GlobalDailySignAutoClosed"]
+    assert claim["on_error"] == ["GlobalDailySignClaimByOcr"]
+
+    claim_ocr = pipeline["GlobalDailySignClaimByOcr"]
+    assert claim_ocr["recognition"] == "OCR"
+    assert claim_ocr["expected"] == "^签到$"
+    assert claim_ocr["roi"] == [0, 400, 1280, 320]
+    assert claim_ocr["action"] == "Click"
+    assert claim_ocr["next"] == ["GlobalDailySignClose", "GlobalDailySignAutoClosed"]
+    assert "on_error" not in claim_ocr
 
     close = pipeline["GlobalDailySignClose"]
     assert close["template"] == "签到_关闭.png"
@@ -118,7 +159,7 @@ def run_tests():
         if locations[name].name in ISOLATED_PIPELINES:
             continue
         successors = node.get("next")
-        if name in HANDLER_NODES or name in ATOMIC_NEXT_NODES or not successors:
+        if name in HANDLER_NODES or name in ATOMIC_NEXT_NODES or name in INTERNAL_CHAIN_NODES or not successors:
             continue
         if successors[:len(GLOBAL_HANDLERS)] != GLOBAL_HANDLERS:
             missing.append(f"{locations[name]}::{name}")

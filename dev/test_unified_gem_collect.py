@@ -5,7 +5,7 @@
 2. Interface 配置与契约校验
 3. SetGemCollectModeAction 模式切换
 4. CheckGemCollectModeReco 识别器分流
-5. execute_shake_gem_collect_cycle 执行器 (S->W 交替、6次扫底、连续3次失败熔断、取消响应)
+5. execute_shake_gem_collect_cycle 执行器 (S->W 交替、6次扫底、连续3次失败跳过剩余摇晃并继续挂机、取消响应)
 """
 import json
 import os
@@ -23,6 +23,7 @@ from agent.my_action import (
     GEM_SHAKE_SETTLE_DELAY_SECONDS,
     GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS,
     GEM_SHAKE_MAX_CONSECUTIVE_FAILURES,
+    GEM_SHAKE_RPC_TIMEOUT_SECONDS,
     SWEEP_BOTTOM_BEGIN,
     SWEEP_BOTTOM_END,
     SWEEP_BOTTOM_DURATION_MS,
@@ -283,6 +284,7 @@ class TestUnifiedGemCollectExecutor(unittest.TestCase):
         self.assertGreaterEqual(GEM_SHAKE_SETTLE_DELAY_SECONDS, 1.2)
         self.assertGreaterEqual(GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS, 1.2)
         self.assertEqual(GEM_SHAKE_MAX_CONSECUTIVE_FAILURES, 3)
+        self.assertGreaterEqual(GEM_SHAKE_RPC_TIMEOUT_SECONDS, 5.0)
 
     @patch("agent.my_action.time.sleep", return_value=None)
     @patch("agent.my_action._run_mumu_shake")
@@ -345,6 +347,7 @@ class TestUnifiedGemCollectExecutor(unittest.TestCase):
     @patch("agent.my_action._run_mumu_shake")
     @patch("agent.my_action._get_mumu_manager_and_vm")
     def test_circuit_breaker_on_three_consecutive_failures(self, mock_get_vm, mock_shake, mock_sleep):
+        """连续 3 次 RPC 失败时跳过剩余摇晃，扫底后仍返回 True，不中断挂机。"""
         mock_get_vm.return_value = ("MuMuManager.exe", 0)
         mock_shake.return_value = False
 
@@ -355,9 +358,14 @@ class TestUnifiedGemCollectExecutor(unittest.TestCase):
         mock_context.tasker.stopping = False
         mock_context.tasker.running = True
 
-        res = execute_shake_gem_collect_cycle(mock_context, mock_ctrl, cycles=5, delay_between=0.1)
-        self.assertFalse(res)
+        res = execute_shake_gem_collect_cycle(
+            mock_context, mock_ctrl, cycles=5, delay_between=0.1, final_delay=0.1
+        )
+        self.assertTrue(res)
         self.assertEqual(mock_shake.call_count, GEM_SHAKE_MAX_CONSECUTIVE_FAILURES)
+        self.assertEqual(mock_shake.call_args.kwargs["timeout"], GEM_SHAKE_RPC_TIMEOUT_SECONDS)
+        # 前两次失败仍会扫底，第三次失败后走最终补刀扫底，均不中断任务。
+        self.assertGreaterEqual(mock_ctrl.post_swipe.call_count, 6)
 
     @patch("agent.my_action.time.sleep", return_value=None)
     @patch("agent.my_action._run_mumu_shake")

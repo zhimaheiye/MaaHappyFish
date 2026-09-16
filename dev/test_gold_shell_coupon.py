@@ -4,9 +4,9 @@
 金贝壳券 (GoldShellCouponTask) 离线安全与状态机单测套件
 覆盖用户指定的全部 7 个核心测试场景:
 Case 1: 分类页不能误判成金贝壳主页 (分类页特征命中时 CheckGoldShellPageReco 必须返回 None)
-Case 2: 金贝壳主页专属门禁 (非分类页且有返回按钮时 CheckGoldShellPageReco 稳定命中)
-Case 3: 有兑换 (点击兑换后流向 PostExchangeRouter，按钮消失后验证通过流向返回)
-Case 4: 点击兑换未生效 (按钮依然存在且无弹窗，流向 GoldShellCouponExchangeVerifyFailed 熔断)
+Case 2: 金贝壳主页专属门禁 (必须命中 金贝壳_识别.png，仅有返回按钮不能过门)
+Case 3: 有兑换 (点击兑换后流向 PostExchangeRouter，优先点对号，再点太好了，然后两次返回)
+Case 4: 点击兑换未生效 (无确认对号、无结算弹窗且按钮依然存在，流向 GoldShellCouponExchangeVerifyFailed 熔断)
 Case 5: 无兑换 (主页门禁成立但未识别到兑换，流向 NoExchange 正常返回)
 Case 6: DoneAction 重复执行幂等保护 (连续调用多次，DailyRoutine 队列仅推进一次)
 Case 7: Standalone 独立运行安全 (active=False 时多次执行 DoneAction 不污染队列)
@@ -88,6 +88,7 @@ def test_case_1_category_page_never_misjudged():
 
     # 场景 1A: 贝壳分类页小章鱼命中 (无论返回按钮是否存在，必须返回 None)
     ctx_octopus = MockContext({
+        "GoldShellCouponGoldPageIdentity": MockRecoResult(hit=True, box=(515, 360, 232, 195)),
         "GoldShellCouponVerifyCategoryPage": MockRecoResult(hit=True, box=(498, 80, 280, 191)),
         "GoldShellCouponReturnButtonCheck": MockRecoResult(hit=True, box=(0, 0, 250, 150)),
     })
@@ -96,6 +97,7 @@ def test_case_1_category_page_never_misjudged():
 
     # 场景 1B: 分类页进入按钮命中 (小章鱼漏检但进入按钮在，必须返回 None)
     ctx_enter = MockContext({
+        "GoldShellCouponGoldPageIdentity": MockRecoResult(hit=True, box=(515, 360, 232, 195)),
         "GoldShellCouponVerifyCategoryPage": MockRecoResult(hit=False),
         "GoldShellCouponEnterGold": MockRecoResult(hit=True, box=(904, 579, 108, 40)),
         "GoldShellCouponReturnButtonCheck": MockRecoResult(hit=True, box=(0, 0, 250, 150)),
@@ -105,13 +107,22 @@ def test_case_1_category_page_never_misjudged():
 
     # 场景 1C: 主鱼缸主界面特征命中 (必须返回 None)
     ctx_tank = MockContext({
+        "GoldShellCouponGoldPageIdentity": MockRecoResult(hit=True, box=(515, 360, 232, 195)),
         "GoldShellCouponVerifyTankInternal": MockRecoResult(hit=True, box=(0, 200, 150, 400)),
         "GoldShellCouponReturnButtonCheck": MockRecoResult(hit=True, box=(0, 0, 250, 150)),
     })
     res_1c = reco.analyze(ctx_tank, MockArg())
     assert res_1c is None, "Case 1C 失败: 主鱼缸特征存在时，不得误判为金贝壳主页"
 
-    print("  >>> PASS: Case 1 验证通过 (分类页小章鱼/进入按钮/主鱼缸特征绝不误判成金贝壳主页)")
+    # 场景 1D: 海星宠物页只有返回按钮，没有金贝壳识别模板，必须返回 None
+    ctx_starfish = MockContext({
+        "GoldShellCouponReturnButtonCheck": MockRecoResult(hit=True, box=(0, 0, 189, 146)),
+        "GoldShellCouponGoldPageIdentity": MockRecoResult(hit=False),
+    })
+    res_1d = reco.analyze(ctx_starfish, MockArg())
+    assert res_1d is None, "Case 1D 失败: 仅有返回按钮不得误判为金贝壳主页（海星宠物页）"
+
+    print("  >>> PASS: Case 1 验证通过 (分类页/进入按钮/主鱼缸/仅返回按钮绝不误判成金贝壳主页)")
 
 
 def test_case_2_gold_page_exclusive_gatekeeper():
@@ -119,18 +130,18 @@ def test_case_2_gold_page_exclusive_gatekeeper():
     print("\n--- [Test Case 2: 金贝壳主页专属门禁] ---")
     reco = CheckGoldShellPageReco()
 
-    # 场景 2: 真实金贝壳页: 分类页特征与主鱼缸特征均不存在，返回按钮存在
+    # 场景 2: 真实金贝壳页必须命中 金贝壳_识别.png，且不是分类页/主鱼缸
     ctx_gold = MockContext({
+        "GoldShellCouponGoldPageIdentity": MockRecoResult(hit=True, box=(515, 360, 232, 195)),
         "GoldShellCouponVerifyCategoryPage": MockRecoResult(hit=False),
         "GoldShellCouponEnterGold": MockRecoResult(hit=False),
         "GoldShellCouponVerifyTankInternal": MockRecoResult(hit=False),
-        "GoldShellCouponReturnButtonCheck": MockRecoResult(hit=True, box=(0, 0, 189, 146)),
     })
     res_2 = reco.analyze(ctx_gold, MockArg())
     assert res_2 is not None, "Case 2 失败: 真实金贝壳页必须稳定命中门禁"
-    assert res_2 == (0, 0, 189, 146), f"Case 2 失败: 命中区域不匹配 -> {res_2}"
+    assert res_2 == (515, 360, 232, 195), f"Case 2 失败: 命中区域不匹配 -> {res_2}"
 
-    print("  >>> PASS: Case 2 验证通过 (真实金贝壳页稳定命中专属门禁)")
+    print("  >>> PASS: Case 2 验证通过 (真实金贝壳页必须命中 金贝壳_识别.png)")
 
 
 def test_case_3_exchange_success_verification():
@@ -144,10 +155,33 @@ def test_case_3_exchange_success_verification():
     
     post_router = pdata["GoldShellCouponPostExchangeRouter"]
     assert business_next(post_router) == [
+        "GoldShellCouponConfirmPopup",
+        "GoldShellCouponGreatButton",
         "GoldShellCouponRewardPopup",
         "GoldShellCouponExchangeDisappeared",
         "GoldShellCouponExchangeVerifyFailed",
-    ], "PostExchangeRouter 必须包含弹窗判定、按钮消失判定与失败兜底"
+    ], "PostExchangeRouter 必须先点确认对号，再点太好了，再判定结算弹窗/按钮消失/失败兜底"
+
+    confirm = pdata["GoldShellCouponConfirmPopup"]
+    assert confirm["template"] == "绿色勾选按钮.png"
+    assert confirm["action"] == "Click"
+    assert confirm["roi"] == [751, 404, 153, 150]
+    assert business_next(confirm) == ["GoldShellCouponPostConfirmRouter"]
+
+    post_confirm = pdata["GoldShellCouponPostConfirmRouter"]
+    assert business_next(post_confirm) == [
+        "GoldShellCouponGreatButton",
+        "GoldShellCouponRewardPopup",
+        "GoldShellCouponExchangeDisappeared",
+        "GoldShellCouponExchangeVerifyFailed",
+    ]
+    great = pdata["GoldShellCouponGreatButton"]
+    assert great["recognition"] == "OCR"
+    assert great["expected"] == "^太好了$"
+    assert great["roi"] == [568, 512, 153, 51]
+    assert great["action"] == "Click"
+    assert "target" not in great
+    assert business_next(great) == ["GoldShellCouponReturnCategory"]
 
     # 2. 方案 A: 兑换按钮消失识别器验证
     reco_disappear = CheckExchangeDisappearedReco()
@@ -165,11 +199,12 @@ def test_case_3_exchange_success_verification():
     node_popup = pdata["GoldShellCouponRewardPopup"]
     assert business_next(node_popup) == ["GoldShellCouponReturnCategory"], "结算弹窗处理后必须流向返回分类页"
 
-    print("  >>> PASS: Case 3 验证通过 (点击兑换经过 PostExchangeRouter，按钮消失/弹窗确认后流向返回)")
+    print("  >>> PASS: Case 3 验证通过 (点击兑换后先点对号，再点太好了，然后两次返回)")
 
 
 def test_case_4_exchange_unresponsive_verify_failed():
-    """Case 4: 点击兑换未生效 (兑换按钮依然存在且无弹窗) -> 必须进入失败熔断"""
+    """Case 4: 点击兑换未生效 (无确认对号、无结算弹窗且兑换按钮依然存在) -> 必须进入失败熔断。
+    确认弹窗出现时兑换按钮仍在是正常的，不能在对号之前把按钮仍在当成失败。"""
     print("\n--- [Test Case 4: 点击兑换未生效防假完成熔断] ---")
     pdata = load_pipeline()
 
@@ -181,16 +216,20 @@ def test_case_4_exchange_unresponsive_verify_failed():
     res_still_there = reco_disappear.analyze(ctx_still_there, MockArg())
     assert res_still_there is None, "Case 4 失败: 兑换按钮仍在时 CheckExchangeDisappearedReco 不得命中"
 
-    # 2. 验证 PostExchangeRouter 下一顺位命中 GoldShellCouponExchangeVerifyFailed
+    # 2. 确认对号必须排在按钮消失和失败熔断之前
     post_router = pdata["GoldShellCouponPostExchangeRouter"]
     candidates = business_next(post_router)
+    assert candidates[0] == "GoldShellCouponConfirmPopup", "确认对号必须优先于按钮消失判定"
     assert candidates[-1] == "GoldShellCouponExchangeVerifyFailed", "PostExchangeRouter 兜底必须是 ExchangeVerifyFailed"
+    assert candidates.index("GoldShellCouponConfirmPopup") < candidates.index(
+        "GoldShellCouponExchangeDisappeared"
+    )
 
     node_failed = pdata["GoldShellCouponExchangeVerifyFailed"]
     assert node_failed.get("action") == "StopTask", "Case 4 失败: ExchangeVerifyFailed 必须为 StopTask 熔断动作"
     assert "next" not in node_failed, "Case 4 失败: ExchangeVerifyFailed 绝不能有 next 节点，杜绝流向返回或 DONE"
 
-    print("  >>> PASS: Case 4 验证通过 (点击兑换未生效时严禁假完成，安全跌入 StopTask 熔断)")
+    print("  >>> PASS: Case 4 验证通过 (无对号且未生效时严禁假完成；对号弹窗期间按钮仍在不算失败)")
 
 
 def test_case_5_no_exchange_flow():
@@ -285,6 +324,45 @@ def test_case_7_standalone_safety():
     print("  >>> PASS: Case 7 验证通过 (active=False 独立运行下多次执行 DoneAction 绝不污染日常收尾队列)")
 
 
+def test_case_8_gold_page_identity_resume_and_starfish_recovery():
+    """Case 8: 金贝壳主页模板、步骤恢复顺序、海星误入恢复。"""
+    print("\n--- [Test Case 8: 金贝壳识别模板与海星误入恢复] ---")
+    pdata = load_pipeline()
+    identity = pdata["GoldShellCouponGoldPageIdentity"]
+    assert identity["template"] == "金贝壳_识别.png"
+    assert identity["roi"] == [515, 360, 232, 195]
+    assert identity["action"] == "DoNothing"
+
+    image_path = Path(__file__).resolve().parents[1] / "assets/resource/image/金贝壳_识别.png"
+    assert image_path.is_file(), "缺少 金贝壳_识别.png"
+    data = image_path.read_bytes()
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    import struct
+    width, height = struct.unpack(">II", data[16:24])
+    assert width <= 232 and height <= 195, f"金贝壳_识别.png {width}x{height} 超出 ROI 232x195"
+
+    assert business_next(pdata["GoldShellCouponRouter"]) == [
+        "GoldShellCouponVerifyGoldPage",
+        "GoldShellCouponVerifyCategoryPage",
+        "GoldShellCouponEntry",
+        "GoldShellCouponStarfishMisTouch",
+        "GoldShellCouponAbort",
+    ]
+    assert pdata["GoldShellCouponVerifyCategoryPage"].get("on_error") == [
+        "GoldShellCouponStarfishMisTouch"
+    ]
+    starfish = pdata["GoldShellCouponStarfishMisTouch"]
+    assert starfish["expected"] == "[萌乖亮]海星"
+    assert starfish["roi"] == [80, 70, 800, 100]
+    assert business_next(starfish) == ["GoldShellCouponStarfishReturn"]
+    starfish_return = pdata["GoldShellCouponStarfishReturn"]
+    assert starfish_return["expected"] == "^返回$"
+    assert starfish_return["action"] == "Click"
+    assert "target" not in starfish_return
+    assert business_next(starfish_return) == ["GoldShellCouponRouter"]
+    print("  >>> PASS: Case 8 验证通过 (金贝壳主页优先恢复，误入海星页先返回再重试)")
+
+
 def run_all():
     print("=" * 70)
     print("=== [GoldShellCouponTask] 离线安全性全量测试套件开始 ===")
@@ -297,9 +375,10 @@ def run_all():
     test_case_5_no_exchange_flow()
     test_case_6_done_action_idempotency()
     test_case_7_standalone_safety()
+    test_case_8_gold_page_identity_resume_and_starfish_recovery()
 
     print("\n" + "=" * 70)
-    print("=== [ALL 7 CASES PASSED 100%] 金贝壳券代码安全性加固验证全部通过！ ===")
+    print("=== [ALL 8 CASES PASSED 100%] 金贝壳券代码安全性加固验证全部通过！ ===")
     print("=" * 70)
 
 

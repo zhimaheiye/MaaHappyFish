@@ -1,0 +1,331 @@
+{
+    "GreenWildTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildEntry"
+        ]
+    },
+    "GreenWildEntry": {
+        "recognition": "TemplateMatch",
+        "template": "绿野寻仙踪_入口.png",
+        "roi": [140, 278, 49, 50],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪] 已点击入口，正在打开任务。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildOpenTask"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildOpenTask": {
+        "recognition": "TemplateMatch",
+        "template": "绿野寻仙踪_任务.png",
+        "roi": [41, 345, 68, 59],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪] 已点击任务，正在识别一键领取。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildClaimAll",
+            "GreenWildReturn"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildClaimAll": {
+        "recognition": "OCR",
+        "expected": "键领取",
+        "roi": [1089, 579, 107, 39],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪] 已点击一键领取，准备返回鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildReturn"
+        ],
+        "on_error": [
+            "GreenWildReturn"
+        ]
+    },
+    "GreenWildReturn": {
+        "recognition": "TemplateMatch",
+        "template": "绿野寻仙踪_返回.png",
+        "roi": [1180, 50, 61, 55],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪] 已点击返回，正在确认主鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildVerifyTank"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[绿野寻仙踪] 已确认返回主鱼缸。"
+        },
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪] 页面门禁未通过，已安全停止。"
+        }
+    },
+    "GreenWildDailyTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "InitGreenWildDailyAction",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "OpenShellStartPage",
+            "OpenShellEntry",
+            "OpenShellAbort"
+        ]
+    },
+    "GreenWildDailyBuyFishEntry": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckGreenWildDailyPendingReco",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 开贝壳一次已完成，开始去商店买鱼。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyOpenShop"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildDailyOpenShop": {
+        "recognition": "TemplateMatch",
+        "template": "买鱼入口.png",
+        "roi": [1171, 497, 44, 37],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 1200,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已点击买鱼入口。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailySelectShellFish"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildDailySelectShellFish": {
+        "recognition": "OCR",
+        "expected": "^贝币鱼儿$",
+        "roi": [411, 119, 116, 34],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已点击贝币鱼儿。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyClickFishCard"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildDailyClickFishCard": {
+        "recognition": "DirectHit",
+        "action": "Click",
+        "target": [93, 295, 208, 180],
+        "post_delay": 1000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已在指定范围内点击鱼卡。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyPurchase"
+        ]
+    },
+    "GreenWildDailyPurchase": {
+        "recognition": "OCR",
+        "expected": "^购买$",
+        "roi": [856, 521, 81, 38],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已点击购买。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyContinue"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildDailyContinue": {
+        "recognition": "OCR",
+        "expected": "^继续购物$",
+        "roi": [360, 543, 181, 39],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已点击继续购物。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyReturn1"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildDailyReturn1": {
+        "recognition": "OCR",
+        "expected": "^返回$",
+        "roi": [57, 28, 82, 45],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已点击第 1 次返回。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyReturn2"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildDailyReturn2": {
+        "recognition": "OCR",
+        "expected": "^返回$",
+        "roi": [57, 28, 82, 45],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已点击第 2 次返回，正在确认主鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyVerifyTank"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildDailyVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "Custom",
+        "custom_action": "GreenWildDailyDoneAction",
+        "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已确认返回主鱼缸，任务完成。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    }
+}

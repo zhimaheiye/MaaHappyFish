@@ -20,6 +20,8 @@ on:
       - "**.py"
       - "tools/collect_test_report.ps1"
       - "tools/collect-test-report.cmd"
+      - "tools/set_exe_icon.mjs"
+      - "tools/embed_exe_icon.py"
       - "happyfish.ico"
   pull_request:
     branches:
@@ -30,6 +32,8 @@ on:
       - "**.py"
       - "tools/collect_test_report.ps1"
       - "tools/collect-test-report.cmd"
+      - "tools/set_exe_icon.mjs"
+      - "tools/embed_exe_icon.py"
       - "happyfish.ico"
   workflow_dispatch:
 

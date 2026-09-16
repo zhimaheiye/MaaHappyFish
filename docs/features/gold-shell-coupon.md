@@ -4,8 +4,7 @@
 
 “兑换金贝壳券”(`GoldShellCouponTask`) 是开心水族箱贝壳体系下的常驻自动化子功能。支持从主鱼缸识别贝壳分类入口、从贝壳分类页就地启动，进入金贝壳页面后检查右上角“兑换”按钮，完成金贝壳券兑换；点击兑换后必须经过兑换后状态验证（按钮消失或结算弹窗）；若经多次复核无可兑换或今日已兑换，则作为正常完成分支退出；随后通过两级状态驱动返回安全回到主鱼缸。
 
-> ⚠️ **关于断点恢复说明**：
-> `GoldShellCoupon gold-page direct resume 暂未启用，等待真实页面专属门禁素材`。因仓库内尚无可信金贝壳主页全景视觉切片，为避免使用通用返回按钮伪造 Deepest-First 产生误判，Router 暂停金贝壳主页直接恢复，降级为从贝壳分类页与主鱼缸入口恢复。
+> 金贝壳主页使用用户提供的 `金贝壳_识别.png`（ROI `[515, 360, 232, 195]`）作为正向门禁。仅有左上角返回按钮不能当作金贝壳主页，避免海星宠物页误判。
 
 该功能既可作为独立任务（`GoldShellCouponTask`）运行，也可作为子任务接入【日常收尾】(`DailyRoutineTask`) 串行容器。
 
@@ -17,14 +16,17 @@
 
 ```text
 GoldShellCouponTask -> GoldShellCouponRouter
+                         ├─ 阶段 3: 已在金贝壳主页 (GoldShellCouponVerifyGoldPage / 金贝壳_识别.png)
                          ├─ 阶段 2: 已在贝壳分类页 (GoldShellCouponVerifyCategoryPage) -> 点击进入金贝壳
                          ├─ 阶段 1: 处于主鱼缸 (GoldShellCouponEntry) -> 点击贝壳入口
+                         ├─ 误入海星宠物页 (萌/乖/亮海星) -> 点击返回后重新走 Router
                          └─ 未知状态 -> GoldShellCouponAbort (安全停止，严禁盲点)
 ```
 
-- **金贝壳主页直接恢复**：暂未启用，等待真实页面专属门禁素材。
+- **阶段 3（金贝壳主页）**：命中 `金贝壳_识别.png`（ROI `[515, 360, 232, 195]`）后直接检查兑换按钮。
 - **阶段 2（贝壳分类页）**：命中顶部 `开贝壳_误触识别.png`（ROI `[498, 80, 280, 191]`），在 `[904, 579, 108, 40]` OCR 识别点击右侧“进入”按钮。
 - **阶段 1（主鱼缸）**：命中 `开贝壳_入口.png`（ROI `[289, 492, 168, 139]`），点击进入分类页。
+- **误入海星宠物页**：顶部 OCR `[萌乖亮]海星` 后点击左上角“返回”，再从 Router 重试。
 - **未知状态**：直接触发 `GoldShellCouponAbort`，记录显式日志并安全停止。
 
 ---
@@ -35,9 +37,10 @@ GoldShellCouponTask -> GoldShellCouponRouter
 flowchart TD
     Task[GoldShellCouponTask] --> Router{GoldShellCouponRouter 步骤恢复}
     
-    %% Router 分支 (金贝壳直接恢复暂未启用)
+    Router -- 阶段3: 已在金贝壳主页 --> VerifyGold[GoldShellCouponVerifyGoldPage]
     Router -- 阶段2: 已在分类页 --> VerifyCat[GoldShellCouponVerifyCategoryPage]
     Router -- 阶段1: 在主鱼缸 --> Entry[GoldShellCouponEntry: 点击开贝壳_入口.png]
+    Router -- 误入海星宠物页 --> Starfish[GoldShellCouponStarfishMisTouch -> 返回 -> Router]
     Router -- 未知状态 --> Abort[GoldShellCouponAbort: 安全停止]
 
     %% 阶段1 -> 阶段2
@@ -53,13 +56,23 @@ flowchart TD
     CheckExchange -- 命中兑换 --> DoExchange[GoldShellCouponCheckExchange: 点击兑换]
     DoExchange --> PostRouter{GoldShellCouponPostExchangeRouter 状态验证}
     
+    PostRouter -- 优先: 消耗确认对号弹窗 --> ConfirmPopup[GoldShellCouponConfirmPopup: 点击绿色勾选]
+    ConfirmPopup --> PostConfirm[GoldShellCouponPostConfirmRouter]
+
+    PostRouter -- 结算: 太好了 --> GreatBtn[GoldShellCouponGreatButton: [568,512,153,51] OCR 点击太好了]
+    PostConfirm -- 结算: 太好了 --> GreatBtn
+    GreatBtn --> ReturnCat[GoldShellCouponReturnCategory: 点击左上角返回]
+
     PostRouter -- 方案B: 出现获得/结算弹窗 --> RewardPopup[GoldShellCouponRewardPopup: 点击确定关闭]
-    RewardPopup --> ReturnCat[GoldShellCouponReturnCategory: 点击左上角返回]
+    PostConfirm -- 方案B --> RewardPopup
+    RewardPopup --> ReturnCat
 
     PostRouter -- 方案A: 兑换按钮已消失 --> ExchDisappeared[GoldShellCouponExchangeDisappeared: CheckExchangeDisappearedReco]
+    PostConfirm -- 方案A --> ExchDisappeared
     ExchDisappeared --> ReturnCat
 
-    PostRouter -- 按钮未消失且无弹窗 --> ExchFailed[GoldShellCouponExchangeVerifyFailed: StopTask 失败熔断]
+    PostRouter -- 无对号且按钮未消失且无结算弹窗 --> ExchFailed[GoldShellCouponExchangeVerifyFailed: StopTask 失败熔断]
+    PostConfirm -- 确认后仍无结果 --> ExchFailed
 
     CheckExchange -- 未命中 --> RetryExchange[GoldShellCouponExchangeRetry: 短暂延迟后再次识别兑换]
     RetryExchange -- 命中 --> PostRouter
@@ -85,10 +98,14 @@ flowchart TD
 | `GoldShellCouponEntry` | `TemplateMatch` (0.8) | `开贝壳_入口.png` | `[289, 492, 168, 139]` | `Click` | 主鱼缸贝壳入口 |
 | `GoldShellCouponVerifyCategoryPage` | `TemplateMatch` (0.8) | `开贝壳_误触识别.png` | `[498, 80, 280, 191]` | `DoNothing` | 贝壳分类页门禁（粉色小章鱼特征） |
 | `GoldShellCouponEnterGold` | `OCR` | `^进入$` | `[904, 579, 108, 40]` | `Click` | 分类页右侧金贝壳“进入”按钮 |
-| `GoldShellCouponVerifyGoldPage` | `Custom` | `CheckGoldShellPageReco` | 全屏核验 | `DoNothing` | 金贝壳主页专属门禁（排斥分类页并核验金贝壳场景） |
+| `GoldShellCouponGoldPageIdentity` | `TemplateMatch` (0.8) | `金贝壳_识别.png` | `[515, 360, 232, 195]` | `DoNothing` | 金贝壳主页正向识别模板 |
+| `GoldShellCouponVerifyGoldPage` | `Custom` | `CheckGoldShellPageReco` | 必须命中 `金贝壳_识别.png` | `DoNothing` | 金贝壳主页专属门禁（排斥分类页/海星页） |
+| `GoldShellCouponGreatButton` | `OCR` | `^太好了$` | `[568, 512, 153, 51]` | `Click` | 点完对号后的结算按钮，点击命中文字后再两次返回 |
 | `GoldShellCouponCheckExchange` | `OCR` | `^[兑兌][换換]$` | `[1136, 41, 91, 35]` | `Click` | 右上角兑换按钮（兼容繁简体） |
 | `GoldShellCouponExchangeRetry` | `OCR` | `^[兑兌][换換]$` | `[1136, 41, 91, 35]` | `Click` | 兑换按钮重试节点 |
-| `GoldShellCouponPostExchangeRouter` | `DirectHit` | - | - | `DoNothing` | 兑换后状态验证路由器 |
+| `GoldShellCouponPostExchangeRouter` | `DirectHit` | - | - | `DoNothing` | 兑换后状态验证路由器；优先识别确认对号 |
+| `GoldShellCouponConfirmPopup` | `TemplateMatch` (0.8) | `绿色勾选按钮.png` | `[751, 404, 153, 150]` | `Click` | 消耗确认弹窗对号。此弹窗出现时右上角兑换按钮仍在是正常的 |
+| `GoldShellCouponPostConfirmRouter` | `DirectHit` | - | - | `DoNothing` | 点完对号后再核实结算弹窗或兑换按钮消失 |
 | `GoldShellCouponRewardPopup` | `OCR` | `^(确定\|確定\|恭喜\|获得\|獲得\|奖励\|獎勵)$` | 全屏 | `Click` | 方案 B: 结算获得弹窗关闭 |
 | `GoldShellCouponExchangeDisappeared` | `Custom` | `CheckExchangeDisappearedReco` | `[1136, 41, 91, 35]` | `DoNothing` | 方案 A: 兑换按钮消失确认 |
 | `GoldShellCouponExchangeVerifyFailed` | `DirectHit` | - | - | `StopTask` | 状态未变熔断，严禁假完成 |
@@ -103,14 +120,17 @@ flowchart TD
 
 ### 1. 金贝壳主页专属门禁 (`CheckGoldShellPageReco`)
 严禁单独使用通用返回按钮作为金贝壳门禁。`CheckGoldShellPageReco` 采用双向验证：
-- **严格负向排斥**：检测到贝壳分类页小章鱼或进入按钮，或主鱼缸特征时，坚决返回 `None`，杜绝分类页误判为金贝壳主页；
-- **严格正向验证**：必须存在左上角返回按钮且确认脱离分类页特征。
+- **严格正向验证**：必须命中 `金贝壳_识别.png`（ROI `[515, 360, 232, 195]`）；
+- **严格负向排斥**：检测到贝壳分类页小章鱼、进入按钮或主鱼缸特征时返回 `None`；
+- **海星宠物页**：只有返回按钮、没有金贝壳模板时不得过门。命中 `[萌乖亮]海星` 后点击返回，再从 Router 重试。
 
 ### 2. 兑换后结果验证 (`GoldShellCouponPostExchangeRouter`)
 严禁点击“兑换”后仅靠 `post_delay` 就假定成功并返回。点击后流入状态验证路由器：
-- **方案 A (按钮消失)**：通过 `CheckExchangeDisappearedReco` 核实 `[1136, 41, 91, 35]` 兑换文字已消失；
+- **优先：消耗确认对号** (`GoldShellCouponConfirmPopup`)：实机确认弹窗文案为“兑换金贝壳券需要消耗25个贝壳券，是否继续呢？”，必须先点击绿色对号。此弹窗出现时右上角“兑换”按钮依然存在，这是正常的，不得据此判失败；
+- **结算：太好了** (`GoldShellCouponGreatButton`)：点完对号后，在 `[568, 512, 153, 51]` OCR 点击“太好了”，再执行两次返回；
+- **方案 A (按钮消失)**：点完对号后再通过 `CheckExchangeDisappearedReco` 核实 `[1136, 41, 91, 35]` 兑换文字已消失；
 - **方案 B (结算弹窗)**：通过 `GoldShellCouponRewardPopup` 捕获并关闭获得/结算弹窗；
-- **异常熔断 (`GoldShellCouponExchangeVerifyFailed`)**：若按钮依然存在且无弹窗，坚决触发 `StopTask` 熔断，绝不假完成。
+- **异常熔断 (`GoldShellCouponExchangeVerifyFailed`)**：既没有确认对号、也没有结算弹窗，且兑换按钮仍在，才触发 `StopTask` 熔断，绝不假完成。
 
 ### 3. 未识别到“兑换”时的语义收紧
 - 只有在金贝壳主页专属门禁成立 + 多次复核均无兑换按钮时，才流转到 `GoldShellCouponNoExchange`，正常结束并安全返回鱼缸。

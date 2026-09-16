@@ -13,6 +13,7 @@ except ModuleNotFoundError as e:
     ) from e
 
 from configure import configure_ocr_model
+from embed_exe_icon import embed_exe_icon
 
 
 working_dir = Path(__file__).parent.parent.resolve()
@@ -171,6 +172,38 @@ def install_icon():
 
     target_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source_icon, target_icon)
+
+    # logo.ico only changes the running window/tray. Explorer and shortcuts
+    # read the PE icon baked into the launcher exe, so rewrite that too.
+    if os_name == "win":
+        src_exe = install_path / "MFAAvalonia.exe"
+        dst_exe = install_path / "MaaHappyFish.exe"
+        if src_exe.exists():
+            embed_exe_icon(
+                src_exe,
+                source_icon,
+                working_dir,
+                product_name="MaaHappyFish",
+            )
+            if dst_exe.exists() and dst_exe.resolve() != src_exe.resolve():
+                dst_exe.unlink()
+            src_exe.replace(dst_exe)
+        elif dst_exe.exists():
+            embed_exe_icon(
+                dst_exe,
+                source_icon,
+                working_dir,
+                product_name="MaaHappyFish",
+            )
+        else:
+            print(f"Skip embedding exe icon: {src_exe} not found")
+    else:
+        src_bin = install_path / "MFAAvalonia"
+        dst_bin = install_path / "MaaHappyFish"
+        if src_bin.exists():
+            if dst_bin.exists() and dst_bin.resolve() != src_bin.resolve():
+                dst_bin.unlink()
+            src_bin.replace(dst_bin)
 
 
 def install_default_instance():

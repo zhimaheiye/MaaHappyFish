@@ -87,8 +87,27 @@
         "recognition": "TemplateMatch",
         "template": "签到_点击.png",
         "threshold": 0.8,
+        "roi": [0, 400, 1280, 320],
         "action": "Click",
-        "post_delay": 1000,
+        "post_delay": 1200,
+        "timeout": 4000,
+        "focus": "已识别并点击下方签到文字，准备关闭签到弹窗",
+        "next": [
+            "GlobalDailySignClose",
+            "GlobalDailySignAutoClosed"
+        ],
+        "on_error": [
+            "GlobalDailySignClaimByOcr"
+        ]
+    },
+    "GlobalDailySignClaimByOcr": {
+        "recognition": "OCR",
+        "expected": "^签到$",
+        "roi": [0, 400, 1280, 320],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 4000,
+        "focus": "已通过文字识别点击下方签到，准备关闭签到弹窗",
         "next": [
             "GlobalDailySignClose",
             "GlobalDailySignAutoClosed"

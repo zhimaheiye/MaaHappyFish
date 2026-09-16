@@ -33,6 +33,7 @@ try:
         mobile_ad_state,
         collect_fish_state,
         starfish_timer_state,
+        green_wild_daily_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -50,6 +51,7 @@ except ImportError:
         mobile_ad_state,
         collect_fish_state,
         starfish_timer_state,
+        green_wild_daily_state,
     )
 
 try:
@@ -127,18 +129,38 @@ def _band_fish_locate_target_card(context: Context, frame, target_name: str):
     return None, seen_texts
 
 
+def _ocr_texts(result):
+    texts = []
+    if not result:
+        return texts
+    best = getattr(result, "best_result", None)
+    if best:
+        text = str(getattr(best, "text", "")).strip()
+        if text:
+            texts.append(text)
+    for item in getattr(result, "all_results", []) or []:
+        text = str(getattr(item, "text", "")).strip()
+        if text and text not in texts:
+            texts.append(text)
+    return texts
+
+
 def _recognition_number(context: Context, node_name: str, frame):
     if frame is None or not hasattr(context, "run_recognition"):
         return None
     result = context.run_recognition(node_name, frame)
-    best = getattr(result, "best_result", None) if result and result.hit else None
-    text = getattr(best, "text", "").strip()
-    # Maa OCR 在这个白底数量框里会把单独的“1”稳定识别成右括号笔画。
+    texts = _ocr_texts(result)
+    text = texts[0] if texts else ""
+    # Maa OCR 在这个白底数量框里会把单独的“1”认成相似笔画。
     # 该兼容只作用于数量专用 ROI，避免把同形字符扩散到其他 OCR 节点。
-    if node_name == "BuyFishFoodQuantity" and text == "」":
+    if node_name == "BuyFishFoodQuantity" and text in {"」", "丨", "|", "I", "l", "i", "/", "／"}:
         text = "1"
     digits = "".join(char for char in text if char.isdigit())
-    return int(digits) if digits else None
+    if digits:
+        return int(digits)
+    if node_name == "BuyFishFoodQuantity":
+        print(f"[购买鱼食] 数量框 OCR 原文={texts!r}，无法解析为购买数量", flush=True)
+    return None
 
 
 @AgentServer.custom_action("CalcFishingFoodAction")
@@ -217,6 +239,14 @@ class FindCheapFishFoodAction(CustomAction):
             param = parse_dict_param(argv.custom_action_param)
             max_scrolls = safe_int(param.get("max_scrolls"), 4, min_val=0, max_val=8)
 
+            first_frame = _capture_720p(controller)
+            if (
+                _recognition_box(context, "BuyFishFoodDetailIdentity", first_frame) is not None
+                and _recognition_box(context, "BuyFishFoodUnitPrice", first_frame) is not None
+            ):
+                print("[购买鱼食] 已在廉价鱼食详情页，跳过商品列表查找", flush=True)
+                return True
+
             for scroll_index in range(max_scrolls + 1):
                 if _task_cancelled(context):
                     print("[购买鱼食] 已收到停止请求，终止查找", flush=True)
@@ -285,13 +315,17 @@ class BuyCheapFishFoodAction(CustomAction):
                 "BuyFishFoodPlusButton",
                 "BuyFishFoodPurchaseButton",
             )
-            if any(_recognition_box(context, node, frame) is None for node in required_nodes):
-                print("[购买鱼食] 廉价鱼食详情页门禁不完整，未执行购买", flush=True)
+            missing = [node for node in required_nodes if _recognition_box(context, node, frame) is None]
+            if missing:
+                print(f"[购买鱼食] 廉价鱼食详情页门禁不完整，缺: {', '.join(missing)}", flush=True)
                 return False
 
             current_quantity = _recognition_number(context, "BuyFishFoodQuantity", frame)
             if current_quantity is None or current_quantity < 1 or current_quantity > bags:
-                print("[购买鱼食] 当前购买数量无法安全确认，未执行购买", flush=True)
+                print(
+                    f"[购买鱼食] 当前购买数量无法安全确认（读到={current_quantity}，目标={bags}袋），未执行购买",
+                    flush=True,
+                )
                 return False
 
             print(f"[购买鱼食] 已确认廉价鱼食单价 400 金币，计划购买 {bags} 袋", flush=True)
@@ -3184,6 +3218,47 @@ class GoldenDolphinTaskAction(CustomAction):
             return False
 
 
+@AgentServer.custom_action("InitGreenWildDailyAction")
+class InitGreenWildDailyAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            green_wild_daily_state["pending_buy_fish"] = True
+            try:
+                context.override_pipeline({
+                    "OpenShellShouldContinue": {
+                        "custom_recognition_param": {
+                            "target_count": 1
+                        }
+                    }
+                })
+            except Exception:
+                pass
+            print("[绿野寻仙踪日常] 开始执行：先开贝壳 1 次，再去商店买鱼。", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[绿野寻仙踪日常] 初始化异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("GreenWildDailyDoneAction")
+class GreenWildDailyDoneAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            green_wild_daily_state["pending_buy_fish"] = False
+            print("[绿野寻仙踪日常] 已确认返回主鱼缸，任务完成", flush=True)
+            if daily_routine_state.get("active"):
+                current_step = daily_routine_state.get("step")
+                task_status = daily_routine_state.get("tasks", {}).get("GreenWildDaily", {}).get("status")
+                if current_step == "GREEN_WILD_DAILY" and task_status != "DONE":
+                    advance_daily_routine_step("GreenWildDaily", "DONE")
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[绿野寻仙踪日常] 完成状态写入异常: {e}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("InitDailyRoutineAction")
 class InitDailyRoutineAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -3193,6 +3268,7 @@ class InitDailyRoutineAction(CustomAction):
                 "FreeGift": {"status": "IDLE"},
                 "ReindeerFish": {"status": "IDLE"},
                 "GoldShellCoupon": {"status": "IDLE"},
+                "GreenWildDaily": {"status": "IDLE"},
                 "BandFish": {"status": "IDLE", "stage": "PASS1"},
                 "GoldenDolphin": {"status": "IDLE"},
                 "ShakeGame": {"status": "IDLE"},
@@ -3204,12 +3280,13 @@ class InitDailyRoutineAction(CustomAction):
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "gold_shell_coupon", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house"))
+            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house"))
 
             if has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
                 enable_gsc = bool(param.get("gold_shell_coupon", False))
+                enable_gwd = bool(param.get("green_wild_daily", False))
                 enable_bf = bool(param.get("band_fish", False))
                 enable_gd = bool(param.get("golden_dolphin", False))
                 enable_sg = bool(param.get("shake_game", False))
@@ -3229,6 +3306,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_fg = _is_node_enabled("DailyRoutineEnableFreeGift")
                 enable_rf = _is_node_enabled("DailyRoutineEnableReindeerFish")
                 enable_gsc = _is_node_enabled("DailyRoutineEnableGoldShellCoupon")
+                enable_gwd = _is_node_enabled("DailyRoutineEnableGreenWildDaily")
                 enable_bf = _is_node_enabled("DailyRoutineEnableBandFish")
                 enable_gd = _is_node_enabled("DailyRoutineEnableGoldenDolphin")
                 enable_sg = _is_node_enabled("DailyRoutineEnableShakeGame")
@@ -3248,6 +3326,8 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("REINDEER_FISH")
             if enable_gsc:
                 queue.append("GOLD_SHELL_COUPON")
+            if enable_gwd:
+                queue.append("GREEN_WILD_DAILY")
             if enable_gd:
                 queue.append("GOLDEN_DOLPHIN")
             if enable_sg:
@@ -3268,6 +3348,7 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 每日免费礼包 : {'[ON]' if enable_fg else '[OFF]'}", flush=True)
             print(f"  - 驯鹿鱼送收礼 : {'[ON]' if enable_rf else '[OFF]'}", flush=True)
             print(f"  - 兑换金贝壳券 : {'[ON]' if enable_gsc else '[OFF]'}", flush=True)
+            print(f"  - 绿野寻仙踪日常 : {'[ON]' if enable_gwd else '[OFF]'}", flush=True)
             print(f"  - 乐队鱼演出   : {'[ON]' if enable_bf else '[OFF]'}", flush=True)
             print(f"  - 金海豚小游戏 : {'[ON]' if enable_gd else '[OFF]'}", flush=True)
             print(f"  - 摇一摇小游戏 : {'[ON]' if enable_sg else '[OFF]'}", flush=True)
@@ -3289,7 +3370,7 @@ class InitDailyRoutineAction(CustomAction):
 
             task_labels = (
                 ("每日免费礼包", enable_fg), ("驯鹿鱼送收礼物", enable_rf),
-                ("兑换金贝壳券", enable_gsc), ("乐队鱼", enable_bf),
+                ("兑换金贝壳券", enable_gsc), ("绿野寻仙踪日常", enable_gwd), ("乐队鱼", enable_bf),
                 ("金海豚", enable_gd), ("摇一摇", enable_sg),
                 ("钓鱼达人", enable_fi), ("宝石礼盒兑换", enable_ggb),
                 ("宝石订单", enable_go), ("浪漫满屋", enable_rh),
@@ -3445,6 +3526,8 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 每日免费礼包 (FreeGift)     : {fg_st}", flush=True)
             print(f"  - 驯鹿鱼送收礼 (ReindeerFish) : {rf_st}", flush=True)
             print(f"  - 兑换金贝壳券 (GoldShellCoupon) : {gsc_st}", flush=True)
+            gwd_st = tasks.get("GreenWildDaily", {}).get("status", "SKIPPED")
+            print(f"  - 绿野寻仙踪日常 (GreenWildDaily) : {gwd_st}", flush=True)
             print(f"  - 乐队鱼演出 (BandFish)       : {bf_st}", flush=True)
             print(f"  - 金海豚小游戏 (GoldenDolphin) : {gd_st}", flush=True)
             print(f"  - 摇一摇小游戏 (ShakeGame)     : {sg_st}", flush=True)
@@ -4076,6 +4159,7 @@ GEM_SHAKE_CYCLES = 5
 GEM_SHAKE_SETTLE_DELAY_SECONDS = 1.5          # 每次摇晃后等待宝石下落沉降时间 (调参值)
 GEM_SHAKE_FINAL_SETTLE_DELAY_SECONDS = 1.5    # 全部摇晃完成后，最终补刀扫底前的额外沉降等待时间 (调参值)
 GEM_SHAKE_MAX_CONSECUTIVE_FAILURES = 3
+GEM_SHAKE_RPC_TIMEOUT_SECONDS = 5.0           # 挂机收宝允许 MuMu 短暂繁忙，比小游戏 2s 更宽
 SWEEP_BOTTOM_BEGIN = (221, 663)
 SWEEP_BOTTOM_END = (1007, 663)
 SWEEP_BOTTOM_DURATION_MS = 250
@@ -4113,7 +4197,8 @@ def execute_shake_gem_collect_cycle(
     统一执行一次鱼缸摇晃收宝循环:
     严格交替模式与充分沉降等待:
     Shake 1 -> Settle 1 -> Sweep 1 -> ... -> Shake N -> Settle N -> Sweep N -> Final Settle -> Final Sweep (补刀)
-    连续 3 次 shake 失败触发安全熔断；检测到任务取消立即退出。
+    连续 3 次 shake 失败时跳过本轮剩余摇晃，仍扫底后返回 True，避免把整次收鱼/巡检挂机判失败。
+    检测到任务取消立即退出。
     """
     manager_path, vm_index = _get_mumu_manager_and_vm(ctrl)
     if not manager_path or vm_index is None:
@@ -4125,12 +4210,15 @@ def execute_shake_gem_collect_cycle(
         return False
 
     consecutive_failures = 0
+    skipped_remaining_shakes = False
     for i in range(cycles):
         if _task_cancelled(context):
             print("[统一收宝石] 收到任务停止信号，安全退出摇晃循环", flush=True)
             return False
 
-        ok = _run_mumu_shake(manager_path, vm_index, timeout=2.0)
+        ok = _run_mumu_shake(
+            manager_path, vm_index, timeout=GEM_SHAKE_RPC_TIMEOUT_SECONDS
+        )
         if ok:
             consecutive_failures = 0
             print(f"[统一收宝石] Shake/Sweep ({i + 1}/{cycles})：shake 成功", flush=True)
@@ -4142,8 +4230,13 @@ def execute_shake_gem_collect_cycle(
                 flush=True,
             )
             if consecutive_failures >= GEM_SHAKE_MAX_CONSECUTIVE_FAILURES:
-                print("[统一收宝石] ERROR: 连续 3 次 shake RPC 失败，触发安全熔断！", flush=True)
-                return False
+                print(
+                    "[统一收宝石] 警告: 连续 3 次 shake RPC 失败，"
+                    "跳过本轮剩余摇晃并扫底后继续挂机",
+                    flush=True,
+                )
+                skipped_remaining_shakes = True
+                break
 
         if delay_between > 0:
             print(f"[统一收宝石] Shake/Sweep ({i + 1}/{cycles})：等待宝石下落 {delay_between:.1f}s", flush=True)
@@ -4173,7 +4266,10 @@ def execute_shake_gem_collect_cycle(
         perform_fish_tank_bottom_sweep(ctrl)
 
     # 循环结束后再等待充分沉降，给迟到的掉落物留出收取时间
-    print(f"[统一收宝石] {cycles}/{cycles} 摇晃扫底完成，进入最终沉降等待...", flush=True)
+    if skipped_remaining_shakes:
+        print("[统一收宝石] 本轮摇晃提前结束，进入最终沉降等待...", flush=True)
+    else:
+        print(f"[统一收宝石] {cycles}/{cycles} 摇晃扫底完成，进入最终沉降等待...", flush=True)
     if final_delay > 0:
         print(f"[统一收宝石] 等待最终批次宝石下落 {final_delay:.1f}s", flush=True)
         steps = int(final_delay / 0.1)
@@ -4199,7 +4295,17 @@ def execute_shake_gem_collect_cycle(
 
     print("[统一收宝石] 执行最终底部扫宝 (补刀)", flush=True)
     perform_fish_tank_bottom_sweep(ctrl)
-    print(f"[统一收宝石] 最终扫底完成，本鱼缸 SHAKE 收宝结束 (共 {cycles} 次摇晃 + {cycles + 1} 次扫底)", flush=True)
+    if skipped_remaining_shakes:
+        print(
+            "[统一收宝石] 最终扫底完成，本轮摇晃因 RPC 连续失败提前结束，挂机继续",
+            flush=True,
+        )
+    else:
+        print(
+            f"[统一收宝石] 最终扫底完成，本鱼缸 SHAKE 收宝结束 "
+            f"(共 {cycles} 次摇晃 + {cycles + 1} 次扫底)",
+            flush=True,
+        )
     return True
 
 

@@ -449,6 +449,7 @@ install
 
 # Tools
 tools/ImageCropper/**/*.png
+tools/.icon-patch/
 
 config
 debug
@@ -460,6 +461,9 @@ logs/
 temp/
 *.log
 MaaHappyFish-TestReport*/
+
+# Stale monolithic pipeline. Modular files live under pipeline/features; keep only .bak.
+assets/resource/pipeline/my_task.json
 
 # Local scratch and backup files
 *.rar

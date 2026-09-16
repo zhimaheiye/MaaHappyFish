@@ -24,6 +24,7 @@ from agent.my_action import (
     DailyFreeGiftDoneAction,
     ReindeerFishDoneAction,
     GoldShellCouponDoneAction,
+    GreenWildDailyDoneAction,
     ShakeGameDoneAction,
     GemGiftBoxDoneAction,
     GemOrderDoneAction,
@@ -72,11 +73,12 @@ def test_pipeline_topology():
         with open(pf, "r", encoding="utf-8") as f:
             pdata.update(json.load(f))
 
-    # 1. 验证 10 个 Enable 节点存在
+    # 1. 验证 Enable 节点存在
     for en in [
         "DailyRoutineEnableFreeGift",
         "DailyRoutineEnableReindeerFish",
         "DailyRoutineEnableGoldShellCoupon",
+        "DailyRoutineEnableGreenWildDaily",
         "DailyRoutineEnableBandFish",
         "DailyRoutineEnableGoldenDolphin",
         "DailyRoutineEnableShakeGame",
@@ -87,7 +89,7 @@ def test_pipeline_topology():
     ]:
         assert en in pdata, f"Missing enable node: {en}"
         assert pdata[en].get("enabled") is False, f"{en} default should be enabled: false"
-    print("[PASS] 10 个 DailyRoutineEnable* 节点配置正确 (默认 enabled: false)")
+    print("[PASS] DailyRoutineEnable* 节点配置正确 (默认 enabled: false)")
 
     # 2. 验证 Dispatcher 候选
     disp = pdata.get("DailyRoutineDispatcher", {})
@@ -96,6 +98,7 @@ def test_pipeline_topology():
         "DailyRoutineStepFreeGift",
         "DailyRoutineStepReindeerFish",
         "DailyRoutineStepGoldShellCoupon",
+        "DailyRoutineStepGreenWildDaily",
         "DailyRoutineStepBandFishPass1",
         "DailyRoutineStepGoldenDolphin",
         "DailyRoutineStepShakeGame",
@@ -127,10 +130,11 @@ def test_pipeline_topology():
     assert business_next(pdata["DailyFreeGiftVerifyTank"]) == dual_exit, "DailyFreeGiftVerifyTank 未接入双出口路由"
     assert business_next(pdata["ReindeerFishVerifyTank"]) == dual_exit, "ReindeerFishVerifyTank 未接入双出口路由"
     assert business_next(pdata["GoldShellCouponVerifyTank"]) == dual_exit, "GoldShellCouponVerifyTank 未接入双出口路由"
+    assert business_next(pdata["GreenWildDailyVerifyTank"]) == dual_exit, "GreenWildDailyVerifyTank 未接入双出口路由"
     assert business_next(pdata["GemGiftBoxVerifyTank"]) == dual_exit, "GemGiftBoxVerifyTank 未接入双出口路由"
     assert business_next(pdata["GemOrderVerifyTank"]) == dual_exit, "GemOrderVerifyTank 未接入双出口路由"
     assert business_next(pdata["RomanticHouseDone"]) == dual_exit, "RomanticHouseDone 未接入双出口路由"
-    print("[PASS] 摇一摇、金海豚、钓鱼达人、免费礼包、驯鹿鱼、金贝壳券、宝石礼盒、浪漫满屋 均已接入双出口路由")
+    print("[PASS] 摇一摇、金海豚、钓鱼达人、免费礼包、驯鹿鱼、金贝壳券、绿野寻仙踪日常、宝石礼盒、浪漫满屋 均已接入双出口路由")
 
     # 5. 免费礼包必须是二选一分支；领取成功后不再检查“已售罄”。
     assert business_next(pdata["DailyFreeGiftAvailabilityRouter"]) == [
@@ -206,6 +210,7 @@ def test_pipeline_topology():
     assert "驯鹿鱼送收礼物" in routine_cases
     assert "宝石礼盒兑换" in routine_cases
     assert "宝石订单" in routine_cases
+    assert "绿野寻仙踪日常" in routine_cases
     print("[PASS] 独立钓鱼双饵食模式、日常固定普通饵食及三份 interface.json 同步")
 
     # 7. 鱼饵耗尽是钓场内的正常终态：各运行阶段都应优先识别，并复用既有安全退出链。
@@ -334,6 +339,11 @@ def simulate_flow(config_param):
             loops += 1
             continue
 
+        if cur_step == "GREEN_WILD_DAILY":
+            assert GreenWildDailyDoneAction().run(ctx, arg) is True
+            loops += 1
+            continue
+
         if cur_step == "SHAKE_GAME":
             assert ShakeGameDoneAction().run(ctx, arg) is True
             loops += 1
@@ -363,6 +373,7 @@ def test_combination_1():
         "free_gift": True,
         "reindeer_fish": True,
         "gold_shell_coupon": True,
+        "green_wild_daily": True,
         "band_fish": True,
         "golden_dolphin": True,
         "shake_game": True,
@@ -377,6 +388,7 @@ def test_combination_1():
         "FREE_GIFT",
         "REINDEER_FISH",
         "GOLD_SHELL_COUPON",
+        "GREEN_WILD_DAILY",
         "GOLDEN_DOLPHIN",
         "SHAKE_GAME",
         "FISHING",
@@ -396,6 +408,14 @@ def test_gold_shell_coupon_only():
     expected = ["GOLD_SHELL_COUPON", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 兑换金贝壳券可独立启用并正常推进: {' -> '.join(steps)}")
+
+
+def test_green_wild_daily_only():
+    print("--- [Check 3G: 仅绿野寻仙踪日常] ---")
+    steps = simulate_flow({"green_wild_daily": True})
+    expected = ["GREEN_WILD_DAILY", "ALL_DONE"]
+    assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
+    print(f"[PASS] 绿野寻仙踪日常可独立启用并正常推进: {' -> '.join(steps)}")
 
 
 def test_gem_gift_box_only():
@@ -625,6 +645,7 @@ def test_architecture_contract_no_hardcoded_dispatcher():
         "gem_gift_box.json": "GemGiftBoxVerifyTank",
         "gem_order.json": "GemOrderVerifyTank",
         "romantic_house.json": "RomanticHouseDone",
+        "green_wild.json": "GreenWildDailyVerifyTank",
     }
     for fname, exit_node in subtask_files.items():
         fpath = os.path.join("assets", "resource", "pipeline", "features", fname)
@@ -748,14 +769,16 @@ def test_gold_shell_coupon_contract_cases():
     assert rf_idx < gsc_idx < gd_idx, f"Case 2 失败: 顺序错误 -> {steps_order}"
     print("[PASS] Case 2: 队列顺序验证通过 (REINDEER_FISH -> GOLD_SHELL_COUPON -> GOLDEN_DOLPHIN)")
 
-    # Case 3, 4, 5: 步骤恢复路由器 (因金贝壳主页专属视觉模板未录入，暂停金贝壳直接恢复，严格按分类页 -> 主鱼缸入口降级执行)
+    # Case 3, 4, 5: 步骤恢复路由器 (金贝壳主页优先，其次分类页、主鱼缸入口，误入海星页可恢复)
     router_next = business_next(gsc_pipeline["GoldShellCouponRouter"])
     assert router_next == [
+        "GoldShellCouponVerifyGoldPage",
         "GoldShellCouponVerifyCategoryPage",
         "GoldShellCouponEntry",
+        "GoldShellCouponStarfishMisTouch",
         "GoldShellCouponAbort",
     ], f"Case 3-5 失败: 步骤恢复顺序错误 -> {router_next}"
-    print("[PASS] Case 3-5: 步骤恢复路由器验证通过 (暂停金贝壳直接恢复，分类页 -> 主鱼缸入口 -> Abort)")
+    print("[PASS] Case 3-5: 步骤恢复路由器验证通过 (金贝壳主页 -> 分类页 -> 主鱼缸入口 -> 海星误入恢复 -> Abort)")
 
     # Case 6 & 7: 有/无兑换与重试收紧机制 + 兑换后结果验证
     check_exchange = gsc_pipeline["GoldShellCouponCheckExchange"]
@@ -770,10 +793,18 @@ def test_gold_shell_coupon_contract_cases():
 
     post_router = gsc_pipeline["GoldShellCouponPostExchangeRouter"]
     assert business_next(post_router) == [
+        "GoldShellCouponConfirmPopup",
+        "GoldShellCouponGreatButton",
         "GoldShellCouponRewardPopup",
         "GoldShellCouponExchangeDisappeared",
         "GoldShellCouponExchangeVerifyFailed",
     ], "Case 7 失败: PostExchangeRouter 分支不完整"
+    great = gsc_pipeline["GoldShellCouponGreatButton"]
+    assert great["expected"] == "^太好了$"
+    assert great["roi"] == [568, 512, 153, 51]
+    assert great["action"] == "Click"
+    assert "target" not in great
+    assert business_next(great) == ["GoldShellCouponReturnCategory"]
     print("[PASS] Case 6-7: 兑换识别与 PostExchangeRouter 状态验证机制验证通过")
 
     # Case 8: 两级状态驱动返回 (金贝壳 -> 分类页验证 -> 分类页返回 -> 鱼缸确认)
@@ -825,6 +856,7 @@ def main():
     test_free_gift_only()
     test_reindeer_fish_only()
     test_gold_shell_coupon_only()
+    test_green_wild_daily_only()
     test_shake_game_only()
     test_gem_gift_box_only()
     test_gem_order_only()

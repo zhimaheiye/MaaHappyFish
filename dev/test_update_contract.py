@@ -97,14 +97,50 @@ def test_install_workflow_safety():
     icon = REPO_ROOT / "happyfish.ico"
     assert icon.is_file() and icon.read_bytes()[:4] == b"\x00\x00\x01\x00"
     assert 'target_icon = target_dir / "logo.ico"' in installer
+    assert 'dst_exe = install_path / "MaaHappyFish.exe"' in installer
+    assert "product_name=\"MaaHappyFish\"" in installer or "product_name='MaaHappyFish'" in installer
+    assert (REPO_ROOT / "tools" / "set_exe_icon.mjs").is_file()
+    assert (REPO_ROOT / "tools" / "embed_exe_icon.py").is_file()
     assert 'working_dir / "assets" / "default_instance.json"' in installer
     assert '"happyfish.ico"' in content
     print("[PASS] Workflow packaging rules verified.")
+
+
+def _ico_image_payload(icon_bytes: bytes) -> bytes:
+    assert icon_bytes[:4] == b"\x00\x00\x01\x00", "Not a Windows ICO"
+    count = int.from_bytes(icon_bytes[4:6], "little")
+    assert count >= 1, "ICO contains no images"
+    img_size = int.from_bytes(icon_bytes[14:18], "little")
+    img_off = int.from_bytes(icon_bytes[18:22], "little")
+    payload = icon_bytes[img_off : img_off + img_size]
+    assert payload, "ICO image payload is empty"
+    return payload
+
+
+def test_windows_exe_icon_embedded():
+    bundle_exe = REPO_ROOT / "bundle" / "MaaHappyFish.exe"
+    if not bundle_exe.is_file():
+        print("[SKIP] bundle/MaaHappyFish.exe not present; exe icon check runs in CI verify job.")
+        return
+
+    assert not (REPO_ROOT / "bundle" / "MFAAvalonia.exe").exists(), (
+        "bundle still contains MFAAvalonia.exe; launcher should be renamed to MaaHappyFish.exe"
+    )
+    icon = REPO_ROOT / "happyfish.ico"
+    payload = _ico_image_payload(icon.read_bytes())
+    exe_bytes = bundle_exe.read_bytes()
+    needle = payload[: min(len(payload), 4096)]
+    assert needle in exe_bytes, (
+        "bundle/MaaHappyFish.exe does not contain happyfish.ico payload; "
+        "Explorer/shortcut icon was not rewritten during packaging."
+    )
+    print("[PASS] bundle/MaaHappyFish.exe embeds the project icon payload.")
 
 if __name__ == "__main__":
     try:
         test_interface_contracts()
         test_install_workflow_safety()
+        test_windows_exe_icon_embedded()
         print("\nALL UPDATE CONTRACT CHECKS PASSED 100%!")
     except AssertionError as e:
         print(f"\n[FAIL] Update contract assertion failed: {e}", file=sys.stderr)
