@@ -91,8 +91,11 @@ class ManateePipelineTest(unittest.TestCase):
         self.assertEqual(select_manatee["expected"], "海牛先生")
         self.assertEqual(select_manatee["roi"], [460, 185, 183, 127])
         exhausted = self.manatee["ManateeExhausted"]
-        self.assertEqual(exhausted["expected"], "刷新体力")
-        self.assertEqual(exhausted["roi"], [0, 70, 327, 244])
+        self.assertEqual(exhausted["expected"], "^0剩余$")
+        self.assertEqual(exhausted["roi"], [37, 88, 219, 149])
+        feed_param = self.manatee["ManateeFeedUntilExhausted"]["custom_action_param"]
+        self.assertNotIn("min_clicks", feed_param, "旧 min_clicks 语义必须移除")
+        self.assertEqual(feed_param["max_clicks"], 120)
         tank_next = self.manatee["ManateeTankIdentity"]["next"]
         self.assertLess(
             tank_next.index("ManateeExhausted"), tank_next.index("ManateeOpenFeed")
@@ -138,28 +141,26 @@ class ManateePipelineTest(unittest.TestCase):
             "ManateeVerifyMainTank", self.manatee["ManateeBackToTank"]["next"]
         )
 
-    def test_feed_clicks_at_least_30_until_exhausted(self):
+    def test_feed_stops_as_soon_as_exhausted(self):
+        """第 7 次投喂后体力归零：click_count=7 即停，不得继续点到 30。"""
         init = InitManateeStateAction()
         init.run(None, SimpleNamespace(custom_action_param={"return_mode": "standalone"}))
         self.assertEqual(runtime_state.manatee_state["return_mode"], "standalone")
 
-        context = _Context(exhausted_after=30)
-        argv = SimpleNamespace(
-            custom_action_param={"min_clicks": 30, "max_clicks": 120}
-        )
+        context = _Context(exhausted_after=7)
+        argv = SimpleNamespace(custom_action_param={"max_clicks": 120})
         with patch("agent.my_action.time.sleep", return_value=None):
             result = FeedManateeUntilExhaustedAction().run(context, argv)
         self.assertTrue(result)
-        self.assertEqual(len(context.tasker.controller.clicks), 30)
+        self.assertEqual(len(context.tasker.controller.clicks), 7)
+        self.assertEqual(runtime_state.manatee_state["last_feed_count"], 7)
         for x, y in context.tasker.controller.clicks:
             self.assertTrue(792 <= x < 1133)
             self.assertTrue(288 <= y < 643)
 
     def test_feed_stops_before_click_when_page_gate_is_missing(self):
         context = _Context(exhausted_after=30, tank_visible=False)
-        argv = SimpleNamespace(
-            custom_action_param={"min_clicks": 30, "max_clicks": 120}
-        )
+        argv = SimpleNamespace(custom_action_param={"max_clicks": 120})
         result = FeedManateeUntilExhaustedAction().run(context, argv)
         self.assertFalse(result)
         self.assertEqual(context.tasker.controller.clicks, [])
@@ -167,12 +168,36 @@ class ManateePipelineTest(unittest.TestCase):
     def test_feed_stops_immediately_when_task_is_cancelled(self):
         context = _Context(exhausted_after=30)
         context.tasker.stopping = True
-        argv = SimpleNamespace(
-            custom_action_param={"min_clicks": 30, "max_clicks": 120}
-        )
+        argv = SimpleNamespace(custom_action_param={"max_clicks": 120})
         result = FeedManateeUntilExhaustedAction().run(context, argv)
         self.assertFalse(result)
         self.assertEqual(context.tasker.controller.clicks, [])
+
+    def test_feed_does_not_click_when_already_exhausted(self):
+        """一进入页面就是 0 剩余：零点击直接完成。"""
+        init = InitManateeStateAction()
+        init.run(None, SimpleNamespace(custom_action_param={"return_mode": "standalone"}))
+
+        context = _Context(exhausted_after=0)
+        argv = SimpleNamespace(custom_action_param={"max_clicks": 120})
+        with patch("agent.my_action.time.sleep", return_value=None):
+            result = FeedManateeUntilExhaustedAction().run(context, argv)
+        self.assertTrue(result)
+        self.assertEqual(context.tasker.controller.clicks, [])
+        self.assertEqual(runtime_state.manatee_state["last_feed_count"], 0)
+
+    def test_feed_stops_after_single_feed_when_exhausted_after_one(self):
+        """投 1 次后体力归零：下一帧立即停止，click_count=1。"""
+        init = InitManateeStateAction()
+        init.run(None, SimpleNamespace(custom_action_param={"return_mode": "standalone"}))
+
+        context = _Context(exhausted_after=1)
+        argv = SimpleNamespace(custom_action_param={"max_clicks": 120})
+        with patch("agent.my_action.time.sleep", return_value=None):
+            result = FeedManateeUntilExhaustedAction().run(context, argv)
+        self.assertTrue(result)
+        self.assertEqual(len(context.tasker.controller.clicks), 1)
+        self.assertEqual(runtime_state.manatee_state["last_feed_count"], 1)
 
     def test_friend_gem_initialization_selects_friend_return_mode(self):
         InitFriendGemStateAction().run(None, None)

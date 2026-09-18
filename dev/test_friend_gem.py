@@ -85,6 +85,8 @@ class FriendGemSimulator:
             return self.page["kind"] == "exhausted"  # OCR "刷新体力"
         if name == "FriendGemQuickCollectAvailable":
             return self.page["kind"] == "tank" and self.page["quick_available"]
+        if name == "FriendGemQuickCollectAvailableAlt":
+            return self.page["kind"] == "tank" and self.page.get("alt_available", False)
         if name == "FriendGemQuickCollectUnavailable":
             return self.page["kind"] == "tank" and not self.page["quick_available"]
         if name == "FriendGemCollectBubble":
@@ -224,6 +226,17 @@ def run_tests():
     assert sim.outcome == "next_friend_cycle", "不得以失败/错误收尾"
     print("[PASS] Case 2 快捷摸宝后仍有体力：视为正常状态，直接切换下一位，不回退气泡模式")
 
+    # ---- 静态契约：第二位置（两个特殊好友）Alt 节点 ----
+    alt = pipeline["FriendGemQuickCollectAvailableAlt"]
+    assert alt["template"] == "好友摸宝快捷键_可用.png", "两位置共用同一可用模板"
+    assert alt["threshold"] == 0.8
+    assert alt["roi"] == [155, 589, 123, 120], "第二位置 ROI 与主位置同尺寸(123x120)，中心对齐用户给的点"
+    assert alt["action"] == "Click" and "target" not in alt
+    assert business_next(alt) == ["FriendGemQuickCollectPostRouter"], "特殊好友点击后同样进入 PostRouter 分流"
+    router_next = business_next(pipeline["FriendGemFriendRouter"])
+    assert router_next.index("FriendGemQuickCollectAvailable") < router_next.index("FriendGemQuickCollectAvailableAlt") < router_next.index("FriendGemQuickCollectUnavailable")
+    print("[PASS] Alt 静态契约：第二位置同模板同尺寸 ROI，命中后汇入同一 PostRouter")
+
     # ---- Case 3：快捷键一开始不可用 → 气泡模式保持 ----
     init_state()
     sim = FriendGemSimulator(pipeline, fresh_page(quick_available=False), bubble_reco, limit_reco)
@@ -259,6 +272,22 @@ def run_tests():
     sim._follow("FriendGemNextFriend")
     assert friend_gem_state["current_friend_index"] == 3
     print("[PASS] Case 5 切好友复用 StepIndex/ResetAttempts：序号 +1、attempts 与 miss 清零")
+
+    # ---- Case 5B：特殊好友——按钮在第二位置，主位置无按钮 ----
+    init_state()
+    sim = FriendGemSimulator(
+        pipeline,
+        {"kind": "tank", "quick_available": False, "alt_available": True, "bubble_visible": False},
+        bubble_reco, limit_reco,
+    )
+    sim._follow("FriendGemFriendRouter")
+    assert "FriendGemQuickCollectAvailableAlt" in sim.visited, sim.visited
+    assert "FriendGemQuickCollectAvailable" not in sim.visited, "主位置无按钮不得误点"
+    assert "FriendGemQuickCollectPostRouter" in sim.visited
+    assert "FriendGemImageFallbackRouter" not in sim.visited
+    assert "FriendGemNextFriend" in sim.visited
+    assert sim.outcome == "next_friend_cycle"
+    print("[PASS] Case 5B 特殊好友（第二位置按钮）：命中即点击并汇入同一 PostRouter 分流")
 
     # ---- 静态可达性：快捷摸宝成功后的全部可达节点不含气泡模式 ----
     def reachable_within_current_friend(start):

@@ -58,7 +58,12 @@
         "recognition": "TemplateMatch",
         "template": "好友页面_入口.png",
         "threshold": 0.8,
-        "roi": [1128, 205, 131, 124],
+        "roi": [
+            1128,
+            205,
+            131,
+            124
+        ],
         "action": "Click",
         "post_delay": 1200,
         "next": [
@@ -79,7 +84,12 @@
     "ManateeStartFromFriendList": {
         "recognition": "OCR",
         "expected": "海牛先生",
-        "roi": [460, 185, 183, 127],
+        "roi": [
+            460,
+            185,
+            183,
+            127
+        ],
         "action": "Click",
         "post_delay": 1500,
         "next": [
@@ -100,7 +110,12 @@
     "ManateeTankIdentity": {
         "recognition": "OCR",
         "expected": "海牛先生",
-        "roi": [300, 40, 350, 80],
+        "roi": [
+            300,
+            40,
+            350,
+            80
+        ],
         "action": "DoNothing",
         "timeout": 5000,
         "next": [
@@ -123,7 +138,12 @@
         "recognition": "TemplateMatch",
         "template": "好友_喂食.png",
         "threshold": 0.8,
-        "roi": [1126, 258, 143, 145],
+        "roi": [
+            1126,
+            258,
+            143,
+            145
+        ],
         "action": "Click",
         "post_delay": 500,
         "next": [
@@ -145,7 +165,12 @@
         "recognition": "TemplateMatch",
         "template": "海牛先生_选择喂食.png",
         "threshold": 0.8,
-        "roi": [795, 265, 159, 135],
+        "roi": [
+            795,
+            265,
+            159,
+            135
+        ],
         "action": "Click",
         "post_delay": 500,
         "next": [
@@ -160,7 +185,7 @@
             "ManateeAbort"
         ],
         "focus": {
-            "Node.Action.Succeeded": "[海牛先生] 已选择指定鱼食，开始连续喂食；至少点击 30 次并等待刷新体力出现。"
+            "Node.Action.Succeeded": "[海牛先生] 已选择指定鱼食，开始投喂；每次投喂前检查剩余体力，体力归零后立即停止。"
         }
     },
     "ManateeFeedUntilExhausted": {
@@ -168,7 +193,6 @@
         "action": "Custom",
         "custom_action": "FeedManateeUntilExhaustedAction",
         "custom_action_param": {
-            "min_clicks": 30,
             "max_clicks": 120
         },
         "next": [
@@ -184,14 +208,19 @@
             "ManateeAbort"
         ],
         "focus": {
-            "Node.Action.Succeeded": "[海牛先生] 已完成至少 30 次喂食并识别到刷新体力，准备返回。",
+            "Node.Action.Succeeded": "[海牛先生] 已确认体力为 0，停止继续投喂。",
             "Node.Action.Failed": "[海牛先生] 喂食未达到安全终态，已停止继续点击。"
         }
     },
     "ManateeExhausted": {
         "recognition": "OCR",
-        "expected": "刷新体力",
-        "roi": [0, 70, 327, 244],
+        "expected": "^0剩余$",
+        "roi": [
+            37,
+            88,
+            219,
+            149
+        ],
         "action": "DoNothing",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -203,7 +232,7 @@
             "ManateeReturnFriendGem"
         ],
         "focus": {
-            "Node.Action.Succeeded": "[海牛先生] 已识别到刷新体力，无需继续投喂，准备返回。"
+            "Node.Action.Succeeded": "[海牛先生] 已确认体力为 0，无需继续投喂，准备返回。"
         }
     },
     "ManateeReturnStandalone": {
@@ -244,7 +273,12 @@
     "ManateeBackToFriendList": {
         "recognition": "OCR",
         "expected": "返回",
-        "roi": [1, 0, 189, 119],
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
         "action": "Click",
         "post_delay": 1000,
         "next": [
@@ -265,7 +299,12 @@
     "ManateeVerifyFriendList": {
         "recognition": "OCR",
         "expected": "星级好友",
-        "roi": [110, 100, 200, 55],
+        "roi": [
+            110,
+            100,
+            200,
+            55
+        ],
         "action": "DoNothing",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -282,7 +321,12 @@
     "ManateeBackToTank": {
         "recognition": "OCR",
         "expected": "返回",
-        "roi": [1, 0, 189, 119],
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
         "action": "Click",
         "post_delay": 1000,
         "next": [
@@ -303,7 +347,12 @@
     "ManateeVerifyMainTank": {
         "recognition": "TemplateMatch",
         "template": "主界面特征.png",
-        "roi": [0, 200, 150, 400],
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
         "threshold": 0.7,
         "action": "DoNothing",
         "timeout": 5000,

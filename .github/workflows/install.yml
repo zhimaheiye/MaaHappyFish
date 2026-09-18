@@ -201,6 +201,12 @@ jobs:
             }
           }
 
+      - name: Seed sea otter runtime status
+        shell: bash
+        run: |
+          mkdir -p install/resource/runtime
+          cp assets/resource/runtime/sea_otter_status.default.md install/resource/runtime/sea_otter_status.md
+
       - name: Bundle third-party licenses
         shell: bash
         run: |

@@ -1,6 +1,6 @@
 # 当前交接档案 (CURRENT.md)
 
-**更新时间**: 2026-09-19
+**更新时间**: 2026-09-20
 
 ---
 
@@ -8,8 +8,8 @@
 
 | 项目 | 信息 |
 | :--- | :--- |
-| **Current version** | `0.6.0` |
-| **Latest release** | [`v0.6.0`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.6.0) |
+| **Current version** | `0.6.1` |
+| **Latest release** | [`v0.6.1`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.6.1) |
 | **CI hard gate** | `verify (win, x86_64)` PASS（实机 embedded Python 冒烟 + 更新契约门禁） |
 | **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新 |
 

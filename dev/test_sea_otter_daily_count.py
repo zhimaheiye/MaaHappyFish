@@ -204,6 +204,61 @@ def run_tests():
         # 清理环境变量，避免影响同进程其它测试
         os.environ.pop("MAAHAPPYFISH_STATE_DIR", None)
 
+    # ---- 状态 markdown 展示层（唯一真源 = state.json）----
+    from datetime import datetime as _dt
+    from agent.runtime_state import sea_otter_gem_state
+
+    with tempfile.TemporaryDirectory() as tmp2:
+        os.environ["MAAHAPPYFISH_STATE_DIR"] = tmp2
+        state_file = Path(tmp2) / "state.json"
+
+        def write_state(runs, game_day=None):
+            state_file.write_text(
+                json.dumps({"version": 1, "sea_otter": {
+                    "game_day": game_day or ls.get_current_game_day(),
+                    "completed_runs": runs}}, ensure_ascii=False),
+                encoding="utf-8",
+            )
+
+        # 各计数档 → 文案
+        for n in (0, 2, 3):
+            write_state(n)
+            md = ls.build_sea_otter_status_markdown()
+            assert f"{n} / 3" in md, (n, md)
+            assert "今日完整运行" in md
+        print("[PASS] markdown formatter：0/2/3 档文案正确")
+
+        # 跨游戏日：旧日记录 2 次，04:00 后读取 → 0 / 3
+        write_state(2, game_day="2026-09-17")
+        md = ls.build_sea_otter_status_markdown(_dt(2026, 9, 18, 4, 1))
+        assert "0 / 3" in md
+        print("[PASS] markdown 跨游戏日：04:00 后展示归零")
+
+        # 真源一致性：只改 state.json → regenerate → markdown 跟随
+        write_state(2)
+        md_path = ls.write_sea_otter_status_markdown()
+        md_text = md_path.read_text(encoding="utf-8")
+        assert "2 / 3" in md_text and "今日完整运行" in md_text
+        print("[PASS] write_sea_otter_status_markdown：从 state.json 生成文件（展示缓存，非第二真源）")
+
+        # Finalize 正常完成 → markdown 同步；Safety → 不变化
+        from agent.my_action import SeaOtterFinalizeAction as _Fin
+        write_state(1)
+        sea_otter_gem_state["daily_count_recorded"] = False
+        sea_otter_gem_state["normal_completion"] = True
+        assert _Fin().run(MockContext(), MockArg()) is True
+        assert "2 / 3" in md_path.read_text(encoding="utf-8"), "Finalize 后 markdown 必须同步为 2/3"
+
+        sea_otter_gem_state["daily_count_recorded"] = False
+        sea_otter_gem_state["normal_completion"] = False
+        sea_otter_gem_state["completion_reason"] = "SAFETY_MAX_HARVESTS"
+        assert _Fin().run(MockContext(), MockArg()) is True
+        assert "2 / 3" in md_path.read_text(encoding="utf-8"), "Safety 结束不得改变计数"
+        sea_otter_gem_state["completion_reason"] = None
+        print("[PASS] Finalize → markdown 同步：正常完成 +1 跟随，Safety 不变化")
+
+    os.environ.pop("MAAHAPPYFISH_STATE_DIR", None)
+
     print("[PASS] 海獭摸宝每日计数专项测试全部通过")
 
 

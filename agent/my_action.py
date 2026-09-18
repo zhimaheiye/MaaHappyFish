@@ -558,8 +558,7 @@ class FeedManateeUntilExhaustedAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             param = parse_dict_param(getattr(argv, "custom_action_param", None))
-            min_clicks = safe_int(param.get("min_clicks"), 30, 30, 120)
-            max_clicks = safe_int(param.get("max_clicks"), 120, min_clicks, 300)
+            max_clicks = safe_int(param.get("max_clicks"), 120, 1, 300)
             controller = context.tasker.controller
             click_points = (
                 (850, 360), (962, 360), (1075, 360),
@@ -577,14 +576,22 @@ class FeedManateeUntilExhaustedAction(CustomAction):
                     print("[海牛先生] 截图失败，终止喂食", flush=True)
                     return False
 
-                if click_count >= min_clicks and _recognition_box(
+                # 每次投喂前先确认体力：只要识别到"0剩余"立即停止，min_clicks 旧
+                # 语义（至少投 30 次后才允许判断耗尽）已移除。
+                if _recognition_box(
                     context, "ManateeExhausted", frame
                 ) is not None:
                     manatee_state["last_feed_count"] = click_count
-                    print(
-                        f"[海牛先生] 已投喂 {click_count} 次并识别到刷新体力，喂食完成",
-                        flush=True,
-                    )
+                    if click_count == 0:
+                        print(
+                            "[海牛先生] 已确认当前体力为 0，无需投喂，准备返回。",
+                            flush=True,
+                        )
+                    else:
+                        print(
+                            f"[海牛先生] 已投喂 {click_count} 次并确认体力为 0，停止继续投喂。",
+                            flush=True,
+                        )
                     return True
 
                 if click_count >= max_clicks:
@@ -602,7 +609,7 @@ class FeedManateeUntilExhaustedAction(CustomAction):
                 time.sleep(0.1)
 
             print(
-                f"[海牛先生] 已达到 {max_clicks} 次安全上限但仍未识别到刷新体力，停止操作",
+                f"[海牛先生] 已达到 {max_clicks} 次安全上限但仍未确认体力为 0，停止操作",
                 flush=True,
             )
             return False
@@ -933,6 +940,20 @@ class InitSeaOtterStateAction(CustomAction):
             try:
                 count = local_state.get_sea_otter_daily_count()
                 limit = local_state.SEA_OTTER_DAILY_LIMIT
+                local_state.write_sea_otter_status_markdown()
+                try:
+                    context.override_pipeline({
+                        "SeaOtterStartRouter": {
+                            "focus": {
+                                "Node.Action.Succeeded": (
+                                    f"[海獭摸宝] 今日完整运行：{count}/{limit}（04:00刷新）"
+                                )
+                            },
+                            "display": ["log", "toast"],
+                        }
+                    })
+                except Exception:
+                    pass
                 if count >= limit:
                     print(
                         f"[海獭摸宝] 今日完整运行次数：{count}/{limit}（已达到游戏每日上限记录）",
@@ -1137,6 +1158,20 @@ class SeaOtterFinalizeAction(CustomAction):
 
             count, limit = local_state.record_sea_otter_completed_run()
             sea_otter_gem_state["daily_count_recorded"] = True
+            local_state.write_sea_otter_status_markdown()
+            try:
+                context.override_pipeline({
+                    "SeaOtterDoneDisplay": {
+                        "focus": {
+                            "Node.Action.Succeeded": (
+                                f"[海獭摸宝] 本次完整运行完成，今日：{count}/{limit}"
+                            )
+                        },
+                        "display": ["log", "toast"],
+                    }
+                })
+            except Exception:
+                pass
             print(
                 f"[海獭摸宝] 本次完整运行成功，今日计数已更新：{count}/{limit}",
                 flush=True,
@@ -2653,6 +2688,33 @@ def _find_golden_dolphin_template_targets(frame, templates, threshold: float = 0
     ]
 
 
+def _find_golden_dolphin_activation_coin(frame, template, threshold: float = 0.70):
+    """隐藏启动专用：在 y=120~650 ROI 内取最高置信度的唯一贝币。
+
+    恢复 v0.5.1~v0.5.5 已实机验证的选择语义（ROI 先验排除顶部 HUD 与底部
+    栏的边缘伪命中；minMaxLoc 只选 ROI 内最高分，而非全屏候选按 y 降序的
+    bottom-most）。仅用于游戏尚未激活时的 activation 点击。
+    """
+    if frame is None or template is None or template.size == 0:
+        return None
+    if frame.shape[:2] != (720, 1280):
+        frame = cv2.resize(frame, (1280, 720))
+    roi_top, roi_bottom = 120, 650
+    search = frame[roi_top:roi_bottom]
+    template_h, template_w = template.shape[:2]
+    if template_h > search.shape[0] or template_w > search.shape[1]:
+        return None
+    result = cv2.matchTemplate(search, template, cv2.TM_CCOEFF_NORMED)
+    _, score, _, location = cv2.minMaxLoc(result)
+    if score < threshold:
+        return None
+    return (
+        location[0] + template_w // 2,
+        roi_top + location[1] + template_h // 2,
+        float(score),
+    )
+
+
 def _find_golden_dolphin_coin(frame, templates, threshold: float = 0.70):
     """兼容旧调用：返回全屏识别到的首个贝币；未命中时不猜坐标。"""
     candidates = _find_golden_dolphin_template_targets(frame, templates, threshold)
@@ -3156,6 +3218,7 @@ class GoldenDolphinPlayGameAction(CustomAction):
             )
             t_game_start = time.monotonic()
             active_start = None
+            t_first_startup_click = None
             game_done = False
             reward_clicks = {category: 0 for category in GOLDEN_DOLPHIN_REWARD_ORDER}
             loop_count = 0
@@ -3181,25 +3244,34 @@ class GoldenDolphinPlayGameAction(CustomAction):
                         break
 
                 if active_start is None:
-                    has_regular_reward = any(
-                        _find_golden_dolphin_xp(img, reward_templates.get("xp", ()))
-                        if category == "xp"
-                        else _find_golden_dolphin_template_targets(
-                            img, reward_templates.get(category, ())
-                        )
-                        for category in ("xp", "heart", "gem")
+                    # v0.5.1~v0.5.5 已实机验证的 XP-only 启动门禁：Heart/Gem 不参与
+                    # "是否已激活"的判定（全部真实 fixture 中不存在"已激活但 XP 缺席"
+                    # 的样本，且三类全屏 gate 引入 6.47x 帧龄延迟导致下落贝币点空；
+                    # Heart 模板在结束页还存在假阳性）。它们仍是正式阶段的合法奖励。
+                    xp_candidates = _find_golden_dolphin_xp(
+                        img, reward_templates.get("xp", ())
                     )
-                    if has_regular_reward:
+                    if xp_candidates:
                         active_start = time.monotonic()
                         print(
-                            "[金海豚游戏] 已识别到非贝币奖励，隐藏启动阶段完成；"
+                            "[金海豚游戏] 已识别到经验星，隐藏启动阶段完成；"
                             "切换为四类奖励连续点击模式",
                             flush=True,
                         )
+                        print(
+                            f"[金海豚游戏] 隐藏启动完成：activation coin clicks="
+                            f"{reward_clicks['coin']}, startup duration="
+                            f"{active_start - t_game_start:.2f}s",
+                            flush=True,
+                        )
                     else:
-                        coin_candidates = _find_golden_dolphin_template_targets(
-                            img, tpls.get("activation_coin", ())
-                        )[:1]
+                        # 隐藏启动仅使用无编号 金海豚_贝币.png 的 ROI+最高分旧语义，
+                        # 不走全屏多候选 detector（v0.5.6 起的 bottom-most 回归已取证）。
+                        activation_templates = tpls.get("activation_coin", ())
+                        activation_coin = _find_golden_dolphin_activation_coin(
+                            img,
+                            activation_templates[0] if activation_templates else None,
+                        )
 
                 targets = []
                 is_startup_coin = False
@@ -3208,10 +3280,9 @@ class GoldenDolphinPlayGameAction(CustomAction):
                     targets = _collect_golden_dolphin_frame_targets(
                         img, reward_templates, priority, max_targets=4
                     )
-                else:
-                    if not has_regular_reward and coin_candidates:
-                        is_startup_coin = True
-                        targets = [("coin", x, y, score) for x, y, score in coin_candidates]
+                elif activation_coin is not None:
+                    is_startup_coin = True
+                    targets = [("coin", *activation_coin)]
 
                 if targets:
                     for category, target_x, target_y, score in targets:
@@ -3227,10 +3298,19 @@ class GoldenDolphinPlayGameAction(CustomAction):
                         reward_clicks[category] += 1
 
                         if is_startup_coin:
-                            if reward_clicks[category] == 1 or reward_clicks[category] % 10 == 0:
+                            if t_first_startup_click is None:
+                                t_first_startup_click = time.monotonic()
+                                print(
+                                    f"[金海豚游戏] 首次启动贝币点击延迟："
+                                    f"{t_first_startup_click - t_game_start:.2f}s",
+                                    flush=True,
+                                )
+                            n_clicks = reward_clicks[category]
+                            if n_clicks <= 5 or n_clicks % 10 == 0:
                                 print(
                                     f"[金海豚游戏] 隐藏启动：已同步点击贝币\n"
-                                    f"(第 {reward_clicks[category]} 次, score={score:.3f})",
+                                    f"(第 {n_clicks} 次, x={target_x}, y={target_y}, "
+                                    f"score={score:.4f})",
                                     flush=True,
                                 )
 

@@ -17,8 +17,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 _STATE_VERSION = 1
-# 海獭摸宝游戏每日上限（仅用于日志展示，不用于拦截任务）
+# MFA 任务说明（task.description）指向的运行时状态 markdown；
+# 属于运行时生成物，禁止提交进 Git（已加入 .gitignore）。
+SEA_OTTER_STATUS_FILENAME = "sea_otter_status.md"
 SEA_OTTER_DAILY_LIMIT = 3
+# 海獭摸宝游戏每日上限（仅用于日志展示，不用于拦截任务）
 # 游戏日刷新偏移：每天 04:00 为新一天
 _GAME_DAY_SHIFT = timedelta(hours=4)
 
@@ -113,3 +116,68 @@ def record_sea_otter_completed_run(now=None):
     state["sea_otter"] = sea_otter
     save_local_state(state)
     return sea_otter["completed_runs"], SEA_OTTER_DAILY_LIMIT
+
+
+def _sea_otter_status_path():
+    """状态 markdown 必须位于 resource/runtime/（MFA task.description 按程序目录解析，
+    开发环境经 junction、发布包经 install/resource 均可达）。"""
+    agent_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(agent_dir, "..", "assets", "resource", "runtime"),
+        os.path.join(agent_dir, "..", "resource", "runtime"),
+        os.path.abspath(os.path.join("assets", "resource", "runtime")),
+    ]
+    for d in candidates:
+        if os.path.isdir(d):
+            return Path(d) / SEA_OTTER_STATUS_FILENAME
+    return Path(candidates[0]) / SEA_OTTER_STATUS_FILENAME
+
+
+def build_sea_otter_status_markdown(now=None):
+    """从 state.json（唯一真源）构造 MFA 任务说明 markdown。"""
+    game_day = get_current_game_day(now)
+    state = load_local_state()
+    sea_otter = state.get("sea_otter") if isinstance(state, dict) else None
+    if isinstance(sea_otter, dict) and sea_otter.get("game_day") == game_day:
+        try:
+            count = max(0, int(sea_otter.get("completed_runs", 0)))
+        except (TypeError, ValueError):
+            count = 0
+        last_at = sea_otter.get("last_completed_at") or "尚未有完整运行记录"
+    else:
+        count = 0
+        last_at = "尚未有完整运行记录"
+
+    if count >= SEA_OTTER_DAILY_LIMIT:
+        headline = f"今日完整运行：**{count} / {SEA_OTTER_DAILY_LIMIT} 次**（已达到游戏每日上限记录）"
+    else:
+        headline = f"今日完整运行：**{count} / {SEA_OTTER_DAILY_LIMIT} 次**"
+
+    return (
+        "## 海獭摸宝\n\n"
+        f"{headline}\n\n"
+        f"游戏日：{game_day}  \n"
+        "每日 04:00 刷新。\n\n"
+        "仅“完整正常结束”的一次任务会 +1；\n"
+        "Safety Limit、手动停止、异常中断不计数。\n\n"
+        f"上次完整运行：{last_at}\n\n"
+        "---\n\n"
+        "从海獭寻宝好友列表或好友水族箱启动，在相邻好友间往复切换并自动摸取目标宝石；"
+        "到达末位好友后推荐玩家只作跳板。详见日志与功能文档。"
+    )
+
+
+def write_sea_otter_status_markdown(now=None):
+    """刷新 MFA 任务说明 markdown；失败仅 warning，不影响自动化。"""
+    try:
+        path = _sea_otter_status_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        content = build_sea_otter_status_markdown(now)
+        tmp = path.with_suffix(".md.tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(content)
+        os.replace(tmp, path)
+        return path
+    except Exception as e:
+        print(f"[本地状态] 海獭状态说明写入失败（不影响自动化）: {e}", flush=True)
+        return None

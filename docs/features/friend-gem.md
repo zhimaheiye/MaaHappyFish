@@ -149,7 +149,7 @@ FriendGemResetAttempts (attempts 清零，miss_count 清零)
 
 普通好友鱼缸现按以下互斥状态处理：
 
-1. 先在 ROI `[231,592,123,120]` 识别 `好友摸宝快捷键_可用.png`；命中后点击模板实际位置，等待页面稳定（post_delay 2000）后由 `FriendGemQuickCollectPostRouter` 按真实页面正常分流：
+1. 快捷按钮存在两个位置：常规好友在 ROI `[231,592,123,120]`，两个特殊好友在 ROI `[155,589,123,120]`（中心对齐用户实测点 [205,639,23,21]，两处 ROI 同尺寸）。`FriendGemRouter` 候选依次评估 `FriendGemQuickCollectAvailable`（主位置）→ `FriendGemQuickCollectAvailableAlt`（第二位置），任一命中即点击模板实际位置，等待页面稳定（post_delay 2000）后由 `FriendGemQuickCollectPostRouter` 按真实页面正常分流：
    - OCR 识别到「刷新体力」→ `FriendGemQuickCollectExhausted`：快捷摸宝完成且体力已耗尽，切换下一位；
    - 未识别到「刷新体力」→ `FriendGemQuickCollectPartialDone`（DirectHit 正常命中，不产生 error）：快捷摸宝已一次收走当前可收宝石，剩余体力是正常情况（可收宝石可能少于剩余体力），按策略接受少量体力浪费，直接切换下一位。
 2. **快捷摸宝成功点击后，本好友处理即告结束**：当前好友内绝不再进入 `FriendGemImageFallbackRouter` / `FriendGemCollectBubble` / `FriendGemWaitForBubble`（旧 `FriendGemQuickCollectVerifyExhausted` on_error → `VerifyFallback` 降级链已删除）。

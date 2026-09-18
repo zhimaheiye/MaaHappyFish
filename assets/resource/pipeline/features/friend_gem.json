@@ -108,6 +108,7 @@
             "FriendGemCheckManatee",
             "FriendGemExhausted",
             "FriendGemQuickCollectAvailable",
+            "FriendGemQuickCollectAvailableAlt",
             "FriendGemQuickCollectUnavailable",
             "FriendGemCollectBubble",
             "FriendGemBubbleMissLimitReached",
@@ -484,7 +485,12 @@
         "recognition": "TemplateMatch",
         "template": "好友页面_入口.png",
         "threshold": 0.8,
-        "roi": [1128, 205, 131, 124],
+        "roi": [
+            1128,
+            205,
+            131,
+            124
+        ],
         "action": "Click",
         "post_delay": 1200,
         "next": [
@@ -510,6 +516,30 @@
             "[JumpBack]GlobalLevelUpPopup",
             "HangupResumeCollectFish",
             "HangupResumePatrol"
+        ]
+    },
+    "FriendGemQuickCollectAvailableAlt": {
+        "recognition": "TemplateMatch",
+        "template": "好友摸宝快捷键_可用.png",
+        "threshold": 0.8,
+        "roi": [
+            155,
+            589,
+            123,
+            120
+        ],
+        "action": "Click",
+        "post_delay": 2000,
+        "focus": {
+            "Node.Action.Succeeded": "[好友摸宝] 特殊位置快捷摸宝可用，已点击，正在确认本次快捷收取结果。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FriendGemQuickCollectPostRouter"
         ]
     }
 }

@@ -23,6 +23,7 @@ from agent.my_action import (
     advance_daily_routine_step,
     _find_golden_dolphin_coin,
     _find_golden_dolphin_template_targets,
+    _find_golden_dolphin_activation_coin,
     _find_golden_dolphin_xp,
     _get_golden_dolphin_templates,
     _return_golden_dolphin_to_tank,
@@ -259,23 +260,63 @@ def run_tests():
     assert 830 <= cancel_x <= 910 and 550 <= cancel_y <= 600
     print('[PASS] Check 10: 结算按钮出现较晚时会按模板点击，并在主鱼缸门禁通过后才推进！')
 
-    print("\n--- Test 11: 真实未激活启动帧门禁 (无假阳性) ---")
+    print("\n--- Test 11: activation 专用 helper 硬回归 (v0.5.1~v0.5.5 ROI+最高分语义) ---")
     start_frame = cv2.imread('dev/exploration/golden_dolphin/02_game_start_stage.png')
-    assert start_frame is not None, "Missing start frame fixture"
-    
-    # 模拟 _get_golden_dolphin_templates 的结构
-    coin_tpl = templates['activation_coin']
-    xp_tpls = rewards['xp']
-    heart_tpls = rewards['heart']
-    gem_tpls = rewards['gem']
-    
-    assert _find_golden_dolphin_template_targets(start_frame, coin_tpl), "Must find activation coin in start frame"
-    assert not _find_golden_dolphin_xp(start_frame, xp_tpls), "XP false positive on start frame"
-    assert not _find_golden_dolphin_template_targets(start_frame, heart_tpls), "Heart false positive on start frame"
-    assert not _find_golden_dolphin_template_targets(start_frame, gem_tpls), "Gem false positive on start frame"
-    print('[PASS] Check 11: 初始帧只识别到贝币，其余奖励未发生假阳性触发！')
+    mid_frame = cv2.imread('dev/exploration/golden_dolphin/03_middle_falling_dense.png')
+    initial_frame = cv2.imread('dev/exploration/golden_dolphin/00_initial_screen.png')
+    assert start_frame is not None and mid_frame is not None and initial_frame is not None
 
-    print("\n--- Test 12: 贝币启动阶段仅限点击1次且必带 wait 契约 ---")
+    activation_tpl = templates['activation_coin'][0]
+
+    def _legacy_v055_find_coin(frame, template, threshold=0.70):
+        """内联复刻 v0.5.1~v0.5.5 的 _find_golden_dolphin_coin，作为历史基准。"""
+        if frame.shape[:2] != (720, 1280):
+            frame = cv2.resize(frame, (1280, 720))
+        roi_top, roi_bottom = 120, 650
+        search = frame[roi_top:roi_bottom]
+        th, tw = template.shape[:2]
+        result = cv2.matchTemplate(search, template, cv2.TM_CCOEFF_NORMED)
+        _, score, _, location = cv2.minMaxLoc(result)
+        if score < threshold:
+            return None
+        return (location[0] + tw // 2, roi_top + location[1] + th // 2, float(score))
+
+    def _close(a, b):
+        return abs(a[0] - b[0]) <= 2 and abs(a[1] - b[1]) <= 2
+
+    # 02 启动帧：已知历史目标 (862,626) score 约 0.9956
+    t02 = _find_golden_dolphin_activation_coin(start_frame, activation_tpl)
+    assert t02 is not None, "activation helper must find coin on start frame"
+    assert 120 <= t02[1] <= 650, f"activation y must be in legacy ROI, got y={t02[1]}"
+    assert _close(t02, (862, 626)), f"02 target mismatch: {t02}"
+    assert t02[2] >= 0.99, f"activation score should be >=0.99, got {t02[2]:.4f}"
+    legacy02 = _legacy_v055_find_coin(start_frame, activation_tpl)
+    assert legacy02 is not None and _close(t02, legacy02), f"02 NEW={t02} vs LEGACY={legacy02}"
+
+    # 03 下落密集帧：历史目标 (1122,384)；明确排除 bottom-most 回归目标 (1169,696)
+    t03 = _find_golden_dolphin_activation_coin(mid_frame, activation_tpl)
+    assert t03 is not None
+    assert 120 <= t03[1] <= 650, f"activation y must be in legacy ROI, got y={t03[1]}"
+    assert _close(t03, (1122, 384)), f"03 target mismatch: {t03}"
+    assert t03[2] >= 0.99, f"activation score should be >=0.99, got {t03[2]:.4f}"
+    assert (t03[0], t03[1]) != (1169, 696), "must not pick the bottom-most regression target"
+    legacy03 = _legacy_v055_find_coin(mid_frame, activation_tpl)
+    assert legacy03 is not None and _close(t03, legacy03), f"03 NEW={t03} vs LEGACY={legacy03}"
+
+    # 00 负样本：未进入游戏时不得无中生有
+    assert _find_golden_dolphin_activation_coin(initial_frame, activation_tpl) is None, (
+        "00_initial_screen: activation helper must return None"
+    )
+
+    # 职责区分：全屏 multi-target detector 保留给正式阶段（y 降序语义不变）
+    formal = _find_golden_dolphin_template_targets(start_frame, templates['activation_coin'])
+    assert formal, "formal detector must still work"
+    assert all(formal[k][1] >= formal[k + 1][1] for k in range(len(formal) - 1)), (
+        "formal detector keeps y-descending semantics (unchanged responsibility)"
+    )
+    print('[PASS] Check 11: activation helper=ROI(120~650)+最高分；02/03 与 LEGACY 一致；00 负样本 None')
+
+    print("\n--- Test 12: 隐藏启动必须点击 v0.5.x 语义的正确贝币坐标 (862,626) ---")
     class _StrictFakeJob:
         def __init__(self):
             self.wait_called = False
@@ -294,35 +335,187 @@ def run_tests():
             self.tasker = _FakeTasker()
 
     class _StrictFakeController:
-        def __init__(self, ctx, frame):
+        def __init__(self, ctx, frames, stop_after_clicks=1):
             self.ctx = ctx
-            self.frame = frame
-            self.click_count = 0
+            self.frames = list(frames) if isinstance(frames, (list, tuple)) else [frames]
+            self.frame_idx = 0
+            self.clicks = []
             self.last_job = None
-            
+            self.stop_after_clicks = stop_after_clicks
+
         def post_screencap(self):
             class _CapJob:
                 def __init__(self, f): self.f = f
                 def wait(self): return self
                 def get(self): return self.f
-            return _CapJob(self.frame)
+            frame = self.frames[min(self.frame_idx, len(self.frames) - 1)]
+            self.frame_idx += 1
+            return _CapJob(frame)
 
         def post_click(self, x, y):
-            self.click_count += 1
+            self.clicks.append((x, y))
             self.last_job = _StrictFakeJob()
-            self.ctx.tasker.stopping = True
+            self.ctx.tasker.stopping = len(self.clicks) >= self.stop_after_clicks
             return self.last_job
-            
+
     ctx = _FakeContext()
     ctx.tasker.controller = _StrictFakeController(ctx, start_frame)
     golden_dolphin_state['reward_priority'] = 'xp'
-    
+
     GoldenDolphinPlayGameAction().run(ctx, SimpleNamespace(custom_action_param=""))
-    
-    assert ctx.tasker.controller.click_count == 1, f"Expected 1 post_click for startup phase, got {ctx.tasker.controller.click_count}"
+
+    assert len(ctx.tasker.controller.clicks) == 1, (
+        f"Expected 1 post_click for startup phase, got {ctx.tasker.controller.clicks}"
+    )
+    clicked_x, clicked_y = ctx.tasker.controller.clicks[0]
+    assert abs(clicked_x - 862) <= 2 and abs(clicked_y - 626) <= 2, (
+        f"production clicked wrong coin target: ({clicked_x},{clicked_y}), legacy=(862,626)"
+    )
     assert ctx.tasker.controller.last_job is not None, "post_click was not called"
     assert ctx.tasker.controller.last_job.wait_called, "job.wait() was not called on activation coin"
-    print('[PASS] Check 12: 隐藏启动阶段精确点击 1 次贝币并调用了 job.wait() 同步等待！')
+    print('[PASS] Check 12: 生产首次点击坐标=(862,626) 与 v0.5.x 历史目标一致，且 job.wait() 同步等待！')
+
+    print("\n--- Test 12B: 多帧 fresh-coordinate——第二帧必须重新识别移动后的贝币 ---")
+    frame_b = np.roll(start_frame, -60, axis=0)
+    # B 帧期望目标 = activation helper 在 B 帧上的最高分 ROI 输出（整帧上移 60px
+    # 后，02 帧的全帧最高分候选 (909,694) 同步移动到 (909,634)）
+    exp_b = _find_golden_dolphin_activation_coin(frame_b, activation_tpl)
+    assert exp_b is not None and 120 <= exp_b[1] <= 650, exp_b
+    ctx2 = _FakeContext()
+    ctx2.tasker.controller = _StrictFakeController(ctx2, [start_frame, frame_b], stop_after_clicks=2)
+    golden_dolphin_state['reward_priority'] = 'xp'
+
+    GoldenDolphinPlayGameAction().run(ctx2, SimpleNamespace(custom_action_param=""))
+
+    clicks = ctx2.tasker.controller.clicks
+    assert len(clicks) >= 2, f"should click at least twice (one per frame), got {clicks}"
+    assert clicks[0] != clicks[1], f"second frame must not reuse stale coordinates: {clicks[:2]}"
+    assert abs(clicks[1][0] - exp_b[0]) <= 2 and abs(clicks[1][1] - exp_b[1]) <= 2, (
+        f"second frame should click moved target {exp_b}, got {clicks[1]}"
+    )
+    print(f'[PASS] Check 12B: click[0]={clicks[0]} -> click[1]={clicks[1]}，每帧重新识别、不缓存旧坐标！')
+
+    print("\n--- Test 12C: 隐藏启动阶段禁止调用 Heart/Gem detector (结构禁令) ---")
+    import agent.my_action as gd_module
+
+    calls = {"xp": 0, "activation": 0, "template_targets": 0, "heart_or_gem": 0}
+    real_xp = gd_module._find_golden_dolphin_xp
+    real_act = gd_module._find_golden_dolphin_activation_coin
+    real_tt = gd_module._find_golden_dolphin_template_targets
+    heart_tpls = rewards['heart']
+    gem_tpls = rewards['gem']
+
+    def _spy_xp(frame, tpls):
+        calls["xp"] += 1
+        return real_xp(frame, tpls)
+
+    def _spy_act(frame, tpl):
+        calls["activation"] += 1
+        return real_act(frame, tpl)
+
+    def _spy_tt(frame, tpls):
+        calls["template_targets"] += 1
+        # 隐藏启动阶段传入 Heart/Gem 模板即违规
+        if tpls is heart_tpls or tpls is gem_tpls or \
+                (len(tpls) and any(t is ht for t in tpls for ht in (heart_tpls + gem_tpls))):
+            calls["heart_or_gem"] += 1
+            raise AssertionError("startup gate must not call Heart/Gem detector")
+        return real_tt(frame, tpls)
+
+    gd_module._find_golden_dolphin_xp = _spy_xp
+    gd_module._find_golden_dolphin_activation_coin = _spy_act
+    gd_module._find_golden_dolphin_template_targets = _spy_tt
+    try:
+        ctx3 = _FakeContext()
+        ctx3.tasker.controller = _StrictFakeController(ctx3, start_frame, stop_after_clicks=1)
+        golden_dolphin_state['reward_priority'] = 'xp'
+        GoldenDolphinPlayGameAction().run(ctx3, SimpleNamespace(custom_action_param=""))
+    finally:
+        gd_module._find_golden_dolphin_xp = real_xp
+        gd_module._find_golden_dolphin_activation_coin = real_act
+        gd_module._find_golden_dolphin_template_targets = real_tt
+
+    assert calls["heart_or_gem"] == 0, (
+        f"Heart/Gem detector was called {calls['heart_or_gem']} times during startup"
+    )
+    assert calls["xp"] >= 1, "XP detector must gate the startup phase"
+    assert calls["activation"] >= 1, "activation helper must be used for startup coin"
+    assert len(ctx3.tasker.controller.clicks) == 1
+    assert abs(ctx3.tasker.controller.clicks[0][0] - 862) <= 2
+    print('[PASS] Check 12C: 隐藏启动只调用 XP+activation helper，Heart/Gem detector 零调用！')
+
+    print("\n--- Test 12D: XP 出现即触发 active_start，activation helper 不再调用 ---")
+    calls2 = {"activation": 0, "xp": 0}
+
+    def _spy_xp2(frame, tpls):
+        calls2["xp"] += 1
+        return real_xp(frame, tpls)
+
+    def _spy_act2(frame, tpl):
+        calls2["activation"] += 1
+        return real_act(frame, tpl)
+
+    gd_module._find_golden_dolphin_xp = _spy_xp2
+    gd_module._find_golden_dolphin_activation_coin = _spy_act2
+    try:
+        ctx4 = _FakeContext()
+        # 03 帧 XP=True：XP 应直接触发 active_start，不进入 activation 路径
+        ctx4.tasker.controller = _StrictFakeController(ctx4, mid_frame, stop_after_clicks=1)
+        golden_dolphin_state['reward_priority'] = 'xp'
+        GoldenDolphinPlayGameAction().run(ctx4, SimpleNamespace(custom_action_param=""))
+    finally:
+        gd_module._find_golden_dolphin_xp = real_xp
+        gd_module._find_golden_dolphin_activation_coin = real_act
+
+    assert calls2["xp"] >= 1, "XP detector must run to detect activation"
+    assert calls2["activation"] == 0, (
+        f"XP 已出现时 activation helper 仍被调用 {calls2['activation']} 次"
+    )
+    assert len(ctx4.tasker.controller.clicks) >= 1, "formal collector should take over"
+    print('[PASS] Check 12D: XP 出现直接进入正式阶段，activation helper 零调用！')
+
+    print("\n--- Test 12E: Heart false-positive 防护——XP 缺席时 Heart 不得触发激活 ---")
+    # 04_game_over 帧：Heart 模板可命中但 XP=False、coin=None。
+    # mock XP detector 恒返回 []（模拟 XP 缺席），Heart/Gem detector 一旦被调用即失败。
+    calls3 = {"activation": 0}
+    stop_flag = {"stop": False}
+
+    def _mock_xp_none(frame, tpls):
+        calls3.setdefault("xp", 0)
+        calls3["xp"] += 1
+        return []
+
+    def _fail_heart(frame, tpls):
+        raise AssertionError("startup gate must not call Heart detector (false-positive guard)")
+
+    def _spy_act3(frame, tpl):
+        calls3["activation"] += 1
+        if calls3["activation"] >= 3:
+            stop_flag["stop"] = True
+            ctx5.tasker.stopping = True  # 模拟用户停止，避免 75s 空转
+        return real_act(frame, tpl)
+
+    gd_module._find_golden_dolphin_xp = _mock_xp_none
+    gd_module._find_golden_dolphin_template_targets = _fail_heart
+    gd_module._find_golden_dolphin_activation_coin = _spy_act3
+    try:
+        ctx5 = _FakeContext()
+        over_frame = cv2.imread('dev/exploration/golden_dolphin/04_game_over.png')
+        assert over_frame is not None
+        ctx5.tasker.controller = _StrictFakeController(ctx5, over_frame, stop_after_clicks=10**9)
+        golden_dolphin_state['reward_priority'] = 'xp'
+        GoldenDolphinPlayGameAction().run(ctx5, SimpleNamespace(custom_action_param=""))
+    finally:
+        gd_module._find_golden_dolphin_xp = real_xp
+        gd_module._find_golden_dolphin_template_targets = real_tt
+        gd_module._find_golden_dolphin_activation_coin = real_act
+
+    assert calls3["activation"] >= 2, "XP 缺席时应持续用 activation helper 找贝币（而非误判激活）"
+    assert ctx5.tasker.controller.clicks == [] if hasattr(ctx5.tasker.controller, 'clicks') else True
+    assert len(ctx5.tasker.controller.clicks) == 0, (
+        "Heart-only 帧上不得点击任何 activation coin（04 帧 coin=None）"
+    )
+    print('[PASS] Check 12E: Heart 命中 + XP 缺席 → 不触发激活、不点击，持续安全找贝币！')
 
     print("\n--- Test 13: 正式阶段优先填充机制 ---")
     class _MockFind:

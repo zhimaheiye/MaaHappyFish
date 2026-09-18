@@ -511,3 +511,7 @@ dev/verify_*.py
 
 # v1.0.0 milestone documents (local only)
 docs/v1.0-rednote-lottery.md
+
+# runtime status files (local only)
+assets/resource/runtime/sea_otter_status.md
+assets/resource/runtime/sea_otter_status.md.tmp

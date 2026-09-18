@@ -98,7 +98,12 @@
             "剩余",
             "刷新体力"
         ],
-        "roi": [60, 210, 350, 170],
+        "roi": [
+            60,
+            210,
+            350,
+            170
+        ],
         "action": "DoNothing",
         "timeout": 4000,
         "focus": {
@@ -241,7 +246,12 @@
     "SeaOtterRecommendedBridge": {
         "recognition": "TemplateMatch",
         "template": "好友_下一位.png",
-        "roi": [1140, 50, 130, 80],
+        "roi": [
+            1140,
+            50,
+            130,
+            80
+        ],
         "threshold": 0.7,
         "action": "Custom",
         "custom_action": "SeaOtterReturnFromRecommendedAction",
@@ -350,6 +360,25 @@
     "SeaOtterDone": {
         "recognition": "DirectHit",
         "action": "Custom",
-        "custom_action": "SeaOtterFinalizeAction"
+        "custom_action": "SeaOtterFinalizeAction",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterDoneDisplay"
+        ]
+    },
+    "SeaOtterDoneDisplay": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[海獭摸宝] 本次完整运行完成。"
+        },
+        "display": [
+            "log",
+            "toast"
+        ]
     }
 }
