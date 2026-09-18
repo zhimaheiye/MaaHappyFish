@@ -66,35 +66,68 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "PrincessClaimRouter"
+            "PrincessClaimTop",
+            "PrincessClaimMiddle",
+            "PrincessClaimBottom",
+            "PrincessExit"
         ],
         "on_error": [
             "PrincessAbort"
         ]
     },
-    "PrincessClaimRouter": {
-        "recognition": "DirectHit",
-        "action": "DoNothing",
+    "PrincessClaimTop": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_领取奖励.png",
+        "roi": [1028, 290, 62, 96],
+        "threshold": 0.75,
+        "action": "Click",
+        "post_delay": 600,
+        "max_hit": 1,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 已点击上格礼盒，正在判断领取结果。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "PrincessClaimReward",
-            "PrincessExit"
+            "PrincessClaimResultRouter"
         ]
     },
-    "PrincessClaimReward": {
+    "PrincessClaimMiddle": {
         "recognition": "TemplateMatch",
         "template": "公主任务_领取奖励.png",
-        "roi": [1028, 290, 62, 288],
-        "threshold": 0.8,
+        "roi": [1028, 386, 62, 96],
+        "threshold": 0.75,
         "action": "Click",
         "post_delay": 600,
-        "max_hit": 6,
+        "max_hit": 1,
+        "timeout": 4000,
         "focus": {
-            "Node.Action.Succeeded": "[公主任务] 已点击奖励列中命中的礼盒，正在判断领取结果。"
+            "Node.Action.Succeeded": "[公主任务] 已点击中格礼盒，正在判断领取结果。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessClaimResultRouter"
+        ]
+    },
+    "PrincessClaimBottom": {
+        "recognition": "TemplateMatch",
+        "template": "公主任务_领取奖励.png",
+        "roi": [1028, 482, 62, 96],
+        "threshold": 0.75,
+        "action": "Click",
+        "post_delay": 600,
+        "max_hit": 1,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 已点击下格礼盒，正在判断领取结果。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -116,10 +149,29 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "PrincessClaimSuccess",
-            "PrincessClaimFailure"
+            "PrincessClaimFailure",
+            "PrincessClaimNeedMorePoints"
         ],
         "on_error": [
-            "PrincessAbort"
+            "PrincessPageAfterClaim"
+        ]
+    },
+    "PrincessClaimNeedMorePoints": {
+        "recognition": "OCR",
+        "expected": "积分不足|无法领取",
+        "roi": [430, 250, 520, 300],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[公主任务] 当前礼盒积分不足，准备关闭提示后尝试下一格。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessClaimFailure"
         ]
     },
     "PrincessClaimSuccess": {
@@ -143,8 +195,8 @@
     "PrincessClaimFailure": {
         "recognition": "TemplateMatch",
         "template": "公主任务_领取失败.png",
-        "roi": [804, 461, 46, 41],
-        "threshold": 0.8,
+        "roi": [760, 380, 180, 180],
+        "threshold": 0.7,
         "action": "Click",
         "post_delay": 700,
         "next": [
@@ -172,10 +224,13 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "PrincessClaimRouter"
+            "PrincessClaimTop",
+            "PrincessClaimMiddle",
+            "PrincessClaimBottom",
+            "PrincessExit"
         ],
         "on_error": [
-            "PrincessAbort"
+            "PrincessExit"
         ]
     },
     "PrincessExit": {

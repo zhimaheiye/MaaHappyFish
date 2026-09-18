@@ -251,8 +251,10 @@ def test_pipeline_topology():
         "ReindeerFishCollectAll",
         "ReindeerFishReplyAll",
         "ReindeerFishDirectGift",
+        "ReindeerFishClearAll",
         "ReindeerFishStartAtGrid",
         "ReindeerFishStartAtTank",
+        "ReindeerFishCommonBack",
     ]
     # 实机 OCR 曾把“一键收取”稳定识别为“键收取”；使用共同稳定子串兼容两者。
     # 2026-09-12 礼物列表布局把按钮移到 x=512..691，收取 ROI 需兼容新旧位置。
@@ -263,7 +265,13 @@ def test_pipeline_topology():
     assert business_next(pdata["ReindeerFishAfterCollectRouter"]) == [
         "ReindeerFishRewardReturn",
         "ReindeerFishReplyAll",
+        "ReindeerFishClearAll",
     ]
+    assert pdata["ReindeerFishClearAll"]["expected"] == "键清除"
+    assert pdata["ReindeerFishClearAll"]["roi"] == [500, 560, 260, 100]
+    assert pdata["ReindeerFishClearAll"]["action"] == "Click"
+    assert "target" not in pdata["ReindeerFishClearAll"]
+    assert business_next(pdata["ReindeerFishClearAll"]) == ["ReindeerFishCommonBack"]
     assert pdata["ReindeerFishAfterCollectRouter"]["on_error"] == ["ReindeerFishAfterCollectNoReply"]
     assert business_next(pdata["ReindeerFishAfterCollectNoReply"]) == ["ReindeerFishCommonBack"]
     # 2026-09-15 现场 OCR 把“一键回礼”稳定识别为“键回礼”；使用共同稳定子串。
@@ -776,9 +784,11 @@ def test_gold_shell_coupon_contract_cases():
         "GoldShellCouponVerifyCategoryPage",
         "GoldShellCouponEntry",
         "GoldShellCouponStarfishMisTouch",
+        "GoldShellCouponOctopusMisTouch",
+        "GoldShellCouponReturnCategory",
         "GoldShellCouponAbort",
     ], f"Case 3-5 失败: 步骤恢复顺序错误 -> {router_next}"
-    print("[PASS] Case 3-5: 步骤恢复路由器验证通过 (金贝壳主页 -> 分类页 -> 主鱼缸入口 -> 海星误入恢复 -> Abort)")
+    print("[PASS] Case 3-5: 步骤恢复路由器验证通过 (金贝壳主页 -> 分类页 -> 入口 -> 海星/章鱼误入返回 -> Abort)")
 
     # Case 6 & 7: 有/无兑换与重试收紧机制 + 兑换后结果验证
     check_exchange = gsc_pipeline["GoldShellCouponCheckExchange"]
@@ -809,7 +819,10 @@ def test_gold_shell_coupon_contract_cases():
 
     # Case 8: 两级状态驱动返回 (金贝壳 -> 分类页验证 -> 分类页返回 -> 鱼缸确认)
     ret_cat = gsc_pipeline["GoldShellCouponReturnCategory"]
-    assert business_next(ret_cat) == ["GoldShellCouponVerifyCategoryAfterReturn"], "Case 8 失败: 第一次返回后必须确认回到分类页"
+    assert business_next(ret_cat) == [
+        "GoldShellCouponVerifyCategoryAfterReturn",
+        "GoldShellCouponReturnTank",
+    ], "Case 8 失败: 第一次返回后必须确认回到分类页，认不到则继续第二次返回"
     verify_cat_after = gsc_pipeline["GoldShellCouponVerifyCategoryAfterReturn"]
     assert verify_cat_after["template"] == "开贝壳_误触识别.png", "Case 8 失败: 分类页验证必须使用开贝壳_误触识别.png"
     assert business_next(verify_cat_after) == ["GoldShellCouponReturnTank"], "Case 8 失败: 确认分类页后才能触发第二次返回"

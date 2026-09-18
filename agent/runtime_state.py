@@ -74,6 +74,13 @@ green_wild_daily_state = {
     "pending_buy_fish": False,
 }
 
+hangup_schedule_state = {
+    "resume_stack": [],
+    "noon_daily_last_date": None,
+    "friend_gem_morning_date": None,
+    "friend_gem_evening_date": None,
+}
+
 fishing_state = {
     "current_task_id": None,
     "cast_count": 0,

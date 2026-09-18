@@ -2008,6 +2008,8 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "HangupNoonDailyPatrol",
+            "HangupFriendGemPatrol",
             "PatrolTimerDue",
             "PatrolMagicSummonDue",
             "PatrolGemFusionDue",

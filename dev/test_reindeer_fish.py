@@ -34,7 +34,11 @@ def test_topology_contracts():
     assert router["recognition"] == "DirectHit"
     assert 3000 <= router.get("timeout", 0) <= 5000, f"AfterCollectRouter timeout expected 3000~5000ms, got {router.get('timeout')}"
     router_next = [n for n in router.get("next", []) if not n.startswith("[JumpBack]")]
-    assert router_next == ["ReindeerFishRewardReturn", "ReindeerFishReplyAll"], f"AfterCollectRouter.next unexpected: {router_next}"
+    assert router_next == [
+        "ReindeerFishRewardReturn",
+        "ReindeerFishReplyAll",
+        "ReindeerFishClearAll",
+    ], f"AfterCollectRouter.next unexpected: {router_next}"
     assert router.get("on_error") == ["ReindeerFishAfterCollectNoReply"], f"AfterCollectRouter.on_error unexpected: {router.get('on_error')}"
 
     # 4. AfterCollectNoReply 兜底退出
@@ -52,6 +56,26 @@ def test_topology_contracts():
     start_next = [n for n in pdata["ReindeerFishStartRouter"].get("next", []) if not n.startswith("[JumpBack]")]
     assert "ReindeerFishReplyAll" in start_next, f"StartRouter missing ReplyAll: {start_next}"
     assert "ReindeerFishCollectAll" in start_next, f"StartRouter missing CollectAll: {start_next}"
+    assert "ReindeerFishClearAll" in start_next, f"StartRouter missing ClearAll: {start_next}"
+    assert start_next[-1] == "ReindeerFishCommonBack", f"未知页面应最后点左上角返回: {start_next}"
+    after_reply = [n for n in pdata["ReindeerFishAfterReplyRouter"].get("next", []) if not n.startswith("[JumpBack]")]
+    assert after_reply == [
+        "ReindeerFishDirectGift",
+        "ReindeerFishReplyPopupReturn",
+        "ReindeerFishCommonBack",
+    ], f"AfterReplyRouter.next unexpected: {after_reply}"
+    popup_return = pdata["ReindeerFishReplyPopupReturn"]
+    assert popup_return["expected"] == "^返回$"
+    assert popup_return["roi"] == [470, 380, 340, 200]
+    assert popup_return["action"] == "Click"
+    assert "target" not in popup_return
+    popup_next = [n for n in popup_return.get("next", []) if not n.startswith("[JumpBack]")]
+    assert popup_next == ["ReindeerFishCommonBack"]
+    clear_all = pdata["ReindeerFishClearAll"]
+    assert clear_all["expected"] == "键清除"
+    assert clear_all["roi"] == [500, 560, 260, 100]
+    assert clear_all["action"] == "Click"
+    assert "target" not in clear_all
 
     print("[PASS] 静态拓扑契约验证通过")
 
@@ -274,6 +298,45 @@ def test_cases():
     assert "ReindeerFishCommonBack" in hist7
     print("[PASS] Case 7: 稳定窗口期满后确认无回礼，安全触发 AfterCollectNoReply 返回")
 
+    def frames_case_8(node, elapsed_ms, history):
+        if "ReindeerFishCommonBack" in history:
+            return {"主界面特征.png"}
+        if "ReindeerFishClearAll" not in history:
+            return {"键清除"}
+        return {"返回"}
+
+    hist8 = sim.run("ReindeerFishStartRouter", frames_case_8)
+    assert "ReindeerFishClearAll" in hist8
+    assert "ReindeerFishCollectAll" not in hist8
+    assert "ReindeerFishCommonBack" in hist8
+    print("[PASS] Case 8: 礼物已送完页识别一键清除后返回鱼缸")
+
+    def frames_case_9(node, elapsed_ms, history):
+        if "ReindeerFishCommonBack" in history:
+            return {"主界面特征.png"}
+        return {"ReindeerFishCommonBack"}
+
+    hist9 = sim.run("ReindeerFishStartRouter", frames_case_9)
+    assert "ReindeerFishClearAll" not in hist9
+    assert "ReindeerFishCollectAll" not in hist9
+    assert "ReindeerFishCommonBack" in hist9
+    print("[PASS] Case 9: 未识别到收取/回礼/清除时点左上角返回")
+
+    def frames_case_10(node, elapsed_ms, history):
+        if "ReindeerFishCommonBack" in history:
+            return {"主界面特征.png"}
+        if "ReindeerFishReplyAll" not in history:
+            return {"键回礼"}
+        if "ReindeerFishReplyPopupReturn" not in history:
+            return {"^返回$"}
+        return {"ReindeerFishCommonBack"}
+
+    hist10 = sim.run("ReindeerFishStartRouter", frames_case_10)
+    assert "ReindeerFishReplyAll" in hist10
+    assert "ReindeerFishReplyPopupReturn" in hist10
+    assert "ReindeerFishCommonBack" in hist10
+    print("[PASS] Case 10: 一键回礼后的结算弹窗点击返回，再离开页面")
+
 
 def main():
     print("=" * 60)
@@ -282,7 +345,7 @@ def main():
     test_topology_contracts()
     test_cases()
     print("=" * 60)
-    print("  [ALL PASS] 驯鹿鱼专项 7 大场景测试全部通过！")
+    print("  [ALL PASS] 驯鹿鱼专项场景测试全部通过！")
     print("=" * 60)
     return 0
 

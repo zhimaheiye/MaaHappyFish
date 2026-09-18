@@ -99,13 +99,13 @@ def run_tests():
     assert claim_ocr["roi"] == [0, 400, 1280, 320]
     assert claim_ocr["action"] == "Click"
     assert claim_ocr["next"] == ["GlobalDailySignClose", "GlobalDailySignAutoClosed"]
-    assert "on_error" not in claim_ocr
+    assert claim_ocr["on_error"] == ["GlobalDailySignClose"]
 
     close = pipeline["GlobalDailySignClose"]
     assert close["template"] == "签到_关闭.png"
-    assert close["roi"] == [1033, 0, 148, 140]
+    assert close["roi"] == [1000, 0, 220, 160]
     assert close["action"] == "Click"
-    assert close["target"] == [1103, 63, 6, 6]
+    assert "target" not in close
 
     auto_closed = pipeline["GlobalDailySignAutoClosed"]
     assert auto_closed["template"] == "签到_识别.png"

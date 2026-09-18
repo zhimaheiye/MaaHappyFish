@@ -84,11 +84,33 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "SeaOtterLimitReached",
+            "SeaOtterHasStaminaPanel",
             "SeaOtterFriendLiked",
             "SeaOtterFriendUnliked",
             "SeaOtterRecommendedBridge",
             "SeaOtterAddFriendPage",
             "SeaOtterWaitScreen"
+        ]
+    },
+    "SeaOtterHasStaminaPanel": {
+        "recognition": "OCR",
+        "expected": [
+            "剩余",
+            "刷新体力"
+        ],
+        "roi": [60, 210, 350, 170],
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterKnownFriendRouter"
         ]
     },
     "SeaOtterLimitReached": {
@@ -192,12 +214,12 @@
         "recognition": "TemplateMatch",
         "template": "海獭_摸宝.png",
         "roi": [
-            30,
-            460,
-            180,
-            180
+            0,
+            400,
+            560,
+            300
         ],
-        "threshold": 0.7,
+        "threshold": 0.65,
         "action": "Custom",
         "custom_action": "SeaOtterHarvestAction",
         "custom_action_param": {
@@ -274,12 +296,12 @@
         "recognition": "TemplateMatch",
         "template": "海獭_摸宝.png",
         "roi": [
-            30,
-            460,
-            180,
-            180
+            0,
+            400,
+            560,
+            300
         ],
-        "threshold": 0.7,
+        "threshold": 0.65,
         "action": "Custom",
         "custom_action": "SeaOtterHarvestAction",
         "next": [

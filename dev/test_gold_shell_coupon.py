@@ -251,7 +251,10 @@ def test_case_5_no_exchange_flow():
 
     # 4. 验证两级返回流水线完整性
     ret_cat = pdata["GoldShellCouponReturnCategory"]
-    assert business_next(ret_cat) == ["GoldShellCouponVerifyCategoryAfterReturn"]
+    assert business_next(ret_cat) == [
+        "GoldShellCouponVerifyCategoryAfterReturn",
+        "GoldShellCouponReturnTank",
+    ]
     ver_cat = pdata["GoldShellCouponVerifyCategoryAfterReturn"]
     assert business_next(ver_cat) == ["GoldShellCouponReturnTank"]
     ret_tank = pdata["GoldShellCouponReturnTank"]
@@ -346,8 +349,18 @@ def test_case_8_gold_page_identity_resume_and_starfish_recovery():
         "GoldShellCouponVerifyCategoryPage",
         "GoldShellCouponEntry",
         "GoldShellCouponStarfishMisTouch",
+        "GoldShellCouponOctopusMisTouch",
+        "GoldShellCouponReturnCategory",
         "GoldShellCouponAbort",
     ]
+    assert pdata["GoldShellCouponVerifyGoldPage"].get("on_error") == ["GoldShellCouponNoExchange"]
+    assert "GoldShellCouponNoExchange" in business_next(pdata["GoldShellCouponVerifyGoldPage"])
+    assert business_next(pdata["GoldShellCouponNoExchange"]) == ["GoldShellCouponReturnCategory"]
+    octopus = pdata["GoldShellCouponOctopusMisTouch"]
+    assert octopus["template"] == "开贝壳_识别.png"
+    assert business_next(octopus) == ["GoldShellCouponReturnCategory"]
+    assert pdata["GoldShellCouponReturnCategory"].get("on_error") == ["GoldShellCouponReturnTank"]
+    assert pdata["GoldShellCouponReturnTank"].get("on_error") == ["GoldShellCouponVerifyTank"]
     assert pdata["GoldShellCouponVerifyCategoryPage"].get("on_error") == [
         "GoldShellCouponStarfishMisTouch"
     ]

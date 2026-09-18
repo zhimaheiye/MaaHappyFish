@@ -25,11 +25,32 @@
             "ReindeerFishCollectAll",
             "ReindeerFishReplyAll",
             "ReindeerFishDirectGift",
+            "ReindeerFishClearAll",
             "ReindeerFishStartAtGrid",
-            "ReindeerFishStartAtTank"
+            "ReindeerFishStartAtTank",
+            "ReindeerFishCommonBack"
         ],
         "on_error": [
             "ReindeerFishAbort"
+        ]
+    },
+    "ReindeerFishClearAll": {
+        "recognition": "OCR",
+        "expected": "键清除",
+        "roi": [500, 560, 260, 100],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已点击一键清除，准备返回鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "ReindeerFishCommonBack"
         ]
     },
     "ReindeerFishRewardReturn": {
@@ -93,7 +114,8 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishRewardReturn",
-            "ReindeerFishReplyAll"
+            "ReindeerFishReplyAll",
+            "ReindeerFishClearAll"
         ],
         "on_error": [
             "ReindeerFishAfterCollectNoReply"
@@ -135,7 +157,7 @@
     "ReindeerFishAfterReplyRouter": {
         "recognition": "DirectHit",
         "action": "DoNothing",
-        "timeout": 4000,
+        "timeout": 6000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -143,10 +165,30 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishDirectGift",
+            "ReindeerFishReplyPopupReturn",
             "ReindeerFishCommonBack"
         ],
         "on_error": [
-            "ReindeerFishAbort"
+            "ReindeerFishCommonBack"
+        ]
+    },
+    "ReindeerFishReplyPopupReturn": {
+        "recognition": "OCR",
+        "expected": "^返回$",
+        "roi": [470, 380, 340, 200],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已点击回礼结算弹窗中的返回，准备离开驯鹿鱼页面。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "ReindeerFishCommonBack"
         ]
     },
     "ReindeerFishStartAtGrid": {

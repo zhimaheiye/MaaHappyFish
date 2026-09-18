@@ -15,6 +15,7 @@
     "BandFishStartRouter": {
         "recognition": "DirectHit",
         "action": "DoNothing",
+        "timeout": 12000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -28,13 +29,14 @@
     },
     "BandFishStartAtMyPerformance": {
         "recognition": "OCR",
-        "expected": "我的演出",
+        "expected": "^我的演出$",
         "roi": [
             500,
             10,
             280,
             80
         ],
+        "timeout": 4000,
         "action": "DoNothing",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -123,7 +125,7 @@
     },
     "BandFishCheckDone": {
         "recognition": "OCR",
-        "expected": "返场演出|返场演出次数",
+        "expected": "^返场演出",
         "roi": [
             500,
             580,
@@ -166,13 +168,14 @@
     },
     "BandFishCheckInvite": {
         "recognition": "OCR",
-        "expected": "我的演出",
+        "expected": "^我的演出$",
         "roi": [
             500,
             10,
             280,
             80
         ],
+        "timeout": 4000,
         "action": "Custom",
         "custom_action": "BandFishInviteLoopAction",
         "next": [

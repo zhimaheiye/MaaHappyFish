@@ -37,7 +37,7 @@ def run_tests():
             "宝石订单_普通订单_可完成.png",
             [241, 199, 150, 120],
         ),
-        "GemOrderExit": ("宝石订单_退出.png", [1107, 84, 37, 36]),
+        "GemOrderExit": ("宝石订单_退出.png", [1060, 40, 160, 120]),
     }
     for node_name, (template, roi) in expected_templates.items():
         node = pipeline[node_name]
@@ -84,8 +84,20 @@ def run_tests():
     assert "target" not in confirm_discard
     assert business_next(confirm_discard) == ["GemOrderOnPage"]
 
-    assert business_next(pipeline["GemOrderAllIssued"]) == ["GemOrderExit"]
+    assert business_next(pipeline["GemOrderAllIssued"]) == [
+        "GemOrderExit",
+        "GemOrderExitFallback",
+    ]
+    assert pipeline["GemOrderAllIssued"].get("on_error") == ["GemOrderExitFallback"]
+    assert pipeline["GemOrderExit"]["threshold"] == 0.7
+    assert "target" not in pipeline["GemOrderExit"]
+    assert pipeline["GemOrderExit"].get("on_error") == ["GemOrderExitFallback"]
+    fallback = pipeline["GemOrderExitFallback"]
+    assert fallback["recognition"] == "DirectHit"
+    assert fallback["action"] == "Click"
+    assert fallback["target"] == [1085, 55, 90, 90]
     assert business_next(pipeline["GemOrderExit"]) == ["GemOrderVerifyTank"]
+    assert business_next(fallback) == ["GemOrderVerifyTank"]
     assert pipeline["GemOrderVerifyTank"]["template"] == "主界面特征.png"
     assert pipeline["GemOrderVerifyTank"]["action"] == "Custom"
     assert pipeline["GemOrderVerifyTank"]["custom_action"] == "GemOrderDoneAction"

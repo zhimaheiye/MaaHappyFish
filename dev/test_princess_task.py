@@ -50,25 +50,36 @@ def run_tests():
         "roi": [512, 62, 253, 143],
         "action": "DoNothing",
     })
-    assert business_next(pipeline["PrincessPageReady"]) == ["PrincessClaimRouter"]
-    assert business_next(pipeline["PrincessClaimRouter"]) == [
-        "PrincessClaimReward",
+    assert business_next(pipeline["PrincessPageReady"]) == [
+        "PrincessClaimTop",
+        "PrincessClaimMiddle",
+        "PrincessClaimBottom",
         "PrincessExit",
     ]
-
-    claim = pipeline["PrincessClaimReward"]
-    assert claim["recognition"] == "TemplateMatch"
-    assert claim["template"] == "公主任务_领取奖励.png"
-    assert claim["roi"] == [1028, 290, 62, 288]
-    assert claim["action"] == "Click"
-    assert "target" not in claim
-    assert claim.get("max_hit") == 6
-    assert business_next(claim) == ["PrincessClaimResultRouter"]
+    claim_slots = [
+        ("PrincessClaimTop", [1028, 290, 62, 96]),
+        ("PrincessClaimMiddle", [1028, 386, 62, 96]),
+        ("PrincessClaimBottom", [1028, 482, 62, 96]),
+    ]
+    for node_name, roi in claim_slots:
+        claim = pipeline[node_name]
+        assert claim["recognition"] == "TemplateMatch"
+        assert claim["template"] == "公主任务_领取奖励.png"
+        assert claim["roi"] == roi
+        assert claim["action"] == "Click"
+        assert "target" not in claim
+        assert claim.get("max_hit") == 1
+        assert business_next(claim) == ["PrincessClaimResultRouter"]
 
     assert business_next(pipeline["PrincessClaimResultRouter"]) == [
         "PrincessClaimSuccess",
         "PrincessClaimFailure",
+        "PrincessClaimNeedMorePoints",
     ]
+    need_more = pipeline["PrincessClaimNeedMorePoints"]
+    assert need_more["recognition"] == "OCR"
+    assert need_more["expected"] == "积分不足|无法领取"
+    assert business_next(need_more) == ["PrincessClaimFailure"]
     success = pipeline["PrincessClaimSuccess"]
     assert success["recognition"] == "OCR"
     assert success["expected"] == "^开心收下$"
@@ -81,12 +92,17 @@ def run_tests():
     assert failure["template"] == "公主任务_领取失败.png"
     assert failure["action"] == "Click"
     assert "target" not in failure
-    assert business_next(pipeline["PrincessPageAfterClaim"]) == ["PrincessClaimRouter"]
+    assert business_next(pipeline["PrincessPageAfterClaim"]) == [
+        "PrincessClaimTop",
+        "PrincessClaimMiddle",
+        "PrincessClaimBottom",
+        "PrincessExit",
+    ]
+    assert pipeline["PrincessClaimFailure"]["roi"] == [760, 380, 180, 180]
 
     for gone in (
-        "PrincessClaimBottom",
-        "PrincessClaimMiddle",
-        "PrincessClaimTop",
+        "PrincessClaimReward",
+        "PrincessClaimRouter",
         "PrincessBottomRouter",
         "PrincessMiddleRouter",
         "PrincessTopRouter",
@@ -138,7 +154,7 @@ def run_tests():
     assert princess_tasks[0]["name"] == "公主任务"
     assert princess_tasks[0]["default_check"] is False
 
-    print("[PASS] PrincessTask column-claim topology, ROI, assets, and interface contract")
+    print("[PASS] PrincessTask three-slot claim topology, ROI, assets, and interface contract")
 
 
 if __name__ == "__main__":

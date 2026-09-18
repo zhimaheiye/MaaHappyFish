@@ -290,12 +290,20 @@ def test_friend_gate_pipeline():
 
     assert business_next("SeaOtterFriendRouter") == [
         "SeaOtterLimitReached",
+        "SeaOtterHasStaminaPanel",
         "SeaOtterFriendLiked",
         "SeaOtterFriendUnliked",
         "SeaOtterRecommendedBridge",
         "SeaOtterAddFriendPage",
         "SeaOtterWaitScreen",
     ]
+    stamina_panel = pipeline["SeaOtterHasStaminaPanel"]
+    assert stamina_panel["expected"] == ["剩余", "刷新体力"]
+    assert stamina_panel["roi"] == [60, 210, 350, 170]
+    assert business_next("SeaOtterHasStaminaPanel") == ["SeaOtterKnownFriendRouter"]
+    harvest = pipeline["SeaOtterHarvestable"]
+    assert harvest["roi"] == [0, 400, 560, 300]
+    assert harvest["threshold"] == 0.65
     assert pipeline["SeaOtterFriendLiked"]["template"] == "好友判断_已点赞.png"
     assert pipeline["SeaOtterFriendUnliked"]["template"] == "好友判断_未点赞.png"
     assert business_next("SeaOtterFriendLiked") == ["SeaOtterKnownFriendRouter"]
@@ -317,6 +325,7 @@ def test_friend_gate_pipeline():
     ]
     assert business_next("SeaOtterLastFriendExhausted") == ["SeaOtterDone"]
     last_harvest = pipeline["SeaOtterLastFriendHarvestable"]
+    assert last_harvest["roi"] == [0, 400, 560, 300]
     assert last_harvest["custom_action"] == "SeaOtterHarvestAction"
     assert last_harvest["custom_action_param"] == {"stay_on_current": True}
     assert business_next("SeaOtterLastFriendHarvestable") == ["SeaOtterFriendRouter"]

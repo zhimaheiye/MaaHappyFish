@@ -73,8 +73,15 @@ def run_tests():
 
     wait_bubble = pipeline["RomanticHouseWaitBubble"]
     assert wait_bubble["template"] == "浪漫满屋_气泡.png"
-    assert wait_bubble["timeout"] == 30000
+    assert wait_bubble["timeout"] == 3000
     assert wait_bubble["rate_limit"] == 200
+    assert wait_bubble["on_error"] == ["RomanticHouseClickBubbleFallback"]
+    fallback = pipeline["RomanticHouseClickBubbleFallback"]
+    assert fallback["recognition"] == "DirectHit"
+    assert fallback["action"] == "Click"
+    assert fallback["target"] == [874, 387, 71, 65]
+    assert "RomanticHouseInHomePage" in fallback["next"]
+    assert pipeline["RomanticHouseInFishTank"].get("max_hit") == 3
     print("【浪漫满屋退出修复】状态确认链深度验证")
     print("=" * 70)
 

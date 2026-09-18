@@ -29,6 +29,7 @@ try:
         collect_fish_state,
         starfish_timer_state,
         green_wild_daily_state,
+        hangup_schedule_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -45,6 +46,7 @@ except ImportError:
         collect_fish_state,
         starfish_timer_state,
         green_wild_daily_state,
+        hangup_schedule_state,
     )
 
 timer_state = starfish_timer_state
@@ -828,6 +830,62 @@ class CheckGreenWildDailyPendingReco(CustomRecognition):
         if daily_routine_state.get("step") != "GREEN_WILD_DAILY":
             return None
         if green_wild_daily_state.get("pending_buy_fish"):
+            return (0, 0, 10, 10)
+        return None
+
+
+def _hangup_now(param):
+    raw = param.get("now")
+    if raw:
+        try:
+            return datetime.fromisoformat(str(raw))
+        except Exception:
+            pass
+    return datetime.now()
+
+
+@AgentServer.custom_recognition("CheckHangupNoonDailyDueReco")
+class CheckHangupNoonDailyDueReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        param = parse_dict_param(getattr(argv, "custom_recognition_param", None))
+        if not bool(param.get("enabled", False)):
+            return None
+        if daily_routine_state.get("active"):
+            return None
+        now = _hangup_now(param)
+        if now.hour < 12:
+            return None
+        today = now.date().isoformat()
+        if hangup_schedule_state.get("noon_daily_last_date") == today:
+            return None
+        return (0, 0, 10, 10)
+
+
+@AgentServer.custom_recognition("CheckHangupFriendGemDueReco")
+class CheckHangupFriendGemDueReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        param = parse_dict_param(getattr(argv, "custom_recognition_param", None))
+        if not bool(param.get("enabled", False)):
+            return None
+        if daily_routine_state.get("active"):
+            return None
+        now = _hangup_now(param)
+        today = now.date().isoformat()
+        hour = now.hour
+        if 10 <= hour < 12 and hangup_schedule_state.get("friend_gem_morning_date") != today:
+            return (0, 0, 10, 10)
+        if hour >= 22 and hangup_schedule_state.get("friend_gem_evening_date") != today:
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckHangupResumeReco")
+class CheckHangupResumeReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        param = parse_dict_param(getattr(argv, "custom_recognition_param", None))
+        target = param.get("target")
+        stack = hangup_schedule_state.get("resume_stack") or []
+        if target and stack and stack[-1] == target:
             return (0, 0, 10, 10)
         return None
 

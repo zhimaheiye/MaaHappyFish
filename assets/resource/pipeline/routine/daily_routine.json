@@ -193,7 +193,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "BandFishStartRouter"
+            "BandFishTask"
         ]
     },
     "DailyRoutineStepGoldenDolphin": {
@@ -367,7 +367,18 @@
         "custom_action": "DailyRoutineFinishAction",
         "focus": {
             "Node.Action.Succeeded": "[日常收尾] 所有已选子任务均已流转完成。"
-        }
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "HangupResumeCollectFish",
+            "HangupResumePatrol",
+            "HangupResumeFriendGem",
+            "DailyRoutineStandaloneDone"
+        ]
     },
     "DailyRoutineReturnIfActive": {
         "recognition": "Custom",

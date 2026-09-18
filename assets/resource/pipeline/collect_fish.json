@@ -54,6 +54,8 @@
             "HandleShellEntryMisTouch",
             "HandleShellPage",
             "CloseFeedPopup",
+            "HangupNoonDailyCollectFish",
+            "HangupFriendGemCollectFish",
             "TriggerStarfishFeed",
             "CollectFishCheckTankSwitch",
             "CheckDutyCycle",

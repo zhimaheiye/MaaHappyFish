@@ -34,6 +34,7 @@ try:
         collect_fish_state,
         starfish_timer_state,
         green_wild_daily_state,
+        hangup_schedule_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -52,6 +53,7 @@ except ImportError:
         collect_fish_state,
         starfish_timer_state,
         green_wild_daily_state,
+        hangup_schedule_state,
     )
 
 try:
@@ -940,8 +942,15 @@ class SeaOtterHarvestAction(CustomAction):
             param = parse_dict_param(getattr(argv, "custom_action_param", None))
             stay_on_current = bool(param.get("stay_on_current", False))
 
-            # 1. 点击左下角海獭安全本体 (85, 565)
-            ctrl.post_touch_down(85, 565).wait()
+            otter_x, otter_y = 85, 565
+            try:
+                raw_box = getattr(argv, "box", None)
+                box = tuple(int(value) for value in raw_box) if raw_box is not None else None
+                if box and len(box) == 4 and box[2] > 0 and box[3] > 0:
+                    otter_x, otter_y = _box_center(box)
+            except Exception:
+                otter_x, otter_y = 85, 565
+            ctrl.post_touch_down(otter_x, otter_y).wait()
             time.sleep(0.08)
             ctrl.post_touch_up(0).wait()
 
@@ -1627,6 +1636,11 @@ class BandFishInviteLoopAction(CustomAction):
                     if fw != 1280 or fh != 720:
                         f = cv2.resize(f, (1280, 720))
                 return f
+
+            gate_frame = capture_frame()
+            if gate_frame is None or not is_on_stage(gate_frame):
+                print("[乐队鱼邀请] 当前不在乐队鱼舞台，拒绝把空槽当成邀请完成。", flush=True)
+                return False
 
             round_count = 0
             while time.time() - t_start < max_loop_duration:
@@ -3259,6 +3273,69 @@ class GreenWildDailyDoneAction(CustomAction):
             return False
 
 
+HANGUP_DAILY_ALL = {"all_enabled": True}
+
+
+@AgentServer.custom_action("InitHangupScheduledDailyAction")
+class InitHangupScheduledDailyAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            resume_to = param.get("resume_to") or "collect_fish"
+            stack = hangup_schedule_state.setdefault("resume_stack", [])
+            stack.append(resume_to)
+            hangup_schedule_state["noon_daily_last_date"] = datetime.now().date().isoformat()
+            print(
+                f"[挂机日程] 已到 12:00，开始执行日常收尾（默认全选），完成后返回 {resume_to}。",
+                flush=True,
+            )
+            class _Arg:
+                custom_action_param = json.dumps(HANGUP_DAILY_ALL)
+            return InitDailyRoutineAction().run(context, _Arg())
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[挂机日程] 启动十二点日常异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("InitHangupFriendGemAction")
+class InitHangupFriendGemAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            resume_to = param.get("resume_to") or "collect_fish"
+            stack = hangup_schedule_state.setdefault("resume_stack", [])
+            stack.append(resume_to)
+            hour = datetime.now().hour
+            today = datetime.now().date().isoformat()
+            if hour >= 22:
+                hangup_schedule_state["friend_gem_evening_date"] = today
+                slot = "晚上十点"
+            else:
+                hangup_schedule_state["friend_gem_morning_date"] = today
+                slot = "上午十点"
+            print(f"[挂机日程] 已到{slot}，开始好友摸宝兜底，完成后返回 {resume_to}。", flush=True)
+            return InitFriendGemStateAction().run(context, argv)
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[挂机日程] 启动好友摸宝异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("HangupPopResumeAction")
+class HangupPopResumeAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            stack = hangup_schedule_state.setdefault("resume_stack", [])
+            target = stack.pop() if stack else None
+            print(f"[挂机日程] 子任务结束，返回挂机循环: {target}", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[挂机日程] 返回挂机异常: {e}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("InitDailyRoutineAction")
 class InitDailyRoutineAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -3280,9 +3357,13 @@ class InitDailyRoutineAction(CustomAction):
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house"))
+            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house"))
 
-            if has_param:
+            if param.get("all_enabled"):
+                enable_fg = enable_rf = enable_gsc = enable_gwd = True
+                enable_bf = enable_gd = enable_sg = enable_fi = True
+                enable_ggb = enable_go = enable_rh = True
+            elif has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
                 enable_gsc = bool(param.get("gold_shell_coupon", False))

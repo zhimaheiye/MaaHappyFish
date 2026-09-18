@@ -13,6 +13,8 @@
   -> 模板点击 游乐园入口.png
   -> 模板点击 驯鹿鱼_入口.png
   -> 页面状态路由 (ReindeerFishStartRouter)
+       ├─ 礼物已送完: 左下 OCR“键清除”（兼容一键清除）[500,560,260,100] -> 左上角返回
+       ├─ 未识别到收取/回礼/清除: 点左上角“返回”回鱼缸，不 Abort
        ├─ 场景 A & C: 底部 OCR“一键收取” [480,562,440,143] (ReindeerFishCollectAll)
        │    -> ReindeerFishAfterCollectRouter (4000ms 稳定识别窗口)
        │         ├─ 奖励弹窗: OCR“返回” [536,437,210,150] (ReindeerFishRewardReturn) -> 重新进入 AfterCollectRouter
@@ -21,6 +23,7 @@
        └─ 场景 B: 初始即无收取、只有回礼: 左侧 OCR“键回礼” [537,611,128,44] (ReindeerFishReplyAll)
             -> ReindeerFishAfterReplyRouter
                  ├─ 全屏 OCR“直接赠送” -> 点击 -> 通用返回
+                 ├─ 回礼结算弹窗: 中央 OCR“返回” [470,380,340,200] -> 再点左上角返回
                  └─ 未出现弹窗 -> 通用返回
   -> 模板确认回到鱼缸 (ReindeerFishVerifyTank)
   -> 推进日常收尾队列

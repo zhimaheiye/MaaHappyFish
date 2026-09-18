@@ -27,7 +27,28 @@
             "GoldShellCouponVerifyCategoryPage",
             "GoldShellCouponEntry",
             "GoldShellCouponStarfishMisTouch",
+            "GoldShellCouponOctopusMisTouch",
+            "GoldShellCouponReturnCategory",
             "GoldShellCouponAbort"
+        ]
+    },
+    "GoldShellCouponOctopusMisTouch": {
+        "recognition": "TemplateMatch",
+        "template": "开贝壳_识别.png",
+        "threshold": 0.8,
+        "roi": [37, 68, 226, 142],
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[兑换金贝壳券] 当前是开贝壳大章鱼页，未进入金贝壳兑换，开始两次返回鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponReturnCategory"
         ]
     },
     "GoldShellCouponGoldPageIdentity": {
@@ -114,10 +135,12 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "GoldShellCouponVerifyGoldPage"
+            "GoldShellCouponVerifyGoldPage",
+            "GoldShellCouponOctopusMisTouch",
+            "GoldShellCouponReturnCategory"
         ],
         "on_error": [
-            "GoldShellCouponAbort"
+            "GoldShellCouponReturnTank"
         ]
     },
     "GoldShellCouponVerifyGoldPage": {
@@ -135,10 +158,11 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "GoldShellCouponCheckExchange"
+            "GoldShellCouponCheckExchange",
+            "GoldShellCouponNoExchange"
         ],
         "on_error": [
-            "GoldShellCouponAbort"
+            "GoldShellCouponNoExchange"
         ]
     },
     "GoldShellCouponCheckExchange": {
@@ -199,7 +223,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[兑换金贝壳券] 经主页门禁确认且多次未识别到兑换按钮，判定为今日已兑换或无可兑换，准备返回。"
+            "Node.Action.Succeeded": "[兑换金贝壳券] 未识别到兑换，开始两次返回鱼缸，然后继续后续任务。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -358,10 +382,11 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "GoldShellCouponVerifyCategoryAfterReturn"
+            "GoldShellCouponVerifyCategoryAfterReturn",
+            "GoldShellCouponReturnTank"
         ],
         "on_error": [
-            "GoldShellCouponAbort"
+            "GoldShellCouponReturnTank"
         ]
     },
     "GoldShellCouponVerifyCategoryAfterReturn": {
@@ -389,7 +414,7 @@
             "GoldShellCouponReturnTank"
         ],
         "on_error": [
-            "GoldShellCouponAbort"
+            "GoldShellCouponReturnTank"
         ]
     },
     "GoldShellCouponReturnTank": {
@@ -416,7 +441,7 @@
             "GoldShellCouponVerifyTank"
         ],
         "on_error": [
-            "GoldShellCouponAbort"
+            "GoldShellCouponVerifyTank"
         ]
     },
     "GoldShellCouponVerifyTank": {

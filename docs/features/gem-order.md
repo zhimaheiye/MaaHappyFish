@@ -18,7 +18,7 @@
 | 丢弃按钮 | OCR `^[丢丟]弃$` | `[735,626,66,32]` |
 | 丢弃确认按钮 | OCR `^[丢丟]弃$` | `[603,460,85,32]` |
 | 完成按钮 | OCR `^完成$` | `[944,625,65,33]` |
-| 页面退出 | `宝石订单_退出.png` | `[1107,84,37,36]` |
+| 页面退出 | `宝石订单_退出.png` | `[1060,40,160,120]`；模板未命中则点击 `[1085,55,90,90]` |
 
 ## 状态机
 
@@ -29,7 +29,7 @@ GemOrderTask
   -> 其他状态：GemOrderAbort
 
 GemOrderRouter
-  -> OCR 命中 10/10：GemOrderExit -> GemOrderVerifyTank -> 日常/独立双出口
+  -> OCR 命中 10/10：GemOrderExit（模板关窗）/ GemOrderExitFallback（点右上角关闭区）-> GemOrderVerifyTank -> 日常/独立双出口；10/10 后不再 StopTask
   -> 特殊订单对号：GemOrderComplete -> 重新确认订单页
   -> 普通订单对号：GemOrderComplete -> 重新确认订单页
   -> 两种对号均未命中且“丢弃”存在：GemOrderDiscard -> GemOrderConfirmDiscard -> 重新确认订单页

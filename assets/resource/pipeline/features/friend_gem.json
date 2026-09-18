@@ -100,6 +100,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "HangupNoonDailyFriendGem",
             "FriendGemAddFriendPage",
             "FriendGemWelcomePopup",
             "FriendGemSpecialPopup",
@@ -329,6 +330,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "HangupNoonDailyFriendGem",
             "FriendGemAddFriendPage",
             "FriendGemWelcomePopup",
             "FriendGemSpecialPopup",
@@ -489,6 +491,15 @@
     },
     "FriendGemDone": {
         "recognition": "DirectHit",
-        "action": "DoNothing"
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "HangupResumeCollectFish",
+            "HangupResumePatrol"
+        ]
     }
 }

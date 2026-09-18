@@ -111,16 +111,20 @@
         "next": [
             "GlobalDailySignClose",
             "GlobalDailySignAutoClosed"
+        ],
+        "on_error": [
+            "GlobalDailySignClose"
         ]
     },
     "GlobalDailySignClose": {
         "recognition": "TemplateMatch",
         "template": "签到_关闭.png",
-        "threshold": 0.8,
-        "roi": [1033, 0, 148, 140],
+        "threshold": 0.75,
+        "roi": [1000, 0, 220, 160],
         "action": "Click",
-        "target": [1103, 63, 6, 6],
-        "post_delay": 500
+        "post_delay": 800,
+        "timeout": 4000,
+        "focus": "已点击签到弹窗右上角关闭"
     },
     "GlobalDailySignAutoClosed": {
         "recognition": "TemplateMatch",

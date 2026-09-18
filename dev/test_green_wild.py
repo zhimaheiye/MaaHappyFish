@@ -36,34 +36,61 @@ def run_tests():
     pipeline = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
     open_shell = json.loads(OPEN_SHELL_PATH.read_text(encoding="utf-8"))
 
-    assert business_next(pipeline["GreenWildTask"]) == ["GreenWildEntry"]
+    assert business_next(pipeline["GreenWildTask"]) == ["GreenWildStartRouter"]
+    assert business_next(pipeline["GreenWildStartRouter"]) == [
+        "GreenWildClaimAll",
+        "GreenWildOpenTask",
+        "GreenWildOpenTaskByOcr",
+        "GreenWildEntry",
+        "GreenWildAbort",
+    ]
     assert pipeline["GreenWildEntry"]["template"] == "绿野寻仙踪_入口.png"
-    assert pipeline["GreenWildEntry"]["roi"] == [140, 278, 49, 50]
+    assert pipeline["GreenWildEntry"]["roi"] == [120, 258, 90, 90]
     assert pipeline["GreenWildEntry"]["action"] == "Click"
     assert "target" not in pipeline["GreenWildEntry"]
+    assert pipeline["GreenWildEntry"]["post_delay"] == 3000
+    assert business_next(pipeline["GreenWildEntry"]) == ["GreenWildPageWait"]
+    assert pipeline["GreenWildPageWait"]["post_delay"] == 2000
+    assert business_next(pipeline["GreenWildPageWait"]) == [
+        "GreenWildClaimAll",
+        "GreenWildOpenTask",
+        "GreenWildOpenTaskByOcr",
+        "GreenWildReturn",
+    ]
     assert pipeline["GreenWildOpenTask"]["template"] == "绿野寻仙踪_任务.png"
-    assert pipeline["GreenWildOpenTask"]["roi"] == [41, 345, 68, 59]
+    assert pipeline["GreenWildOpenTask"]["roi"] == [20, 300, 140, 140]
     assert pipeline["GreenWildOpenTask"]["action"] == "Click"
+    assert "target" not in pipeline["GreenWildOpenTask"]
     assert business_next(pipeline["GreenWildOpenTask"]) == [
         "GreenWildClaimAll",
         "GreenWildReturn",
     ]
+    assert pipeline["GreenWildOpenTask"].get("on_error") == ["GreenWildOpenTaskByOcr"]
+    ocr_task = pipeline["GreenWildOpenTaskByOcr"]
+    assert ocr_task["recognition"] == "OCR"
+    assert ocr_task["expected"] == "^任务$"
+    assert ocr_task["roi"] == [20, 300, 140, 140]
+    assert ocr_task["action"] == "Click"
+    assert "target" not in ocr_task
+    assert business_next(ocr_task) == ["GreenWildClaimAll", "GreenWildReturn"]
     claim = pipeline["GreenWildClaimAll"]
     assert claim["recognition"] == "OCR"
     assert claim["expected"] == "键领取"
-    assert claim["roi"] == [1089, 579, 107, 39]
+    assert claim["roi"] == [1050, 540, 200, 90]
     assert claim["action"] == "Click"
     assert "target" not in claim
     assert business_next(claim) == ["GreenWildReturn"]
     assert claim.get("on_error") == ["GreenWildReturn"]
     assert pipeline["GreenWildReturn"]["template"] == "绿野寻仙踪_返回.png"
-    assert pipeline["GreenWildReturn"]["roi"] == [1180, 50, 61, 55]
+    assert pipeline["GreenWildReturn"]["roi"] == [1140, 20, 130, 100]
     assert pipeline["GreenWildReturn"]["action"] == "Click"
+    assert "target" not in pipeline["GreenWildReturn"]
     assert pipeline["GreenWildVerifyTank"]["template"] == "主界面特征.png"
 
     assert pipeline["GreenWildDailyTask"]["custom_action"] == "InitGreenWildDailyAction"
     assert business_next(pipeline["GreenWildDailyTask"]) == [
         "OpenShellStartPage",
+        "OpenShellCategoryPage",
         "OpenShellEntry",
         "OpenShellAbort",
     ]

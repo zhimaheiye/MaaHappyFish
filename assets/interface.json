@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.8",
+    "version": "0.5.9",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -79,7 +79,10 @@
             "name": "好友摸宝",
             "entry": "FriendGemTask",
             "default_check": false,
-            "description": "从主鱼缸、好友列表或好友水族箱启动；优先使用可用的快捷摸宝按钮，不可用时通过图像识别收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。"
+            "description": "从主鱼缸、好友列表或好友水族箱启动；优先使用可用的快捷摸宝按钮，不可用时通过图像识别收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。挂机跨过中午时可选插入十二点日常收尾。",
+            "option": [
+                "挂机十二点日常"
+            ]
         },
         {
             "name": "海牛先生",
@@ -97,29 +100,33 @@
             "name": "公主任务",
             "entry": "PrincessTask",
             "default_check": false,
-            "description": "从主鱼缸或公主任务页面启动，在右侧奖励列 [1028,290,62,288] 内查找可领取礼盒并点击命中位置，分别处理领取成功或失败结果，最后安全返回鱼缸。"
+            "description": "从主鱼缸或公主任务页面启动，在右侧奖励列从上到下依次点击三个礼盒；领取成功、失败或积分不足后继续下一格，三格都尝试完再返回鱼缸。"
         },
         {
             "name": "收鱼产物",
             "entry": "CollectFishTask",
             "default_check": true,
-            "description": "循环收宝任务，支持单鱼缸持续/休眠收宝，或在 1 缸与 2 缸之间按间隔轮换收宝；并定时统一为三只海星补充鱼食",
+            "description": "循环收宝任务，支持单鱼缸持续/休眠收宝，或在 1 缸与 2 缸之间按间隔轮换收宝；并定时统一为三只海星补充鱼食。可选到点插入十二点日常收尾、十点/二十二点好友摸宝。",
             "option": [
                 "收鱼鱼缸模式",
                 "喂食间隔",
                 "收宝石方式",
-                "挂机鱼食计算"
+                "挂机鱼食计算",
+                "挂机十二点日常",
+                "挂机十点好友摸宝"
             ]
         },
         {
             "name": "多鱼缸巡检",
             "entry": "PatrolTask",
             "default_check": false,
-            "description": "首轮立即依次巡检 1/2/3 鱼缸收宝并为三缸海星补充鱼食；可选每小时检查魔力召唤和宝石融合",
+            "description": "首轮立即依次巡检 1/2/3 鱼缸收宝并为三缸海星补充鱼食；可选每小时检查魔力召唤和宝石融合。可选到点插入十二点日常收尾、十点/二十二点好友摸宝。",
             "option": [
                 "多鱼缸巡检间隔",
                 "多鱼缸巡检子任务",
-                "收宝石方式"
+                "收宝石方式",
+                "挂机十二点日常",
+                "挂机十点好友摸宝"
             ]
         },
         {
@@ -632,6 +639,72 @@
                     "pipeline_override": {
                         "PatrolGemFusionDue": {
                             "enabled": true
+                        }
+                    }
+                }
+            ]
+        },
+        "挂机十二点日常": {
+            "type": "select",
+            "label": "十二点日常收尾",
+            "description": "挂机到当天 12:00 后自动跑一遍日常收尾（子任务默认全选），完成后回到原来的挂机。每个自然日只跑一次。失败兼容后续再补。",
+            "default_case": "开启",
+            "cases": [
+                {
+                    "name": "开启",
+                    "pipeline_override": {
+                        "HangupNoonDailyCollectFish": {
+                            "custom_recognition_param": { "enabled": true }
+                        },
+                        "HangupNoonDailyPatrol": {
+                            "custom_recognition_param": { "enabled": true }
+                        },
+                        "HangupNoonDailyFriendGem": {
+                            "custom_recognition_param": { "enabled": true }
+                        }
+                    }
+                },
+                {
+                    "name": "关闭",
+                    "pipeline_override": {
+                        "HangupNoonDailyCollectFish": {
+                            "custom_recognition_param": { "enabled": false }
+                        },
+                        "HangupNoonDailyPatrol": {
+                            "custom_recognition_param": { "enabled": false }
+                        },
+                        "HangupNoonDailyFriendGem": {
+                            "custom_recognition_param": { "enabled": false }
+                        }
+                    }
+                }
+            ]
+        },
+        "挂机十点好友摸宝": {
+            "type": "select",
+            "label": "十点/二十二点好友摸宝",
+            "description": "挂机到当天 10:00 或 22:00 后自动跑一遍好友摸宝，清掉未手动处理的体力，完成后回到挂机。每个时段每天只跑一次。默认关闭。",
+            "default_case": "关闭",
+            "cases": [
+                {
+                    "name": "开启",
+                    "pipeline_override": {
+                        "HangupFriendGemCollectFish": {
+                            "custom_recognition_param": { "enabled": true }
+                        },
+                        "HangupFriendGemPatrol": {
+                            "custom_recognition_param": { "enabled": true }
+                        }
+                    }
+                },
+                {
+                    "name": "关闭",
+                    "pipeline_override": {
+                        "HangupFriendGemCollectFish": {
+                            "custom_recognition_param": { "enabled": false }
+                        },
+                        "HangupFriendGemPatrol": {
+                            "custom_recognition_param": { "enabled": false }
                         }
                     }
                 }

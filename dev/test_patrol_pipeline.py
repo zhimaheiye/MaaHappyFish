@@ -148,7 +148,7 @@ class PatrolPipelineTest(unittest.TestCase):
         # OpenShellTask entry routing (supports deep resume at start page or entry from main tank)
         self.assertEqual(
             business_next(self.open_shell_pipeline["OpenShellTask"]),
-            ["OpenShellStartPage", "OpenShellEntry", "OpenShellAbort"],
+            ["OpenShellStartPage", "OpenShellCategoryPage", "OpenShellEntry", "OpenShellAbort"],
         )
 
         entry = self.open_shell_pipeline["OpenShellEntry"]
@@ -159,8 +159,8 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertNotIn("target", entry)
         # 1. OpenShellEntry 的业务 next 不再直接是 OpenShellStartPage
         self.assertNotIn("OpenShellStartPage", business_next(entry))
-        # 2. OpenShellEntry -> OpenShellEnter
-        self.assertEqual(business_next(entry), ["OpenShellEnter"])
+        # 2. OpenShellEntry -> 分类页门禁 -> 进入
+        self.assertEqual(business_next(entry), ["OpenShellCategoryPage", "OpenShellEnter"])
         self.assertEqual(entry.get("on_error"), ["OpenShellAbort"])
         self.assertTrue(
             os.path.isfile(
@@ -168,16 +168,26 @@ class PatrolPipelineTest(unittest.TestCase):
             )
         )
 
-        # 3. OpenShellEnter: OCR, expected "^进入$", roi [271, 573, 101, 45], action Click
+        # 3. OpenShellEnter: OCR 普通贝壳「进入」，失败则点分类页返回
         enter_node = self.open_shell_pipeline["OpenShellEnter"]
         self.assertEqual(enter_node["recognition"], "OCR")
         self.assertEqual(enter_node["expected"], "^进入$")
-        self.assertEqual(enter_node["roi"], [271, 573, 101, 45])
+        self.assertEqual(enter_node["roi"], [160, 500, 280, 140])
         self.assertEqual(enter_node["action"], "Click")
         self.assertNotIn("target", enter_node)
-        self.assertEqual(enter_node.get("on_error"), ["OpenShellAbort"])
-        # 4. OpenShellEnter -> OpenShellStartPage
-        self.assertEqual(business_next(enter_node), ["OpenShellStartPage"])
+        self.assertEqual(enter_node.get("on_error"), ["OpenShellReturnFromCategory"])
+        self.assertEqual(
+            business_next(enter_node),
+            ["OpenShellStartPage", "OpenShellReturnFromCategory"],
+        )
+        category = self.open_shell_pipeline["OpenShellCategoryPage"]
+        self.assertEqual(category["template"], "开贝壳_误触识别.png")
+        self.assertEqual(business_next(category), ["OpenShellEnter"])
+        back = self.open_shell_pipeline["OpenShellReturnFromCategory"]
+        self.assertEqual(back["expected"], "^返回$")
+        self.assertEqual(back["action"], "Click")
+        self.assertNotIn("target", back)
+        self.assertEqual(business_next(back), ["OpenShellVerifyMainAfterDone"])
 
         # 5. OpenShellStartPage ROI == [37, 68, 226, 142]
         start_page = self.open_shell_pipeline["OpenShellStartPage"]
