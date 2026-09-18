@@ -200,7 +200,11 @@
             350,
             170
         ],
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "SeaOtterMarkNormalCompletionAction",
+        "custom_action_param": {
+            "reason": "LAST_FRIEND_EXHAUSTED"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -262,7 +266,11 @@
             1280,
             720
         ],
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "SeaOtterMarkNormalCompletionAction",
+        "custom_action_param": {
+            "reason": "FRIEND_LIST_EXHAUSTED"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -341,6 +349,7 @@
     },
     "SeaOtterDone": {
         "recognition": "DirectHit",
-        "action": "DoNothing"
+        "action": "Custom",
+        "custom_action": "SeaOtterFinalizeAction"
     }
 }

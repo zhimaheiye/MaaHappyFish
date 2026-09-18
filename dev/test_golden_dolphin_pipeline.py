@@ -259,6 +259,136 @@ def run_tests():
     assert 830 <= cancel_x <= 910 and 550 <= cancel_y <= 600
     print('[PASS] Check 10: 结算按钮出现较晚时会按模板点击，并在主鱼缸门禁通过后才推进！')
 
+    print("\n--- Test 11: 真实未激活启动帧门禁 (无假阳性) ---")
+    start_frame = cv2.imread('dev/exploration/golden_dolphin/02_game_start_stage.png')
+    assert start_frame is not None, "Missing start frame fixture"
+    
+    # 模拟 _get_golden_dolphin_templates 的结构
+    coin_tpl = templates['activation_coin']
+    xp_tpls = rewards['xp']
+    heart_tpls = rewards['heart']
+    gem_tpls = rewards['gem']
+    
+    assert _find_golden_dolphin_template_targets(start_frame, coin_tpl), "Must find activation coin in start frame"
+    assert not _find_golden_dolphin_xp(start_frame, xp_tpls), "XP false positive on start frame"
+    assert not _find_golden_dolphin_template_targets(start_frame, heart_tpls), "Heart false positive on start frame"
+    assert not _find_golden_dolphin_template_targets(start_frame, gem_tpls), "Gem false positive on start frame"
+    print('[PASS] Check 11: 初始帧只识别到贝币，其余奖励未发生假阳性触发！')
+
+    print("\n--- Test 12: 贝币启动阶段仅限点击1次且必带 wait 契约 ---")
+    class _StrictFakeJob:
+        def __init__(self):
+            self.wait_called = False
+        def wait(self):
+            self.wait_called = True
+            return self
+
+    class _FakeTasker:
+        def __init__(self):
+            self.stopping = False
+            self.running = True
+            self.controller = None
+
+    class _FakeContext:
+        def __init__(self):
+            self.tasker = _FakeTasker()
+
+    class _StrictFakeController:
+        def __init__(self, ctx, frame):
+            self.ctx = ctx
+            self.frame = frame
+            self.click_count = 0
+            self.last_job = None
+            
+        def post_screencap(self):
+            class _CapJob:
+                def __init__(self, f): self.f = f
+                def wait(self): return self
+                def get(self): return self.f
+            return _CapJob(self.frame)
+
+        def post_click(self, x, y):
+            self.click_count += 1
+            self.last_job = _StrictFakeJob()
+            self.ctx.tasker.stopping = True
+            return self.last_job
+            
+    ctx = _FakeContext()
+    ctx.tasker.controller = _StrictFakeController(ctx, start_frame)
+    golden_dolphin_state['reward_priority'] = 'xp'
+    
+    GoldenDolphinPlayGameAction().run(ctx, SimpleNamespace(custom_action_param=""))
+    
+    assert ctx.tasker.controller.click_count == 1, f"Expected 1 post_click for startup phase, got {ctx.tasker.controller.click_count}"
+    assert ctx.tasker.controller.last_job is not None, "post_click was not called"
+    assert ctx.tasker.controller.last_job.wait_called, "job.wait() was not called on activation coin"
+    print('[PASS] Check 12: 隐藏启动阶段精确点击 1 次贝币并调用了 job.wait() 同步等待！')
+
+    print("\n--- Test 13: 正式阶段优先填充机制 ---")
+    class _MockFind:
+        def __init__(self, xp_cnt, heart_cnt, gem_cnt, coin_cnt):
+            self.xp = [(1, 1, 0.9)] * xp_cnt
+            self.heart = [(2, 2, 0.9)] * heart_cnt
+            self.gem = [(3, 3, 0.9)] * gem_cnt
+            self.coin = [(4, 4, 0.9)] * coin_cnt
+
+    def _mock_collect(frame, priority, xp_cnt, heart_cnt, gem_cnt, coin_cnt):
+        import sys
+        if 'agent' not in sys.path:
+            sys.path.append('agent')
+        import my_action
+        old_xp = my_action._find_golden_dolphin_xp
+        old_others = my_action._find_golden_dolphin_template_targets
+        
+        mock_data = _MockFind(xp_cnt, heart_cnt, gem_cnt, coin_cnt)
+        
+        def mock_xp(f, t): return mock_data.xp
+        def mock_others(f, t):
+            # Hacky way to guess what's being asked
+            # Actually, _collect_golden_dolphin_frame_targets uses keys in reward_templates
+            return []
+            
+        my_action._find_golden_dolphin_xp = mock_xp
+        
+        # Real mock
+        def _mock_others2(f, t):
+            if t == "fake_heart": return mock_data.heart
+            if t == "fake_gem": return mock_data.gem
+            if t == "fake_coin": return mock_data.coin
+            return []
+        my_action._find_golden_dolphin_template_targets = _mock_others2
+        
+        fake_rewards = {
+            "xp": "fake_xp",
+            "heart": "fake_heart",
+            "gem": "fake_gem",
+            "coin": "fake_coin"
+        }
+        
+        try:
+            res = my_action._collect_golden_dolphin_frame_targets(None, fake_rewards, priority, 4)
+            return [r[0] for r in res]
+        finally:
+            my_action._find_golden_dolphin_xp = old_xp
+            my_action._find_golden_dolphin_template_targets = old_others
+
+    # Case A
+    res_a = _mock_collect(None, "xp", 2, 3, 4, 5)
+    assert len(res_a) == 4, f"Case A length {len(res_a)}"
+    assert res_a == ["xp", "xp", "heart", "heart"], f"Case A wrong items: {res_a}"
+    
+    # Case B
+    res_b = _mock_collect(None, "xp", 6, 3, 4, 0)
+    assert len(res_b) == 4
+    assert res_b == ["xp", "xp", "xp", "xp"]
+    
+    # Case C
+    res_c = _mock_collect(None, "xp", 0, 1, 2, 5)
+    assert len(res_c) == 4
+    assert res_c == ["heart", "gem", "gem", "coin"]
+    
+    print('[PASS] Check 13: 优先填充机制正确地优先取回目标且补足缺口！')
+
     print("\nALL GOLDEN DOLPHIN PIPELINE TESTS PASSED 100%!")
 
 

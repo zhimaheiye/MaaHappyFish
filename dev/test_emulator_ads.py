@@ -45,7 +45,10 @@ class TestEmulatorAds(unittest.TestCase):
         for node_name, (template, action) in expected_templates.items():
             node = self.pipeline[node_name]
             self.assertEqual(node["recognition"], "TemplateMatch")
-            self.assertEqual(node["template"], template)
+            if isinstance(node["template"], list):
+                self.assertIn(template, node["template"])
+            else:
+                self.assertEqual(node["template"], template)
             self.assertEqual(node["roi"], [0, 0, 1280, 720])
             self.assertEqual(node["threshold"], 0.8)
             self.assertEqual(node["action"], action)
@@ -96,10 +99,10 @@ class TestEmulatorAds(unittest.TestCase):
     def test_interface_exposes_emulator_task_and_shared_cycle_options(self):
         task = next(item for item in self.interface["task"] if item["entry"] == "EmulatorAdTask")
         self.assertEqual(task["name"], "模拟器看广告")
-        self.assertEqual(task["option"], ["手机广告轮数"])
+        self.assertEqual(task["option"], ["模拟器广告轮数"])
 
-        option = self.interface["option"]["手机广告轮数"]
-        expected_cycles = {"3 轮(默认测试)": 3, "5 轮": 5, "10 轮": 10}
+        option = self.interface["option"]["模拟器广告轮数"]
+        expected_cycles = {"3 轮(默认测试)": 3, "5 轮": 5, "10 轮": 10, "一直运行": 0}
         for case in option["cases"]:
             count = expected_cycles[case["name"]]
             override = case["pipeline_override"]
@@ -113,10 +116,160 @@ class TestEmulatorAds(unittest.TestCase):
                 count,
             )
 
+        # Phone ad UI remains intact and has no "一直运行"
+        phone_opt = self.interface["option"]["手机广告轮数"]
+        phone_cases = [c["name"] for c in phone_opt["cases"]]
+        self.assertNotIn("一直运行", phone_cases)
+
     def test_external_ad_pipeline_is_isolated_from_game_popup_handlers(self):
         source = (ROOT / "dev" / "test_daily_sign_global.py").read_text(encoding="utf-8")
         self.assertIn('"emulator_ads.json"', source)
 
+    def test_wait_node_and_skip_logic_contract(self):
+        # Case 1: EmulatorAdWaitForClose must have long timeout
+        wait_node = self.pipeline["EmulatorAdWaitForClose"]
+        self.assertEqual(wait_node["recognition"], "DirectHit")
+        self.assertEqual(wait_node["action"], "DoNothing")
+        self.assertGreaterEqual(wait_node["timeout"], 80000)
+        self.assertIn("EmulatorAdClosePage", wait_node["next"])
+        # 2026-09-18: 长等待窗口耗尽后才允许固定位置兜底（不再直接 Abort）
+        self.assertEqual(wait_node["on_error"], ["EmulatorAdCloseFixedFallback"])
+
+        # Case 2: EmulatorAdClosePage must strictly wait for X template
+        close_node = self.pipeline["EmulatorAdClosePage"]
+        self.assertEqual(close_node["recognition"], "TemplateMatch")
+        self.assertIn("看广告页面_关闭.png", close_node["template"])
+        self.assertIn("看广告页面_关闭1.png", close_node["template"])
+        self.assertEqual(close_node["order_by"], "Score")
+        self.assertEqual(close_node["action"], "Click")
+        # 模板关闭仍是主路径：ClosePage 自己的 on_error 不得指向固定兜底
+        self.assertEqual(close_node["on_error"], ["EmulatorAdAbort"])
+
+        close_done_node = self.pipeline["EmulatorAdCloseRewardAndDone"]
+        self.assertIn("看广告页面_关闭.png", close_done_node["template"])
+        self.assertIn("看广告页面_关闭1.png", close_done_node["template"])
+        self.assertEqual(close_done_node["order_by"], "Score")
+
+        # Case 3: Strictly NO skip click logic
+        pipeline_str = json.dumps(self.pipeline, ensure_ascii=False)
+        self.assertNotIn("跳过", pipeline_str)
+
+    def test_fixed_close_fallback_contract(self):
+        """2026-09-18 固定坐标关闭兜底：模板优先、长等待超时后一次兜底、转盘门禁。"""
+        pipeline = self.pipeline
+
+        # 固定兜底节点契约：一次点击 [1230,29,25,21]，汇入与模板关闭相同的转盘门禁
+        fallback = pipeline["EmulatorAdCloseFixedFallback"]
+        self.assertEqual(fallback["recognition"], "DirectHit")
+        self.assertEqual(fallback["action"], "Click")
+        self.assertEqual(fallback["target"], [1230, 29, 25, 21])
+        self.assertNotEqual(fallback.get("post_delay"), 0)
+        self.assertEqual(fallback["next"], ["EmulatorAdPostAdRouter"])
+        self.assertEqual(fallback["on_error"], ["EmulatorAdAbort"])
+        self.assertNotIn("timeout", fallback)
+
+        # FixedFallback 唯一入口是 WaitForClose 的 on_error（等待窗口耗尽），
+        # 绝不挂在 ClosePage 上，也绝不在任何 next 列表里（单帧 miss 不可达）
+        referrers = []
+        for name, node in pipeline.items():
+            if name == "EmulatorAdCloseFixedFallback":
+                continue
+            if "EmulatorAdCloseFixedFallback" in node.get("on_error", []):
+                referrers.append(("on_error", name))
+            if "EmulatorAdCloseFixedFallback" in node.get("next", []):
+                referrers.append(("next", name))
+        self.assertEqual(
+            referrers, [("on_error", "EmulatorAdWaitForClose")],
+            "FixedFallback 只能由 WaitForClose 长等待超时进入",
+        )
+
+        # 模板关闭与固定兜底汇入同一转盘门禁（PostAdRouter），不复制两套后续逻辑
+        self.assertEqual(pipeline["EmulatorAdClosePage"]["next"], ["EmulatorAdPostAdRouter"])
+        post_router = pipeline["EmulatorAdPostAdRouter"]
+        self.assertEqual(
+            post_router["next"],
+            ["EmulatorAdRewardPopup", "EmulatorAdStopEnabled", "EmulatorAdStopDisabled"],
+        )
+        self.assertEqual(post_router["on_error"], ["EmulatorAdAbort"])
+
+    def test_fixed_close_fallback_semantics(self):
+        """Case 1~5 语义场景（基于真实 Maa next-list / on_error 语义的拓扑推演）。"""
+        pipeline = self.pipeline
+
+        def business(node, key):
+            return list(node.get(key, []))
+
+        # Case 1/2：任一关闭模板命中 → 点击识别 bbox → PostAdRouter 转盘门禁，
+        # FixedFallback 不在模板命中路径上
+        close_page = pipeline["EmulatorAdClosePage"]
+        self.assertEqual(business(close_page, "next"), ["EmulatorAdPostAdRouter"])
+        self.assertNotIn("EmulatorAdCloseFixedFallback", business(close_page, "on_error"))
+
+        # Case 3：整个等待窗口模板全 miss → WaitForClose on_error → FixedFallback
+        # 恰好一次（其 next 为 PostAdRouter，本轮不再回到 WaitForClose）
+        wait_node = pipeline["EmulatorAdWaitForClose"]
+        self.assertEqual(business(wait_node, "next"), ["EmulatorAdClosePage"])
+        self.assertEqual(business(wait_node, "on_error"), ["EmulatorAdCloseFixedFallback"])
+        self.assertNotIn("EmulatorAdCloseFixedFallback", business(wait_node, "next"))
+        # FixedFallback 自身不回环到 WaitForClose：每轮广告最多一次固定点击
+        self.assertNotIn("EmulatorAdWaitForClose", business(fallback_node := pipeline["EmulatorAdCloseFixedFallback"], "next"))
+        self.assertNotIn("EmulatorAdWaitForClose", business(fallback_node, "on_error"))
+
+        # Case 4：固定点击后仍在广告页/未知页 → PostAdRouter 20s 内三候选全 miss
+        # → on_error Abort 安全停止；无二次固定点击、无循环
+        post_router = pipeline["EmulatorAdPostAdRouter"]
+        self.assertEqual(post_router["on_error"], ["EmulatorAdAbort"])
+        for cycle_node in ("EmulatorAdStopEnabled", "EmulatorAdStopDisabled", "EmulatorAdRewardPopup"):
+            self.assertNotEqual(pipeline[cycle_node].get("on_error"), ["EmulatorAdCloseFixedFallback"])
+
+        # Case 5：广告前半段（"跳过"阶段）WaitForClose 活跃等待中，
+        # ClosePage 单帧 miss 只是 next-list 循环重试，FixedFallback 完全不可达
+        all_next_refs = [
+            name for name, node in pipeline.items()
+            if "EmulatorAdCloseFixedFallback" in node.get("next", [])
+        ]
+        self.assertEqual(all_next_refs, [])
+
+        # 一直运行兼容：兜底位于单轮广告内部流程，轮数链路（Reward→Continue→MarkStarted）
+        # 不经过 FixedFallback 判断，第 N 轮使用兜底后仍正常进入下一轮
+        self.assertEqual(pipeline["EmulatorAdContinue"]["next"], ["EmulatorAdMarkStarted"])
+        self.assertEqual(pipeline["EmulatorAdMarkStarted"]["next"], ["EmulatorAdWaitForClose"])
+
+    def test_cycle_limit_reco_zero_logic(self):
+        import sys
+        if 'agent' not in sys.path:
+            sys.path.append('agent')
+        from my_reco import MobileAdCheckCycleLimitReco
+        from maa.context import Context
+        from maa.custom_recognition import CustomRecognition
+
+        class _FakeArg:
+            def __init__(self, p):
+                self.custom_recognition_param = p
+
+        class _FakeContext(Context):
+            pass
+
+        import my_reco
+        reco = MobileAdCheckCycleLimitReco()
+
+        # Case A: max_cycles=3
+        my_reco.mobile_ad_state["completed_cycles"] = 2
+        res = reco.analyze(None, _FakeArg(json.dumps({"max_cycles": 3})))
+        self.assertIsNone(res)
+
+        my_reco.mobile_ad_state["completed_cycles"] = 3
+        res = reco.analyze(None, _FakeArg(json.dumps({"max_cycles": 3})))
+        self.assertEqual(res, (0, 0, 10, 10))
+
+        # Case B: max_cycles=0
+        my_reco.mobile_ad_state["completed_cycles"] = 0
+        res = reco.analyze(None, _FakeArg(json.dumps({"max_cycles": 0})))
+        self.assertIsNone(res)
+
+        my_reco.mobile_ad_state["completed_cycles"] = 100
+        res = reco.analyze(None, _FakeArg(json.dumps({"max_cycles": 0})))
+        self.assertIsNone(res)
 
 if __name__ == "__main__":
     unittest.main()

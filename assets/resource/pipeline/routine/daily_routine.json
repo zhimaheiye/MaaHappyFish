@@ -19,6 +19,11 @@
         "action": "DoNothing",
         "enabled": false
     },
+    "DailyRoutineEnableSecretRealmGate": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineEnableBandFish": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -90,6 +95,7 @@
             "DailyRoutineStepReindeerFish",
             "DailyRoutineStepGoldShellCoupon",
             "DailyRoutineStepGreenWildDaily",
+            "DailyRoutineStepSecretRealmGate",
             "DailyRoutineStepBandFishPass1",
             "DailyRoutineStepGoldenDolphin",
             "DailyRoutineStepShakeGame",
@@ -175,6 +181,25 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "GreenWildDailyTask"
+        ]
+    },
+    "DailyRoutineStepSecretRealmGate": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "SECRET_REALM_GATE"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：秘境之门。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "SecretRealmGateTask"
         ]
     },
     "DailyRoutineStepBandFishPass1": {

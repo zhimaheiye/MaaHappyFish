@@ -89,10 +89,7 @@ def run_tests():
 
     assert pipeline["GreenWildDailyTask"]["custom_action"] == "InitGreenWildDailyAction"
     assert business_next(pipeline["GreenWildDailyTask"]) == [
-        "OpenShellStartPage",
-        "OpenShellCategoryPage",
-        "OpenShellEntry",
-        "OpenShellAbort",
+        "OpenShellStartRouter",
     ]
     assert business_next(open_shell["OpenShellVerifyMainAfterDone"]) == [
         "GreenWildDailyBuyFishEntry",

@@ -238,6 +238,7 @@
         "template": "宝石订单_退出.png",
         "roi": [1060, 40, 160, 120],
         "threshold": 0.7,
+        "order_by": "Score",
         "action": "Click",
         "post_delay": 1500,
         "timeout": 4000,

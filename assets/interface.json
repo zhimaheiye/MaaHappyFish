@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.5.9",
+    "version": "0.6.0",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -49,12 +49,6 @@
             "description": "自动启动开心水族箱并等待进入主界面"
         },
         {
-            "name": "日常签到",
-            "entry": "DailySignTask",
-            "default_check": false,
-            "description": "自动完成每日签到与领奖"
-        },
-        {
             "name": "开贝壳",
             "entry": "OpenShellTask",
             "default_check": false,
@@ -89,6 +83,23 @@
             "entry": "ManateeTask",
             "default_check": false,
             "description": "周六、周日从主鱼缸、好友列表或海牛先生页面启动，连续喂食至识别到刷新体力后返回主鱼缸。"
+        },
+        {
+            "name": "秘境之门",
+            "entry": "SecretRealmGateTask",
+            "default_check": false,
+            "description": "自动完成秘境之门送鱼任务：依次送出并领取奖励，无鱼任务自动删除卡片"
+        },
+        {
+            "name": "许愿神灯",
+            "entry": "WishingLampTask",
+            "default_check": false,
+            "description": "自动许愿神灯：进入神灯后连续点击许愿绸；可选遇暂停条件即停止",
+            "option": [
+                "许愿神灯选择",
+                "许愿神灯许愿次数",
+                "许愿神灯模式"
+            ]
         },
         {
             "name": "绿野寻仙踪",
@@ -215,7 +226,7 @@
             "default_check": false,
             "description": "在 MuMu 模拟器 1280x720 画面中自动识别看视频赚大奖入口、广告关闭、转盘停止与奖励弹窗，按配置轮数连续执行。",
             "option": [
-                "手机广告轮数"
+                "模拟器广告轮数"
             ]
         },
         {
@@ -234,28 +245,94 @@
             "label": "默认任务列表",
             "description": "新安装使用的默认列表；手机看广告因仅适配特定真实手机环境，需从添加任务中手动加入。",
             "task": [
-                { "name": "启动游戏", "enabled": false },
-                { "name": "日常签到", "enabled": false },
-                { "name": "开贝壳", "enabled": false },
-                { "name": "宝石礼盒兑换", "enabled": false },
-                { "name": "宝石订单", "enabled": false },
-                { "name": "好友摸宝", "enabled": false },
-                { "name": "海牛先生", "enabled": false },
-                { "name": "绿野寻仙踪", "enabled": false },
-                { "name": "公主任务", "enabled": false },
-                { "name": "收鱼产物", "enabled": true },
-                { "name": "多鱼缸巡检", "enabled": false },
-                { "name": "海星喂食(单次)", "enabled": false },
-                { "name": "购买鱼食", "enabled": false },
-                { "name": "钓鱼达人", "enabled": false },
-                { "name": "海獭摸宝", "enabled": false },
-                { "name": "乐队鱼演出", "enabled": false },
-                { "name": "日常收尾", "enabled": false },
-                { "name": "金海豚小游戏", "enabled": false },
-                { "name": "摇一摇小游戏", "enabled": false },
-                { "name": "摇一摇收宝石（测试）", "enabled": false },
-                { "name": "兑换金贝壳券", "enabled": false },
-                { "name": "模拟器看广告", "enabled": false }
+                {
+                    "name": "启动游戏",
+                    "enabled": false
+                },
+                {
+                    "name": "日常签到",
+                    "enabled": false
+                },
+                {
+                    "name": "开贝壳",
+                    "enabled": false
+                },
+                {
+                    "name": "宝石礼盒兑换",
+                    "enabled": false
+                },
+                {
+                    "name": "宝石订单",
+                    "enabled": false
+                },
+                {
+                    "name": "好友摸宝",
+                    "enabled": false
+                },
+                {
+                    "name": "海牛先生",
+                    "enabled": false
+                },
+                {
+                    "name": "绿野寻仙踪",
+                    "enabled": false
+                },
+                {
+                    "name": "公主任务",
+                    "enabled": false
+                },
+                {
+                    "name": "收鱼产物",
+                    "enabled": true
+                },
+                {
+                    "name": "多鱼缸巡检",
+                    "enabled": false
+                },
+                {
+                    "name": "海星喂食(单次)",
+                    "enabled": false
+                },
+                {
+                    "name": "购买鱼食",
+                    "enabled": false
+                },
+                {
+                    "name": "钓鱼达人",
+                    "enabled": false
+                },
+                {
+                    "name": "海獭摸宝",
+                    "enabled": false
+                },
+                {
+                    "name": "乐队鱼演出",
+                    "enabled": false
+                },
+                {
+                    "name": "日常收尾",
+                    "enabled": false
+                },
+                {
+                    "name": "金海豚小游戏",
+                    "enabled": false
+                },
+                {
+                    "name": "摇一摇小游戏",
+                    "enabled": false
+                },
+                {
+                    "name": "摇一摇收宝石（测试）",
+                    "enabled": false
+                },
+                {
+                    "name": "兑换金贝壳券",
+                    "enabled": false
+                },
+                {
+                    "name": "模拟器看广告",
+                    "enabled": false
+                }
             ]
         }
     ],
@@ -654,13 +731,19 @@
                     "name": "开启",
                     "pipeline_override": {
                         "HangupNoonDailyCollectFish": {
-                            "custom_recognition_param": { "enabled": true }
+                            "custom_recognition_param": {
+                                "enabled": true
+                            }
                         },
                         "HangupNoonDailyPatrol": {
-                            "custom_recognition_param": { "enabled": true }
+                            "custom_recognition_param": {
+                                "enabled": true
+                            }
                         },
                         "HangupNoonDailyFriendGem": {
-                            "custom_recognition_param": { "enabled": true }
+                            "custom_recognition_param": {
+                                "enabled": true
+                            }
                         }
                     }
                 },
@@ -668,13 +751,19 @@
                     "name": "关闭",
                     "pipeline_override": {
                         "HangupNoonDailyCollectFish": {
-                            "custom_recognition_param": { "enabled": false }
+                            "custom_recognition_param": {
+                                "enabled": false
+                            }
                         },
                         "HangupNoonDailyPatrol": {
-                            "custom_recognition_param": { "enabled": false }
+                            "custom_recognition_param": {
+                                "enabled": false
+                            }
                         },
                         "HangupNoonDailyFriendGem": {
-                            "custom_recognition_param": { "enabled": false }
+                            "custom_recognition_param": {
+                                "enabled": false
+                            }
                         }
                     }
                 }
@@ -690,10 +779,14 @@
                     "name": "开启",
                     "pipeline_override": {
                         "HangupFriendGemCollectFish": {
-                            "custom_recognition_param": { "enabled": true }
+                            "custom_recognition_param": {
+                                "enabled": true
+                            }
                         },
                         "HangupFriendGemPatrol": {
-                            "custom_recognition_param": { "enabled": true }
+                            "custom_recognition_param": {
+                                "enabled": true
+                            }
                         }
                     }
                 },
@@ -701,10 +794,14 @@
                     "name": "关闭",
                     "pipeline_override": {
                         "HangupFriendGemCollectFish": {
-                            "custom_recognition_param": { "enabled": false }
+                            "custom_recognition_param": {
+                                "enabled": false
+                            }
                         },
                         "HangupFriendGemPatrol": {
-                            "custom_recognition_param": { "enabled": false }
+                            "custom_recognition_param": {
+                                "enabled": false
+                            }
                         }
                     }
                 }
@@ -1246,6 +1343,14 @@
                     }
                 },
                 {
+                    "name": "秘境之门",
+                    "pipeline_override": {
+                        "DailyRoutineEnableSecretRealmGate": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
                     "name": "乐队鱼",
                     "pipeline_override": {
                         "DailyRoutineEnableBandFish": {
@@ -1360,17 +1465,6 @@
                             "custom_recognition_param": {
                                 "max_cycles": 3
                             }
-                        },
-                        "EmulatorAdTask": {
-                            "custom_action_param": {
-                                "max_cycles": 3,
-                                "log_tag": "模拟器看广告"
-                            }
-                        },
-                        "EmulatorAdCheckContinueCondition": {
-                            "custom_recognition_param": {
-                                "max_cycles": 3
-                            }
                         }
                     }
                 },
@@ -1384,17 +1478,6 @@
                             }
                         },
                         "MobileAdCheckContinueCondition": {
-                            "custom_recognition_param": {
-                                "max_cycles": 5
-                            }
-                        },
-                        "EmulatorAdTask": {
-                            "custom_action_param": {
-                                "max_cycles": 5,
-                                "log_tag": "模拟器看广告"
-                            }
-                        },
-                        "EmulatorAdCheckContinueCondition": {
                             "custom_recognition_param": {
                                 "max_cycles": 5
                             }
@@ -1414,7 +1497,52 @@
                             "custom_recognition_param": {
                                 "max_cycles": 10
                             }
+                        }
+                    }
+                }
+            ]
+        },
+        "模拟器广告轮数": {
+            "type": "select",
+            "label": "连续看广告轮数",
+            "description": "选择连续观看轮数；一直运行会持续执行，直到用户手动停止任务。",
+            "default_case": "3 轮(默认测试)",
+            "cases": [
+                {
+                    "name": "3 轮(默认测试)",
+                    "pipeline_override": {
+                        "EmulatorAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 3,
+                                "log_tag": "模拟器看广告"
+                            }
                         },
+                        "EmulatorAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 3
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "5 轮",
+                    "pipeline_override": {
+                        "EmulatorAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 5,
+                                "log_tag": "模拟器看广告"
+                            }
+                        },
+                        "EmulatorAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 5
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "10 轮",
+                    "pipeline_override": {
                         "EmulatorAdTask": {
                             "custom_action_param": {
                                 "max_cycles": 10,
@@ -1425,6 +1553,207 @@
                             "custom_recognition_param": {
                                 "max_cycles": 10
                             }
+                        }
+                    }
+                },
+                {
+                    "name": "一直运行",
+                    "pipeline_override": {
+                        "EmulatorAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 0,
+                                "log_tag": "模拟器看广告"
+                            }
+                        },
+                        "EmulatorAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 0
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "许愿神灯许愿次数": {
+            "type": "select",
+            "label": "许愿次数",
+            "description": "进入神灯后连续点击许愿绸的次数",
+            "default_case": "10 次（默认）",
+            "cases": [
+                {
+                    "name": "5 次",
+                    "pipeline_override": {
+                        "WishingLampShouldContinue": {
+                            "custom_recognition_param": {
+                                "target_count": 5
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "10 次（默认）",
+                    "pipeline_override": {
+                        "WishingLampShouldContinue": {
+                            "custom_recognition_param": {
+                                "target_count": 10
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "20 次",
+                    "pipeline_override": {
+                        "WishingLampShouldContinue": {
+                            "custom_recognition_param": {
+                                "target_count": 20
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "50 次",
+                    "pipeline_override": {
+                        "WishingLampShouldContinue": {
+                            "custom_recognition_param": {
+                                "target_count": 50
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "许愿神灯模式": {
+            "type": "select",
+            "label": "许愿模式",
+            "description": "连续许愿：点完设定次数后自动退出；遇暂停条件即停止：许愿过程中识别到暂停条件图标立即结束任务，等待用户手动处理",
+            "default_case": "连续许愿（默认）",
+            "cases": [
+                {
+                    "name": "连续许愿（默认）",
+                    "pipeline_override": {
+                        "WishingLampLoopRouter": {
+                            "next": [
+                                "[JumpBack]GlobalActivityPagePopup",
+                                "[JumpBack]GlobalDailySignPopup",
+                                "[JumpBack]GlobalSpecialOfferPopup",
+                                "[JumpBack]GlobalNewsPopup",
+                                "[JumpBack]GlobalLevelUpPopup",
+                                "WishingLampShouldContinue",
+                                "WishingLampDone"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "遇暂停条件即停止",
+                    "pipeline_override": {
+                        "WishingLampLoopRouter": {
+                            "next": [
+                                "[JumpBack]GlobalActivityPagePopup",
+                                "[JumpBack]GlobalDailySignPopup",
+                                "[JumpBack]GlobalSpecialOfferPopup",
+                                "[JumpBack]GlobalNewsPopup",
+                                "[JumpBack]GlobalLevelUpPopup",
+                                "WishingLampPauseCheck",
+                                "WishingLampShouldContinue",
+                                "WishingLampDone"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        "许愿神灯选择": {
+            "type": "select",
+            "label": "目标神灯",
+            "description": "要进入并许愿的神灯；列表当前屏没有该灯时将自动向左滑动查找（最多 12 次，超限安全停止）",
+            "default_case": "幸运神灯",
+            "cases": [
+                {
+                    "name": "幸运神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "幸运神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "开心神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "开心神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "欢乐神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "欢乐神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "魔法神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "魔法神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "青春神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "青春神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "奇迹神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "奇迹神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "活力神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "活力神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "欢欣神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "欢欣神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "玲珑神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "玲珑神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "元气神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "元气神灯"
+                        }
+                    }
+                },
+                {
+                    "name": "童趣神灯",
+                    "pipeline_override": {
+                        "WishingLampOpenLamp": {
+                            "expected": "童趣神灯"
                         }
                     }
                 }

@@ -37,8 +37,17 @@ def test_topology_contracts():
     assert router_next == [
         "ReindeerFishRewardReturn",
         "ReindeerFishReplyAll",
-        "ReindeerFishClearAll",
     ], f"AfterCollectRouter.next unexpected: {router_next}"
+
+    # Contract 1: ReindeerFishClearAll must not be in any node's next list
+    for node_name, node_data in pdata.items():
+        if node_name != "ReindeerFishClearAll":
+            assert "ReindeerFishClearAll" not in node_data.get("next", []), f"ReindeerFishClearAll found in {node_name}.next"
+
+    # Contract 2: ReindeerFishClearAll action must not be Click
+    if "ReindeerFishClearAll" in pdata:
+        assert pdata["ReindeerFishClearAll"].get("action") != "Click", "ReindeerFishClearAll action must not be Click"
+
     assert router.get("on_error") == ["ReindeerFishAfterCollectNoReply"], f"AfterCollectRouter.on_error unexpected: {router.get('on_error')}"
 
     # 4. AfterCollectNoReply 兜底退出
@@ -56,7 +65,6 @@ def test_topology_contracts():
     start_next = [n for n in pdata["ReindeerFishStartRouter"].get("next", []) if not n.startswith("[JumpBack]")]
     assert "ReindeerFishReplyAll" in start_next, f"StartRouter missing ReplyAll: {start_next}"
     assert "ReindeerFishCollectAll" in start_next, f"StartRouter missing CollectAll: {start_next}"
-    assert "ReindeerFishClearAll" in start_next, f"StartRouter missing ClearAll: {start_next}"
     assert start_next[-1] == "ReindeerFishCommonBack", f"未知页面应最后点左上角返回: {start_next}"
     after_reply = [n for n in pdata["ReindeerFishAfterReplyRouter"].get("next", []) if not n.startswith("[JumpBack]")]
     assert after_reply == [
@@ -74,7 +82,7 @@ def test_topology_contracts():
     clear_all = pdata["ReindeerFishClearAll"]
     assert clear_all["expected"] == "键清除"
     assert clear_all["roi"] == [500, 560, 260, 100]
-    assert clear_all["action"] == "Click"
+    assert clear_all["action"] == "DoNothing"
     assert "target" not in clear_all
 
     print("[PASS] 静态拓扑契约验证通过")
@@ -301,15 +309,13 @@ def test_cases():
     def frames_case_8(node, elapsed_ms, history):
         if "ReindeerFishCommonBack" in history:
             return {"主界面特征.png"}
-        if "ReindeerFishClearAll" not in history:
-            return {"键清除"}
-        return {"返回"}
+        return {"键清除", "ReindeerFishCommonBack"}
 
     hist8 = sim.run("ReindeerFishStartRouter", frames_case_8)
-    assert "ReindeerFishClearAll" in hist8
+    assert "ReindeerFishClearAll" not in hist8, "ReindeerFishClearAll should be ignored"
     assert "ReindeerFishCollectAll" not in hist8
     assert "ReindeerFishCommonBack" in hist8
-    print("[PASS] Case 8: 礼物已送完页识别一键清除后返回鱼缸")
+    print("[PASS] Case 8: 礼物已送完页(有一键清除)不再误点清除，安全返回鱼缸")
 
     def frames_case_9(node, elapsed_ms, history):
         if "ReindeerFishCommonBack" in history:

@@ -112,11 +112,6 @@ def run_tests():
     assert auto_closed["inverse"] is True
     assert auto_closed["action"] == "DoNothing"
 
-    assert pipeline["DailySignTask"]["next"] == [
-        *GLOBAL_HANDLERS,
-        "DailySignNoPopup",
-    ]
-
     offer = pipeline["GlobalSpecialOfferPopup"]
     assert offer["template"] == "特惠礼包_识别.png"
     assert offer["action"] == "DoNothing"

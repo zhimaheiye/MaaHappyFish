@@ -90,6 +90,7 @@ def run_tests():
     ]
     assert pipeline["GemOrderAllIssued"].get("on_error") == ["GemOrderExitFallback"]
     assert pipeline["GemOrderExit"]["threshold"] == 0.7
+    assert pipeline["GemOrderExit"]["order_by"] == "Score"
     assert "target" not in pipeline["GemOrderExit"]
     assert pipeline["GemOrderExit"].get("on_error") == ["GemOrderExitFallback"]
     fallback = pipeline["GemOrderExitFallback"]

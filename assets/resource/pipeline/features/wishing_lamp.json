@@ -1,0 +1,416 @@
+{
+    "WishingLampTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampStartRouter"
+        ]
+    },
+    "WishingLampStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 1000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampInLampPage",
+            "WishingLampSelectPage",
+            "WishingLampMainTankEntry",
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampInLampPage": {
+        "recognition": "TemplateMatch",
+        "template": "许愿绸.png",
+        "roi": [
+            1022,
+            458,
+            68,
+            38
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[许愿神灯] 已确认处于神灯内部，直接开始许愿。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampLoopRouter"
+        ]
+    },
+    "WishingLampSelectPage": {
+        "recognition": "TemplateMatch",
+        "template": "许愿神灯_识别.png",
+        "roi": [
+            0,
+            0,
+            201,
+            129
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[许愿神灯] 已确认神灯选择主页，正在定位灯名文字。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampOpenLamp",
+            "WishingLampSwipeLampList"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampOpenLamp": {
+        "recognition": "OCR",
+        "expected": "幸运神灯",
+        "roi": [
+            68,
+            459,
+            1213,
+            83
+        ],
+        "action": "Click",
+        "post_delay": 2000,
+        "timeout": 6000,
+        "focus": {
+            "Node.Action.Succeeded": "[许愿神灯] 已点击指定神灯文字，正在确认进入神灯。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampVerifyInLamp"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampVerifyInLamp": {
+        "recognition": "TemplateMatch",
+        "template": "许愿绸.png",
+        "roi": [
+            1022,
+            458,
+            68,
+            38
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[许愿神灯] 已确认进入神灯内部。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampLoopRouter"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampMainTankEntry": {
+        "recognition": "TemplateMatch",
+        "template": "许愿神灯_入口.png",
+        "roi": [
+            145,
+            171,
+            35,
+            22
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[许愿神灯] 已点击主鱼缸许愿神灯入口，正在确认选择主页。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampVerifySelectPage"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampVerifySelectPage": {
+        "recognition": "TemplateMatch",
+        "template": "许愿神灯_识别.png",
+        "roi": [
+            0,
+            0,
+            201,
+            129
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampOpenLamp",
+            "WishingLampSwipeLampList"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampLoopRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampPauseCheck",
+            "WishingLampShouldContinue",
+            "WishingLampDone"
+        ]
+    },
+    "WishingLampPauseCheck": {
+        "recognition": "TemplateMatch",
+        "template": "许愿神灯_暂停条件.png",
+        "roi": [
+            583,
+            135,
+            130,
+            127
+        ],
+        "threshold": 0.8,
+        "action": "StopTask",
+        "timeout": 2000,
+        "focus": {
+            "Node.Action.Succeeded": "[许愿神灯] 识别到暂停条件，任务已结束，等待用户手动处理。"
+        }
+    },
+    "WishingLampShouldContinue": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckWishingLampContinueReco",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampClickSilk"
+        ]
+    },
+    "WishingLampClickSilk": {
+        "recognition": "TemplateMatch",
+        "template": "许愿绸.png",
+        "roi": [
+            1022,
+            458,
+            68,
+            38
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 5000,
+        "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[许愿神灯] 已点击许愿绸，等待 5 秒后继续。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampLoopRouter"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampDone": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampExitInner"
+        ]
+    },
+    "WishingLampExitInner": {
+        "recognition": "TemplateMatch",
+        "template": "许愿神灯_退出.png",
+        "roi": [
+            1226,
+            22,
+            38,
+            37
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2000,
+        "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[许愿神灯] 已点击神灯内右上角退出，正在确认回到选择主页。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampVerifySelectPageAfterExit"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampVerifySelectPageAfterExit": {
+        "recognition": "TemplateMatch",
+        "template": "许愿神灯_识别.png",
+        "roi": [
+            0,
+            0,
+            201,
+            129
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampExitSelect"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampExitSelect": {
+        "recognition": "TemplateMatch",
+        "template": "许愿神灯_退出.png",
+        "roi": [
+            1226,
+            22,
+            38,
+            37
+        ],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 2000,
+        "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[许愿神灯] 已点击选择主页右上角退出，正在确认回到主鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampVerifyMainTank"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampVerifyMainTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[许愿神灯] 已确认返回主鱼缸，任务完成。"
+        },
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    },
+    "WishingLampAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[许愿神灯] 页面门禁未通过，已安全停止且未继续点击。"
+        }
+    },
+    "WishingLampSwipeLampList": {
+        "recognition": "TemplateMatch",
+        "template": "许愿神灯_识别.png",
+        "roi": [
+            0,
+            0,
+            201,
+            129
+        ],
+        "threshold": 0.8,
+        "action": "Swipe",
+        "begin": [
+            1000,
+            360
+        ],
+        "end": [
+            280,
+            360
+        ],
+        "duration": 400,
+        "post_delay": 1000,
+        "max_hit": 12,
+        "focus": {
+            "Node.Action.Succeeded": "[许愿神灯] 当前屏未找到指定神灯，向左滑动列表继续查找。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "WishingLampOpenLamp",
+            "WishingLampSwipeLampList"
+        ],
+        "on_error": [
+            "WishingLampAbort"
+        ]
+    }
+}

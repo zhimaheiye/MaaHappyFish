@@ -148,8 +148,24 @@ class PatrolPipelineTest(unittest.TestCase):
         # OpenShellTask entry routing (supports deep resume at start page or entry from main tank)
         self.assertEqual(
             business_next(self.open_shell_pipeline["OpenShellTask"]),
-            ["OpenShellStartPage", "OpenShellCategoryPage", "OpenShellEntry", "OpenShellAbort"],
+            ["OpenShellStartRouter"],
         )
+        # 启动 Router：入口被游动鱼遮挡时走主鱼缸确认重试，最后才是 Abort
+        self.assertEqual(
+            business_next(self.open_shell_pipeline["OpenShellStartRouter"]),
+            [
+                "OpenShellStartPage",
+                "OpenShellCategoryPage",
+                "OpenShellEntry",
+                "OpenShellRetryEntryFromMainTank",
+                "OpenShellAbort",
+            ],
+        )
+        retry_node = self.open_shell_pipeline["OpenShellRetryEntryFromMainTank"]
+        self.assertEqual(retry_node["template"], "主界面特征.png")
+        self.assertEqual(retry_node["roi"], [0, 200, 150, 400])
+        self.assertEqual(retry_node["action"], "DoNothing")
+        self.assertEqual(business_next(retry_node), ["OpenShellStartRouter"])
 
         entry = self.open_shell_pipeline["OpenShellEntry"]
         self.assertEqual(entry["recognition"], "TemplateMatch")
@@ -159,8 +175,11 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertNotIn("target", entry)
         # 1. OpenShellEntry 的业务 next 不再直接是 OpenShellStartPage
         self.assertNotIn("OpenShellStartPage", business_next(entry))
-        # 2. OpenShellEntry -> 分类页门禁 -> 进入
-        self.assertEqual(business_next(entry), ["OpenShellCategoryPage", "OpenShellEnter"])
+        # 2. OpenShellEntry -> 分类页门禁 -> 主鱼缸重试兜底 -> 进入
+        self.assertEqual(
+            business_next(entry),
+            ["OpenShellCategoryPage", "OpenShellEntryRetryOnMainTank", "OpenShellEnter"],
+        )
         self.assertEqual(entry.get("on_error"), ["OpenShellAbort"])
         self.assertTrue(
             os.path.isfile(
@@ -257,7 +276,10 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(done["roi"], [0, 0, 173, 123])
         self.assertEqual(done["action"], "Click")
         self.assertNotIn("target", done)
-        self.assertEqual(business_next(done), ["OpenShellVerifyMainAfterDone"])
+        self.assertEqual(
+            business_next(done),
+            ["OpenShellVerifyMainAfterDone", "OpenShellReturnFromCategory"],
+        )
 
         verify_main = self.open_shell_pipeline["OpenShellVerifyMainAfterDone"]
         self.assertEqual(verify_main["template"], "主界面特征.png")
@@ -706,7 +728,10 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(raw_files[0], raw_files[1])
         self.assertEqual(raw_files[0], raw_files[2])
         task = next(item for item in payloads[0]["task"] if item["entry"] == "PatrolTask")
-        self.assertEqual(task["option"], ["多鱼缸巡检间隔", "多鱼缸巡检子任务", "收宝石方式"])
+        self.assertEqual(
+            task["option"],
+            ["多鱼缸巡检间隔", "多鱼缸巡检子任务", "收宝石方式", "挂机十二点日常", "挂机十点好友摸宝"],
+        )
         option = payloads[0]["option"]["多鱼缸巡检间隔"]
         self.assertEqual(option["default_case"], "30分钟")
         extras = payloads[0]["option"]["多鱼缸巡检子任务"]

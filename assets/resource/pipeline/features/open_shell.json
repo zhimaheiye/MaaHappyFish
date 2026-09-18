@@ -8,10 +8,43 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "OpenShellStartRouter"
+        ]
+    },
+    "OpenShellStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "OpenShellStartPage",
             "OpenShellCategoryPage",
             "OpenShellEntry",
+            "OpenShellRetryEntryFromMainTank",
             "OpenShellAbort"
+        ]
+    },
+    "OpenShellRetryEntryFromMainTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "post_delay": 700,
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[开贝壳] 当前仍在主鱼缸，入口可能被游动鱼遮挡，等待后重新识别入口。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "OpenShellStartRouter"
         ]
     },
     "OpenShellEntry": {
@@ -37,7 +70,51 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "OpenShellCategoryPage",
+            "OpenShellEntryRetryOnMainTank",
             "OpenShellEnter"
+        ],
+        "on_error": [
+            "OpenShellAbort"
+        ]
+    },
+    "OpenShellEntryRetryOnMainTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "threshold": 0.7,
+        "roi": [0, 200, 150, 400],
+        "action": "DoNothing",
+        "post_delay": 500,
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[开贝壳] 点击入口后仍在主鱼缸，可能被游动鱼遮挡，重新识别入口并重试。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "OpenShellEntryRetryGate"
+        ],
+        "on_error": [
+            "OpenShellAbort"
+        ]
+    },
+    "OpenShellEntryRetryGate": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckOpenShellEntryRetryReco",
+        "custom_recognition_param": {
+            "max_retries": 15
+        },
+        "action": "DoNothing",
+        "timeout": 2000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "OpenShellEntry"
         ],
         "on_error": [
             "OpenShellAbort"
@@ -93,7 +170,7 @@
         "post_delay": 1200,
         "timeout": 4000,
         "focus": {
-            "Node.Action.Succeeded": "[开贝壳] 未能进入大章鱼页，已点击分类页返回，正在确认主鱼缸。"
+            "Node.Action.Succeeded": "[开贝壳] 已点击分类页左上角返回，正在确认主鱼缸。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -309,7 +386,8 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "OpenShellVerifyMainAfterDone"
+            "OpenShellVerifyMainAfterDone",
+            "OpenShellReturnFromCategory"
         ],
         "on_error": [
             "OpenShellAbort"

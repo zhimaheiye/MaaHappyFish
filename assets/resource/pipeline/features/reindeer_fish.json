@@ -25,7 +25,6 @@
             "ReindeerFishCollectAll",
             "ReindeerFishReplyAll",
             "ReindeerFishDirectGift",
-            "ReindeerFishClearAll",
             "ReindeerFishStartAtGrid",
             "ReindeerFishStartAtTank",
             "ReindeerFishCommonBack"
@@ -38,11 +37,9 @@
         "recognition": "OCR",
         "expected": "键清除",
         "roi": [500, 560, 260, 100],
-        "action": "Click",
-        "post_delay": 1000,
-        "timeout": 4000,
+        "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已点击一键清除，准备返回鱼缸。"
+            "Node.Action.Succeeded": "[驯鹿鱼送收礼] 检测到一键清除；按业务规则禁止自动点击，保留好友送礼记录。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -114,8 +111,7 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "ReindeerFishRewardReturn",
-            "ReindeerFishReplyAll",
-            "ReindeerFishClearAll"
+            "ReindeerFishReplyAll"
         ],
         "on_error": [
             "ReindeerFishAfterCollectNoReply"

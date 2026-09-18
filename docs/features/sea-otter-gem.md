@@ -1,10 +1,19 @@
 # 海獭摸宝自动化 (docs/features/sea-otter-gem.md)
 
-**最后更新**: 2026-09-13
+**最后更新**: 2026-09-18
 
 ## 功能定位
 
 开心水族箱海獭寻宝特定宝石自动化助手（`SeaOtterGemTask`）。针对用户在海獭寻宝中选定特定宝石并进入寻宝好友列表/鱼缸的场景，自动化在相邻好友之间往复切换、高效摸取目标宝石，并在好友体力耗尽后自动向后滑动窗口。到达末位好友后，右侧系统推荐玩家只作为返回末位好友的跳板，不执行摸宝。
+
+## 每日完整运行次数（2026-09-18 新增）
+
+- **仅正常完整结束 +1**：`SeaOtterLastFriendExhausted`（末位好友体力耗尽）与 `SeaOtterAddFriendPage`（好友列表耗尽页）由 `SeaOtterMarkNormalCompletionAction` 显式标记正常终点，推荐玩家桥接 LEFT 分支同样标记；`SeaOtterDone` 统一经 `SeaOtterFinalizeAction` 落盘计数。
+- **Safety / Cancel / Abort 不计数**：`max_harvests`、`consecutive_exhausted`（`SAFETY_MAX_HARVESTS` / `SAFETY_CONSECUTIVE_EXHAUSTED`）、手动停止、异常、Pipeline 中断均不计数；判定依据是显式 `normal_completion` 标志，与 `total_harvests`（本次摸宝动作数）完全无关。
+- **04:00 为游戏日边界**：`game_day = (now - 4h).date()`，读取时惰性计算清零，无需定时器，电脑 04:00 无需开机。
+- **本机持久化**：`%LOCALAPPDATA%\MaaHappyFish\state.json`（原子写入，损坏时 warning 后安全视为空状态），不进入 Git；Agent/MFA/电脑重启后仍可读取。
+- **仅记账不拦截**：达到 3/3 后日志提示"已达到游戏每日上限记录"，但不阻止任务启动；同一次任务由 `daily_count_recorded` 幂等保护，重复进入 Finalize 只计一次。
+- 专项测试：`dev/test_sea_otter_daily_count.py`（游戏日边界、持久化 Case A~E、正常/Safety/中断分类、幂等）。
 
 ---
 

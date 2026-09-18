@@ -32,7 +32,11 @@ FriendGemFriendRouter (直通路由器)
     │                                                                   │  │
     ├─ 体力耗尽 ──> FriendGemExhausted (OCR「刷新体力」/ 灰电) ────────┼──┤ (优先判断)
     │                                                                   │  │
-    ├─ 快捷键可用 ─> 点击实际命中位置 ─> 确认「刷新体力」 ──────────────┼──┤
+    ├─ 快捷键可用 ─> 点击实际命中位置 ─> QuickCollectPostRouter ───────┼──┤
+    │       ├─ 「刷新体力」可见 ─> QuickCollectExhausted ───────────────┤  │
+    │       └─ 仍有剩余体力 ────> QuickCollectPartialDone ─────────────┤  │
+    │           （两种结果均视为本好友处理完成，正常切下一位，           │  │
+    │             不再回退气泡模式；剩余体力被接受为正常情况）           │  │
     ├─ 快捷键不可用/未识别 ─> FriendGemImageFallbackRouter              │  │
     │                                                                   │  │
     ├─ 发现气泡 ──> FriendGemCollectBubble (安全 ROI 模板匹配)          │  │
@@ -145,13 +149,15 @@ FriendGemResetAttempts (attempts 清零，miss_count 清零)
 
 普通好友鱼缸现按以下互斥状态处理：
 
-1. 先在 ROI `[231,592,123,120]` 识别 `好友摸宝快捷键_可用.png`；命中后点击模板实际位置，等待并确认左侧出现「刷新体力」，随后直接进入下一位好友。
-2. 若命中同 ROI 的 `好友摸宝快捷键_不可用.png`，立即转入 `FriendGemImageFallbackRouter`，沿用 `金币气泡.png` 逐个识别点击流程。
-3. 点击快捷键后 3 秒仍未识别到「刷新体力」，也安全降级到金币气泡识别，不重复盲点点击快捷键。
+1. 先在 ROI `[231,592,123,120]` 识别 `好友摸宝快捷键_可用.png`；命中后点击模板实际位置，等待页面稳定（post_delay 2000）后由 `FriendGemQuickCollectPostRouter` 按真实页面正常分流：
+   - OCR 识别到「刷新体力」→ `FriendGemQuickCollectExhausted`：快捷摸宝完成且体力已耗尽，切换下一位；
+   - 未识别到「刷新体力」→ `FriendGemQuickCollectPartialDone`（DirectHit 正常命中，不产生 error）：快捷摸宝已一次收走当前可收宝石，剩余体力是正常情况（可收宝石可能少于剩余体力），按策略接受少量体力浪费，直接切换下一位。
+2. **快捷摸宝成功点击后，本好友处理即告结束**：当前好友内绝不再进入 `FriendGemImageFallbackRouter` / `FriendGemCollectBubble` / `FriendGemWaitForBubble`（旧 `FriendGemQuickCollectVerifyExhausted` on_error → `VerifyFallback` 降级链已删除）。
+3. 若命中同 ROI 的 `好友摸宝快捷键_不可用.png`，立即转入 `FriendGemImageFallbackRouter`，沿用 `金币气泡.png` 逐个识别点击流程。
 4. 一旦本好友进入图像识别降级路径，收取及等待循环不再反复检测快捷键；切换下一位好友后才重新判断快捷键状态。
 5. 两个快捷键模板仅接入 `FriendGemTask`。`SeaOtterGemTask` 不引用它们，仍只允许点击左下角海獭执行摸宝。
 
-本轮仅完成代码级验证，快捷键模板命中率及点击后的实际状态变化待用户在 MFA 中验证。
+2026-09-18 快捷摸宝后语义修正：不再强求体力耗尽，未耗尽也正常切下一位（纯 Pipeline 修改，Agent 逻辑未动）。专项测试 `dev/test_friend_gem.py`（Case 1~5 + 静态可达性契约）全部通过；代码级验证完成，待实机复测。
 
 ---
 

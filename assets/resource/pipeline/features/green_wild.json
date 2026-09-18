@@ -193,10 +193,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "OpenShellStartPage",
-            "OpenShellCategoryPage",
-            "OpenShellEntry",
-            "OpenShellAbort"
+            "OpenShellStartRouter"
         ]
     },
     "GreenWildDailyBuyFishEntry": {

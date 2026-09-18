@@ -27,17 +27,21 @@
     },
     "RomanticHouseInFishTank": {
         "recognition": "TemplateMatch",
-        "template": "浪漫满屋_珊瑚.png",
+        "template": "主界面特征.png",
         "roi": [
-            700,
-            450,
-            450,
-            250
+            0,
+            200,
+            150,
+            400
         ],
-        "threshold": 0.65,
+        "threshold": 0.7,
         "action": "Click",
-        "post_delay": 1200,
-        "max_hit": 3,
+        "target": [842, 554, 126, 56],
+        "post_delay": 2000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[浪漫满屋] 已确认主鱼缸，点击固定海藻入口位置。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -47,42 +51,16 @@
             "RomanticHouseWaitBubble"
         ],
         "on_error": [
-            "RomanticHouseDone"
+            "RomanticHouseAbort"
         ]
     },
     "RomanticHouseWaitBubble": {
-        "recognition": "TemplateMatch",
-        "template": "浪漫满屋_气泡.png",
-        "roi": [
-            700,
-            280,
-            450,
-            320
-        ],
-        "threshold": 0.6,
-        "rate_limit": 200,
-        "timeout": 3000,
-        "action": "Click",
-        "post_delay": 2000,
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "RomanticHouseInHomePage"
-        ],
-        "on_error": [
-            "RomanticHouseClickBubbleFallback"
-        ]
-    },
-    "RomanticHouseClickBubbleFallback": {
         "recognition": "DirectHit",
         "action": "Click",
-        "target": [874, 387, 71, 65],
+        "target": [878, 391, 71, 57],
         "post_delay": 2000,
         "focus": {
-            "Node.Action.Succeeded": "[浪漫满屋] 气泡模板未命中，已点击气泡位置 [874,387,71,65]。"
+            "Node.Action.Succeeded": "[浪漫满屋] 已固定点击浪漫满屋气泡位置 [878,391,71,57]。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -90,11 +68,35 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "RomanticHouseInHomePage"
+            "RomanticHouseInHomePage",
+            "RomanticHouseInFishTank"
         ],
         "on_error": [
-            "RomanticHouseInFishTank"
+            "RomanticHouseTransientWait"
         ]
+    },
+    "RomanticHouseTransientWait": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "post_delay": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[浪漫满屋] 未进入主页且不在主鱼缸，短暂等待后重新识别当前页面。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "RomanticHouseStartRouter"
+        ]
+    },
+    "RomanticHouseAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[浪漫满屋] 页面门禁未通过，已安全停止且未继续点击。"
+        }
     },
     "RomanticHouseInHomePage": {
         "recognition": "TemplateMatch",
@@ -260,14 +262,14 @@
     },
     "RomanticHouseDone": {
         "recognition": "TemplateMatch",
-        "template": "浪漫满屋_珊瑚.png",
+        "template": "主界面特征.png",
         "roi": [
-            700,
-            450,
-            450,
-            250
+            0,
+            200,
+            150,
+            400
         ],
-        "threshold": 0.65,
+        "threshold": 0.7,
         "action": "Custom",
         "custom_action": "RomanticHouseExitToTankAction",
         "next": [

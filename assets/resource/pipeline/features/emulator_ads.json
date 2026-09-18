@@ -56,16 +56,38 @@
     "EmulatorAdWaitForClose": {
         "recognition": "DirectHit",
         "action": "DoNothing",
+        "timeout": 90000,
         "focus": {
-            "Node.Action.Succeeded": "[模拟器看广告] 广告仍在播放，等待可识别的关闭按钮。"
+            "Node.Action.Succeeded": "[模拟器看广告] 广告仍在播放，等待真正的关闭按钮。"
         },
         "next": [
             "EmulatorAdClosePage"
+        ],
+        "on_error": [
+            "EmulatorAdCloseFixedFallback"
+        ]
+    },
+    "EmulatorAdCloseFixedFallback": {
+        "recognition": "DirectHit",
+        "action": "Click",
+        "target": [1230, 29, 25, 21],
+        "post_delay": 1500,
+        "focus": {
+            "Node.Action.Succeeded": "[模拟器看广告] 关闭叉模板在等待窗口内未命中，执行固定位置关闭兜底。"
+        },
+        "next": [
+            "EmulatorAdPostAdRouter"
+        ],
+        "on_error": [
+            "EmulatorAdAbort"
         ]
     },
     "EmulatorAdClosePage": {
         "recognition": "TemplateMatch",
-        "template": "看广告页面_关闭.png",
+        "template": [
+            "看广告页面_关闭.png",
+            "看广告页面_关闭1.png"
+        ],
         "roi": [
             0,
             0,
@@ -84,7 +106,8 @@
         ],
         "on_error": [
             "EmulatorAdAbort"
-        ]
+        ],
+        "order_by": "Score"
     },
     "EmulatorAdStopEnabled": {
         "recognition": "TemplateMatch",
@@ -211,7 +234,10 @@
     },
     "EmulatorAdCloseRewardAndDone": {
         "recognition": "TemplateMatch",
-        "template": "看广告页面_关闭.png",
+        "template": [
+            "看广告页面_关闭.png",
+            "看广告页面_关闭1.png"
+        ],
         "roi": [
             0,
             0,
@@ -230,7 +256,8 @@
         ],
         "on_error": [
             "EmulatorAdAbort"
-        ]
+        ],
+        "order_by": "Score"
     },
     "EmulatorAdDone": {
         "recognition": "DirectHit",

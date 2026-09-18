@@ -35,6 +35,7 @@ try:
         starfish_timer_state,
         green_wild_daily_state,
         hangup_schedule_state,
+        secret_realm_gate_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -54,12 +55,18 @@ except ImportError:
         starfish_timer_state,
         green_wild_daily_state,
         hangup_schedule_state,
+        secret_realm_gate_state,
     )
 
 try:
     from param_utils import parse_dict_param, safe_float, safe_int
 except ImportError:
     from agent.param_utils import parse_dict_param, safe_float, safe_int
+
+try:
+    import local_state
+except ImportError:
+    from agent import local_state
 
 
 def _capture_720p(controller):
@@ -921,6 +928,27 @@ class InitSeaOtterStateAction(CustomAction):
             sea_otter_gem_state["total_harvests"] = 0
             sea_otter_gem_state["consecutive_exhausted"] = 0
             sea_otter_gem_state["completion_reason"] = None
+            sea_otter_gem_state["normal_completion"] = False
+            sea_otter_gem_state["daily_count_recorded"] = False
+            try:
+                count = local_state.get_sea_otter_daily_count()
+                limit = local_state.SEA_OTTER_DAILY_LIMIT
+                if count >= limit:
+                    print(
+                        f"[海獭摸宝] 今日完整运行次数：{count}/{limit}（已达到游戏每日上限记录）",
+                        flush=True,
+                    )
+                elif count > 0:
+                    game_day = local_state.get_current_game_day()
+                    print(
+                        f"[海獭摸宝] 今日完整运行次数：{count}/{limit}（游戏日 {game_day}，04:00 刷新）",
+                        flush=True,
+                    )
+                else:
+                    print("[海獭摸宝] 今日完整运行次数：0/3（04:00 刷新）", flush=True)
+                print("[海獭摸宝] 计数仅作记录，不阻止任务启动。", flush=True)
+            except Exception as e:
+                print(f"[海獭摸宝] 读取本机每日计数失败（不影响任务）: {e}", flush=True)
             print(f"[海獭摸宝] 状态已重置: side=LEFT, harvests=0 (task_id: {task_id})", flush=True)
             return True
         except Exception as e:
@@ -1032,6 +1060,7 @@ class SeaOtterReturnFromRecommendedAction(CustomAction):
                 return False
             if sea_otter_gem_state.get("current_side", "left") == "left":
                 sea_otter_gem_state["completion_reason"] = "LAST_FRIEND_EXHAUSTED"
+                sea_otter_gem_state["normal_completion"] = True
                 print(
                     "[SeaOtter] side=LEFT ui=RECOMMENDED action=DONE_LAST_FRIEND_EXHAUSTED",
                     flush=True,
@@ -1054,6 +1083,69 @@ class SeaOtterSwitchPairAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         # 已合流至 SeaOtterHarvestAction，保持幂等兼容
         return True
+
+
+@AgentServer.custom_action("SeaOtterMarkNormalCompletionAction")
+class SeaOtterMarkNormalCompletionAction(CustomAction):
+    """在 Pipeline 的正常业务终点节点上显式标记"本次运行为正常完整结束"。
+
+    仅 NORMAL 终点允许挂载本 Action；Safety Limit / 异常 / 手动停止路径
+    绝不会执行到它，从根源上保证每日计数只来自正常完整运行。
+    """
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            reason = str(param.get("reason") or "NORMAL_COMPLETION")
+            sea_otter_gem_state["normal_completion"] = True
+            sea_otter_gem_state["completion_reason"] = reason
+            print(f"[海獭摸宝] 到达正常业务终点 ({reason})", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海獭摸宝] 标记正常完成异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SeaOtterFinalizeAction")
+class SeaOtterFinalizeAction(CustomAction):
+    """SeaOtterDone 的统一终局动作：只有正常完整结束才持久化 +1。
+
+    幂等保护：同一次任务（daily_count_recorded）重复进入本 Action 只计一次。
+    计数落盘在本机 %LOCALAPPDATA% 状态文件中，仅作记录，不拦截任务。
+    """
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            if not sea_otter_gem_state.get("normal_completion"):
+                reason = sea_otter_gem_state.get("completion_reason")
+                if reason and str(reason).startswith("SAFETY_"):
+                    print(
+                        f"[海獭摸宝] 本次因安全保护结束 ({reason})，不计入今日完整运行次数。",
+                        flush=True,
+                    )
+                else:
+                    print(
+                        "[海獭摸宝] 本次未以正常业务终点结束（手动停止/异常/中断），不计入今日完整运行次数。",
+                        flush=True,
+                    )
+                return True
+
+            if sea_otter_gem_state.get("daily_count_recorded"):
+                print("[海獭摸宝] 本次任务的完整运行计数已记录过，跳过重复计数。", flush=True)
+                return True
+
+            count, limit = local_state.record_sea_otter_completed_run()
+            sea_otter_gem_state["daily_count_recorded"] = True
+            print(
+                f"[海獭摸宝] 本次完整运行成功，今日计数已更新：{count}/{limit}",
+                flush=True,
+            )
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海獭摸宝] 记录每日计数异常（不影响任务收尾）: {e}", flush=True)
+            return True
 
 
 def _reset_band_fish_state():
@@ -2651,6 +2743,38 @@ def _select_golden_dolphin_frame_targets(
     return "wait", []
 
 
+def _collect_golden_dolphin_frame_targets(
+    frame,
+    reward_templates,
+    priority: str = "xp",
+    max_targets: int = 4,
+):
+    """一帧内收集多种奖励，高优先级优先，总数不超过 max_targets"""
+    if priority not in GOLDEN_DOLPHIN_REWARD_ORDER:
+        priority = "xp"
+    search_order = (priority,) + tuple(
+        category for category in GOLDEN_DOLPHIN_REWARD_ORDER if category != priority
+    )
+    
+    collected = []
+    for category in search_order:
+        if len(collected) >= max_targets:
+            break
+            
+        templates = reward_templates.get(category, ())
+        if category == "xp":
+            candidates = _find_golden_dolphin_xp(frame, templates)
+        else:
+            candidates = _find_golden_dolphin_template_targets(frame, templates)
+            
+        for x, y, score in candidates:
+            if len(collected) >= max_targets:
+                break
+            collected.append((category, x, y, score))
+            
+    return collected
+
+
 def _complete_golden_dolphin_round():
     """记录一局结算；前三局之间继续，第三局后完成。"""
     completed = int(golden_dolphin_state.get("completed_rounds", 0)) + 1
@@ -3073,30 +3197,43 @@ class GoldenDolphinPlayGameAction(CustomAction):
                             flush=True,
                         )
                     else:
-                        phase = "coin"
-                        candidates = _find_golden_dolphin_template_targets(
+                        coin_candidates = _find_golden_dolphin_template_targets(
                             img, tpls.get("activation_coin", ())
-                        )[:4]
-                        if not candidates:
-                            phase = "wait"
+                        )[:1]
+
+                targets = []
+                is_startup_coin = False
 
                 if active_start is not None:
-                    phase, candidates = _select_golden_dolphin_frame_targets(
-                        img, reward_templates, priority
+                    targets = _collect_golden_dolphin_frame_targets(
+                        img, reward_templates, priority, max_targets=4
                     )
-                if phase != "wait":
-                    for target_x, target_y, _ in candidates:
+                else:
+                    if not has_regular_reward and coin_candidates:
+                        is_startup_coin = True
+                        targets = [("coin", x, y, score) for x, y, score in coin_candidates]
+
+                if targets:
+                    for category, target_x, target_y, score in targets:
                         if _task_cancelled(context):
                             print("[金海豚游戏] 收到停止请求，立即停止奖励点击", flush=True)
                             return False
-                        ctrl.post_click(target_x, target_y)
-                        reward_clicks[phase] += 1
-                    if reward_clicks[phase] == len(candidates) or reward_clicks[phase] % 20 == 0:
-                        print(
-                            f"[金海豚游戏] 点击{GOLDEN_DOLPHIN_REWARD_NAMES[phase]} "
-                            f"(累计 {reward_clicks[phase]} 次)",
-                            flush=True,
-                        )
+                        
+                        job = ctrl.post_click(target_x, target_y)
+                        if is_startup_coin:
+                            if job:
+                                job.wait()
+
+                        reward_clicks[category] += 1
+
+                        if is_startup_coin:
+                            if reward_clicks[category] == 1 or reward_clicks[category] % 10 == 0:
+                                print(
+                                    f"[金海豚游戏] 隐藏启动：已同步点击贝币\n"
+                                    f"(第 {reward_clicks[category]} 次, score={score:.3f})",
+                                    flush=True,
+                                )
+
                     time.sleep(0.01)
 
                 if active_start is not None and time.monotonic() - active_start >= 45.0:
@@ -3353,16 +3490,18 @@ class InitDailyRoutineAction(CustomAction):
                 "GemGiftBox": {"status": "IDLE"},
                 "GemOrder": {"status": "IDLE"},
                 "RomanticHouse": {"status": "IDLE"},
+                "SecretRealmGate": {"status": "IDLE"},
             }
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house"))
+            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate"))
 
             if param.get("all_enabled"):
                 enable_fg = enable_rf = enable_gsc = enable_gwd = True
                 enable_bf = enable_gd = enable_sg = enable_fi = True
                 enable_ggb = enable_go = enable_rh = True
+                enable_srg = True
             elif has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
@@ -3375,6 +3514,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_ggb = bool(param.get("gem_gift_box", False))
                 enable_go = bool(param.get("gem_order", False))
                 enable_rh = bool(param.get("romantic_house", False))
+                enable_srg = bool(param.get("secret_realm_gate", False))
             else:
                 # 2. 从 pipeline override 中的 Enable 节点读取配置
                 def _is_node_enabled(node_name: str) -> bool:
@@ -3395,6 +3535,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_ggb = _is_node_enabled("DailyRoutineEnableGemGiftBox")
                 enable_go = _is_node_enabled("DailyRoutineEnableGemOrder")
                 enable_rh = _is_node_enabled("DailyRoutineEnableRomanticHouse")
+                enable_srg = _is_node_enabled("DailyRoutineEnableSecretRealmGate")
 
             # 3. 按固定安全顺序构建待执行队列。
             queue = []
@@ -3409,6 +3550,8 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("GOLD_SHELL_COUPON")
             if enable_gwd:
                 queue.append("GREEN_WILD_DAILY")
+            if enable_srg:
+                queue.append("SECRET_REALM_GATE")
             if enable_gd:
                 queue.append("GOLDEN_DOLPHIN")
             if enable_sg:
@@ -3430,6 +3573,7 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 驯鹿鱼送收礼 : {'[ON]' if enable_rf else '[OFF]'}", flush=True)
             print(f"  - 兑换金贝壳券 : {'[ON]' if enable_gsc else '[OFF]'}", flush=True)
             print(f"  - 绿野寻仙踪日常 : {'[ON]' if enable_gwd else '[OFF]'}", flush=True)
+            print(f"  - 秘境之门     : {'[ON]' if enable_srg else '[OFF]'}", flush=True)
             print(f"  - 乐队鱼演出   : {'[ON]' if enable_bf else '[OFF]'}", flush=True)
             print(f"  - 金海豚小游戏 : {'[ON]' if enable_gd else '[OFF]'}", flush=True)
             print(f"  - 摇一摇小游戏 : {'[ON]' if enable_sg else '[OFF]'}", flush=True)
@@ -3451,7 +3595,7 @@ class InitDailyRoutineAction(CustomAction):
 
             task_labels = (
                 ("每日免费礼包", enable_fg), ("驯鹿鱼送收礼物", enable_rf),
-                ("兑换金贝壳券", enable_gsc), ("绿野寻仙踪日常", enable_gwd), ("乐队鱼", enable_bf),
+                ("兑换金贝壳券", enable_gsc), ("绿野寻仙踪日常", enable_gwd), ("秘境之门", enable_srg), ("乐队鱼", enable_bf),
                 ("金海豚", enable_gd), ("摇一摇", enable_sg),
                 ("钓鱼达人", enable_fi), ("宝石礼盒兑换", enable_ggb),
                 ("宝石订单", enable_go), ("浪漫满屋", enable_rh),
@@ -3575,7 +3719,7 @@ class RomanticHouseExitToTankAction(CustomAction):
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
-            print("[浪漫满屋退出] 已确认返回主鱼缸珊瑚", flush=True)
+            print("[浪漫满屋退出] 已确认返回主鱼缸", flush=True)
             romantic_house_state["status"] = "DONE"
             if daily_routine_state.get("active"):
                 advance_daily_routine_step("RomanticHouse", "DONE")
@@ -3583,6 +3727,115 @@ class RomanticHouseExitToTankAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[浪漫满屋退出] 异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SecretRealmGateClickSendAction")
+class SecretRealmGateClickSendAction(CustomAction):
+    """点击任务列表中的"送出"按钮，并记录其 OCR 命中框供分支二相对定位。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[秘境之门] 错误: 未获取到 Controller", flush=True)
+                return False
+            box = getattr(argv, "box", None)
+            if not box or len(box) != 4:
+                print("[秘境之门] 错误: 送出按钮识别框缺失", flush=True)
+                return False
+            box = [int(v) for v in box]
+            cx = box[0] + box[2] // 2
+            cy = box[1] + box[3] // 2
+            ctrl.post_click(cx, cy).wait()
+            secret_realm_gate_state["last_send_box"] = box
+            print(f"[秘境之门] 已点击送出按钮 {box}（中心 {cx},{cy}），已记录位置", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[秘境之门] 点击送出异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SecretRealmGateClickDeleteAction")
+class SecretRealmGateClickDeleteAction(CustomAction):
+    """分支二："您没有这种鱼"时删除对应卡片垃圾桶。
+
+    相对位置（用户提供实测值）：送出按钮 [980,441,51,29] 时垃圾桶在 [1239,330,15,17]，
+    即垃圾桶中心相对送出按钮中心偏移 (+241, -117)。先按偏移推算期望位置，
+    再在小容差窗口内用 秘境之门_删除.png 模板确认后才点击，绝不盲点。
+    """
+
+    SEND_TO_DELETE_OFFSET = (241, -117)
+    TOLERANCE = 40
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[秘境之门] 错误: 未获取到 Controller", flush=True)
+                return False
+            send_box = secret_realm_gate_state.get("last_send_box")
+            if not send_box or len(send_box) != 4:
+                print("[秘境之门] 错误: 缺少送出按钮位置记录，无法定位对应垃圾桶", flush=True)
+                return False
+
+            send_cx = send_box[0] + send_box[2] // 2
+            send_cy = send_box[1] + send_box[3] // 2
+            exp_cx = send_cx + self.SEND_TO_DELETE_OFFSET[0]
+            exp_cy = send_cy + self.SEND_TO_DELETE_OFFSET[1]
+            roi = [
+                max(0, exp_cx - self.TOLERANCE),
+                max(0, exp_cy - self.TOLERANCE),
+                self.TOLERANCE * 2,
+                self.TOLERANCE * 2,
+            ]
+            result = context.run_recognition(
+                "SecretRealmGateDeleteIcon",
+                pipeline_override={
+                    "recognition": "TemplateMatch",
+                    "template": "秘境之门_删除.png",
+                    "threshold": 0.7,
+                    "roi": roi,
+                    "order_by": "Distance",
+                },
+            )
+            if not result or not result.hit:
+                print(
+                    f"[秘境之门] 错误: 送出按钮 {send_box} 对应垃圾桶期望位置 ({exp_cx},{exp_cy}) "
+                    "未命中删除图标模板，拒绝盲点",
+                    flush=True,
+                )
+                return False
+            del_box = [int(v) for v in result.box]
+            dx = del_box[0] + del_box[2] // 2
+            dy = del_box[1] + del_box[3] // 2
+            ctrl.post_click(dx, dy).wait()
+            secret_realm_gate_state["last_send_box"] = None
+            print(
+                f"[秘境之门] 已按相对偏移点击对应垃圾桶 {del_box}（中心 {dx},{dy}），"
+                f"期望位置 ({exp_cx},{exp_cy})",
+                flush=True,
+            )
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[秘境之门] 点击删除异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SecretRealmGateDoneAction")
+class SecretRealmGateDoneAction(CustomAction):
+    """秘境之门结算：确认回到主鱼缸后标记完成；日常收尾中则推进队列。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            if daily_routine_state.get("active"):
+                advance_daily_routine_step("SecretRealmGate", "DONE")
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[秘境之门] 结算异常: {e}", flush=True)
             return False
 
 
@@ -3601,6 +3854,7 @@ class DailyRoutineFinishAction(CustomAction):
             ggb_st = tasks.get("GemGiftBox", {}).get("status", "SKIPPED")
             go_st = tasks.get("GemOrder", {}).get("status", "SKIPPED")
             rh_st = tasks.get("RomanticHouse", {}).get("status", "SKIPPED")
+            srg_st = tasks.get("SecretRealmGate", {}).get("status", "SKIPPED")
 
             print("=" * 60, flush=True)
             print("  【日常收尾 DailyRoutineTask】全部勾选子任务执行完毕！", flush=True)
@@ -3616,6 +3870,7 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 宝石礼盒兑换 (GemGiftBox)   : {ggb_st}", flush=True)
             print(f"  - 宝石订单 (GemOrder)         : {go_st}", flush=True)
             print(f"  - 浪漫满屋 (RomanticHouse)    : {rh_st}", flush=True)
+            print(f"  - 秘境之门 (SecretRealmGate)  : {srg_st}", flush=True)
             print("=" * 60, flush=True)
 
             daily_routine_state["active"] = False
@@ -4435,10 +4690,10 @@ class UnifiedShakeGemCollectAction(CustomAction):
 @AgentServer.custom_action("MobileAdResetStateAction")
 class MobileAdResetStateAction(CustomAction):
     """
-    重置手机/模拟器看广告共享运行时状态并解析任务选项:
+    手机/模拟器通用看广告任务状态初始化:
     - 重置 completed_cycles = 0;
     - 重置 reward_recorded = False;
-    - 解析 max_cycles (默认 3 轮);
+    - 记录 max_cycles (默认 3 轮);
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         param = parse_dict_param(argv.custom_action_param)
@@ -4448,24 +4703,27 @@ class MobileAdResetStateAction(CustomAction):
         mobile_ad_state["reward_recorded"] = False
         mobile_ad_state["max_cycles"] = max_cycles
         mobile_ad_state["log_tag"] = log_tag
-        print(f"[{log_tag}] 任务初始化，目标看广告轮数: {max_cycles} 轮", flush=True)
+        if max_cycles <= 0:
+            print(f"[{log_tag}] 任务初始化：一直运行，直到用户手动停止", flush=True)
+        else:
+            print(f"[{log_tag}] 任务初始化，目标看广告轮数: {max_cycles} 轮", flush=True)
         return True
 
 
 @AgentServer.custom_action("MobileAdRecordRewardAction")
 class MobileAdRecordRewardAction(CustomAction):
     """
-    当识别到最终奖励弹窗时执行（严格幂等）:
-    1. 幂等防护: 若当前奖励弹窗已被记录 (reward_recorded == True)，跳过计数;
-    2. 若未记录: completed_cycles += 1, reward_recorded = True;
-    3. 尝试截屏 OCR 观测背景中的周期进度标记 (如 (1/20), (10/10) 等，仅作日志观测);
-    4. 打印当前进度日志与下一步操作提示。
+    识别到结算对号时执行，防重幂等:
+    1. 幂等防重: 若当前轮已记录 (reward_recorded == True) 则跳过;
+    2. 首次记录: completed_cycles += 1, reward_recorded = True;
+    3. 可选：OCR 观察背景中的结算进度比例 (如 (1/20), (10/10) 等，仅日志观察);
+    4. 打印当前进度与下一步指示
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         max_cycles = mobile_ad_state.get("max_cycles", 3)
         log_tag = mobile_ad_state.get("log_tag", "手机看广告")
 
-        # 1. 尝试截屏并 OCR 观测背景中的周期进度标记 (如 (1/20), (10/10) 等)
+        # 1. 可选：OCR 观察背景中的结算进度比例 (如 (1/20), (10/10) 等)
         try:
             ctrl = getattr(getattr(context, "tasker", None), "controller", None)
             if ctrl is not None:
@@ -4487,25 +4745,32 @@ class MobileAdRecordRewardAction(CustomAction):
                         txt = "".join(r[1] for r in res)
                         m = re.search(r"(\d+/\d+)", txt)
                         if m:
-                            print(f"[{log_tag}][观测] 当前页面奖励进度: {m.group(1)}", flush=True)
+                            print(f"[{log_tag}][观察] 当前页面进度比例: {m.group(1)}", flush=True)
         except Exception:
             pass
 
-        # 2. 幂等检查：同一个奖励弹窗即使被重新接管，也绝不重复计数
+        # 2. 幂等检查：同一个结算页被多次检测到，只记录一次
         if mobile_ad_state.get("reward_recorded", False):
             curr = mobile_ad_state.get("completed_cycles", 0)
-            print(f"[{log_tag}] 当前奖励弹窗已经计数 (第 {curr}/{max_cycles} 轮)，跳过重复记录", flush=True)
+            if max_cycles <= 0:
+                print(f"[{log_tag}] 当前弹窗已计入 (第 {curr} 轮)，忽略重复记录", flush=True)
+            else:
+                print(f"[{log_tag}] 当前弹窗已计入 (第 {curr}/{max_cycles} 轮)，忽略重复记录", flush=True)
             return True
 
         mobile_ad_state["completed_cycles"] = mobile_ad_state.get("completed_cycles", 0) + 1
         mobile_ad_state["reward_recorded"] = True
         curr = mobile_ad_state["completed_cycles"]
 
-        print(f"[{log_tag}] 广告完成进度: 第 {curr}/{max_cycles} 轮", flush=True)
-        if curr >= max_cycles:
-            print(f"[{log_tag}] 已达到单次任务设定的安全上限 ({max_cycles} 轮)，准备关闭弹窗结束任务。", flush=True)
-        else:
+        if max_cycles <= 0:
+            print(f"[{log_tag}] 广告完成进度：已完成第 {curr} 轮（一直运行）", flush=True)
             print(f"[{log_tag}] 准备拉起第 {curr + 1} 轮广告...", flush=True)
+        else:
+            print(f"[{log_tag}] 广告完成进度: 第 {curr}/{max_cycles} 轮", flush=True)
+            if curr >= max_cycles:
+                print(f"[{log_tag}] 已达到设定的安全限制轮数 ({max_cycles} 轮)，准备关闭页面", flush=True)
+            else:
+                print(f"[{log_tag}] 准备拉起第 {curr + 1} 轮广告...", flush=True)
 
         return True
 

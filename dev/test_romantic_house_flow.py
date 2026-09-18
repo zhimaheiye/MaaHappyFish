@@ -40,18 +40,14 @@ def match_node(node_name, img):
         threshold = cfg.get("threshold", 0.7)
         tpl_path = os.path.join("assets/resource/image", tpl_name)
         tpl = cv_imread(tpl_path)
-        
+
         crop = img[roi[1]:roi[1]+roi[3], roi[0]:roi[0]+roi[2]]
-        if len(tpl.shape) == 3 and tpl.shape[2] == 4:
-            mask = tpl[:, :, 3]
-            tpl_bgr = tpl[:, :, :3]
-            crop_bgr = crop[:, :, :3] if len(crop.shape) == 3 and crop.shape[2] == 4 else crop
-            res = cv2.matchTemplate(crop_bgr, tpl_bgr, cv2.TM_CCORR_NORMED, mask=mask)
-        else:
-            tpl_bgr = tpl[:, :, :3] if len(tpl.shape) == 3 and tpl.shape[2] == 4 else tpl
-            crop_bgr = crop[:, :, :3] if len(crop.shape) == 3 and crop.shape[2] == 4 else crop
-            res = cv2.matchTemplate(crop_bgr, tpl_bgr, cv2.TM_CCOEFF_NORMED)
-            
+        # MaaFramework TemplateMatch 按 BGR 评估（RGBA 模板丢弃 alpha，无隐式 mask）；
+        # 实机交叉验证：主界面特征.png 在贝壳分类帧 TM_CCOEFF_NORMED=0.357 MISS、鱼缸命中。
+        tpl_bgr = tpl[:, :, :3] if len(tpl.shape) == 3 and tpl.shape[2] == 4 else tpl
+        crop_bgr = crop[:, :, :3] if len(crop.shape) == 3 and crop.shape[2] == 4 else crop
+        res = cv2.matchTemplate(crop_bgr, tpl_bgr, cv2.TM_CCOEFF_NORMED)
+
         _, max_val, _, max_loc = cv2.minMaxLoc(res)
         hit = max_val >= threshold
         center_global = (roi[0] + max_loc[0] + tpl.shape[1] // 2, roi[1] + max_loc[1] + tpl.shape[0] // 2)
@@ -72,16 +68,18 @@ def run_tests():
     print("=" * 70)
 
     wait_bubble = pipeline["RomanticHouseWaitBubble"]
-    assert wait_bubble["template"] == "浪漫满屋_气泡.png"
-    assert wait_bubble["timeout"] == 3000
-    assert wait_bubble["rate_limit"] == 200
-    assert wait_bubble["on_error"] == ["RomanticHouseClickBubbleFallback"]
-    fallback = pipeline["RomanticHouseClickBubbleFallback"]
-    assert fallback["recognition"] == "DirectHit"
-    assert fallback["action"] == "Click"
-    assert fallback["target"] == [874, 387, 71, 65]
-    assert "RomanticHouseInHomePage" in fallback["next"]
-    assert pipeline["RomanticHouseInFishTank"].get("max_hit") == 3
+    # 2026-09-18 入口可靠性改造：气泡固定位置直接点击，不再依赖气泡模板
+    assert wait_bubble["recognition"] == "DirectHit"
+    assert wait_bubble["action"] == "Click"
+    assert wait_bubble["target"] == [878, 391, 71, 57]
+    assert wait_bubble.get("on_error") == ["RomanticHouseTransientWait"]
+    assert "RomanticHouseClickBubbleFallback" not in pipeline, "旧盲点兜底节点必须移除"
+    in_fish_tank = pipeline["RomanticHouseInFishTank"]
+    # 入口第一步：主鱼缸门禁 + 固定海藻位置，不再用珊瑚模板定位
+    assert in_fish_tank["template"] == "主界面特征.png"
+    assert in_fish_tank["action"] == "Click"
+    assert in_fish_tank["target"] == [842, 554, 126, 56]
+    assert "max_hit" not in in_fish_tank, "入口重试不得设置很小的次数上限"
     print("【浪漫满屋退出修复】状态确认链深度验证")
     print("=" * 70)
 

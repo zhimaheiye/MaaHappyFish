@@ -30,6 +30,7 @@ from agent.my_action import (
     GemOrderDoneAction,
     DailyRoutineFinishAction,
     RomanticHouseExitToTankAction,
+    SecretRealmGateDoneAction,
 )
 from agent.my_reco import (
     CheckDailyRoutineStepReco,
@@ -79,6 +80,7 @@ def test_pipeline_topology():
         "DailyRoutineEnableReindeerFish",
         "DailyRoutineEnableGoldShellCoupon",
         "DailyRoutineEnableGreenWildDaily",
+        "DailyRoutineEnableSecretRealmGate",
         "DailyRoutineEnableBandFish",
         "DailyRoutineEnableGoldenDolphin",
         "DailyRoutineEnableShakeGame",
@@ -99,6 +101,7 @@ def test_pipeline_topology():
         "DailyRoutineStepReindeerFish",
         "DailyRoutineStepGoldShellCoupon",
         "DailyRoutineStepGreenWildDaily",
+        "DailyRoutineStepSecretRealmGate",
         "DailyRoutineStepBandFishPass1",
         "DailyRoutineStepGoldenDolphin",
         "DailyRoutineStepShakeGame",
@@ -352,6 +355,11 @@ def simulate_flow(config_param):
             loops += 1
             continue
 
+        if cur_step == "SECRET_REALM_GATE":
+            assert SecretRealmGateDoneAction().run(ctx, arg) is True
+            loops += 1
+            continue
+
         if cur_step == "SHAKE_GAME":
             assert ShakeGameDoneAction().run(ctx, arg) is True
             loops += 1
@@ -382,6 +390,7 @@ def test_combination_1():
         "reindeer_fish": True,
         "gold_shell_coupon": True,
         "green_wild_daily": True,
+        "secret_realm_gate": True,
         "band_fish": True,
         "golden_dolphin": True,
         "shake_game": True,
@@ -397,6 +406,7 @@ def test_combination_1():
         "REINDEER_FISH",
         "GOLD_SHELL_COUPON",
         "GREEN_WILD_DAILY",
+        "SECRET_REALM_GATE",
         "GOLDEN_DOLPHIN",
         "SHAKE_GAME",
         "FISHING",

@@ -24,6 +24,10 @@ sea_otter_gem_state = {
     "max_consecutive_exhausted": 30,
     "completion_reason": None,
     "current_task_id": None,
+    # 本次运行是否以正常业务终点结束（Safety Limit / 手动停止 / 异常均为 False）
+    "normal_completion": False,
+    # 同一次任务的完成计数是否已落盘（幂等保护，Init 时重置）
+    "daily_count_recorded": False,
 }
 
 BAND_FISH_TARGETS = {
@@ -67,11 +71,22 @@ daily_routine_state = {
         "GemGiftBox": {"status": "IDLE"},
         "GemOrder": {"status": "IDLE"},
         "RomanticHouse": {"status": "IDLE"},
+        "SecretRealmGate": {"status": "IDLE"},
     },
 }
 
 green_wild_daily_state = {
     "pending_buy_fish": False,
+}
+
+secret_realm_gate_state = {
+    "last_send_box": None,  # 最近一次点击的"送出"OCR 命中框 [x,y,w,h]，用于分支二相对位置定位垃圾桶
+}
+
+wishing_lamp_state = {
+    "task_id": None,
+    "completed": 0,
+    "target": 10,
 }
 
 hangup_schedule_state = {

@@ -53,18 +53,6 @@
         "threshold": 0.7,
         "action": "DoNothing"
     },
-    "DailySignTask": {
-        "recognition": "DirectHit",
-        "action": "DoNothing",
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "DailySignNoPopup"
-        ]
-    },
     "GlobalActivityPagePopup": {
         "recognition": "TemplateMatch",
         "template": "活动页面_退出.png",
@@ -204,9 +192,5 @@
         "action": "Click",
         "post_delay": 500,
         "focus": "检测到升级弹窗，已识别并点击“太好了”，继续当前任务"
-    },
-    "DailySignNoPopup": {
-        "recognition": "DirectHit",
-        "action": "DoNothing"
     }
 }

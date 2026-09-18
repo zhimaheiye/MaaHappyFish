@@ -30,6 +30,7 @@ try:
         starfish_timer_state,
         green_wild_daily_state,
         hangup_schedule_state,
+        wishing_lamp_state,
     )
 except ImportError:
     from agent.runtime_state import (
@@ -47,6 +48,7 @@ except ImportError:
         starfish_timer_state,
         green_wild_daily_state,
         hangup_schedule_state,
+        wishing_lamp_state,
     )
 
 timer_state = starfish_timer_state
@@ -104,6 +106,11 @@ open_shell_loop_state = {
     "task_id": None,
     "completed": 0,
     "target": 1,
+}
+
+open_shell_entry_retry_state = {
+    "task_id": None,
+    "retries": 0,
 }
 
 
@@ -637,6 +644,86 @@ class CheckOpenShellLoopReco(CustomRecognition):
             return None
 
 
+@AgentServer.custom_recognition("CheckOpenShellEntryRetryReco")
+class CheckOpenShellEntryRetryReco(CustomRecognition):
+    # 仅统计"点击入口后经 OpenShellEntryRetryOnMainTank 模板确认仍在主鱼缸"的重试；
+    # Pipeline 中该门禁必须排在主鱼缸模板门禁之后，未知页面不得进入本计数。
+
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        global open_shell_entry_retry_state
+
+        param = parse_dict_param(argv.custom_recognition_param)
+
+        try:
+            max_retries = max(1, int(param.get("max_retries", 15)))
+        except (TypeError, ValueError):
+            max_retries = 15
+
+        task_id = argv.task_detail.task_id
+        if open_shell_entry_retry_state["task_id"] != task_id:
+            open_shell_entry_retry_state = {
+                "task_id": task_id,
+                "retries": 0,
+            }
+
+        open_shell_entry_retry_state["retries"] += 1
+        retries = open_shell_entry_retry_state["retries"]
+
+        if retries <= max_retries:
+            print(
+                f"[开贝壳] 入口点击未生效，仍在主鱼缸，准备第 {retries} 次尝试",
+                flush=True,
+            )
+            return (0, 0, 10, 10)
+
+        print(
+            f"[开贝壳] 入口重试已达上限 ({max_retries})，仍未能从主鱼缸进入贝壳分类页，安全停止",
+            flush=True,
+        )
+        return None
+
+
+@AgentServer.custom_recognition("CheckWishingLampContinueReco")
+class CheckWishingLampContinueReco(CustomRecognition):
+    # LoopRouter 首次到达在第一次点击之前，因此每次评估先 +1 得到"即将点击的序号"，
+    # 序号 <= target 时命中继续；点击 target 次后的下一次评估返回 None 流向退出链。
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        global wishing_lamp_state
+
+        param = parse_dict_param(argv.custom_recognition_param)
+
+        try:
+            target_count = max(1, int(param.get("target_count", 10)))
+        except (TypeError, ValueError):
+            target_count = 10
+
+        task_id = argv.task_detail.task_id
+        if wishing_lamp_state["task_id"] != task_id:
+            wishing_lamp_state = {
+                "task_id": task_id,
+                "completed": 0,
+                "target": target_count,
+            }
+
+        wishing_lamp_state["target"] = target_count
+        wishing_lamp_state["completed"] += 1
+        completed = wishing_lamp_state["completed"]
+
+        if completed <= target_count:
+            print(f"[许愿神灯] 准备进行第 {completed}/{target_count} 次许愿", flush=True)
+            return (0, 0, 10, 10)
+        print(f"[许愿神灯] 已完成 {target_count}/{target_count} 次许愿，开始退出神灯", flush=True)
+        return None
+
+
 @AgentServer.custom_recognition("CheckFriendGemLimitReco")
 class CheckFriendGemLimitReco(CustomRecognition):
     def analyze(
@@ -738,20 +825,22 @@ class CheckSeaOtterLimitReco(CustomRecognition):
         context: Context,
         argv: CustomRecognition.AnalyzeArg,
     ) -> Optional[RectType]:
-        completion_reason = sea_otter_gem_state.get("completion_reason")
-        if completion_reason:
+        if sea_otter_gem_state.get("normal_completion"):
+            completion_reason = sea_otter_gem_state.get("completion_reason")
             print(f"[海獭摸宝] 已到达好友边界，任务正常完成 ({completion_reason})", flush=True)
             return (0, 0, 10, 10)
 
         cur = sea_otter_gem_state.get("total_harvests", 0)
         limit = sea_otter_gem_state.get("max_harvests", 200)
         if cur >= limit:
+            sea_otter_gem_state["completion_reason"] = "SAFETY_MAX_HARVESTS"
             print(f"[海獭摸宝] 达到摸宝上限安全保护 ({cur}/{limit})，任务安全停止 (Safety Limit Triggered)", flush=True)
             return (0, 0, 10, 10)
 
         consec = sea_otter_gem_state.get("consecutive_exhausted", 0)
         max_consec = sea_otter_gem_state.get("max_consecutive_exhausted", 30)
         if consec >= max_consec:
+            sea_otter_gem_state["completion_reason"] = "SAFETY_CONSECUTIVE_EXHAUSTED"
             print(f"[海獭摸宝] 连续检测到 {consec} 位好友体力耗尽，达到防死循环上限，任务安全停止 (Safety Limit Triggered)", flush=True)
             return (0, 0, 10, 10)
 
@@ -1026,6 +1115,9 @@ class MobileAdCheckCycleLimitReco(CustomRecognition):
         param = parse_dict_param(getattr(argv, "custom_recognition_param", None))
         max_cycles = safe_int(param.get("max_cycles", mobile_ad_state.get("max_cycles", 3)), 3)
         curr = mobile_ad_state.get("completed_cycles", 0)
+
+        if max_cycles <= 0:
+            return None
 
         if curr >= max_cycles:
             return (0, 0, 10, 10)
