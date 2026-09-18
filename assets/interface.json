@@ -250,10 +250,6 @@
                     "enabled": false
                 },
                 {
-                    "name": "日常签到",
-                    "enabled": false
-                },
-                {
                     "name": "开贝壳",
                     "enabled": false
                 },
@@ -275,6 +271,14 @@
                 },
                 {
                     "name": "绿野寻仙踪",
+                    "enabled": false
+                },
+                {
+                    "name": "许愿神灯",
+                    "enabled": false
+                },
+                {
+                    "name": "秘境之门",
                     "enabled": false
                 },
                 {
