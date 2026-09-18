@@ -949,7 +949,6 @@ class InitSeaOtterStateAction(CustomAction):
                                     f"[海獭摸宝] 今日完整运行：{count}/{limit}（04:00刷新）"
                                 )
                             },
-                            "display": ["log", "toast"],
                         }
                     })
                 except Exception:
@@ -1167,7 +1166,6 @@ class SeaOtterFinalizeAction(CustomAction):
                                 f"[海獭摸宝] 本次完整运行完成，今日：{count}/{limit}"
                             )
                         },
-                        "display": ["log", "toast"],
                     }
                 })
             except Exception:

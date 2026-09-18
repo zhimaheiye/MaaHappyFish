@@ -375,10 +375,6 @@
         "action": "DoNothing",
         "focus": {
             "Node.Action.Succeeded": "[海獭摸宝] 本次完整运行完成。"
-        },
-        "display": [
-            "log",
-            "toast"
-        ]
+        }
     }
 }
