@@ -31,6 +31,7 @@ from agent.my_action import (
     DailyRoutineFinishAction,
     RomanticHouseExitToTankAction,
     SecretRealmGateDoneAction,
+    PrincessTaskDoneAction,
 )
 from agent.my_reco import (
     CheckDailyRoutineStepReco,
@@ -81,6 +82,7 @@ def test_pipeline_topology():
         "DailyRoutineEnableGoldShellCoupon",
         "DailyRoutineEnableGreenWildDaily",
         "DailyRoutineEnableSecretRealmGate",
+        "DailyRoutineEnablePrincessTask",
         "DailyRoutineEnableBandFish",
         "DailyRoutineEnableGoldenDolphin",
         "DailyRoutineEnableShakeGame",
@@ -102,6 +104,7 @@ def test_pipeline_topology():
         "DailyRoutineStepGoldShellCoupon",
         "DailyRoutineStepGreenWildDaily",
         "DailyRoutineStepSecretRealmGate",
+        "DailyRoutineStepPrincessTask",
         "DailyRoutineStepBandFishPass1",
         "DailyRoutineStepGoldenDolphin",
         "DailyRoutineStepShakeGame",
@@ -248,13 +251,12 @@ def test_pipeline_topology():
     assert business_next(pdata["FishingVerifyExitToTank"]) == dual_exit
     print("[PASS] 鱼饵耗尽模板在四个钓场路由中优先命中，并复用右上角退出与主鱼缸确认链")
 
-    # 8. 驯鹿鱼已知分支必须全部基于识别结果点击，并使用统一返回 OCR 范围。
+    # 8. 驯鹿鱼已知分支必须全部基于识别结果点击；一键清除永远不可进入正常路由。
     assert business_next(pdata["ReindeerFishStartRouter"]) == [
         "ReindeerFishRewardReturn",
         "ReindeerFishCollectAll",
         "ReindeerFishReplyAll",
         "ReindeerFishDirectGift",
-        "ReindeerFishClearAll",
         "ReindeerFishStartAtGrid",
         "ReindeerFishStartAtTank",
         "ReindeerFishCommonBack",
@@ -268,13 +270,15 @@ def test_pipeline_topology():
     assert business_next(pdata["ReindeerFishAfterCollectRouter"]) == [
         "ReindeerFishRewardReturn",
         "ReindeerFishReplyAll",
-        "ReindeerFishClearAll",
     ]
     assert pdata["ReindeerFishClearAll"]["expected"] == "键清除"
     assert pdata["ReindeerFishClearAll"]["roi"] == [500, 560, 260, 100]
-    assert pdata["ReindeerFishClearAll"]["action"] == "Click"
+    assert pdata["ReindeerFishClearAll"]["action"] == "DoNothing"
     assert "target" not in pdata["ReindeerFishClearAll"]
     assert business_next(pdata["ReindeerFishClearAll"]) == ["ReindeerFishCommonBack"]
+    for node_name, node_data in pdata.items():
+        if node_name != "ReindeerFishClearAll":
+            assert "ReindeerFishClearAll" not in node_data.get("next", [])
     assert pdata["ReindeerFishAfterCollectRouter"]["on_error"] == ["ReindeerFishAfterCollectNoReply"]
     assert business_next(pdata["ReindeerFishAfterCollectNoReply"]) == ["ReindeerFishCommonBack"]
     # 2026-09-15 现场 OCR 把“一键回礼”稳定识别为“键回礼”；使用共同稳定子串。
@@ -360,6 +364,11 @@ def simulate_flow(config_param):
             loops += 1
             continue
 
+        if cur_step == "PRINCESS_TASK":
+            assert PrincessTaskDoneAction().run(ctx, arg) is True
+            loops += 1
+            continue
+
         if cur_step == "SHAKE_GAME":
             assert ShakeGameDoneAction().run(ctx, arg) is True
             loops += 1
@@ -391,6 +400,7 @@ def test_combination_1():
         "gold_shell_coupon": True,
         "green_wild_daily": True,
         "secret_realm_gate": True,
+        "princess_task": True,
         "band_fish": True,
         "golden_dolphin": True,
         "shake_game": True,
@@ -407,6 +417,7 @@ def test_combination_1():
         "GOLD_SHELL_COUPON",
         "GREEN_WILD_DAILY",
         "SECRET_REALM_GATE",
+        "PRINCESS_TASK",
         "GOLDEN_DOLPHIN",
         "SHAKE_GAME",
         "FISHING",

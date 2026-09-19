@@ -35,6 +35,7 @@ def run_tests():
     pipeline = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
 
     assert business_next(pipeline["PrincessStartRouter"]) == [
+        "PrincessTreasureTaskPage",
         "PrincessPageReady",
         "PrincessOpenEntry",
     ]
@@ -44,6 +45,10 @@ def run_tests():
         "roi": [29, 264, 50, 37],
         "action": "Click",
     })
+    assert business_next(pipeline["PrincessOpenEntry"]) == [
+        "PrincessTreasureTaskPage",
+        "PrincessPageReady",
+    ]
     assert_fields(pipeline["PrincessPageReady"], {
         "recognition": "TemplateMatch",
         "template": "公主任务_识别.png",
@@ -54,6 +59,7 @@ def run_tests():
         "PrincessClaimTop",
         "PrincessClaimMiddle",
         "PrincessClaimBottom",
+        "PrincessTreasureTaskPage",
         "PrincessExit",
     ]
     claim_slots = [
@@ -96,9 +102,46 @@ def run_tests():
         "PrincessClaimTop",
         "PrincessClaimMiddle",
         "PrincessClaimBottom",
+        "PrincessTreasureTaskPage",
         "PrincessExit",
     ]
+    assert pipeline["PrincessPageAfterClaim"]["on_error"] == [
+        "PrincessTreasureTaskPage"
+    ]
     assert pipeline["PrincessClaimFailure"]["roi"] == [760, 380, 180, 180]
+
+    treasure_page = pipeline["PrincessTreasureTaskPage"]
+    assert_fields(treasure_page, {
+        "recognition": "OCR",
+        "expected": "公主宝箱任务",
+        "roi": [494, 158, 292, 141],
+        "action": "DoNothing",
+    })
+    assert business_next(treasure_page) == [
+        "PrincessTreasureClaimAvailable",
+        "PrincessExit",
+    ]
+    assert treasure_page["on_error"] == ["PrincessExit"]
+
+    treasure_claim = pipeline["PrincessTreasureClaimAvailable"]
+    assert_fields(treasure_claim, {
+        "recognition": "TemplateMatch",
+        "template": "公主宝箱任务_领取.png",
+        "roi": [376, 501, 40, 40],
+        "action": "Click",
+    })
+    assert "target" not in treasure_claim
+    assert business_next(treasure_claim) == ["PrincessTreasureClaimSuccess"]
+
+    treasure_success = pipeline["PrincessTreasureClaimSuccess"]
+    assert_fields(treasure_success, {
+        "recognition": "OCR",
+        "expected": "^你真棒$",
+        "roi": [596, 517, 86, 31],
+        "action": "Click",
+    })
+    assert "target" not in treasure_success
+    assert business_next(treasure_success) == ["PrincessExit"]
 
     for gone in (
         "PrincessClaimReward",
@@ -128,12 +171,13 @@ def run_tests():
         "公主任务_领取奖励.png",
         "公主任务_领取失败.png",
         "公主任务_退出.png",
+        "公主宝箱任务_领取.png",
     ):
         assert (IMAGE_DIR / name).is_file(), f"missing template: {name}"
 
     for node in pipeline.values():
         template_name = node.get("template", "")
-        if template_name.startswith("公主任务_"):
+        if template_name.startswith(("公主任务_", "公主宝箱任务_")):
             template_width, template_height = png_size(IMAGE_DIR / template_name)
             _, _, roi_width, roi_height = node["roi"]
             assert template_width <= roi_width and template_height <= roi_height, (
@@ -154,7 +198,7 @@ def run_tests():
     assert princess_tasks[0]["name"] == "公主任务"
     assert princess_tasks[0]["default_check"] is False
 
-    print("[PASS] PrincessTask three-slot claim topology, ROI, assets, and interface contract")
+    print("[PASS] PrincessTask three-slot + treasure-task topology, ROI, assets, and interface contract")
 
 
 if __name__ == "__main__":

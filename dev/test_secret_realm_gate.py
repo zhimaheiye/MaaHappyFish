@@ -103,27 +103,43 @@ class SecretRealmGateSimulator:
       send_condition: 分支一中确定送出条件是否成立
     """
 
-    def __init__(self, pipeline, page):
+    def __init__(self, pipeline, page, on_wait_retry=None, on_entry_click=None, on_popup_wait=None):
+        # on_wait_retry(round)：每次 WaitSendRetry 等待后回调（模拟下一帧画面变化）
+        # on_entry_click(clicks)：每次 MainTankEntry 点击后回调（模拟点击是否生效）
         self.pipeline = pipeline
         self.page = page
+        self.loop_next = None
+        self.on_wait_retry = on_wait_retry
+        self.on_entry_click = on_entry_click
+        self.on_popup_wait = on_popup_wait
         self.visited = []
         self.clicks = []
+        self.send_wait_rounds = 0  # “无送出”观察窗轮数（>=5 视为窗口耗尽）
+        self.main_retry_rounds = 0  # 主鱼缸重试轮数（模拟器保护上限 8）
         self.outcome = None
+
+    loop_next = None
 
     def reco_hit(self, name):
         p = self.page
         if name in ("SecretRealmGateTask", "SecretRealmGateStartRouter",
                     "SecretRealmGateSendRouter", "SecretRealmGateNoMoreSend",
-                    "SecretRealmGateClickDelete"):
+                    "SecretRealmGateClickDelete", "SecretRealmGatePopupWait"):
             return True  # DirectHit 型节点
+        if name == "SecretRealmGateWaitSendRetry":
+            return self.send_wait_rounds < 5  # 2.5s 观察窗 ≈ 5 轮重试
+        if name == "SecretRealmGateMainTankRetry":
+            # 生产语义：主缸门禁命中即无限重试（用户 Stop 正常停止）。
+            # 模拟器层面 8 轮后人为跳出，防止递归爆栈；断言只验证 Retry 发生且未 Abort。
+            return p["stage"] == "main_tank" and self.main_retry_rounds < 8
         if name == "SecretRealmGateOpenTreasure":
-            return p["stage"] == "main_tank"  # 右下角宝箱只在主鱼缸
+            return p["stage"] == "main_tank" and p.get("treasure_visible", True)
         if name == "SecretRealmGateMainTankEntry":
-            return p["stage"] == "main_tank"  # 入口模板在宝箱菜单弹出后可见
+            return p["stage"] == "main_tank" and p.get("entry_visible", True)
         if name in ("SecretRealmGateMainPage",):
             return p["stage"] == "gate"  # 秘境之门_识别
         if name == "SecretRealmGateClickSend":
-            return p["stage"] == "gate" and p["send_visible"]  # OCR 送出
+            return p["stage"] == "gate" and p.get("send_visible", False)  # OCR 送出
         if name == "SecretRealmGateSendPopup":
             return p["stage"] == "send_popup"  # 分支一标题 OCR
         if name == "SecretRealmGateCheckSendCondition":
@@ -136,7 +152,7 @@ class SecretRealmGateSimulator:
         if name == "SecretRealmGateClickConfirmDelete":
             return p.get("branch") == "no_fish" and p["stage"] == "no_fish"  # 删除确认对号
         if name == "SecretRealmGateExitGate":
-            return p["stage"] == "gate" and not p["send_visible"]  # OCR 返回
+            return p["stage"] == "gate" and not p.get("send_visible", False)  # OCR 返回
         if name == "SecretRealmGateVerifyTank":
             return p["stage"] == "main_tank"  # 主界面特征
         if name in ("DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"):
@@ -158,12 +174,29 @@ class SecretRealmGateSimulator:
         if node.get("action") == "Click" or name == "SecretRealmGateClickSend":
             self.clicks.append(name)
         # 页面转移（模拟真实点击后的页面变化）
-        if name == "SecretRealmGateOpenTreasure":
-            self.page = {"stage": "main_tank", "send_visible": self.page["send_visible"]}
-        if name == "SecretRealmGateMainTankEntry":
-            self.page = {"stage": "gate", "send_visible": self.page["send_visible"]}
+        if name == "SecretRealmGateWaitSendRetry":
+            self.send_wait_rounds += 1
+            if self.on_wait_retry:
+                self.on_wait_retry(self.send_wait_rounds)
+        if name == "SecretRealmGateMainTankRetry":
+            self.main_retry_rounds += 1
+            if self.on_wait_retry:
+                self.on_wait_retry(self.main_retry_rounds)
+        new_page_from_hook = None
+        if name == "SecretRealmGateMainTankEntry" and self.on_entry_click:
+            new_page = self.on_entry_click(self.clicks.count("SecretRealmGateMainTankEntry"))
+            if new_page is not None:
+                new_page_from_hook = new_page
+                self.page = new_page
+        if name == "SecretRealmGateMainTankEntry" and new_page_from_hook is None:
+            self.page = {"stage": "gate", "send_visible": self.page.get("send_visible", False)}
+        if name == "SecretRealmGatePopupWait" and self.on_popup_wait:
+            self.on_popup_wait()  # 等待后弹窗出现（或仍未出现）
         elif name == "SecretRealmGateClickSend":
-            if self.page.get("branch") == "no_fish":
+            if self.on_popup_wait:
+                # 弹窗延迟出现场景：点击后先保持原状态，由 PopupWait 等待回调决定弹窗何时出现
+                self.page = {"stage": "pre_popup", "branch": self.page.get("branch", "send")}
+            elif self.page.get("branch") == "no_fish":
                 self.page = {"stage": "no_fish", "branch": "no_fish"}
             else:
                 self.page = {"stage": "send_popup", "send_condition": self.page.get("send_condition", True)}
@@ -177,10 +210,18 @@ class SecretRealmGateSimulator:
             self.page = {"stage": "gate", "send_visible": False}  # 卡片已删
         elif name == "SecretRealmGateExitGate":
             self.page = {"stage": "main_tank"}
-        for cand in business_next(node):
+        candidates = business_next(node)
+        for cand in candidates:
             if self.reco_hit(cand):
                 self._follow(cand)
                 return
+        if candidates and node.get("on_error"):
+            # next 候选全 miss = active 节点识别失败 → 走自身 on_error
+            # （next 为空 = 正常收尾，不走 on_error）
+            for cand in [n for n in node.get("on_error", []) if not n.startswith("[JumpBack]")]:
+                if self.reco_hit(cand):
+                    self._follow(cand)
+                    return
         self.outcome = "chain_end"
 
     def run(self, page):
@@ -200,7 +241,7 @@ def run_tests():
         "SecretRealmGateMainTankEntry": ("秘境之门_入口.png", [573, 621, 58, 40], "Click"),
         "SecretRealmGateMainPage": ("秘境之门_识别.png", [464, 0, 354, 127], "DoNothing"),
         "SecretRealmGateCheckSendCondition": ("秘境之门_确定送出条件.png", [179, 229, 107, 37], "DoNothing"),
-        "SecretRealmGateClickConfirmDelete": ("秘境之门_确认删除.png", [804, 462, 44, 44], "Click"),
+        "SecretRealmGateClickConfirmDelete": ("秘境之门_确认删除.png", [804, 462, 44, 44], "Custom"),
     }
     for node_name, (tpl, roi, action) in tpl_specs.items():
         node = pipeline[node_name]
@@ -209,12 +250,28 @@ def run_tests():
         assert node["roi"] == roi, node_name
         assert node["threshold"] == 0.8, node_name
         assert node["action"] == action, node_name
+        if action == "Click":
+            assert "target" not in node, f"{node_name} 必须点击识别位置"
+    # 确认删除改 Custom：点击真实识别框 + 列表变化清 skip
+    ccd = pipeline["SecretRealmGateClickConfirmDelete"]
+    assert ccd["custom_action"] == "SecretRealmGateListChangedAction"
     for name in ("右下角_宝箱.png", "秘境之门_入口.png", "秘境之门_识别.png",
                  "秘境之门_确定送出条件.png", "秘境之门_删除.png", "秘境之门_确认删除.png"):
         assert (ROOT / "assets/resource/image" / name).is_file()
-    # OCR 节点契约
-    assert pipeline["SecretRealmGateClickSend"]["expected"] == "^送出$"
+    # OCR 节点契约：ClickSend 已改 Custom Reco（内部 OCR 正则），此处验证正则语义
+    import re as _re
+    send_re = r".*送\s*出.*"
+    assert pipeline["SecretRealmGateClickSend"]["custom_recognition"] == "SecretRealmGateFindSendCardReco"
+    for ok_text in ("送出", "送 出", "xx送出xx", "送  出"):
+        assert _re.search(send_re, ok_text), ok_text
+    for bad_text in ("领取", "确定", "返回"):
+        assert not _re.search(send_re, bad_text), bad_text
     assert pipeline["SecretRealmGateClickSend"]["roi"] == [930, 149, 149, 522]
+    exit_re = pipeline["SecretRealmGateExitGate"]["expected"]
+    assert exit_re == ".*返\\s*回.*", exit_re
+    for ok_text in ("返回", "返 回"):
+        assert _re.search(exit_re, ok_text), ok_text
+    assert not _re.search(exit_re, "送出")
     assert pipeline["SecretRealmGateClickSend"]["custom_action"] == "SecretRealmGateClickSendAction"
     assert pipeline["SecretRealmGateSendPopup"]["expected"] == "选择|送出的鱼", "分支一分词兼容"
     assert pipeline["SecretRealmGateNoFishCheck"]["expected"] == "没有这种鱼|您没有", "分支二分词兼容"
@@ -234,9 +291,40 @@ def run_tests():
     ]
     assert business_next(pipeline["SecretRealmGateStartRouter"]) == [
         "SecretRealmGateMainPage", "SecretRealmGateOpenTreasure",
-        "SecretRealmGateMainTankEntry", "SecretRealmGateAbort",
+        "SecretRealmGateMainTankEntry", "SecretRealmGateMainTankRetry",
+        "SecretRealmGateAbort",
+    ]
+    retry_node = pipeline["SecretRealmGateMainTankRetry"]
+    assert retry_node["template"] == "主界面特征.png"
+    assert retry_node["roi"] == [0, 200, 150, 400]
+    assert retry_node["action"] == "DoNothing"
+    assert business_next(retry_node) == ["SecretRealmGateStartRouter"]
+    assert business_next(pipeline["SecretRealmGateMainTankEntry"]) == [
+        "SecretRealmGateMainPage", "SecretRealmGateMainTankRetry",
+    ]
+    assert business_next(pipeline["SecretRealmGateOpenTreasure"]) == [
+        "SecretRealmGateMainTankEntry", "SecretRealmGateMainTankRetry",
+    ]
+    assert business_next(pipeline["SecretRealmGateSendRouter"]) == [
+        "SecretRealmGateClickSend", "SecretRealmGateWaitSendRetry", "SecretRealmGateNoMoreSend",
+    ]
+    wait_node = pipeline["SecretRealmGateWaitSendRetry"]
+    assert wait_node["custom_recognition"] == "CheckSecretRealmGateSendWaitReco"
+    assert business_next(wait_node) == ["SecretRealmGateClickSend", "SecretRealmGateWaitSendRetry"]
+    assert [n for n in wait_node.get("on_error", []) if not n.startswith("[JumpBack]")] == [
+        "SecretRealmGateNoMoreSend"
+    ]
+    assert pipeline["SecretRealmGateClickSend"]["on_error"] == ["SecretRealmGateNoMoreSend"], (
+        "全部卡跳过后走正常退出链（NoMoreSend），而非 Abort"
+    )
+    assert business_next(pipeline["SecretRealmGateStartRouter"]) == [
+        "SecretRealmGateMainPage", "SecretRealmGateOpenTreasure",
+        "SecretRealmGateMainTankEntry", "SecretRealmGateMainTankRetry",
+        "SecretRealmGateAbort",
     ], "主鱼缸启动必须先开宝箱再点入口"
-    assert business_next(pipeline["SecretRealmGateOpenTreasure"]) == ["SecretRealmGateMainTankEntry"]
+    assert business_next(pipeline["SecretRealmGateOpenTreasure"]) == [
+        "SecretRealmGateMainTankEntry", "SecretRealmGateMainTankRetry",
+    ]
     assert pipeline["SecretRealmGateVerifyTank"]["custom_action"] == "SecretRealmGateDoneAction"
     print("[PASS] 静态拓扑：两分支结束统一回流 SendRouter，VerifyTank 走日常双出口")
 
@@ -334,7 +422,110 @@ def run_tests():
     labels = [c["name"] for c in cases]
     assert labels.index("绿野寻仙踪日常") < labels.index("秘境之门")
     assert "秘境之门" not in interface["option"]["日常收尾任务"]["default_case"]
+    # ---- Round 5 场景 G：点击送出后弹窗延迟出现 → 分支一正常继续 ----
+    sim = SecretRealmGateSimulator(
+        pipeline, {"stage": "gate", "send_visible": True, "branch": "send", "send_condition": True},
+        on_popup_wait=lambda: sim.page.update({"stage": "send_popup", "send_condition": True}),
+    )
+    sim.run({"stage": "gate", "send_visible": True, "branch": "send", "send_condition": True})
+    assert "SecretRealmGatePopupWait" in sim.visited
+    assert "SecretRealmGateSendPopup" in sim.visited
+    assert "SecretRealmGateClickPopupSend" in sim.visited
+    assert "SecretRealmGateAbort" not in sim.visited
+    assert sim.outcome == "daily_exit"
+    print("[PASS] Round5-G 弹窗延迟出现：PopupWait 等待后 SendPopup 命中，分支一正常继续")
+
+    # ---- Round 5 场景 H：弹窗始终不出现 → PopupWait 重评后仍 miss → 安全 Abort ----
+    sim2 = SecretRealmGateSimulator(
+        pipeline, {"stage": "none_state", "branch": "none"},
+        on_popup_wait=lambda: None,
+    )
+    # 模拟：点击“送出”后页面停在未知状态（无弹窗），从 PopupWait 重评开始
+    sim2.page = {"stage": "none_state", "branch": "none"}
+    sim2._follow("SecretRealmGatePopupWait")
+    assert "SecretRealmGateAbort" in sim2.visited
+    assert sim2.outcome == "stop_task"
+    assert len(sim2.clicks) == 0, "未知状态下不得点击"
+    print("[PASS] Round5-H 弹窗持续不出现：PopupWait 重评后仍 miss → 安全 Abort（未录入分支按约定停止）")
+
     print("[PASS] 日常收尾契约：Enable/Step/Dispatcher/队列顺序/多选 case 全部接入")
+
+    # ---- Round 5 场景 A：主鱼缸宝箱/入口都被挡 → 主缸重试 → 宝箱出现 ----
+    sim = SecretRealmGateSimulator(
+        pipeline, {"stage": "main_tank", "treasure_visible": False, "entry_visible": False},
+        on_wait_retry=lambda rnd: sim.page.update({"treasure_visible": True, "entry_visible": True}),
+    )
+    sim.run({"stage": "main_tank", "treasure_visible": False, "entry_visible": False})
+    assert "SecretRealmGateMainTankRetry" in sim.visited
+    assert "SecretRealmGateOpenTreasure" in sim.visited
+    assert "SecretRealmGateMainTankEntry" in sim.visited
+    assert "SecretRealmGateAbort" not in sim.visited
+    assert sim.outcome == "daily_exit"
+    print("[PASS] Case A 宝箱/入口同帧被挡：主缸确认重试后正常进入并完成，未 Abort")
+
+    # ---- Round 5 场景 B：宝箱已展开、入口暂不可见 → 重试 → 入口出现 ----
+    sim = SecretRealmGateSimulator(
+        pipeline, {"stage": "main_tank", "treasure_visible": False, "entry_visible": False},
+        on_wait_retry=lambda rnd: sim.page.update({"entry_visible": True}),
+    )
+    sim.run({"stage": "main_tank", "treasure_visible": False, "entry_visible": False})
+    assert "SecretRealmGateOpenTreasure" not in sim.visited, "宝箱已展开时不得重复点击宝箱"
+    assert "SecretRealmGateMainTankRetry" in sim.visited
+    assert "SecretRealmGateMainTankEntry" in sim.visited
+    assert "SecretRealmGateAbort" not in sim.visited
+    assert sim.outcome == "daily_exit"
+    print("[PASS] Case B 宝箱已展开、入口被挡：只走主缸重试，不重复点击宝箱")
+
+    # ---- Round 5 场景 C：入口点击未生效（仍在主鱼缸）→ 重试后第二次点击成功 ----
+    def entry_click_flaky(n):
+        # 第 1 次点击被鱼挡住（仍在主鱼缸），第 2 次生效进入主页
+        return {"stage": "main_tank", "treasure_visible": True, "entry_visible": True} if n == 1 else {"stage": "gate"}
+
+    sim = SecretRealmGateSimulator(
+        pipeline, {"stage": "main_tank", "treasure_visible": True, "entry_visible": True},
+        on_entry_click=entry_click_flaky,
+    )
+    sim.run({"stage": "main_tank", "treasure_visible": True, "entry_visible": True})
+    entry_clicks = sim.clicks.count("SecretRealmGateMainTankEntry")
+    assert entry_clicks == 2, entry_clicks
+    assert "SecretRealmGateAbort" not in sim.visited
+    assert sim.outcome == "daily_exit"
+    print("[PASS] Case C 入口点击未生效：主缸门禁确认后重试，第二次点击进入主页")
+
+    # ---- Round 5 场景 D：真正未知页面才 Abort ----
+    sim = SecretRealmGateSimulator(pipeline, {"stage": "unknown"})
+    sim.run({"stage": "unknown"})
+    assert sim.outcome == "stop_task"
+    assert "SecretRealmGateMainTankRetry" not in sim.visited
+    print("[PASS] Case D 未知页面：MainPage/OpenTreasure/Entry/MainTank 全 miss 才 Abort")
+
+    # ---- Round 5 场景 E：Send 单帧 miss 不等于 NoMoreSend ----
+    def wait_recovers(rnd):
+        if rnd == 1:
+            sim.page = {"stage": "gate", "send_visible": True}
+        return None
+
+    sim = SecretRealmGateSimulator(
+        pipeline, {"stage": "gate", "send_visible": False},
+        on_wait_retry=wait_recovers,
+    )
+    sim.run({"stage": "gate", "send_visible": False})
+    assert sim.clicks.count("SecretRealmGateClickSend") >= 1, "观察窗内送出出现后必须正常点击"
+    assert "SecretRealmGateNoMoreSend" in sim.visited, "第二次稳定无送出后应正常进入退出链"
+    assert sim.visited.index("SecretRealmGateNoMoreSend") > sim.visited.index("SecretRealmGateClickSend"), (
+        "NoMoreSend 只能出现在成功点击送出之后的稳定 miss 阶段"
+    )
+    assert "SecretRealmGateAbort" not in sim.visited
+    print("[PASS] Case E Send 单帧 miss：观察窗内恢复后正常点击；NoMoreSend 仅在后续稳定 miss 时合法出现")
+
+    # ---- Round 5 场景 F：稳定多帧 miss 才 NoMoreSend → ExitGate ----
+    sim = SecretRealmGateSimulator(pipeline, {"stage": "gate", "send_visible": False})
+    sim.run({"stage": "gate", "send_visible": False})
+    assert sim.send_wait_rounds == 5
+    assert "SecretRealmGateNoMoreSend" in sim.visited
+    assert "SecretRealmGateExitGate" in sim.visited
+    assert sim.outcome == "daily_exit"
+    print("[PASS] Case F 稳定 5 轮无送出：才进入 NoMoreSend 并正常退出")
 
     print("[PASS] 秘境之门专项测试全部通过")
 

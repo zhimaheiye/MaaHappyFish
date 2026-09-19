@@ -6,6 +6,7 @@ import sys
 from types import SimpleNamespace
 
 import cv2
+import inspect
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -516,6 +517,136 @@ def run_tests():
         "Heart-only 帧上不得点击任何 activation coin（04 帧 coin=None）"
     )
     print('[PASS] Check 12E: Heart 命中 + XP 缺席 → 不触发激活、不点击，持续安全找贝币！')
+
+    print("\n--- Test 12F: 普通确认路径禁止调用 RapidOCR（结构 + 运行时双重验证） ---")
+    import agent.my_action as gd_mod
+
+    # 结构断言：rapidocr 导入只允许出现在 _get_golden_dolphin_ocr 内
+    fn_src = inspect.getsource(gd_mod._get_golden_dolphin_ocr)
+    assert "rapidocr_onnxruntime" in fn_src
+    module_src = inspect.getsource(gd_mod)
+    ocr_fn_start = module_src.find("def _get_golden_dolphin_ocr")
+    before_ocr_fn = module_src[:ocr_fn_start]
+    assert "rapidocr_onnxruntime" not in before_ocr_fn.split("class GoldenDolphinTaskAction")[0], (
+        "rapidocr 导入必须只在 lazy singleton 内"
+    )
+    # 确认闭环抽函数源码内不得出现 RapidOCR
+    confirm_fn_src = inspect.getsource(gd_mod._confirm_golden_dolphin_dialog_closed)
+    assert "RapidOCR" not in confirm_fn_src and "rapidocr" not in confirm_fn_src
+    print("[PASS] 结构（12F）：rapidocr 仅存在于 lazy singleton，确认闭环函数零 OCR 依赖")
+
+    class _FC:
+        def __init__(self, fs):
+            self.frames = list(fs)
+            self.idx = 0
+            self.clicks = []
+
+        def post_screencap(self):
+            f = self.frames[min(self.idx, len(self.frames) - 1)]
+            self.idx += 1
+
+            class _J:
+                def wait(self):
+                    return self
+
+                def get(self):
+                    return f
+
+            return _J()
+
+        def post_click(self, x, y):
+            self.clicks.append((x, y))
+
+            class _J:
+                def wait(self):
+                    return self
+
+            return _J()
+
+    popup_frame = cv2.imread('dev/exploration/golden_dolphin/02_confirm_popup.png')
+    game_frame = cv2.imread('dev/exploration/golden_dolphin/02_game_start_stage.png')
+    assert popup_frame is not None and game_frame is not None
+    tpl_confirm = _get_golden_dolphin_templates()["confirm"]
+
+    # 运行时断言：普通确认闭环零 RapidOCR 调用（monkeypatch 即失败）
+    orig_get_ocr = gd_mod._get_golden_dolphin_ocr
+
+    def _forbidden_ocr():
+        raise AssertionError("normal play popup must not call RapidOCR")
+
+    gd_mod._get_golden_dolphin_ocr = _forbidden_ocr
+    try:
+        ctrl = _FC([game_frame])
+        dialog_closed, bx, by = gd_mod._confirm_golden_dolphin_dialog_closed(
+            ctrl, tpl_confirm, popup_frame, 824, 480)
+        assert dialog_closed is True
+        assert ctrl.clicks == [(824, 480)]
+    finally:
+        gd_mod._get_golden_dolphin_ocr = orig_get_ocr
+    print("[PASS] 运行时（12F）：普通确认闭环零 RapidOCR 调用（monkeypatch 未触发）")
+
+    print("\n--- Test 12G: 疑似耗尽分支才允许 RapidOCR + lazy singleton ---")
+    calls = {"construct": 0}
+
+    class _FakeRapidOCR:
+        def __init__(self):
+            calls["construct"] += 1
+
+        def __call__(self, frame):
+            return [(None, "机会已全部用完", None)], None
+
+    fake_mod = type(sys)("rapidocr_onnxruntime_fake")
+    fake_mod.RapidOCR = _FakeRapidOCR
+    saved_mod = sys.modules.get("rapidocr_onnxruntime")
+    sys.modules["rapidocr_onnxruntime"] = fake_mod
+    try:
+        gd_mod._golden_dolphin_ocr = None  # 重置 singleton
+        o1 = gd_mod._get_golden_dolphin_ocr()
+        o2 = gd_mod._get_golden_dolphin_ocr()
+        assert o1 is o2, "lazy singleton 必须复用同一实例"
+        assert calls["construct"] == 1, "RapidOCR 只构造一次"
+        print("[PASS] lazy singleton（12G）：RapidOCR 仅首次构造，后续复用实例")
+    finally:
+        gd_mod._golden_dolphin_ocr = None
+        if saved_mod is not None:
+            sys.modules["rapidocr_onnxruntime"] = saved_mod
+        else:
+            sys.modules.pop("rapidocr_onnxruntime", None)
+
+    print("\n--- Test 12H: 普通确认闭环——第一次成功 / fresh 坐标重试 / 三次失败 ---")
+    from agent.my_action import _confirm_golden_dolphin_dialog_closed as _confirm_loop
+
+    # 场景 1：第一次点击成功
+    ctrl1 = _FC([game_frame])
+    closed, bx, by = _confirm_loop(ctrl1, tpl_confirm, popup_frame, 824, 480)
+    assert closed is True and ctrl1.clicks == [(824, 480)]
+    print("[PASS] 确认闭环场景 1：第一次点击 (824,480) 即关闭，无多余点击")
+
+    # 场景 2：第一次未关，第二次 fresh 坐标成功（保持按钮完整落在安全识别区）
+    rolled = np.roll(popup_frame, -40, axis=0)
+    ctrl2 = _FC([rolled, game_frame])
+    closed, bx, by = _confirm_loop(ctrl2, tpl_confirm, popup_frame, 824, 480)
+    assert closed is True
+    assert len(ctrl2.clicks) == 2, ctrl2.clicks
+    assert ctrl2.clicks[0] == (824, 480)
+    assert ctrl2.clicks[1] == (824, 440), f"第二次必须使用 fresh 帧坐标: {ctrl2.clicks[1]}"
+    print("[PASS] 确认闭环场景 2：第一次未关 → fresh 坐标 (824,440) 重试成功")
+
+    # 场景 3：三次都失败
+    ctrl3 = _FC([popup_frame] * 5)
+    closed, bx, by = _confirm_loop(ctrl3, tpl_confirm, popup_frame, 824, 480)
+    assert closed is False
+    assert len(ctrl3.clicks) == 3, "最多 3 次点击"
+    print("[PASS] 确认闭环场景 3：三次点击弹窗仍在 → closed=False（上层 FAILED）")
+
+    # 11:39 防回归契约：confirm 模板分数阈值语义
+    res_popup = cv2.matchTemplate(popup_frame, tpl_confirm, cv2.TM_CCOEFF_NORMED)
+    score_popup = cv2.minMaxLoc(res_popup)[1]
+    res_game = cv2.matchTemplate(game_frame, tpl_confirm, cv2.TM_CCOEFF_NORMED)
+    score_game = cv2.minMaxLoc(res_game)[1]
+    assert score_popup >= 0.65, f"弹窗帧 confirm 模板必须 >=0.65, got {score_popup:.4f}"
+    assert score_game < 0.65, f"游戏帧 confirm 模板必须 <0.65, got {score_game:.4f}"
+    print(f"[PASS] 11:39 防回归契约：confirm 模板分数 弹窗={score_popup:.4f} / 游戏={score_game:.4f}（阈值 0.65 有效区分）")
 
     print("\n--- Test 13: 正式阶段优先填充机制 ---")
     class _MockFind:

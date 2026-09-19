@@ -14,8 +14,10 @@ import numpy as np
 
 from maa.agent.agent_server import AgentServer
 from maa.custom_action import CustomAction
+from maa.custom_recognition import CustomRecognition
 from maa.context import Context
 from maa.pipeline import JActionType, JLongPress
+from maa.define import RectType
 
 try:
     from runtime_state import (
@@ -81,6 +83,45 @@ def _capture_720p(controller):
     if width != 1280 or height != 720:
         frame = cv2.resize(frame, (1280, 720))
     return frame
+
+
+_golden_dolphin_ocr = None
+
+
+def _get_golden_dolphin_ocr():
+    """RapidOCR lazy singleton：仅在疑似耗尽分支首次调用时加载模型。"""
+    global _golden_dolphin_ocr
+    if _golden_dolphin_ocr is None:
+        from rapidocr_onnxruntime import RapidOCR
+        _golden_dolphin_ocr = RapidOCR()
+    return _golden_dolphin_ocr
+
+
+def _confirm_golden_dolphin_dialog_closed(ctrl, tpl_confirm, screen_confirm, btn_cx, btn_cy):
+    """普通“想玩”确认弹窗点击闭环：点击 → fresh 截图 → confirm 模板验证弹窗关闭。
+
+    最多 3 次点击，每次重试前用 fresh 帧上的 HSV 中心更新坐标（不缓存旧坐标）。
+    返回 (dialog_closed, btn_cx, btn_cy)。
+    """
+    dialog_closed = False
+    for _attempt in range(3):
+        ctrl.post_click(btn_cx, btn_cy).wait()
+        time.sleep(0.8)
+        job = ctrl.post_screencap()
+        sc = job.get() if job else None
+        if sc is None:
+            continue
+        confirm_score = 0.0
+        if tpl_confirm is not None:
+            res_c = cv2.matchTemplate(sc, tpl_confirm, cv2.TM_CCOEFF_NORMED)
+            confirm_score = cv2.minMaxLoc(res_c)[1]
+        if confirm_score < 0.65:
+            dialog_closed = True
+            break
+        gc = _find_green_check(sc)
+        if gc is not None:
+            btn_cx, btn_cy = gc
+    return dialog_closed, btn_cx, btn_cy
 
 
 def _recognition_box(context: Context, node_name: str, frame):
@@ -606,7 +647,7 @@ class FeedManateeUntilExhaustedAction(CustomAction):
                 manatee_state["last_feed_count"] = click_count + 1
                 if (click_count + 1) % 10 == 0:
                     print(f"[海牛先生] 已执行 {click_count + 1} 次喂食点击", flush=True)
-                time.sleep(0.1)
+                time.sleep(0.2)
 
             print(
                 f"[海牛先生] 已达到 {max_clicks} 次安全上限但仍未确认体力为 0，停止操作",
@@ -3077,30 +3118,52 @@ class GoldenDolphinNavigationAction(CustomAction):
                 time.sleep(1.0)
                 return True
 
-            # 区分“机会已全部用完”与“您想玩这个小游戏吗”
-            is_exhausted = False
+            # 区分“机会已全部用完”与“您想玩这个小游戏吗”（保留 HSV 红色取消几何判定）
+            has_red_cancel = False
             try:
                 sc_720 = cv2.resize(screen_confirm, (1280, 720))
                 red_patch = sc_720[430:490, 650:710]
                 hsv_p = cv2.cvtColor(red_patch, cv2.COLOR_BGR2HSV)
                 mask_r = ((hsv_p[:, :, 0] < 10) | (hsv_p[:, :, 0] > 170)) & (hsv_p[:, :, 1] > 90) & (hsv_p[:, :, 2] > 90)
                 has_red_cancel = bool(np.sum(mask_r) > 400)
-                if not has_red_cancel:
-                    is_exhausted = True
             except Exception:
                 pass
 
-            if not is_exhausted:
-                try:
-                    from rapidocr_onnxruntime import RapidOCR
-                    _ocr = RapidOCR()
-                    res_ocr, _ = _ocr(screen_confirm)
-                    for _, txt, _ in (res_ocr or []):
-                        if any(k in txt for k in ("用完", "明天再来", "全部用完", "明天")):
-                            is_exhausted = True
-                            break
-                except Exception:
-                    pass
+            if has_red_cancel:
+                # 普通“想玩”确认弹窗：完全跳过 RapidOCR，立即进入确认点击闭环
+                print(
+                    f"[金海豚导航] 普通“想玩”确认弹窗已确认，跳过文字 OCR，"
+                    f"立即点击绿色对号 ({btn_cx},{btn_cy})。",
+                    flush=True,
+                )
+                dialog_closed, btn_cx, btn_cy = _confirm_golden_dolphin_dialog_closed(
+                    ctrl, tpl_confirm, screen_confirm, btn_cx, btn_cy
+                )
+                if not dialog_closed:
+                    print(
+                        "[金海豚导航] ERROR: 确认弹窗连续 3 次点击后仍未关闭，"
+                        "安全停止，不进入采集循环。",
+                        flush=True,
+                    )
+                    golden_dolphin_state["status"] = "FAILED"
+                    return False
+                print("[金海豚导航] 已验证确认弹窗关闭，小游戏进入流程成立。", flush=True)
+                golden_dolphin_state["status"] = "READY_TO_PLAY"
+                return True
+
+            # 无红 X：疑似耗尽弹窗（几何证据），RapidOCR 仅作辅助确认（lazy singleton）
+            is_exhausted = True
+            try:
+                ocr = _get_golden_dolphin_ocr()
+                res_ocr, _ = ocr(screen_confirm)
+                for _, txt, _ in (res_ocr or []):
+                    if any(k in txt for k in ("用完", "明天再来", "全部用完", "明天")):
+                        print("[金海豚导航] OCR 命中耗尽文案，确认机会耗尽判定。", flush=True)
+                        break
+                else:
+                    print("[金海豚导航] OCR 未命中耗尽文案，维持几何判定（疑似耗尽）。", flush=True)
+            except Exception as e:
+                print(f"[金海豚导航] OCR 辅助确认异常，维持疑似耗尽判定: {e}", flush=True)
 
             if is_exhausted:
                 print(f"[金海豚导航] 检测到提示「今天的机会已全部用完」，点击绿色对号按钮 ({btn_cx}, {btn_cy}) 关闭并验证...", flush=True)
@@ -3569,17 +3632,18 @@ class InitDailyRoutineAction(CustomAction):
                 "GemOrder": {"status": "IDLE"},
                 "RomanticHouse": {"status": "IDLE"},
                 "SecretRealmGate": {"status": "IDLE"},
+                "PrincessTask": {"status": "IDLE"},
             }
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate"))
+            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate", "princess_task"))
 
             if param.get("all_enabled"):
                 enable_fg = enable_rf = enable_gsc = enable_gwd = True
                 enable_bf = enable_gd = enable_sg = enable_fi = True
                 enable_ggb = enable_go = enable_rh = True
-                enable_srg = True
+                enable_srg = enable_pt = True
             elif has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
@@ -3593,6 +3657,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_go = bool(param.get("gem_order", False))
                 enable_rh = bool(param.get("romantic_house", False))
                 enable_srg = bool(param.get("secret_realm_gate", False))
+                enable_pt = bool(param.get("princess_task", False))
             else:
                 # 2. 从 pipeline override 中的 Enable 节点读取配置
                 def _is_node_enabled(node_name: str) -> bool:
@@ -3614,6 +3679,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_go = _is_node_enabled("DailyRoutineEnableGemOrder")
                 enable_rh = _is_node_enabled("DailyRoutineEnableRomanticHouse")
                 enable_srg = _is_node_enabled("DailyRoutineEnableSecretRealmGate")
+                enable_pt = _is_node_enabled("DailyRoutineEnablePrincessTask")
 
             # 3. 按固定安全顺序构建待执行队列。
             queue = []
@@ -3630,6 +3696,8 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("GREEN_WILD_DAILY")
             if enable_srg:
                 queue.append("SECRET_REALM_GATE")
+            if enable_pt:
+                queue.append("PRINCESS_TASK")
             if enable_gd:
                 queue.append("GOLDEN_DOLPHIN")
             if enable_sg:
@@ -3652,6 +3720,7 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 兑换金贝壳券 : {'[ON]' if enable_gsc else '[OFF]'}", flush=True)
             print(f"  - 绿野寻仙踪日常 : {'[ON]' if enable_gwd else '[OFF]'}", flush=True)
             print(f"  - 秘境之门     : {'[ON]' if enable_srg else '[OFF]'}", flush=True)
+            print(f"  - 公主任务     : {'[ON]' if enable_pt else '[OFF]'}", flush=True)
             print(f"  - 乐队鱼演出   : {'[ON]' if enable_bf else '[OFF]'}", flush=True)
             print(f"  - 金海豚小游戏 : {'[ON]' if enable_gd else '[OFF]'}", flush=True)
             print(f"  - 摇一摇小游戏 : {'[ON]' if enable_sg else '[OFF]'}", flush=True)
@@ -3673,7 +3742,7 @@ class InitDailyRoutineAction(CustomAction):
 
             task_labels = (
                 ("每日免费礼包", enable_fg), ("驯鹿鱼送收礼物", enable_rf),
-                ("兑换金贝壳券", enable_gsc), ("绿野寻仙踪日常", enable_gwd), ("秘境之门", enable_srg), ("乐队鱼", enable_bf),
+                ("兑换金贝壳券", enable_gsc), ("绿野寻仙踪日常", enable_gwd), ("秘境之门", enable_srg), ("公主任务", enable_pt), ("乐队鱼", enable_bf),
                 ("金海豚", enable_gd), ("摇一摇", enable_sg),
                 ("钓鱼达人", enable_fi), ("宝石礼盒兑换", enable_ggb),
                 ("宝石订单", enable_go), ("浪漫满屋", enable_rh),
@@ -3827,6 +3896,7 @@ class SecretRealmGateClickSendAction(CustomAction):
             cy = box[1] + box[3] // 2
             ctrl.post_click(cx, cy).wait()
             secret_realm_gate_state["last_send_box"] = box
+            secret_realm_gate_state["send_wait_started"] = None
             print(f"[秘境之门] 已点击送出按钮 {box}（中心 {cx},{cy}），已记录位置", flush=True)
             return True
         except Exception as e:
@@ -3902,6 +3972,172 @@ class SecretRealmGateClickDeleteAction(CustomAction):
             return False
 
 
+@AgentServer.custom_recognition("SecretRealmGateFindSendCardReco")
+class SecretRealmGateFindSendCardReco(CustomRecognition):
+    """显式逐卡选择：OCR 任务列表全部“送出”，按 center_y 从上往下，
+    跳过当前布局内已验证无响应的行，返回第一张可处理卡的 OCR 命中框。
+    纯读取：只读 runtime_state，不修改任何状态（skip 清空由 Action 负责）。
+    """
+
+    ROW_TOLERANCE = 40
+
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        frame = argv.image
+        if frame is None:
+            return None
+        result = context.run_recognition(
+            "SecretRealmGateSendOcrAll",
+            frame,
+            pipeline_override={"SecretRealmGateSendOcrAll": {
+                "recognition": "OCR",
+                "expected": ".*送\\s*出.*",
+                "roi": [930, 149, 149, 522],
+            }},
+        )
+        rows = []
+        for item in getattr(result, "all_results", None) or []:
+            box = getattr(item, "box", None)
+            text = str(getattr(item, "text", ""))
+            if not box or len(box) != 4:
+                continue
+            if not re.search(".*送\\s*出.*", text):
+                continue
+            center_y = int(box[1]) + int(box[3]) // 2
+            rows.append((center_y, [int(v) for v in box]))
+        if not rows:
+            return None
+        rows.sort(key=lambda r: r[0])
+
+        # 列表布局签名：行集合变化 = 列表发生业务变化（完成/删除）→ skip 失效
+        signature = tuple(r[0] for r in rows)
+        if secret_realm_gate_state.get("last_row_signature") != signature:
+            secret_realm_gate_state["no_response_rows"] = []
+            secret_realm_gate_state["last_row_signature"] = signature
+
+        skipped = secret_realm_gate_state.get("no_response_rows", [])
+        for center_y, box in rows:
+            if any(abs(center_y - sy) <= self.ROW_TOLERANCE for sy in skipped):
+                continue
+            return box
+        return None
+
+
+@AgentServer.custom_recognition("CheckSecretRealmGateSendWaitReco")
+class CheckSecretRealmGateSendWaitReco(CustomRecognition):
+    """"无送出"稳定观察窗口：单帧 OCR miss 不等于列表为空。
+
+    首次评估记录观察起点，2.5 秒内命中（继续等待重试）；超时返回 None，
+    由 WaitSendRetry 自身 on_error 流向 NoMoreSend → 退出链。
+    点击送出成功后窗口重置（分支处理完回来重新计时）。
+    """
+    WAIT_WINDOW_SECONDS = 2.5
+
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        task_id = argv.task_detail.task_id
+        now = time.monotonic()
+
+        if secret_realm_gate_state.get("wait_task_id") != task_id:
+            secret_realm_gate_state["wait_task_id"] = task_id
+            secret_realm_gate_state["send_wait_started"] = None
+
+        started = secret_realm_gate_state.get("send_wait_started")
+        if started is None:
+            secret_realm_gate_state["send_wait_started"] = now
+            print("[秘境之门] 暂未识别到送出，进入稳定观察窗口", flush=True)
+            return (0, 0, 10, 10)
+
+        if now - started < self.WAIT_WINDOW_SECONDS:
+            return (0, 0, 10, 10)
+
+        print("[秘境之门] 观察窗口内稳定无送出，判定任务列表为空", flush=True)
+        return None
+
+
+@AgentServer.custom_action("SecretRealmGateMarkNoResponseAction")
+class SecretRealmGateMarkNoResponseAction(CustomAction):
+    """无响应确认：主页仍在 + 刚点击行的“送出”仍在 → 该行标记 no-response。
+
+    主页 miss = 未知页面（弹窗盖住/未知状态）→ return False → 节点失败 →
+    on_error 列表交给 SendPopup/NoFishCheck/Abort 处理（不吞未知页）。
+    """
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            frame = _capture_720p(context.tasker.controller)
+            if frame is None:
+                print("[秘境之门] ERROR: 标记无响应时截图失败", flush=True)
+                return False
+            main_box = _recognition_box(context, "SecretRealmGateMainPage", frame)
+            if main_box is None:
+                print("[秘境之门] 主页门禁未命中，无法确认无响应状态", flush=True)
+                return False
+
+            last_box = secret_realm_gate_state.get("last_send_box")
+            if not last_box or len(last_box) != 4:
+                print("[秘境之门] ERROR: 缺少送出按钮位置记录", flush=True)
+                return False
+            row_y = last_box[1] + last_box[3] // 2
+
+            result = context.run_recognition(
+                "SecretRealmGateSendOcrAll",
+                frame,
+                pipeline_override={"SecretRealmGateSendOcrAll": {
+                    "recognition": "OCR",
+                    "expected": ".*送\\s*出.*",
+                    "roi": [930, 149, 149, 522],
+                }},
+            )
+            same_row_found = False
+            for item in getattr(result, "all_results", None) or []:
+                b = getattr(item, "box", None)
+                if not b or len(b) != 4:
+                    continue
+                cy = int(b[1]) + int(b[3]) // 2
+                if abs(cy - row_y) <= 40:
+                    same_row_found = True
+                    break
+
+            if same_row_found:
+                rows = secret_realm_gate_state.setdefault("no_response_rows", [])
+                if not any(abs(r - row_y) <= 40 for r in rows):
+                    rows.append(row_y)
+                print(
+                    f"[秘境之门] 第 {row_y} 行送出确认无响应，已标记跳过"
+                    f"（当前跳过行: {sorted(secret_realm_gate_state['no_response_rows'])}）",
+                    flush=True,
+                )
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[秘境之门] 标记无响应异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SecretRealmGateListChangedAction")
+class SecretRealmGateListChangedAction(CustomAction):
+    """列表业务变化（分支一完成 / 分支二删除）→ 清空 no-response 跳过行，
+    使逐卡扫描从顶部重新开始（卡片位置固定的前提是列表布局已变化）。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            if secret_realm_gate_state.get("no_response_rows"):
+                print("[秘境之门] 列表已发生业务变化，清空无响应跳过行记录", flush=True)
+            secret_realm_gate_state["no_response_rows"] = []
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[秘境之门] 清空跳过行异常: {e}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("SecretRealmGateDoneAction")
 class SecretRealmGateDoneAction(CustomAction):
     """秘境之门结算：确认回到主鱼缸后标记完成；日常收尾中则推进队列。"""
@@ -3914,6 +4150,62 @@ class SecretRealmGateDoneAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[秘境之门] 结算异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("PrincessTaskDoneAction")
+class PrincessTaskDoneAction(CustomAction):
+    """公主任务结算：确认回到主鱼缸后标记完成；日常收尾中则推进队列。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            if daily_routine_state.get("active"):
+                advance_daily_routine_step("PrincessTask", "DONE")
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[公主任务] 结算异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("EmulatorAdClosePageAction")
+class EmulatorAdClosePageAction(CustomAction):
+    """模拟器看广告：关闭当前层广告/落地页，并对同一关闭链做连续层数保护。"""
+
+    MAX_CONSECUTIVE_CLOSES = 4
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[模拟器看广告] 错误: 未获取到 Controller", flush=True)
+                return False
+            box = getattr(argv, "box", None)
+            if not box or len(box) != 4:
+                print("[模拟器看广告] 错误: 关闭按钮识别框缺失", flush=True)
+                return False
+            box = [int(v) for v in box]
+            cx = box[0] + box[2] // 2
+            cy = box[1] + box[3] // 2
+            ctrl.post_click(cx, cy).wait()
+
+            count = int(mobile_ad_state.get("consecutive_close_count", 0)) + 1
+            mobile_ad_state["consecutive_close_count"] = count
+            print(
+                f"[模拟器看广告] 已关闭第 {count} 层广告/落地页页面 (x={cx}, y={cy})",
+                flush=True,
+            )
+            if count > self.MAX_CONSECUTIVE_CLOSES:
+                print(
+                    "[模拟器看广告] ERROR: 连续关闭多层广告页面达到安全上限，"
+                    "仍未回到已知状态，停止避免重复点击同一 X。",
+                    flush=True,
+                )
+                return False
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[模拟器看广告] 关闭落地页异常: {e}", flush=True)
             return False
 
 
@@ -3933,6 +4225,7 @@ class DailyRoutineFinishAction(CustomAction):
             go_st = tasks.get("GemOrder", {}).get("status", "SKIPPED")
             rh_st = tasks.get("RomanticHouse", {}).get("status", "SKIPPED")
             srg_st = tasks.get("SecretRealmGate", {}).get("status", "SKIPPED")
+            pt_st = tasks.get("PrincessTask", {}).get("status", "SKIPPED")
 
             print("=" * 60, flush=True)
             print("  【日常收尾 DailyRoutineTask】全部勾选子任务执行完毕！", flush=True)
@@ -3949,6 +4242,7 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 宝石订单 (GemOrder)         : {go_st}", flush=True)
             print(f"  - 浪漫满屋 (RomanticHouse)    : {rh_st}", flush=True)
             print(f"  - 秘境之门 (SecretRealmGate)  : {srg_st}", flush=True)
+            print(f"  - 公主任务 (PrincessTask)     : {pt_st}", flush=True)
             print("=" * 60, flush=True)
 
             daily_routine_state["active"] = False
@@ -4779,6 +5073,7 @@ class MobileAdResetStateAction(CustomAction):
         log_tag = str(param.get("log_tag") or "手机看广告")
         mobile_ad_state["completed_cycles"] = 0
         mobile_ad_state["reward_recorded"] = False
+        mobile_ad_state["consecutive_close_count"] = 0
         mobile_ad_state["max_cycles"] = max_cycles
         mobile_ad_state["log_tag"] = log_tag
         if max_cycles <= 0:
@@ -4838,6 +5133,7 @@ class MobileAdRecordRewardAction(CustomAction):
 
         mobile_ad_state["completed_cycles"] = mobile_ad_state.get("completed_cycles", 0) + 1
         mobile_ad_state["reward_recorded"] = True
+        mobile_ad_state["consecutive_close_count"] = 0
         curr = mobile_ad_state["completed_cycles"]
 
         if max_cycles <= 0:
@@ -4861,6 +5157,7 @@ class MobileAdOnAdStartAction(CustomAction):
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         mobile_ad_state["reward_recorded"] = False
+        mobile_ad_state["consecutive_close_count"] = 0
         log_tag = mobile_ad_state.get("log_tag", "手机看广告")
         print(f"[{log_tag}] 新广告已确认启动播放，重置奖励弹窗记录标记", flush=True)
         return True

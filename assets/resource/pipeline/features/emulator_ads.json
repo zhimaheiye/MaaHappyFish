@@ -70,7 +70,12 @@
     "EmulatorAdCloseFixedFallback": {
         "recognition": "DirectHit",
         "action": "Click",
-        "target": [1230, 29, 25, 21],
+        "target": [
+            1230,
+            29,
+            25,
+            21
+        ],
         "post_delay": 1500,
         "focus": {
             "Node.Action.Succeeded": "[模拟器看广告] 关闭叉模板在等待窗口内未命中，执行固定位置关闭兜底。"
@@ -95,7 +100,7 @@
             720
         ],
         "threshold": 0.8,
-        "action": "Click",
+        "action": "Custom",
         "post_delay": 1500,
         "timeout": 80000,
         "focus": {
@@ -107,7 +112,8 @@
         "on_error": [
             "EmulatorAdAbort"
         ],
-        "order_by": "Score"
+        "order_by": "Score",
+        "custom_action": "EmulatorAdClosePageAction"
     },
     "EmulatorAdStopEnabled": {
         "recognition": "TemplateMatch",
@@ -158,7 +164,8 @@
         "next": [
             "EmulatorAdRewardPopup",
             "EmulatorAdStopEnabled",
-            "EmulatorAdStopDisabled"
+            "EmulatorAdStopDisabled",
+            "EmulatorAdClosePage"
         ],
         "on_error": [
             "EmulatorAdAbort"
@@ -171,7 +178,8 @@
         "next": [
             "EmulatorAdRewardPopup",
             "EmulatorAdStopEnabled",
-            "EmulatorAdStopDisabled"
+            "EmulatorAdStopDisabled",
+            "EmulatorAdClosePage"
         ],
         "on_error": [
             "EmulatorAdAbort"

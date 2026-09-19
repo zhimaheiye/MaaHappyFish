@@ -21,6 +21,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTreasureTaskPage",
             "PrincessPageReady",
             "PrincessOpenEntry"
         ],
@@ -31,7 +32,12 @@
     "PrincessOpenEntry": {
         "recognition": "TemplateMatch",
         "template": "公主任务_入口.png",
-        "roi": [29, 264, 50, 37],
+        "roi": [
+            29,
+            264,
+            50,
+            37
+        ],
         "threshold": 0.8,
         "action": "Click",
         "post_delay": 1200,
@@ -44,6 +50,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTreasureTaskPage",
             "PrincessPageReady"
         ],
         "on_error": [
@@ -53,7 +60,12 @@
     "PrincessPageReady": {
         "recognition": "TemplateMatch",
         "template": "公主任务_识别.png",
-        "roi": [512, 62, 253, 143],
+        "roi": [
+            512,
+            62,
+            253,
+            143
+        ],
         "threshold": 0.8,
         "action": "DoNothing",
         "timeout": 5000,
@@ -69,6 +81,7 @@
             "PrincessClaimTop",
             "PrincessClaimMiddle",
             "PrincessClaimBottom",
+            "PrincessTreasureTaskPage",
             "PrincessExit"
         ],
         "on_error": [
@@ -78,7 +91,12 @@
     "PrincessClaimTop": {
         "recognition": "TemplateMatch",
         "template": "公主任务_领取奖励.png",
-        "roi": [1028, 290, 62, 96],
+        "roi": [
+            1028,
+            290,
+            62,
+            96
+        ],
         "threshold": 0.75,
         "action": "Click",
         "post_delay": 600,
@@ -99,7 +117,12 @@
     "PrincessClaimMiddle": {
         "recognition": "TemplateMatch",
         "template": "公主任务_领取奖励.png",
-        "roi": [1028, 386, 62, 96],
+        "roi": [
+            1028,
+            386,
+            62,
+            96
+        ],
         "threshold": 0.75,
         "action": "Click",
         "post_delay": 600,
@@ -120,7 +143,12 @@
     "PrincessClaimBottom": {
         "recognition": "TemplateMatch",
         "template": "公主任务_领取奖励.png",
-        "roi": [1028, 482, 62, 96],
+        "roi": [
+            1028,
+            482,
+            62,
+            96
+        ],
         "threshold": 0.75,
         "action": "Click",
         "post_delay": 600,
@@ -159,7 +187,12 @@
     "PrincessClaimNeedMorePoints": {
         "recognition": "OCR",
         "expected": "积分不足|无法领取",
-        "roi": [430, 250, 520, 300],
+        "roi": [
+            430,
+            250,
+            520,
+            300
+        ],
         "action": "DoNothing",
         "timeout": 3000,
         "focus": {
@@ -177,7 +210,12 @@
     "PrincessClaimSuccess": {
         "recognition": "OCR",
         "expected": "^开心收下$",
-        "roi": [586, 518, 102, 32],
+        "roi": [
+            586,
+            518,
+            102,
+            32
+        ],
         "action": "Click",
         "post_delay": 700,
         "next": [
@@ -195,7 +233,12 @@
     "PrincessClaimFailure": {
         "recognition": "TemplateMatch",
         "template": "公主任务_领取失败.png",
-        "roi": [760, 380, 180, 180],
+        "roi": [
+            760,
+            380,
+            180,
+            180
+        ],
         "threshold": 0.7,
         "action": "Click",
         "post_delay": 700,
@@ -214,7 +257,12 @@
     "PrincessPageAfterClaim": {
         "recognition": "TemplateMatch",
         "template": "公主任务_识别.png",
-        "roi": [512, 62, 253, 143],
+        "roi": [
+            512,
+            62,
+            253,
+            143
+        ],
         "threshold": 0.8,
         "action": "DoNothing",
         "timeout": 4000,
@@ -227,21 +275,104 @@
             "PrincessClaimTop",
             "PrincessClaimMiddle",
             "PrincessClaimBottom",
+            "PrincessTreasureTaskPage",
+            "PrincessExit"
+        ],
+        "on_error": [
+            "PrincessTreasureTaskPage"
+        ]
+    },
+    "PrincessTreasureTaskPage": {
+        "recognition": "OCR",
+        "expected": "公主宝箱任务",
+        "roi": [
+            494,
+            158,
+            292,
+            141
+        ],
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[公主任务] 已确认进入公主宝箱任务页面，检查是否可以开启。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTreasureClaimAvailable",
             "PrincessExit"
         ],
         "on_error": [
             "PrincessExit"
         ]
     },
+    "PrincessTreasureClaimAvailable": {
+        "recognition": "TemplateMatch",
+        "template": "公主宝箱任务_领取.png",
+        "roi": [
+            376,
+            501,
+            40,
+            40
+        ],
+        "threshold": 0.75,
+        "action": "Click",
+        "post_delay": 700,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 公主宝箱任务已完成，正在开启奖励。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTreasureClaimSuccess"
+        ]
+    },
+    "PrincessTreasureClaimSuccess": {
+        "recognition": "OCR",
+        "expected": "^你真棒$",
+        "roi": [
+            596,
+            517,
+            86,
+            31
+        ],
+        "action": "Click",
+        "post_delay": 700,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 公主宝箱奖励已领取，准备退出。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessExit"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
     "PrincessExit": {
         "recognition": "TemplateMatch",
         "template": "公主任务_退出.png",
-        "roi": [1068, 121, 37, 39],
+        "roi": [
+            1068,
+            121,
+            37,
+            39
+        ],
         "threshold": 0.8,
         "action": "Click",
         "post_delay": 1200,
         "focus": {
-            "Node.Action.Succeeded": "[公主任务] 奖励列已检查完毕，正在确认返回鱼缸。"
+            "Node.Action.Succeeded": "[公主任务] 奖励检查完毕，正在确认返回鱼缸。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -258,15 +389,31 @@
     "PrincessVerifyTank": {
         "recognition": "TemplateMatch",
         "template": "主界面特征.png",
-        "roi": [0, 200, 150, 400],
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
         "threshold": 0.7,
-        "action": "DoNothing",
+        "action": "Custom",
         "timeout": 5000,
         "focus": {
-            "Node.Recognition.Succeeded": "[公主任务] 已确认返回主鱼缸，任务完成。"
+            "Node.Recognition.Succeeded": "[公主任务] 已确认返回主鱼缸，任务完成。",
+            "Node.Action.Succeeded": "[公主任务] 已确认返回主鱼缸，任务完成。"
         },
         "on_error": [
             "PrincessAbort"
+        ],
+        "custom_action": "PrincessTaskDoneAction",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
         ]
     },
     "PrincessAbort": {

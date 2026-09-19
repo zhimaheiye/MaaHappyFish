@@ -96,6 +96,7 @@
             "DailyRoutineStepGoldShellCoupon",
             "DailyRoutineStepGreenWildDaily",
             "DailyRoutineStepSecretRealmGate",
+            "DailyRoutineStepPrincessTask",
             "DailyRoutineStepBandFishPass1",
             "DailyRoutineStepGoldenDolphin",
             "DailyRoutineStepShakeGame",
@@ -421,5 +422,29 @@
     "DailyRoutineStandaloneDone": {
         "recognition": "DirectHit",
         "action": "DoNothing"
+    },
+    "DailyRoutineEnablePrincessTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineStepPrincessTask": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "PRINCESS_TASK"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：公主任务。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTask"
+        ]
     }
 }

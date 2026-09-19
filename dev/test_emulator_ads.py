@@ -35,7 +35,7 @@ class TestEmulatorAds(unittest.TestCase):
         )
         expected_templates = {
             "EmulatorAdCenter": ("看视频赚大奖.png", "Click"),
-            "EmulatorAdClosePage": ("看广告页面_关闭.png", "Click"),
+            "EmulatorAdClosePage": ("看广告页面_关闭.png", "Custom"),
             "EmulatorAdStopEnabled": ("停止按钮_可点击.png", "Click"),
             "EmulatorAdStopDisabled": ("停止按钮_不可点击.png", "DoNothing"),
             "EmulatorAdRewardPopup": ("下一段视频_对号.png", "Custom"),
@@ -52,7 +52,8 @@ class TestEmulatorAds(unittest.TestCase):
             self.assertEqual(node["roi"], [0, 0, 1280, 720])
             self.assertEqual(node["threshold"], 0.8)
             self.assertEqual(node["action"], action)
-            self.assertNotIn("target", node)
+            if action == "Click" and node_name != "EmulatorAdClosePage":
+                self.assertNotIn("target", node)
 
     def test_cycle_state_is_shared_without_copying_agent_logic(self):
         task = self.pipeline["EmulatorAdTask"]
@@ -64,13 +65,19 @@ class TestEmulatorAds(unittest.TestCase):
         self.assertEqual(limit["custom_recognition"], "MobileAdCheckCycleLimitReco")
         self.assertEqual(limit["next"], ["EmulatorAdCloseRewardAndDone"])
         self.assertEqual(self.pipeline["EmulatorAdContinue"]["next"], ["EmulatorAdMarkStarted"])
+        self.assertEqual(self.pipeline["EmulatorAdClosePage"]["custom_action"], "EmulatorAdClosePageAction")
         self.assertEqual(self.pipeline["EmulatorAdClosePage"]["next"], ["EmulatorAdPostAdRouter"])
+        # Post 双 Router 均可识别第二层落地页关闭（多层广告落地页支持）
+        for router_name in ("EmulatorAdPostAdRouter", "EmulatorAdPostStopRouter"):
+            router_next = self.pipeline[router_name]["next"]
+            self.assertIn("EmulatorAdClosePage", router_next)
+            self.assertEqual(router_next[0], "EmulatorAdRewardPopup", "转盘/奖励优先于关闭页")
         self.assertEqual(self.pipeline["EmulatorAdStopEnabled"]["next"], ["EmulatorAdPostStopRouter"])
         self.assertEqual(self.pipeline["EmulatorAdStopDisabled"]["next"], ["EmulatorAdPostStopRouter"])
         for node_name in ("EmulatorAdPostAdRouter", "EmulatorAdPostStopRouter"):
             self.assertEqual(
                 self.pipeline[node_name]["next"],
-                ["EmulatorAdRewardPopup", "EmulatorAdStopEnabled", "EmulatorAdStopDisabled"],
+                ["EmulatorAdRewardPopup", "EmulatorAdStopEnabled", "EmulatorAdStopDisabled", "EmulatorAdClosePage"],
             )
         self.assertEqual(self.pipeline["EmulatorAdCloseRewardAndDone"]["next"], ["EmulatorAdDone"])
 
@@ -141,7 +148,7 @@ class TestEmulatorAds(unittest.TestCase):
         self.assertIn("看广告页面_关闭.png", close_node["template"])
         self.assertIn("看广告页面_关闭1.png", close_node["template"])
         self.assertEqual(close_node["order_by"], "Score")
-        self.assertEqual(close_node["action"], "Click")
+        self.assertEqual(close_node["action"], "Custom")
         # 模板关闭仍是主路径：ClosePage 自己的 on_error 不得指向固定兜底
         self.assertEqual(close_node["on_error"], ["EmulatorAdAbort"])
 
@@ -188,7 +195,7 @@ class TestEmulatorAds(unittest.TestCase):
         post_router = pipeline["EmulatorAdPostAdRouter"]
         self.assertEqual(
             post_router["next"],
-            ["EmulatorAdRewardPopup", "EmulatorAdStopEnabled", "EmulatorAdStopDisabled"],
+            ["EmulatorAdRewardPopup", "EmulatorAdStopEnabled", "EmulatorAdStopDisabled", "EmulatorAdClosePage"],
         )
         self.assertEqual(post_router["on_error"], ["EmulatorAdAbort"])
 
@@ -234,6 +241,76 @@ class TestEmulatorAds(unittest.TestCase):
         # 不经过 FixedFallback 判断，第 N 轮使用兜底后仍正常进入下一轮
         self.assertEqual(pipeline["EmulatorAdContinue"]["next"], ["EmulatorAdMarkStarted"])
         self.assertEqual(pipeline["EmulatorAdMarkStarted"]["next"], ["EmulatorAdWaitForClose"])
+
+    def test_consecutive_close_count_lifecycle(self):
+        """多层关闭安全计数的完整生命周期：Task Init 清零 / 新广告清零 / 领奖清零。"""
+        import sys
+        if 'agent' not in sys.path:
+            sys.path.append('agent')
+        import my_action
+        import runtime_state as _rts
+        mobile_ad_state = _rts.mobile_ad_state
+        from types import SimpleNamespace as _NS
+
+        # 模拟上一轮遗留脏状态（连续关闭超限）
+        mobile_ad_state["consecutive_close_count"] = 99
+        reset = my_action.MobileAdResetStateAction()
+        argv = _NS(custom_action_param='{"max_cycles": 0, "log_tag": "模拟器看广告"}')
+        assert reset.run(None, argv) is True
+        assert mobile_ad_state["consecutive_close_count"] == 0, (
+            "任务重新启动必须清零连续关闭计数（任意合法状态接续的前提）"
+        )
+
+        # 模拟从 ClosePage 状态直接启动：第一次关闭 0 -> 1（不继承旧运行状态）
+        close = my_action.EmulatorAdClosePageAction()
+        ctrl = my_action if False else None
+
+        class _Ctrl:
+            def __init__(self):
+                self.clicks = []
+
+            def post_click(self, x, y):
+                self.clicks.append((x, y))
+
+                class _J:
+                    def wait(self):
+                        return self
+
+                return _J()
+
+        class _Tasker:
+            controller = None
+
+        class _Ctx:
+            tasker = None
+
+        ctx = _Ctx()
+        ctx.tasker = _Tasker()
+        ctx.tasker.controller = _Ctrl()
+        box = [1229, 28, 29, 21]
+        argv_close = _NS(box=box)
+        assert close.run(ctx, argv_close) is True
+        assert mobile_ad_state["consecutive_close_count"] == 1
+        assert ctx.tasker.controller.clicks == [(1243, 38)]
+        print("[PASS] Reset 清零 + 从 ClosePage 直接启动：首次关闭 0 -> 1，不继承旧状态")
+
+        # 连续关闭超过上限 -> return False（不再点击同一 X 链）
+        for _ in range(3):
+            assert close.run(ctx, argv_close) is True
+        assert mobile_ad_state["consecutive_close_count"] == 4
+        assert close.run(ctx, argv_close) is False, "超过上限后必须拒绝继续关闭"
+        self.assertEqual(len(ctx.tasker.controller.clicks), 5, "超过上限的那次点击已发出，随后拒绝继续")
+        print("[PASS] 连续关闭超过上限（>4）：拒绝继续点击同一 X 链")
+
+        # OnAdStart / RecordReward 重置
+        mobile_ad_state["consecutive_close_count"] = 3
+        assert my_action.MobileAdOnAdStartAction().run(None, _NS()) is True
+        assert mobile_ad_state["consecutive_close_count"] == 0
+        mobile_ad_state["consecutive_close_count"] = 3
+        reward = my_action.MobileAdRecordRewardAction()
+        reward.run(None, _NS(custom_action_param="{}"))
+        assert mobile_ad_state["consecutive_close_count"] == 0
+        print("[PASS] OnAdStart / RecordReward 均重置连续关闭计数")
 
     def test_cycle_limit_reco_zero_logic(self):
         import sys

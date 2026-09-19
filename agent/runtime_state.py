@@ -72,6 +72,7 @@ daily_routine_state = {
         "GemOrder": {"status": "IDLE"},
         "RomanticHouse": {"status": "IDLE"},
         "SecretRealmGate": {"status": "IDLE"},
+        "PrincessTask": {"status": "IDLE"},
     },
 }
 
@@ -81,6 +82,10 @@ green_wild_daily_state = {
 
 secret_realm_gate_state = {
     "last_send_box": None,  # 最近一次点击的"送出"OCR 命中框 [x,y,w,h]，用于分支二相对位置定位垃圾桶
+    "wait_task_id": None,  # "无送出"稳定观察窗口的任务隔离
+    "send_wait_started": None,  # 观察窗口起点（monotonic 秒），点击送出后重置
+    "no_response_rows": [],  # 当前列表布局内已验证无响应的行 center_y 列表（列表业务变化时清空）
+    "last_row_signature": None,  # 上次 OCR 的行布局签名，用于检测列表变化
 }
 
 wishing_lamp_state = {
@@ -130,6 +135,8 @@ mobile_ad_state = {
     "log_tag": "手机看广告",
     "stop_count": 0,
     "max_stops_per_ad": 5,
+    # 当前一次模拟器广告流程中的关闭页安全计数（Task Init / 新广告启动 / 领奖时重置）
+    "consecutive_close_count": 0,
 }
 
 collect_fish_state = {
