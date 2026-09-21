@@ -83,7 +83,7 @@ Windows 发行包根目录自带 `collect-test-report.cmd`。出现问题后：
 
 - `agent/`：Python Agent 与自定义识别、动作
 - `assets/`：Project Interface、Pipeline 和图片资源
-- `tools/`：资源校验与发行包组装脚本
+- `tools/`：独立辅助界面、资源校验与发行包组装脚本
 - `client_avalonia/`：本地调试运行目录，不提交到 Git
 
 本地开发需要 Python、`maafw` 与 Node.js。常用代码级检查：
@@ -94,6 +94,16 @@ python dev/test_agent_registration_refs.py
 python dev/test_update_contract.py
 python dev/test_release_agent_imports.py
 ```
+
+每日魔幻拼图另提供无需连接游戏的 4×4 手工标格工具：
+
+```powershell
+python tools/daily_magic_puzzle.py
+```
+
+依次点击图片块 1、2、3、4 所在格子后，工具会显示最少 Swipe 动作序列；该独立窗口不会操作模拟器。
+
+MFA 中另提供默认不勾选的独立任务“每日魔幻拼图”，支持已实机通过的 4×4（2×2 图片），以及待用户首次实机验证的 5×5（3×3 图片）和 6×6（4×4 图片）。按完整图片顺序填写 4、9 或 16 块当前位置；推荐使用 `rNcN`，也支持中英文逗号和纯数字格号。页面模板门禁命中且完整求解成功后才会执行 Swipe。
 
 ## 发布
 

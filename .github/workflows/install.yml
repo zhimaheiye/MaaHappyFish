@@ -189,7 +189,11 @@ jobs:
             "$pythonDir/Lib/site-packages/numpy/__init__.py",
             "$pythonDir/Lib/site-packages/cv2/__init__.py",
             "$env:GITHUB_WORKSPACE/install/agent/my_action.py",
-            "$env:GITHUB_WORKSPACE/install/agent/my_reco.py"
+            "$env:GITHUB_WORKSPACE/install/agent/my_reco.py",
+            "$env:GITHUB_WORKSPACE/install/agent/puzzle_solver.py",
+            "$env:GITHUB_WORKSPACE/install/agent/puzzle_solver_5x5.py",
+            "$env:GITHUB_WORKSPACE/install/agent/puzzle_executor.py",
+            "$env:GITHUB_WORKSPACE/install/agent/puzzle_position.py"
           )
           foreach ($path in $required) {
             if (-not (Test-Path -LiteralPath $path)) { throw "Missing release dependency: $path" }

@@ -242,10 +242,7 @@
     },
     "EmulatorAdCloseRewardAndDone": {
         "recognition": "TemplateMatch",
-        "template": [
-            "看广告页面_关闭.png",
-            "看广告页面_关闭1.png"
-        ],
+        "template": "下一段视频_对号.png",
         "roi": [
             0,
             0,
@@ -253,7 +250,8 @@
             720
         ],
         "threshold": 0.8,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "EmulatorAdCloseRewardAction",
         "post_delay": 1000,
         "timeout": 10000,
         "focus": {
@@ -264,8 +262,7 @@
         ],
         "on_error": [
             "EmulatorAdAbort"
-        ],
-        "order_by": "Score"
+        ]
     },
     "EmulatorAdDone": {
         "recognition": "DirectHit",

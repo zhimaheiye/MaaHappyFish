@@ -59,6 +59,14 @@ def main():
         print("  [PASS] runtime_state imported successfully")
         import param_utils
         print("  [PASS] param_utils imported successfully")
+        import puzzle_solver
+        print("  [PASS] puzzle_solver imported successfully")
+        import puzzle_solver_5x5
+        print("  [PASS] puzzle_solver_5x5 imported successfully")
+        import puzzle_executor
+        print("  [PASS] puzzle_executor imported successfully")
+        import puzzle_position
+        print("  [PASS] puzzle_position imported successfully")
         import my_action
         print("  [PASS] my_action imported successfully")
         import my_reco

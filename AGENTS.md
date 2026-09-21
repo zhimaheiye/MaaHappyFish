@@ -7,6 +7,7 @@
 - **设备要求**: MuMu 模拟器 v5+ (adb connect 127.0.0.1:16416)
 - **运行客户端**: 运行 `client_avalonia/` 下的 MFAAvalonia 客户端程序。
 - **独立计算器**: `python tools/fish_food_calculator.py`
+- **每日魔幻拼图离线求解器**: `python tools/daily_magic_puzzle.py`
 
 ## 文档路由表
 | 遇到问题 | 查阅文档 |
@@ -33,6 +34,7 @@
 | 维护"乐队鱼演出"邀请与演出活动 | `docs/features/band-fish.md` |
 | 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
 | 维护"金海豚小游戏"活动自动化 | `docs/features/golden-dolphin.md` |
+| 维护"每日魔幻拼图"离线标格、最短路径与后续 Swipe 执行 | `docs/features/daily-magic-puzzle.md` |
 | 维护"公主任务"奖励列领取 | `docs/features/princess-task.md` |
 | 维护"绿野寻仙踪"入口/任务/返回与日常开贝壳买鱼 | `docs/features/green-wild.md` |
 | 维护"摇一摇小游戏"活动自动化 | `docs/features/shake-game.md` |

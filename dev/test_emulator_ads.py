@@ -40,7 +40,7 @@ class TestEmulatorAds(unittest.TestCase):
             "EmulatorAdStopDisabled": ("停止按钮_不可点击.png", "DoNothing"),
             "EmulatorAdRewardPopup": ("下一段视频_对号.png", "Custom"),
             "EmulatorAdContinue": ("下一段视频_对号.png", "Click"),
-            "EmulatorAdCloseRewardAndDone": ("看广告页面_关闭.png", "Click"),
+            "EmulatorAdCloseRewardAndDone": ("下一段视频_对号.png", "Custom"),
         }
         for node_name, (template, action) in expected_templates.items():
             node = self.pipeline[node_name]
@@ -153,9 +153,8 @@ class TestEmulatorAds(unittest.TestCase):
         self.assertEqual(close_node["on_error"], ["EmulatorAdAbort"])
 
         close_done_node = self.pipeline["EmulatorAdCloseRewardAndDone"]
-        self.assertIn("看广告页面_关闭.png", close_done_node["template"])
-        self.assertIn("看广告页面_关闭1.png", close_done_node["template"])
-        self.assertEqual(close_done_node["order_by"], "Score")
+        self.assertEqual(close_done_node["template"], "下一段视频_对号.png")
+        self.assertEqual(close_done_node["custom_action"], "EmulatorAdCloseRewardAction")
 
         # Case 3: Strictly NO skip click logic
         pipeline_str = json.dumps(self.pipeline, ensure_ascii=False)
@@ -294,6 +293,15 @@ class TestEmulatorAds(unittest.TestCase):
         assert ctx.tasker.controller.clicks == [(1243, 38)]
         print("[PASS] Reset 清零 + 从 ClosePage 直接启动：首次关闭 0 -> 1，不继承旧状态")
 
+        # MaaFramework 实机传入 maa.define.Rect，而不是普通 list。
+        from maa.define import Rect
+        mobile_ad_state["consecutive_close_count"] = 0
+        ctx.tasker.controller.clicks.clear()
+        assert close.run(ctx, _NS(box=Rect(1229, 28, 29, 21))) is True
+        assert mobile_ad_state["consecutive_close_count"] == 1
+        assert ctx.tasker.controller.clicks == [(1243, 38)]
+        print("[PASS] Maa Rect 识别框可直接用于关闭点击")
+
         # 连续关闭超过上限 -> return False（不再点击同一 X 链）
         for _ in range(3):
             assert close.run(ctx, argv_close) is True
@@ -311,6 +319,38 @@ class TestEmulatorAds(unittest.TestCase):
         reward.run(None, _NS(custom_action_param="{}"))
         assert mobile_ad_state["consecutive_close_count"] == 0
         print("[PASS] OnAdStart / RecordReward 均重置连续关闭计数")
+
+    def test_reward_popup_close_uses_green_check_as_gate_and_red_x_offset(self):
+        import sys
+        if "agent" not in sys.path:
+            sys.path.append("agent")
+        import my_action
+        from maa.define import Rect
+        from types import SimpleNamespace as _NS
+
+        class _Ctrl:
+            def __init__(self):
+                self.clicks = []
+
+            def post_click(self, x, y):
+                self.clicks.append((x, y))
+
+                class _J:
+                    def wait(self):
+                        return self
+
+                return _J()
+
+        ctrl = _Ctrl()
+        ctx = _NS(tasker=_NS(controller=ctrl))
+        action = my_action.EmulatorAdCloseRewardAction()
+        self.assertTrue(action.run(ctx, _NS(box=Rect(796, 498, 46, 40))))
+        self.assertEqual(ctrl.clicks, [(717, 518)])
+
+        node = self.pipeline["EmulatorAdCloseRewardAndDone"]
+        self.assertEqual(node["template"], "下一段视频_对号.png")
+        self.assertEqual(node["action"], "Custom")
+        self.assertEqual(node["custom_action"], "EmulatorAdCloseRewardAction")
 
     def test_cycle_limit_reco_zero_logic(self):
         import sys

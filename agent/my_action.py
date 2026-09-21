@@ -70,6 +70,36 @@ try:
 except ImportError:
     from agent import local_state
 
+try:
+    from puzzle_solver import PUZZLE_SPEC_4X4, PUZZLE_SPEC_5X5, PUZZLE_SPEC_6X6, PuzzleSolver
+    from puzzle_solver_5x5 import Puzzle5x5Solver, Puzzle6x6Solver, PuzzleSearchBudgetExceeded
+    from puzzle_executor import (
+        MaaPuzzleExecutor,
+        PUZZLE_GEOMETRY_4X4,
+        PUZZLE_GEOMETRY_5X5,
+        PUZZLE_GEOMETRY_6X6,
+    )
+    from puzzle_position import PuzzlePositionError, parse_piece_positions
+except ImportError:
+    from agent.puzzle_solver import (
+        PUZZLE_SPEC_4X4,
+        PUZZLE_SPEC_5X5,
+        PUZZLE_SPEC_6X6,
+        PuzzleSolver,
+    )
+    from agent.puzzle_solver_5x5 import (
+        Puzzle5x5Solver,
+        Puzzle6x6Solver,
+        PuzzleSearchBudgetExceeded,
+    )
+    from agent.puzzle_executor import (
+        MaaPuzzleExecutor,
+        PUZZLE_GEOMETRY_4X4,
+        PUZZLE_GEOMETRY_5X5,
+        PUZZLE_GEOMETRY_6X6,
+    )
+    from agent.puzzle_position import PuzzlePositionError, parse_piece_positions
+
 
 def _capture_720p(controller):
     job = controller.post_screencap()
@@ -4180,11 +4210,18 @@ class EmulatorAdClosePageAction(CustomAction):
             if not ctrl:
                 print("[模拟器看广告] 错误: 未获取到 Controller", flush=True)
                 return False
-            box = getattr(argv, "box", None)
-            if not box or len(box) != 4:
+            raw_box = getattr(argv, "box", None)
+            if raw_box is None:
                 print("[模拟器看广告] 错误: 关闭按钮识别框缺失", flush=True)
                 return False
-            box = [int(v) for v in box]
+            try:
+                box = [int(v) for v in raw_box]
+            except (TypeError, ValueError):
+                print("[模拟器看广告] 错误: 关闭按钮识别框格式无效", flush=True)
+                return False
+            if len(box) != 4:
+                print("[模拟器看广告] 错误: 关闭按钮识别框缺失", flush=True)
+                return False
             cx = box[0] + box[2] // 2
             cy = box[1] + box[3] // 2
             ctrl.post_click(cx, cy).wait()
@@ -4206,6 +4243,47 @@ class EmulatorAdClosePageAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[模拟器看广告] 关闭落地页异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("EmulatorAdCloseRewardAction")
+class EmulatorAdCloseRewardAction(CustomAction):
+    """模拟器看广告：以领奖弹窗绿色对号为门禁，点击同弹窗左侧红叉退出。"""
+
+    RED_CLOSE_OFFSET_X = -102
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[模拟器看广告] 错误: 未获取到 Controller", flush=True)
+                return False
+            raw_box = getattr(argv, "box", None)
+            if raw_box is None:
+                print("[模拟器看广告] 错误: 领奖弹窗对号识别框缺失", flush=True)
+                return False
+            try:
+                box = [int(v) for v in raw_box]
+            except (TypeError, ValueError):
+                print("[模拟器看广告] 错误: 领奖弹窗对号识别框格式无效", flush=True)
+                return False
+            if len(box) != 4:
+                print("[模拟器看广告] 错误: 领奖弹窗对号识别框缺失", flush=True)
+                return False
+            cx = box[0] + box[2] // 2 + self.RED_CLOSE_OFFSET_X
+            cy = box[1] + box[3] // 2
+            if cx < 0 or cy < 0:
+                print("[模拟器看广告] 错误: 领奖弹窗红叉坐标越界", flush=True)
+                return False
+            ctrl.post_click(cx, cy).wait()
+            print(
+                f"[模拟器看广告] 已点击领奖弹窗红叉 (x={cx}, y={cy})",
+                flush=True,
+            )
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[模拟器看广告] 关闭领奖弹窗异常: {e}", flush=True)
             return False
 
 
@@ -5369,3 +5447,131 @@ class CollectFishAfterStarfishAction(CustomAction):
                 flush=True,
             )
         return True
+
+
+@AgentServer.custom_action("DailyMagicPuzzleSolveAction")
+class DailyMagicPuzzleSolveAction(CustomAction):
+    """读取 MFA 中的图片块位置，完整求解后在已门禁的拼图页执行。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            grid_size = safe_int(param.get("grid_size", param.get("board_size")), 4, 1, 99)
+            specs = {4: PUZZLE_SPEC_4X4, 5: PUZZLE_SPEC_5X5, 6: PUZZLE_SPEC_6X6}
+            spec = specs.get(grid_size)
+            if spec is None:
+                print(
+                    f"[每日魔幻拼图] ERROR: 当前仅支持 4×4、5×5 或 6×6 棋盘，收到 {grid_size}×{grid_size}",
+                    flush=True,
+                )
+                return False
+            target_size = safe_int(param.get("target_size"), spec.target_size, 1, 9)
+            piece_count = safe_int(param.get("piece_count"), spec.piece_count, 1, 25)
+            if target_size != spec.target_size or piece_count != spec.piece_count:
+                print("[每日魔幻拼图] ERROR: 拼图规格参数不一致，已停止且未执行 Swipe", flush=True)
+                return False
+            defaults = {
+                4: (1, 2, 5, 6),
+                5: (1, 2, 3, 6, 7, 8, 11, 12, 13),
+                6: (1, 2, 3, 4, 7, 8, 9, 10, 13, 14, 15, 16, 19, 20, 21, 22),
+            }[grid_size]
+            raw_positions = tuple(
+                param.get(f"piece{piece}", defaults[piece - 1])
+                for piece in range(1, piece_count + 1)
+            )
+            try:
+                positions = parse_piece_positions(raw_positions, grid_size, piece_count)
+            except PuzzlePositionError as exc:
+                print(f"[每日魔幻拼图] ERROR: {exc}", flush=True)
+                return False
+
+            print(
+                f"[每日魔幻拼图] 拼图规格：{grid_size}×{grid_size} / "
+                f"目标图片：{target_size}×{target_size}",
+                flush=True,
+            )
+            print(f"[每日魔幻拼图] 目标块数量：{piece_count}", flush=True)
+            print(
+                f"[每日魔幻拼图] 图片块位置：{tuple(position + 1 for position in positions)}",
+                flush=True,
+            )
+            try:
+                if grid_size == 4:
+                    moves = PuzzleSolver().solve(positions)
+                    search_stats = None
+                elif grid_size == 5:
+                    solver_5x5 = Puzzle5x5Solver(
+                        max_expanded_states=safe_int(
+                            param.get("max_expanded_states"), 300_000, 1_000, 1_000_000
+                        ),
+                        max_seconds=float(
+                            safe_int(param.get("max_search_seconds"), 8, 1, 30)
+                        ),
+                    )
+                    moves = solver_5x5.solve(positions)
+                    search_stats = solver_5x5.last_stats
+                else:
+                    solver_6x6 = Puzzle6x6Solver(
+                        max_expanded_states=safe_int(
+                            param.get("max_expanded_states"), 400_000, 1_000, 1_000_000
+                        ),
+                        max_seconds=float(
+                            safe_int(param.get("max_search_seconds"), 12, 1, 30)
+                        ),
+                    )
+                    moves = solver_6x6.solve(positions)
+                    search_stats = solver_6x6.last_stats
+            except PuzzleSearchBudgetExceeded as exc:
+                print(
+                    f"[每日魔幻拼图] {grid_size}×{grid_size} 求解超过安全搜索预算，"
+                    "未执行任何滑动。"
+                    f" expanded={exc.stats.expanded_states}, elapsed={exc.stats.elapsed_seconds:.3f}s",
+                    flush=True,
+                )
+                return False
+
+            if search_stats is not None:
+                print(
+                    f"[每日魔幻拼图] {grid_size}×{grid_size} 求解完成："
+                    f"moves={len(moves)}, expanded={search_stats.expanded_states}, "
+                    f"time={search_stats.elapsed_seconds:.3f}s",
+                    flush=True,
+                )
+            else:
+                print(f"[每日魔幻拼图] 求解完成，共 {len(moves)} 次 Swipe", flush=True)
+            if not moves:
+                print("[每日魔幻拼图] 当前排布已经完成", flush=True)
+                return True
+
+            print("[每日魔幻拼图] 执行计划：", flush=True)
+            for step, move in enumerate(moves, 1):
+                print(f"[每日魔幻拼图] {step}. {move.to_chinese()}", flush=True)
+
+            controller = getattr(getattr(context, "tasker", None), "controller", None)
+            if controller is None:
+                print("[每日魔幻拼图] ERROR: 未获取到 MAA Controller", flush=True)
+                return False
+
+            duration_ms = safe_int(param.get("duration_ms"), 400, 100, 2000)
+            move_delay_ms = safe_int(param.get("move_delay_ms"), 600, 0, 5000)
+            geometry = {
+                4: PUZZLE_GEOMETRY_4X4,
+                5: PUZZLE_GEOMETRY_5X5,
+                6: PUZZLE_GEOMETRY_6X6,
+            }[grid_size]
+            executor = MaaPuzzleExecutor(
+                controller, duration_ms=duration_ms, geometry=geometry
+            )
+            for step, move in enumerate(moves, 1):
+                if _task_cancelled(context):
+                    print("[每日魔幻拼图] 已收到停止请求，不再继续 Swipe", flush=True)
+                    return False
+                executor.execute(move)
+                print(f"[每日魔幻拼图] {step}. 已执行 {move.to_chinese()}", flush=True)
+                if move_delay_ms:
+                    time.sleep(move_delay_ms / 1000.0)
+            return True
+        except Exception as exc:
+            print(f"[每日魔幻拼图] ERROR: 求解失败: {exc}", flush=True)
+            traceback.print_exc()
+            return False
