@@ -25,6 +25,7 @@
 | 维护"购买鱼食"独立模块 | `docs/features/buy-fish-food.md` |
 | 维护"活动页面/每日签到/特惠礼包/快报/升级弹窗"全局处理 | `docs/features/daily-sign.md` |
 | 维护"开贝壳"活动自动化 | `docs/features/open-shell.md` |
+| 维护"兑换金贝壳券"日常与独立任务 | `docs/features/gold-shell-coupon.md` |
 | 维护"宝石礼盒兑换"七配方自动化 | `docs/features/gem-gift-box.md` |
 | 维护"宝石订单"完成与丢弃循环 | `docs/features/gem-order.md` |
 | 维护"好友摸宝"巡访与采集 | `docs/features/friend-gem.md` |
