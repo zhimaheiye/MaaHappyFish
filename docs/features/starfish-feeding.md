@@ -18,7 +18,7 @@
 ```text
 TriggerStarfishFeed
   ↓
-CollectFishOpenManagement (点击鱼缸管理扳手 [1200, 360, 80, 80])
+CollectFishOpenManagement (点击鱼缸管理扳手 [120, 0, 120, 110])
   ↓
 CollectFishVerifyManagement (校验进入鱼缸管理页，匹配 鱼缸管理_进入.png)
   ↓
@@ -120,6 +120,7 @@ ResumeHarvest (万能返回节点)
 - **重构**: 将 `CollectFishTask` 内部旧有的齿轮单海星喂食链路全面重构为鱼缸管理页通用入口链路；
 - **全量覆盖**: 依次进入萌海星、乖海星、亮海星面板完成鱼食补充与进度条满仓校验；
 - **自适应目标缸**: 喂食完成后由 `CollectFishAfterStarfishRouter` 重新评估物理单调时间片，自动将目标缸校准至当前时刻对应的正确鱼缸序号，彻底消除了海星喂食打乱双缸轮换节奏的隐患。
+- **背景敏感与死锁陷阱**: `patrol/鱼缸管理_扳手.png` 取样自鱼缸 3 深蓝背景（得分 1.00），在鱼缸 1（青蓝）得分为 0.74，在鱼缸 2（木质黄）骤降至 0.49（<0.70）。若 `TriggerStarfishFeed` 设为 `timeout: -1`，由于候选未命中不触发候选自身的 `on_error`，会导致任务在鱼缸 2 无限轮询假死。入口需具备鱼缸归一或扳手多背景适配，且触发器应设置有限超时熔断。
 
 ## 当前状态
 
