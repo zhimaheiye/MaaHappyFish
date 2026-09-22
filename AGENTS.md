@@ -211,6 +211,7 @@ Step 1 探索（截图/OCR/路径）
 - **必须显式返回 `True` / `False`**（Action）或 `RectType | None`（Recognition），不能靠 Python 默认返回 `None`。
 - `custom_action_param` 和 `custom_recognition_param` 可能收到字符串 `"null"`（Pipeline 未配置参数时），必须通过 `agent/param_utils.py` 的 `parse_dict_param()` 安全解析，不能直接 `json.loads()`。
 - 所有新增 Action/Reco 均需统一走 `param_utils` 工具函数，防御 null、空字符串、类型错误等边界情况。
+- **CustomRecognition 纯函数与无副作用原则（Pure Recognition Rule）**：MaaFramework 在评估 `next` 候选列表时，每一帧都在高频轮询 candidate 的 `recognition`（单秒可达数十次）。因此 `CustomRecognition.analyze()` 必须保持纯函数特性，严禁在此修改业务状态、递增轮数或触发带有副作用的业务逻辑，否则会导致在单帧画面等待期间状态数十倍虚增。状态变更与轮数自增必须移至确切被激活执行的 `CustomAction` 中，且在循环或可能重入的流程中必须辅以幂等状态锁（如 `reward_recorded`）防重。
 - **引用完整性门禁**：修改 Pipeline 或 Agent 后**必须**运行 `python dev/test_agent_registration_refs.py`，保证 Pipeline 中所有引用的 `custom_action` / `custom_recognition` 均在 Agent 中存在对应注册，禁止悬空引用。
 - **观测与日志非阻断原则**：观测/日志逻辑不应成为关键业务流的必经 CustomAction，除非该 Action 本身承担必要状态变更。避免因日志动作未注册或回调异常而阻断核心导航。
 

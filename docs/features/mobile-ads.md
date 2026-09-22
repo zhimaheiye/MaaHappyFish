@@ -28,6 +28,7 @@ MobileAdTask -> MobileAdRouter
                   ├─ [广告播放] 处于非 MainActivity 或检测到播放中胶囊 -> 安全等待播放完毕
                   └─ [大厅入口] 位于广告中心大厅 -> 识别并点击【看视频赚大奖】
 ```
+- **大厅入口门禁（TemplateMatch 优先原则）**：废弃顶部艺术花体字（“轻松看视频/奖励拿不停”）OCR 作为大厅主门禁，因实机测试证明艺术字笔画变形与粒子光晕导致 OCR 漏检卡死；改为优先使用局部模板 `mobile_ads/看视频赚大奖_入口.png`（ROI `[990, 500, 140, 110]`，实测匹配分 >= 0.998），并仅以按钮普通 OCR 文本作为备选分支，确保大厅启动确定性。
 
 模拟器端保持相同业务语义，但用独立状态机处理其页面：
 
@@ -52,6 +53,15 @@ EmulatorAdTask -> EmulatorAdRouter
 
 ### 4. 奖励弹窗双出口与无人干预连续流转
 - **业务语义明确**：游戏内广告观看无次数上限，界面 `(n/10)` 仅作为周期性观察标记，**绝对不作为终止判断**。
+- **幂等防重与重入锁机制 (`reward_recorded`)**：奖励弹窗由 `MobileAdVerifyRewardPopup` 识别并挂载 `MobileAdRecordRewardAction` 执行计数。为防止单次弹窗停留等待期间被重复接管导致轮数虚增，通过 `reward_recorded` 状态锁保障重入幂等；当下一轮广告成功启动播放（`MobileAdPlaying`）时由 `MobileAdOnAdStartAction` 清空标记，确保单次广告周期的严格唯一计数。
+- **并列候选与自然 Fallthrough 架构**：在 MaaFramework 语义下，候选节点的 `recognition` 返回 `None` 仅代表未命中跳过，**绝不会触发候选自身的 `on_error`**。因此双出口路由必须采用 `next` 并列候选设计：
+  ```text
+  MobileAdVerifyRewardPopup (执行 RecordReward 幂等动作)
+    └─ next:
+        ├─ MobileAdCheckContinueCondition (达到轮数时 Recognition 命中 -> 点击红叉退出)
+        └─ MobileAdClickContinueCheck (未达轮数时自然 Fallthrough 命中对号 -> 拉起下一条)
+  ```
+  `MobileAdCheckCycleLimitReco` 严格保持无副作用的纯函数特性，仅只读判断 `completed_cycles >= max_cycles`，彻底规避了候选轮询评估期间的计数虚增。
 - **绿色对号快捷继续**：弹窗右下角检测到绿色对号 `✔`（ROI `[930, 455, 120, 130]`），只要未达到本次任务配置的目标轮数（`completed_cycles < max_cycles`），自动点击拉起下一条广告（实测拉起耗时 ~3.07s）。
 - **红色叉号安全退出**：达到用户设定的运行轮数（如完成 3 轮）时，识别点击红色 `✖`（ROI `[840, 455, 100, 110]`），安全返回大厅优雅终止任务。严禁无模板盲点保底。
 
