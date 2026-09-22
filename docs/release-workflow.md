@@ -59,13 +59,18 @@ git status --short
 git branch --show-current
 git remote -v
 git fetch origin --tags
+git rev-list --left-right --count origin/main...HEAD
 ```
 
 ### 必须满足的硬性标准：
 1. **当前分支必须为 `main`**：`git branch --show-current` 输出必须是 `main`。严禁在功能分支或处于分离头指针（detached HEAD）状态下发版；
 2. **`origin` 远端必须正确**：`git remote -v` 中 `origin` 的 push URL 必须为 `https://github.com/zhimaheiye/MaaHappyFish.git`；
 3. **工作区不得有来源不明的修改**：若存在未知变更，必须立即停下向用户确认，绝对禁止私自静默暂存或清理；
-4. **禁止非 fast-forward / 分叉**：本地 `main` 必须与 `origin/main` 保持同步，禁止存在分叉，禁止使用任何强制推送；
+4. **分支同步确定性门禁（严格要求 `0    0`）**：
+   运行 `git rev-list --left-right --count origin/main...HEAD`，输出格式为 `<behind> <ahead>`：
+   - **`0    0`**：本地与远端完全同步，允许继续；
+   - **本地仅落后（behind > 0, ahead == 0）且工作区干净（`git status --short` 无输出）**：可以执行 `git pull --ff-only origin main` 快进同步，拉取后重新执行本门禁核验；
+   - **其余情况（本地存在未推送提交 ahead > 0、与远端存在分叉、或需要非 fast-forward 合并）**：必须立即停止发版并向用户报告，绝对严禁使用 force push、rebase 或 hard reset 强行同步；
 5. **目标 Tag 全局不存在**：
    - 本地检查：`git tag -l vX.Y.Z` 必须无输出；
    - 远端检查：`git ls-remote --tags origin refs/tags/vX.Y.Z` 必须无输出；
@@ -138,7 +143,7 @@ python dev/test_update_contract.py
 在打 Tag 与推送之前，仅更新本次版本必须包含的内容，**严禁提前将尚未构建发布的版本写入正式发布状态**：
 
 ### 5.1 更新 `RELEASE_NOTES.md`
-在 `RELEASE_NOTES.md` 中，将新的版本更新块插入到现有的 `## 历史版本更新` 标题之前。**严禁每个版本重复新建“## 历史版本更新”标题**，避免标题堆叠：
+在 `RELEASE_NOTES.md` 中，将新的 `vX.Y.Z` 更新块插入文件中从顶部开始遇到的第一个 `## 历史版本更新` 标题之前（严禁重写或修改其后的历史段落，严禁每个版本重复新建“## 历史版本更新”标题以防标题堆叠）：
 
 ```markdown
 ## vX.Y.Z 更新内容
@@ -266,7 +271,7 @@ gh release view vX.Y.Z -R zhimaheiye/MaaHappyFish --json assets,name,tagName,isP
 
 ### 11.1 更新发布状态
 1. **`PROJECT_STATUS.md`**：
-   - 更新当前正式版为 `vX.Y.Z`，commit 为本次 release commit SHA，发布时间为当前日期；
+   - 更新当前正式版为 `vX.Y.Z`，commit 字段记录为 `vX.Y.Z`（遵循项目既有惯例 `commit：vX.Y.Z`，不擅自改成 Git 完整 commit hash），发布时间为当前日期；
    - 尚未正式发布：`暂无`。
 2. **`docs/handoff/CURRENT.md`**：
    - 更新 `Current version` 为 `X.Y.Z`；

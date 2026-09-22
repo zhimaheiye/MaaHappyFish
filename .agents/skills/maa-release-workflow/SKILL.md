@@ -9,14 +9,14 @@ description: >-
 
 本文件是 Antigravity 的薄调度入口（Thin Dispatch Entry）。为确保发版规范的单一事实源（Single Source of Truth），**所有发版逻辑、静态门禁、Git 规范及 CI 监控步骤一律以项目根目录下的唯一权威文档为准**。
 
-> 📖 **唯一权威文档**：[`docs/release-workflow.md`](../../docs/release-workflow.md)
+> 📖 **唯一权威文档**：[`docs/release-workflow.md`](../../../docs/release-workflow.md)
 
 ---
 
 ## 0. 执行前置准则（必须严格执行）
 
 1. **先读权威正文**：
-   在执行任何修改或命令前，**必须首先完整阅读并遵循 [`docs/release-workflow.md`](../../docs/release-workflow.md)**，严禁仅凭记忆或本入口描述执行操作。
+   在执行任何修改或命令前，**必须首先完整阅读并遵循 [`docs/release-workflow.md`](../../../docs/release-workflow.md)**，严禁仅凭记忆或本入口描述执行操作。
 2. **严格按文档执行**：
    发布流程包含 Step 0（Git 环境与分支安全核验）至 Step 10（里程碑边界），必须逐项跑通前置门禁，不得跳步。
 
