@@ -211,7 +211,11 @@ Step 1 探索（截图/OCR/路径）
 - **必须显式返回 `True` / `False`**（Action）或 `RectType | None`（Recognition），不能靠 Python 默认返回 `None`。
 - `custom_action_param` 和 `custom_recognition_param` 可能收到字符串 `"null"`（Pipeline 未配置参数时），必须通过 `agent/param_utils.py` 的 `parse_dict_param()` 安全解析，不能直接 `json.loads()`。
 - 所有新增 Action/Reco 均需统一走 `param_utils` 工具函数，防御 null、空字符串、类型错误等边界情况。
-- **CustomRecognition 纯函数与无副作用原则（Pure Recognition Rule）**：MaaFramework 在评估 `next` 候选列表时，每一帧都在高频轮询 candidate 的 `recognition`（单秒可达数十次）。因此 `CustomRecognition.analyze()` 必须保持纯函数特性，严禁在此修改业务状态、递增轮数或触发带有副作用的业务逻辑，否则会导致在单帧画面等待期间状态数十倍虚增。状态变更与轮数自增必须移至确切被激活执行的 `CustomAction` 中，且在循环或可能重入的流程中必须辅以幂等状态锁（如 `reward_recorded`）防重。
+- **CustomRecognition 副作用与幂等性规则（Recognition Side-Effect & Idempotency Rule）**：MaaFramework 在父节点等待期间评估 `next` 候选列表时，每一帧都在高频轮询候选节点的 `recognition`（单秒可达数十次）。因此**绝对不能把“Recognition 被调用一次”等价为“业务事件发生一次”**：
+  - **默认职责**：Recognition 默认应只做画面分析、特征检测与条件判断；
+  - **禁止累计一次性业务事件**：严禁在可能被重复评估的 Recognition 中直接累计“完成轮数、奖励次数、资源消耗次数”等一次性业务事件（如手机看广告事故中的 `completed_cycles += 1`）；
+  - **一次性业务副作用归属**：此类业务状态变更与计数必须优先放在节点真正命中并激活后执行的 `CustomAction` 中，且在循环或可能重入的流程中辅以幂等状态锁（如 `reward_recorded`）防重；
+  - **有状态 Recognition 的幂等要求**：若 Recognition 因计时器、画面缓存、防卡死停滞检测、调度器判断等系统机制必须维护内部状态（如 `CheckScreenStallReco`、`CheckStarfishTimerReco`、`CheckPatrolTimerReco` 等），其状态写入必须具备幂等性，确保在同一画面或同一等待阶段被连续重复评估时，绝不重复制造新的业务事件或破坏调度状态。严禁将所有 Recognition 机械式要求为无状态纯函数。
 - **引用完整性门禁**：修改 Pipeline 或 Agent 后**必须**运行 `python dev/test_agent_registration_refs.py`，保证 Pipeline 中所有引用的 `custom_action` / `custom_recognition` 均在 Agent 中存在对应注册，禁止悬空引用。
 - **观测与日志非阻断原则**：观测/日志逻辑不应成为关键业务流的必经 CustomAction，除非该 Action 本身承担必要状态变更。避免因日志动作未注册或回调异常而阻断核心导航。
 

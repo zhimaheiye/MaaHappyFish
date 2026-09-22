@@ -162,7 +162,7 @@ git diff --check
 | 长任务工具调用超时后屏幕仍被操作 | 调用超时不等于 Maa tasker 已停止 | 长任务用有界阶段测试；调用停止后核对 `tasker_stopped`、日志和进程状态，不能只看 API 返回 |
 | MaaFW 候选节点识别未命中不触发自身 on_error | 误以为候选节点的 on_error 在 recognition 返回 None 时会自救 | MaaFW 核心语义：父节点的 timeout/on_error 控制对 next 候选列表的识别等待；候选节点的 timeout/on_error 仅在该节点被成功识别、正式激活后才生效。候选识别未命中仅被视作跳过，绝不会触发候选自身的 on_error。若父节点设为 `timeout: -1` 且无候选命中，将导致无限轮询死锁。父节点必须设置有限 timeout 或默认兜底 |
 | 半透明/气泡图标跨鱼缸背景失配（历史事故：v0.5.5 扳手模板） | 模板（如深海深蓝背景截取的半透明扳手）在浅色/木质鱼缸中全图 RGB 差异极大（0.49 < 0.70）导致识别失败 | 裁图紧贴前景或加绿色遮罩扣除半透明背景；当前 CollectFish 已彻底弃用扳手模板，改为先识别各鱼缸主页面编号牌确认环境后再精准点击管理入口坐标 (176, 54)，从架构上根除背景色差风险 |
-| CustomRecognition 带有业务副作用导致轮询期间状态虚增（历史事故：手机看广告轮数暴增） | 误以为 CustomRecognition 仅在做出最终流转决断时执行一次，在 `analyze()` 中执行 `completed_cycles += 1`；而 MaaFW 在父节点等待期间每秒高频多次评估所有候选 candidate，导致单次弹窗停留 2~3 秒期间计数虚增数十次 | 强制遵守纯函数原则：Recognition 只读状态返回 Rect 或 None，绝不修改 runtime_state；所有计数与状态变更有且仅能在节点正式激活后由 CustomAction 执行，并增加 `reward_recorded` 状态锁保障同一画面重入幂等 |
+| CustomRecognition 带有业务副作用导致轮询期间状态虚增（历史事故：手机看广告轮数暴增） | 误以为 CustomRecognition 仅在做出最终流转决断时执行一次，在 `analyze()` 中执行 `completed_cycles += 1`；而 MaaFW 在父节点等待期间每秒高频多次评估所有候选 candidate，导致单次弹窗停留 2~3 秒期间计数虚增数十次 | 手机广告事故中的 `completed_cycles` 属于业务事件计数，不应放在 Recognition 中；对一次性业务事件的计数与副作用应由命中后的 Action 承担。Recognition 若维护 timer/cache/scheduler 等内部状态，必须保证重复评估幂等 |
 
 ## 九、文档维护要求
 
