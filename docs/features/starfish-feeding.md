@@ -16,9 +16,14 @@
 无论单鱼缸模式还是双鱼缸轮换模式，均统一通过鱼缸管理页通用入口，一次喂满三只海星：
 
 ```text
-TriggerStarfishFeed
+TriggerStarfishFeed (timeout: 10000, 失败导向 CollectFishStarfishEntryFailed)
   ↓
-CollectFishOpenManagement (点击鱼缸管理扳手 [120, 0, 120, 110])
+CollectFishOpenManagement (DirectHit 重置入口状态)
+  ↓
+CollectFishStarfishEntryRouter (主页面鱼缸识别路由)
+  ├── CollectFishOpenManagementFromTank1 (匹配 patrol/鱼缸1_主页面编号.png [40, 32, 45, 48] 后点击入口 [176, 54, 4, 4])
+  ├── CollectFishOpenManagementFromTank2 (匹配 patrol/鱼缸2_主页面编号.png [40, 32, 45, 48] 后点击入口 [176, 54, 4, 4])
+  └── CollectFishOpenManagementFromTank3 (匹配 patrol/鱼缸3_主页面编号.png [40, 32, 45, 48] 后点击入口 [176, 54, 4, 4])
   ↓
 CollectFishVerifyManagement (校验进入鱼缸管理页，匹配 鱼缸管理_进入.png)
   ↓
@@ -120,7 +125,7 @@ ResumeHarvest (万能返回节点)
 - **重构**: 将 `CollectFishTask` 内部旧有的齿轮单海星喂食链路全面重构为鱼缸管理页通用入口链路；
 - **全量覆盖**: 依次进入萌海星、乖海星、亮海星面板完成鱼食补充与进度条满仓校验；
 - **自适应目标缸**: 喂食完成后由 `CollectFishAfterStarfishRouter` 重新评估物理单调时间片，自动将目标缸校准至当前时刻对应的正确鱼缸序号，彻底消除了海星喂食打乱双缸轮换节奏的隐患。
-- **背景敏感与死锁陷阱**: `patrol/鱼缸管理_扳手.png` 取样自鱼缸 3 深蓝背景（得分 1.00），在鱼缸 1（青蓝）得分为 0.74，在鱼缸 2（木质黄）骤降至 0.49（<0.70）。若 `TriggerStarfishFeed` 设为 `timeout: -1`，由于候选未命中不触发候选自身的 `on_error`，会导致任务在鱼缸 2 无限轮询假死。入口需具备鱼缸归一或扳手多背景适配，且触发器应设置有限超时熔断。
+- **[历史事故/已在v0.5.6修复] 跨背景模板失配与死锁陷阱**: 在 v0.5.5 时期曾尝试使用 `patrol/鱼缸管理_扳手.png`，因其取样自鱼缸 3 深蓝背景，在鱼缸 2（木质黄）因半透明玻璃透色得分骤降至 0.49（<0.70）导致识别失败；同时 `TriggerStarfishFeed` 若设为 `timeout: -1`，候选节点未命中不会触发自身的 `on_error`，导致父节点无限轮询假死。v0.5.6 起已将 `TriggerStarfishFeed` 设为有界超时（`timeout: 10000` + `on_error`），且彻底弃用半透明扳手模板，改为通过各缸稳定的主页面编号牌识别当前缸并精准点击管理入口坐标 `(176, 54)`。
 
 ## 当前状态
 
@@ -128,8 +133,8 @@ ResumeHarvest (万能返回节点)
 - **关键文件**:
     - `agent/my_reco.py` (`CheckStarfishTimerReco`)
     - `agent/my_action.py` (`CollectFishAfterStarfishAction`)
-    - `assets/resource/pipeline/collect_fish.json` (`CollectFishOpenManagement` -> `FeedCute/WellBehaved/Bright` -> `CollectFishAfterStarfishRouter`)
+    - `assets/resource/pipeline/collect_fish.json` (`CollectFishOpenManagement` -> `CollectFishStarfishEntryRouter` -> `FeedCute/WellBehaved/Bright` -> `CollectFishAfterStarfishRouter`)
     - `assets/resource/image/鱼食已装满.png`
     - `assets/resource/image/普通鱼食袋.png`
-    - `assets/resource/image/patrol/鱼缸管理_扳手.png`
+    - `assets/resource/image/patrol/鱼缸1_主页面编号.png`、`鱼缸2_主页面编号.png`、`鱼缸3_主页面编号.png`
 
