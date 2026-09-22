@@ -11,7 +11,7 @@
 | 项目硬规则、工具边界、文件导航 | `AGENTS.md` |
 | 架构、技术栈、禁止事项、非目标 | `PRODUCT.md` |
 | 当前版本、完成度、MFA 实测状态、下一步 | `docs/handoff/CURRENT.md` |
-| 打包发版、升级版本、推送 Tag 与发布 CI 门禁 | `docs/release-workflow.md`（技能文档：`.agents/skills/maa-release-workflow/SKILL.md`） |
+| 打包发版、升级版本、推送 Tag 与发布 CI 门禁 | `docs/release-workflow.md`（唯一权威文档；调度技能：`.agents/skills/maa-release-workflow/SKILL.md`） |
 | 某个功能的状态机、ROI、模板、分支 | 对应 `docs/features/*.md` |
 | 游戏资源、稀缺性和实机消耗授权 | `docs/game-knowledge.md` |
 | 通用返回/OCR 等 UI 约定 | `docs/ui-conventions.md` |
@@ -137,7 +137,7 @@ git diff --check
 | 模板/ROI | 文件存在、真实页面正样本、相似控件负样本；ADB 模式还要主 Agent 复核最终裁图 |
 | 高频/长按/循环动作 | 停止状态单测或 Mock，确保停止后不再点击/滑动 |
 | 稀缺资源流程 | 先做 replay/mock/前置页面验证，MFA 结果单独登记 |
-| 打包发布 (Release) | 完整执行 `docs/release-workflow.md`，跑通 4 项静态门禁，同步三份 `interface.json`，推送 tag 触发 CI，验证 8 平台资产 |
+| 打包发布 (Release) | 完整执行唯一权威文档 `docs/release-workflow.md`，通过 4 项静态门禁，两阶段更新状态，推送 tag 触发 CI 并验证 8 目标构建资产 |
 
 ## 八、历史错误与解决方式
 

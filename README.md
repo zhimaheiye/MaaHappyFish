@@ -107,11 +107,11 @@ MFA 中另提供默认不勾选的独立任务“每日魔幻拼图”，支持�
 
 ## 发布与打包
 
-MaaHappyFish 遵循严格的发版规范与静态硬门禁流程。发布新版本时，必须完整执行 [发布工作流手册 (docs/release-workflow.md)](./docs/release-workflow.md)，依次通过正则双层校验、引用一致性校验、自动更新契约与嵌入式 Python 依赖冒烟测试，同步三份 `interface.json` 后推送 `main` 分支及对应 `v*` Tag，由 GitHub Actions 自动构建全平台发行包。
+MaaHappyFish 遵循严格的发版规范与静态硬门禁流程。发布新版本时，必须完整执行唯一权威文档 [发布工作流手册 (docs/release-workflow.md)](./docs/release-workflow.md)，依次通过正则双层校验、引用一致性校验、自动更新契约与嵌入式 Python 依赖冒烟测试，更新 `assets/interface.json` 并在存在本地客户端目录时完成同步，经 Git 安全核验后推送 `main` 分支及对应 `v*` Tag，由 GitHub Actions 自动完成 4 个 OS × 2 个架构共 8 个构建目标的自动化打包与发布。
 
-完整流程与技能指引详见：
-- [发布工作流手册 (docs/release-workflow.md)](./docs/release-workflow.md)
-- [Antigravity Workspace Skill (.agents/skills/maa-release-workflow/SKILL.md)](./.agents/skills/maa-release-workflow/SKILL.md)
+完整流程与技能调度详见：
+- [发布工作流唯一权威文档 (docs/release-workflow.md)](./docs/release-workflow.md)
+- [Antigravity Workspace Skill 调度入口 (.agents/skills/maa-release-workflow/SKILL.md)](./.agents/skills/maa-release-workflow/SKILL.md)
 
 ## 免责声明
 

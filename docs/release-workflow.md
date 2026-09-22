@@ -1,134 +1,145 @@
 # MaaHappyFish 版本发布与打包工作流 (Release Workflow)
 
-本文档是 MaaHappyFish 项目标准的发版技能手册（Skill Document）。当需要**升级版本号、打包发版、打 Tag、推送 Release** 时，所有 Agent 和开发者必须严格遵循本工作流执行。
+> 📌 **单一事实源声明 (Single Source of Truth)**：本文档是 MaaHappyFish 项目版本发布、打包、打 Tag、CI 监控与资产核验的**唯一权威流程正文**。`.agents/skills/maa-release-workflow/SKILL.md` 仅作为 Antigravity 调度的薄入口，发版执行一律以本文档为准。
 
 ---
 
-## 0. 触发条件与快速导航
+## 0. 触发条件与核心安全红线
 
 ### 什么时候查阅本手册？
-当用户或任务提出以下需求时立即激活本流程：
+当用户或任务提出以下需求时立即激活并执行本流程：
 - “打包发一个新版，应该是 0.6.x 了”
 - “发 release / 发布新版本”
 - “打 tag / 推送 tag”
 - “升级版本到 vX.Y.Z”
 
-### 核心文档路由
-| 关联文档 | 关系说明 |
-| :--- | :--- |
-| `AGENTS.md` | 项目总导航地图，在“文档路由表”和“硬规则”中强制引用本文档 |
-| `docs/handoff/DEVELOPMENT_PLAYBOOK.md` | 开发手册，在“检查清单”与“文档信息优先级”中引用本文档 |
-| `docs/handoff/CURRENT.md` | 当前交接档案，在“Release health”与版本状态中展示最新发布产物 |
-| `PROJECT_STATUS.md` | 记录当前正式版本号、commit hash 与发布日期 |
-| `RELEASE_NOTES.md` | 手写维护用户可见的 Release 说明，CI 会自动拼接入 GitHub Release 正文 |
-| `.agents/skills/maa-release-workflow/SKILL.md` | Antigravity 专属 Workspace Skill 镜像，提供原生技能感知与渐进式调度 |
+### 核心安全红线：
+1. **单一事实源**：一切规则与步骤以本文档为准，严禁在其他地方维护平行发版逻辑；
+2. **严禁覆盖既有版本**：已发布的 Tag / Release 绝对禁止删除、覆盖、移动或强制重建；
+3. **两阶段状态沉淀**：Tag 推送前严禁提前谎报“已正式发布”；只有当 CI 构建全绿且资产核验完整后，才作为 post-release 提交更新状态；
+4. **仓库严格限定**：所有 `gh` 命令必须显式附加 `-R zhimaheiye/MaaHappyFish` 参数，防止回退到上游模板库；
+5. **严禁盲目暂存**：严禁无脑执行 `git add -A`，暂存前后必须核查未跟踪文件与 `git diff --cached`。
 
 ---
 
 ## 1. 发布流程全景图
 
 ```text
-Step 1: 本地静态门禁与专项单测校验（Pre-Flight Gates）
+Step 0: Git 环境与分支安全前置核验（main 分支、无分叉、Tag 不存在）
     ↓
-Step 2: 版本号升级（interface.json × 3 份保持字节级一致）
+Step 1: 本地静态硬门禁与专项单测（Pre-Flight Gates，100% 通过方可继续）
     ↓
-Step 3: 交付文档与交接状态闭环同步（RELEASE_NOTES / STATUS / CURRENT / ISSUES）
+Step 2: 升级 canonical 版本号（assets/interface.json，若存在则同步本地 client 目录）
     ↓
-Step 4: Git 暂存与检查（包含新图片/代码，剔除临时文件）
+Step 3: 第一阶段：Tag 前文档与代码准备（RELEASE_NOTES.md / ISSUES.md 闭环，不提前改 STATUS）
     ↓
-Step 5: Git Commit 与打 Tag（Conventional Commit: chore: release vX.Y.Z）
+Step 4: 审慎 Git 暂存与检查（包含必要资产，严格排除临时排查文件）
     ↓
-Step 6: Git Push（先推送 main 分支，后推送 tag 触发 CI）
+Step 5: Git Commit 与打 Tag（Conventional Commit: chore: release vX.Y.Z，Tag 格式: vX.Y.Z）
     ↓
-Step 7: GitHub Actions CI 监控（-R zhimaheiye/MaaHappyFish 监听 8 平台构建与 Windows 实机硬门禁）
+Step 6: 双阶段 Git Push（先推 main 分支提交，后推 vX.Y.Z 标签触发 GitHub CI）
     ↓
-Step 8: GitHub Release 产物核验（确认 8 个平台的 .zip 资产已全部上传）
+Step 7: GitHub Actions CI 精准监控（过滤 Tag 对应 Run ID，防止选错 main push 的竞态 Run）
     ↓
-Step 9: 里程碑检查（仅限 v1.0.0 触发小红书抽奖，其余版本绝对不触发）
+Step 8: GitHub Release 产物核验（确认 4 个 OS × 2 个架构共 8 个构建目标产物完整上传）
+    ↓
+Step 9: 第二阶段：Post-Release 文档状态确认（提交 PROJECT_STATUS.md 与 CURRENT.md 正式状态）
+    ↓
+Step 10: 里程碑检查（仅限 v1.0.0 触发小红书抽奖，本地文档不存在时不得猜测）
 ```
 
 ---
 
-## 2. Step 1 — 本地静态硬门禁（Pre-Flight Gates）
+## 2. Step 0 — Git 环境与分支安全前置核验
+
+在修改任何文件之前，在项目仓库根目录（可通过 `git rev-parse --show-toplevel` 确认）执行检查：
+
+```powershell
+git status --short
+git branch --show-current
+git remote -v
+git fetch origin --tags
+```
+
+### 必须满足的硬性标准：
+1. **当前分支必须为 `main`**：`git branch --show-current` 输出必须是 `main`。严禁在功能分支或处于分离头指针（detached HEAD）状态下发版；
+2. **`origin` 远端必须正确**：`git remote -v` 中 `origin` 的 push URL 必须为 `https://github.com/zhimaheiye/MaaHappyFish.git`；
+3. **工作区不得有来源不明的修改**：若存在未知变更，必须立即停下向用户确认，绝对禁止私自静默暂存或清理；
+4. **禁止非 fast-forward / 分叉**：本地 `main` 必须与 `origin/main` 保持同步，禁止存在分叉，禁止使用任何强制推送；
+5. **目标 Tag 全局不存在**：
+   - 本地检查：`git tag -l vX.Y.Z` 必须无输出；
+   - 远端检查：`git ls-remote --tags origin refs/tags/vX.Y.Z` 必须无输出；
+   - Release 检查：`gh release view vX.Y.Z -R zhimaheiye/MaaHappyFish` 必须返回未找到（not found）；
+   - 若目标 Tag 或 Release 已存在，**立即终止流程**，严禁覆盖、删除或重新打同名 Tag。
+
+---
+
+## 3. Step 1 — 本地静态硬门禁（Pre-Flight Gates）
 
 **必须 100% 全部通过后，才允许进入后续版本号修改与提交步骤。**
 
-在项目根目录（`d:\happyfishgame`）打开终端依次执行：
+在项目仓库根目录下依次执行：
 
-### 2.1 Pipeline 正则与资源加载校验
+### 3.1 Pipeline 正则与资源加载校验
 ```powershell
 python dev/test_pipeline_regex.py
 ```
-- **检查内容**：全量扫描 `assets/resource/pipeline/**/*.json` 中所有 OCR `expected` 字段的正则表达式语法，并通过 `MaaFramework` 底层真实加载全部节点资源（当前应成功载入 700+ 个节点）。
-- **常见隐患**：OCR 内容含有未转义括号（如 `(`），会被 `std::regex` 编译失败导致整包资源加载崩溃。
+- **检查内容**：扫描全部 Pipeline 文件中的 OCR `expected` 正则语法，并通过 `MaaFramework` 底层真实加载全部节点资源；
+- **事故预防**：杜绝未转义的 `(` 等字符导致 `std::regex` 编译失败引发整包资源加载崩溃。
 
-### 2.2 Agent 动作与识别引用完整性校验
+### 3.2 Agent 动作与识别引用完整性校验
 ```powershell
 python dev/test_agent_registration_refs.py
 ```
 - **检查内容**：确保所有流水线中声明的 `custom_action` 与 `custom_recognition`，在 `agent/main.py`、`agent/my_action.py` 和 `agent/my_reco.py` 中均有对应实现与注册，禁止悬空引用。
 
-### 2.3 自动更新契约静态校验
+### 3.3 自动更新契约静态校验
 ```powershell
 python dev/test_update_contract.py
 ```
-- **检查内容**：
-  1. `assets/interface.json`、`client/interface.json`、`client_avalonia/interface.json` 三份文件 SHA256 完全一致；
-  2. `github` 字段为纯文本 URL `"https://github.com/zhimaheiye/MaaHappyFish"`（无末尾斜杠）；
-  3. `version` 字段为合法 SemVer（如 `0.6.3`，不带 `v` 前缀）；
-  4. Release 资产名匹配 MFAAvalonia 优先级 100 规则 `MaaHappyFish-win-x86_64-v*.zip`；
-  5. 首次安装预设与任务选项配置合法。
+- **真实契约逻辑**：
+  1. `assets/interface.json` 是 Git 跟踪的唯一 canonical source；
+  2. `client/interface.json` 与 `client_avalonia/interface.json` 为 `.gitignore` 忽略的本地运行目录。`test_update_contract.py` **仅在这两个本地目录/文件实际存在时**才执行 SHA256 校验；干净的 clone 不要求这两个本地目录存在；
+  3. `github` 字段必须严格等于 `"https://github.com/zhimaheiye/MaaHappyFish"`（纯文本，无末尾斜杠）；
+  4. `version` 字段为合法 SemVer（`^\d+\.\d+\.\d+$`，不带 `v` 前缀）；
+  5. 发行包文件名格式需匹配 MFAAvalonia 优先级 100 正则规则。
 
-### 2.4 发布运行时依赖冒烟校验
+### 3.4 发布运行时依赖冒烟校验
 ```powershell
 python dev/test_release_agent_imports.py
 ```
-- **检查内容**：验证 `maa`、`numpy`、`cv2` 及 Agent 下的所有模块（`runtime_state`, `param_utils`, `puzzle_*`, `my_action`, `my_reco`）可被正常无错误导入。
+- **检查内容**：在 Python 环境下验证 `maa`, `numpy`, `cv2` 及 Agent 模块能正常无报错导入。
 
-### 2.5 涉及新特性的业务单测
-若本版本修改了具体业务功能，必须同步运行对应的单元测试确保逻辑闭环，例如：
+### 3.5 涉及修改特性的业务单测
+若本版本涉及具体业务功能改动，必须运行对应单元测试确保逻辑闭环（如 `test_emulator_ads.py`, `test_daily_magic_puzzle.py`, `test_princess_task.py`, `test_secret_realm_gate.py`, `test_daily_routine_scheduler.py` 等）。
+
+---
+
+## 4. Step 2 — 升级版本号与可选本地副本同步
+
+### 4.1 更新 canonical 源文件
+编辑 `assets/interface.json` 中的 `version` 字段为新版本号（如 `"0.6.3"`，纯数字，无 `v` 前缀）。
+
+### 4.2 同步存在的本地客户端目录（带存在性判断）
+在 PowerShell 中执行前检查目录是否存在，避免在干净 clone 或未部署客户端的机器上因目录缺失而报错：
 ```powershell
-# 按修改模块选择运行：
-python dev/test_emulator_ads.py
-python dev/test_daily_magic_puzzle.py
-python dev/test_princess_task.py
-python dev/test_secret_realm_gate.py
-python dev/test_golden_dolphin_pipeline.py
-python dev/test_daily_routine_scheduler.py
+if (Test-Path client) { Copy-Item assets\interface.json client\interface.json -Force }
+if (Test-Path client_avalonia) { Copy-Item assets\interface.json client_avalonia\interface.json -Force }
+```
+重新运行门禁确认一致：
+```powershell
+python dev/test_update_contract.py
 ```
 
 ---
 
-## 3. Step 2 — 版本号升级（interface.json × 3 份同步）
+## 5. Step 3 — 发布第一阶段：Tag 前文档更新 (Pre-Tag)
 
-`interface.json` 中的 `version` 字段是客户端显示与更新检测的核心依据。项目内共有三处副本，**必须保持字节级完全一致**：
+在打 Tag 与推送之前，仅更新本次版本必须包含的内容，**严禁提前将尚未构建发布的版本写入正式发布状态**：
 
-1. 源文件：`assets/interface.json`
-2. 客户端副本：`client/interface.json`
-3. 桌面端副本：`client_avalonia/interface.json`
+### 5.1 更新 `RELEASE_NOTES.md`
+在 `RELEASE_NOTES.md` 中，将新的版本更新块插入到现有的 `## 历史版本更新` 标题之前。**严禁每个版本重复新建“## 历史版本更新”标题**，避免标题堆叠：
 
-> **注意**：`client_avalonia/resource` 是 junction 符号链接，但根目录的 `interface.json` 不在链接内，必须手动同步。
-
-### 执行步骤：
-1. 编辑 `assets/interface.json` 中的 `version` 字段为新版本号（如 `"0.6.3"`，注意纯数字，无 `v` 前缀）。
-2. 在 PowerShell 中执行强制覆盖同步：
-   ```powershell
-   Copy-Item assets\interface.json client\interface.json -Force
-   Copy-Item assets\interface.json client_avalonia\interface.json -Force
-   ```
-3. 重新运行门禁确认一致：
-   ```powershell
-   python dev/test_update_contract.py
-   ```
-
----
-
-## 4. Step 3 — 交付文档与交接状态同步
-
-### 4.1 更新 `RELEASE_NOTES.md`
-`RELEASE_NOTES.md` 位于项目根目录，是手写维护的更新日志。GitHub Actions CI 在发布时会使用 `git-cliff` 将其拼接在自动生成的 Changelog **之前**，直接呈现在 GitHub Release 页面顶部。
-
-**操作要求**：在文件顶部的 `> MaaHappyFish 仍处于早期测试阶段。` 下方，插入新版本的说明块：
 ```markdown
 ## vX.Y.Z 更新内容
 
@@ -138,38 +149,35 @@ python dev/test_daily_routine_scheduler.py
 ## 历史版本更新
 ```
 
-### 4.2 更新 `PROJECT_STATUS.md`
-- **版本**：更新为新正式版本号（如 `v0.6.3`）
-- **commit**：更新为新版本号（如 `v0.6.3`）
-- **发布时间**：更新为发版日期（如 `2026-09-21`）
-- **尚未正式发布**：若本次全量发布则更新为 `暂无`
+### 5.2 暂缓更新发布状态文件
+- **`PROJECT_STATUS.md` 与 `docs/handoff/CURRENT.md` 在此阶段保持不变**；
+- 不得提前把一个尚不存在的 Release 写成“当前正式版已发布”。只有当 CI 跑通、GitHub Release 生成且资产核验完整后，才作为 Post-Release 提交确认。
 
-### 4.3 更新 `docs/handoff/CURRENT.md`
-- 更新表格中的 `Current version`（如 `0.6.3`）
-- 更新 `Latest release` 链接（如 `[v0.6.3](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.6.3)`）
-
-### 4.4 检查 `ISSUES.md` 闭环
-若本版本修复了某些问题，按照硬规则执行文档闭环：从“待修复”待办中移除，迁移至已完成记录，不得遗留失效待办。
+### 5.3 检查 `ISSUES.md` 闭环
+将本次已完成代码级验证的 Bug 迁移为已完成记录，或从待修复待办中移除。
 
 ---
 
-## 5. Step 4 — Git 暂存与检查
+## 6. Step 4 — 审慎 Git 暂存与检查
 
-在提交前，务必执行：
+**严禁盲目直接执行 `git add -A`**。必须显式核对未跟踪文件和暂存差异：
+
 ```powershell
+# 1. 检查修改与未跟踪文件
 git status --short
+
+# 2. 审慎添加（确保新图片、新脚本被包含，排查日志和临时文件被排除）
+git add <必要文件> # 或在确认工作区完全无多余杂质后 git add -A
+
+# 3. 严格复核暂存区
+git status
+git diff --cached --stat
+git diff --cached
 ```
-- **仔细核对新增文件（`??`）**：新增的图片素材（`assets/resource/image/*.png`）、新增的脚本或 Agent 辅助模块（`agent/*.py`）必须纳入暂存；
-- **排查临时文件**：临时的截屏测试图、现场日志、排查脚本等临时资产绝对不得误提交；
-- 执行全部暂存：
-  ```powershell
-  git add -A
-  git status
-  ```
 
 ---
 
-## 6. Step 5 — Git Commit 与打 Tag
+## 7. Step 5 — Git Commit 与打 Tag
 
 遵循 Conventional Commits 提交规范，以便 `git-cliff` 自动提取提交日志：
 
@@ -181,21 +189,19 @@ git commit -m "chore: release vX.Y.Z"
 git tag vX.Y.Z
 ```
 
-**Tag 命名约定**：
-- 正式版：`v0.6.3`（触发正式 Release）
-- 预发布：`v0.6.3-beta.1`、`v0.6.3-rc.1`（CI 会自动标记为 Pre-release）
+> **说明**：当前项目发布规范专注定义正式版本（`vX.Y.Z`），不维护未完整约定的预发布（beta/rc）流程。
 
 ---
 
-## 7. Step 6 — 推送到 GitHub 远程仓库
+## 8. Step 6 — 双阶段 Git 推送
 
-发版流程需要推送两次：**主分支提交**与**发布 Tag**。
+发版流程需要两阶段推送：
 
 ```powershell
-# 1. 推送主分支代码
+# 1. 先推送 main 分支提交
 git push origin main
 
-# 2. 推送发布 Tag（这一步真正触发 GitHub Actions 发布流水线）
+# 2. 再推送发布 Tag（真正触发 GitHub Actions 的 Release 流水线）
 git push origin vX.Y.Z
 ```
 
@@ -203,75 +209,110 @@ git push origin vX.Y.Z
 
 ---
 
-## 8. Step 7 — GitHub Actions CI 监控与核验
+## 9. Step 7 — GitHub Actions CI 监控（防选错竞态）
 
-### 8.1 仓库范围限定（极其关键！）
-**执行任何 `gh` 命令时，必须显式带上 `-R zhimaheiye/MaaHappyFish` 参数！**
-若省略 `-R` 参数，GitHub CLI 会回退匹配到上游模板库 `MaaXYZ/MaaPracticeBoilerplate`，导致查询不到任务或权限报错。
+### 9.1 必须显式指定仓库
+**所有 `gh` 命令必须带 `-R zhimaheiye/MaaHappyFish`**，防止默认落入上游模板库。
 
-### 8.2 查询与监听 CI 构建
+### 9.2 识别并监控 Tag Push 对应的 Workflow Run
+由于 `git push origin main` 与 `git push origin vX.Y.Z` 会先后触发 `install.yml`，列表中会出现两个接近的 Run。**绝对不能盲目抓取最新的一条，必须确认其 ref 为目标 Tag！**
+
 ```powershell
-# 1. 查看当前正在运行的 Release 任务
-gh run list -R zhimaheiye/MaaHappyFish --limit 5
+# 查看 install.yml 最近运行，核对 HEAD BRANCH / TAG 列必须为目标 vX.Y.Z
+gh run list -R zhimaheiye/MaaHappyFish -w install.yml --limit 5
 
-# 2. 持续监听指定运行（使用上述返回的 RUN_ID）
+# 或通过 jq 精确过滤对应 Tag 的 Run ID：
+gh run list -R zhimaheiye/MaaHappyFish -w install.yml --json databaseId,headBranch,event,status --jq '.[] | select(.headBranch=="vX.Y.Z") | .databaseId'
+```
+
+获取到对应的 `<RUN_ID>` 后，启动监听：
+```powershell
 gh run watch <RUN_ID> -R zhimaheiye/MaaHappyFish
 ```
 
-### 8.3 CI 核心流水线各 Job 验证清单
-GitHub Actions `.github/workflows/install.yml` 包含以下关键阶段：
-1. **`meta`**：从 tag 解析版本号，校验正式版/预发布标记；
-2. **`install`（8 个并行构建矩阵）**：
-   - 跨平台覆盖：`os=[win, macos, linux, android]` × `arch=[x86_64, aarch64]` 共 8 组；
-   - 依赖集成：下载 MaaFramework 核心库与 MFAAvalonia 客户端；
-   - Windows x64 专属打包：自动注入嵌入式 Python 3.13.5，pip 安装 `maafw` 与 `opencv-python-headless`，生成运行环境；
-3. **`verify (win, x86_64)`（CI 实机硬门禁）**：
-   - 在真实 Windows Runner 上解包构建产物；
-   - 运行内嵌 Python 真实执行 `import maa`, `import cv2`, `import numpy` 及 Agent 模块冒烟测试；
-   - 运行 `test_update_contract.py` 校验整包结构；
-   - 此 Job 失败将阻断 Release 发布！
-4. **`changelog`**：结合 `RELEASE_NOTES.md` 与 Git 提交生成发布说明；
-5. **`release`**：将 8 个平台的发布压缩包上传至 GitHub Release。
+### 9.3 CI 构建矩阵与硬门禁核查清单
+- **`install`（4 个 OS × 2 个架构，共 8 个构建目标）**：全部绿色通过（`win/macos/linux/android` × `x86_64/aarch64`）；
+- **`verify (win, x86_64)`**：GitHub Windows Runner 上的发行包硬门禁 / embedded Python smoke gate 必须绿色通过；
+- **`changelog` 与 `release`**：全部成功执行。
 
 ---
 
-## 9. Step 8 — GitHub Release 产物确认
+## 10. Step 8 — GitHub Release 产物核验
 
-CI 流程全绿通过后，通过命令行验证 Release 产物状态：
+CI 结束后，查询 GitHub Release 资产：
 
 ```powershell
 gh release view vX.Y.Z -R zhimaheiye/MaaHappyFish --json assets,name,tagName,isPrerelease,url
 ```
 
-### 必达核验项：
-- [ ] `isPrerelease` 状态符合预期（正式版为 `false`）；
-- [ ] `assets` 列表中必须完整包含 **8 个平台的 `.zip` 压缩包**：
-  1. `MaaHappyFish-win-x86_64-vX.Y.Z.zip`（包含嵌入式 Python 环境，体积约 227MB）
-  2. `MaaHappyFish-win-aarch64-vX.Y.Z.zip`
-  3. `MaaHappyFish-macos-x86_64-vX.Y.Z.zip`
-  4. `MaaHappyFish-macos-aarch64-vX.Y.Z.zip`
-  5. `MaaHappyFish-linux-x86_64-vX.Y.Z.zip`
-  6. `MaaHappyFish-linux-aarch64-vX.Y.Z.zip`
-  7. `MaaHappyFish-android-x86_64-vX.Y.Z.zip`
-  8. `MaaHappyFish-android-aarch64-vX.Y.Z.zip`
-- [ ] 所有资产 `state` 字段为 `uploaded`。
+### 资产核验项：
+1. `isPrerelease` 必须为 `false`；
+2. `assets` 完整包含全部 **4 个 OS × 2 个架构共 8 个构建目标的 `.zip` 压缩包**：
+   - `MaaHappyFish-win-x86_64-vX.Y.Z.zip`（当前参考值：约 227MB，内嵌 Python 运行环境；参考值非长期固定契约）
+   - `MaaHappyFish-win-aarch64-vX.Y.Z.zip`
+   - `MaaHappyFish-macos-x86_64-vX.Y.Z.zip`
+   - `MaaHappyFish-macos-aarch64-vX.Y.Z.zip`
+   - `MaaHappyFish-linux-x86_64-vX.Y.Z.zip`
+   - `MaaHappyFish-linux-aarch64-vX.Y.Z.zip`
+   - `MaaHappyFish-android-x86_64-vX.Y.Z.zip`
+   - `MaaHappyFish-android-aarch64-vX.Y.Z.zip`
+3. 所有资产状态均为 `uploaded`。
 
 ---
 
-## 10. Step 9 — 里程碑与边界检查 (v1.0.0 Only)
+## 11. Step 9 — 发布第二阶段：Post-Release 文档状态确认 (Post-Release)
 
-- **唯一触发条件**：当且仅当项目版本号正式达到 **`1.0.0`**（工具 1.0 版本正式完结大版本发布）时，才触发查阅并执行 `docs/v1.0-rednote-lottery.md` 中约定的小红书抽奖活动流程。
-- **严格禁止提前触发**：当前所有 `0.x.x` 阶段，任何 Agent 或自动化工作流**绝对不得提前触发或执行该文件**。
+在确认 GitHub Release 已正式上线并可下载后，再将项目交接状态正式更新为已发布：
+
+### 11.1 更新发布状态
+1. **`PROJECT_STATUS.md`**：
+   - 更新当前正式版为 `vX.Y.Z`，commit 为本次 release commit SHA，发布时间为当前日期；
+   - 尚未正式发布：`暂无`。
+2. **`docs/handoff/CURRENT.md`**：
+   - 更新 `Current version` 为 `X.Y.Z`；
+   - 更新 `Latest release` 为最新 GitHub Release 链接；
+   - `Release health` 保持正常，使用相对链接 `../release-workflow.md`。
+
+### 11.2 提交状态更新
+```powershell
+git add PROJECT_STATUS.md docs/handoff/CURRENT.md
+git commit -m "docs: confirm vX.Y.Z release status"
+git push origin main
+```
 
 ---
 
-## 11. 常见错误排查与应急手册
+## 12. Step 10 — 里程碑边界检查 (v1.0.0 Only)
 
-| 常见错误 / 现象 | 根因分析 | 应急处理与预防措施 |
+- `docs/v1.0-rednote-lottery.md` 已在 `.gitignore` 中标记为维护者本机私有/本地里程碑文档；
+- **触发条件**：当且仅当版本号达到 `1.0.0` 时触发；当前所有 `0.x.x` 版本绝对不触发；
+- **容错防线**：若该文件在当前工作区不存在，**严禁自行猜测或造假生成抽奖流程**，只能报告本地文档不可用。
+
+---
+
+## 13. 第三方运行时依赖边界与核查要求
+
+当前 GitHub Actions `install.yml` 在 Windows x64 打包阶段**实际硬编码**通过 pip 安装以下包：
+```powershell
+maafw opencv-python-headless
+```
+并没有直接通过 `-r agent/requirements-release.txt` 自动读取依赖。
+因此：**绝不能声称“只要在 requirements-release.txt 加一行，发行包就会自动包含该依赖”**。
+
+新增运行时第三方依赖时必须四步核查闭环：
+1. 更新 `agent/requirements-release.txt` 声明版本；
+2. 检查并同步修改 `.github/workflows/install.yml` 中的 pip 安装命令及 `$required` 验证列表；
+3. 更新 `dev/test_release_agent_imports.py` 增加导入冒烟测试；
+4. 确保 CI 中的 `verify (win, x86_64)` 硬门禁覆盖该依赖。
+
+---
+
+## 14. 常见错误与应急排查速查
+
+| 现象 | 根因 | 处置方式 |
 | :--- | :--- | :--- |
-| **`std::regex` 编译失败** (`Unmatched parenthesis`) | Pipeline 中的 OCR `expected` 字段包含未转义的 `(` 等正则字符 | 改用不含特殊字符的稳定中文语义关键词（如“刷新体力”），或使用 `\\(` 双重转义；发版前必跑 `python dev/test_pipeline_regex.py` |
-| **Agent 注册引用缺失** | Pipeline 中调用了未在 `my_action.py`/`my_reco.py` 注册的名称 | 运行 `python dev/test_agent_registration_refs.py` 检查并补齐注册代码 |
-| **更新契约校验失败** | 只修改了 `assets/interface.json`，遗漏了 `client/` 或 `client_avalonia/` 副本 | 重新执行 `Copy-Item` 强制覆盖，确保三份文件 SHA256 字节完全一致 |
-| **CI 未触发 Release 任务** | 仅推送了 `main` 分支提交，忘记推送 Tag | 执行 `git push origin vX.Y.Z` 推送对应标签 |
-| **`verify (win, x86_64)` 失败** | 新增的第三方 Python 依赖未写入 `agent/requirements-release.txt` 或嵌入式脚本漏检 | 补齐 `requirements-release.txt`，检查 `.github/workflows/install.yml` 中的 `$required` 文件列表 |
-| **`gh` 报 404 或找不到运行** | 未指定仓库，`gh` 默认落入 upstream 模板库 | 始终附加 `-R zhimaheiye/MaaHappyFish` 参数 |
+| `std::regex` 报错崩溃 | OCR `expected` 含未转义正则符号 | 改用纯中文语义短语或双反斜杠转义，发版前必跑 `test_pipeline_regex.py` |
+| `gh` 命令 404 / 没权限 | 未显式声明目标仓库 | 严格加上 `-R zhimaheiye/MaaHappyFish` |
+| CI Release Job 跳过 | 仅 push 了分支，没有 push tag | 检查 `git push origin vX.Y.Z` |
+| CI 选错监听任务 | `gh run list` 误抓了 branch push 任务 | 通过 `--json headBranch` 过滤 Tag 名确认 RUN_ID |
+| Windows Runner verify 报错 | 缺少运行依赖或 `interface.json` 不一致 | 查看 verify job 详情，补齐 install.yml 或同步 interface.json |

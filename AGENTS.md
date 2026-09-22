@@ -44,8 +44,8 @@
 | 维护"许愿神灯"独立活动任务 | `docs/features/wishing-lamp.md` |
 | 维护"秘境之门"独立与日常送鱼任务 | `docs/features/secret-realm-gate.md` |
 | 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |
-| 打包发布新版本、推送 Tag、发布 CI 门禁核验与版本号升级 | `docs/release-workflow.md`（技能文档：`.agents/skills/maa-release-workflow/SKILL.md`） |
-| 当且仅当项目版本号达到 1.0.0 正式完结发版时触发小红书抽奖活动 | `docs/v1.0-rednote-lottery.md`（仅在版本号达到 1.0.0 时触发，其余所有版本绝对不触发） |
+| 打包发布新版本、推送 Tag、发布 CI 门禁核验与版本号升级 | `docs/release-workflow.md`（唯一权威文档；调度技能：`.agents/skills/maa-release-workflow/SKILL.md`） |
+| 当且仅当项目版本号达到 1.0.0 正式完结发版时触发小红书抽奖活动 | `docs/v1.0-rednote-lottery.md`（维护者本机私有/本地里程碑文档；仅在版本号达到 1.0.0 且文件存在时触发，文件不存在时不得猜测，其余所有版本绝对不触发） |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 
 ## 新 Agent 对话接手顺序（必须执行）
@@ -78,7 +78,7 @@
 | `dev/test_agent_registration_refs.py` | Pipeline 引用一致性校验 | 静态确保 Pipeline 引用的所有 custom_action/reco 均在 Agent 中注册。 |
 | `dev/test_release_agent_imports.py` | 发布包 import 冒烟测试 | 在 embedded Python 环境下验证所有依赖可正常导入。 |
 | `dev/test_update_contract.py` | 自动更新契约静态门禁 | 静态校验 interface.json、github 字段、SemVer、资产命名匹配与包排他性。 |
-| `docs/release-workflow.md` | 版本发布与打包技能工作流 | 镜像在 `.agents/skills/maa-release-workflow/SKILL.md`。发版前必跑四项静态门禁、同步三份 interface.json，gh 命令必须带 `-R zhimaheiye/MaaHappyFish`。 |
+| `docs/release-workflow.md` | 版本发布工作流唯一权威文档 | 调度入口在 `.agents/skills/maa-release-workflow/SKILL.md`。详述前置 Git 检查、静态门禁、两阶段状态沉淀与 CI 监控。 |
 
 ---
 
@@ -262,3 +262,4 @@ MaaHappyFish 采用 MFAAvalonia 原生支持的二合一整包（UI + MaaFW + Ag
 
 - **唯一触发条件**：当且仅当本项目版本号正式推进至 **`1.0.0`**（即工具 1.0 版本正式完结发版）时，才触发执行本地文档 `docs/v1.0-rednote-lottery.md` 中的小红书抽奖活动流程。
 - **严格禁止提前触发**：在版本号未达到 `1.0.0`（例如处于当前所有 `0.x.x` 阶段）时，任何 Agent 或自动化工作流**绝对不得提前触发、引用或执行该文件**。
+- **本地私有文档约束**：该文档在 `.gitignore` 中标记为维护者本机私有文件。若文件在当前工作区不存在，严禁自行猜测或造假生成抽奖流程，只能报告本地文档不可用。
