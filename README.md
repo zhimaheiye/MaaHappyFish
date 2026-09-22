@@ -105,16 +105,13 @@ python tools/daily_magic_puzzle.py
 
 MFA 中另提供默认不勾选的独立任务“每日魔幻拼图”，支持已实机通过的 4×4（2×2 图片），以及待用户首次实机验证的 5×5（3×3 图片）和 6×6（4×4 图片）。按完整图片顺序填写 4、9 或 16 块当前位置；推荐使用 `rNcN`，也支持中英文逗号和纯数字格号。页面模板门禁命中且完整求解成功后才会执行 Swipe。
 
-## 发布
+## 发布与打包
 
-GitHub Actions 会在推送 `v*` 标签后自动组装并发布各平台产物。Windows x64 包会额外内置嵌入式 Python、OpenCV 和 `maafw`。
+MaaHappyFish 遵循严格的发版规范与静态硬门禁流程。发布新版本时，必须完整执行 [发布工作流手册 (docs/release-workflow.md)](./docs/release-workflow.md)，依次通过正则双层校验、引用一致性校验、自动更新契约与嵌入式 Python 依赖冒烟测试，同步三份 `interface.json` 后推送 `main` 分支及对应 `v*` Tag，由 GitHub Actions 自动构建全平台发行包。
 
-```powershell
-git tag v0.5.2
-git push origin v0.5.2
-```
-
-版本号会在打包时自动写入 `interface.json`，无需手工修改。
+完整流程与技能指引详见：
+- [发布工作流手册 (docs/release-workflow.md)](./docs/release-workflow.md)
+- [Antigravity Workspace Skill (.agents/skills/maa-release-workflow/SKILL.md)](./.agents/skills/maa-release-workflow/SKILL.md)
 
 ## 免责声明
 

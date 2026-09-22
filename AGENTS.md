@@ -44,6 +44,7 @@
 | 维护"许愿神灯"独立活动任务 | `docs/features/wishing-lamp.md` |
 | 维护"秘境之门"独立与日常送鱼任务 | `docs/features/secret-realm-gate.md` |
 | 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |
+| 打包发布新版本、推送 Tag、发布 CI 门禁核验与版本号升级 | `docs/release-workflow.md`（技能文档：`.agents/skills/maa-release-workflow/SKILL.md`） |
 | 当且仅当项目版本号达到 1.0.0 正式完结发版时触发小红书抽奖活动 | `docs/v1.0-rednote-lottery.md`（仅在版本号达到 1.0.0 时触发，其余所有版本绝对不触发） |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 
@@ -77,6 +78,7 @@
 | `dev/test_agent_registration_refs.py` | Pipeline 引用一致性校验 | 静态确保 Pipeline 引用的所有 custom_action/reco 均在 Agent 中注册。 |
 | `dev/test_release_agent_imports.py` | 发布包 import 冒烟测试 | 在 embedded Python 环境下验证所有依赖可正常导入。 |
 | `dev/test_update_contract.py` | 自动更新契约静态门禁 | 静态校验 interface.json、github 字段、SemVer、资产命名匹配与包排他性。 |
+| `docs/release-workflow.md` | 版本发布与打包技能工作流 | 镜像在 `.agents/skills/maa-release-workflow/SKILL.md`。发版前必跑四项静态门禁、同步三份 interface.json，gh 命令必须带 `-R zhimaheiye/MaaHappyFish`。 |
 
 ---
 

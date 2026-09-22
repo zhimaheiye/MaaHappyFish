@@ -11,7 +11,7 @@
 | **Current version** | `0.6.3` |
 | **Latest release** | [`v0.6.3`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.6.3) |
 | **CI hard gate** | `verify (win, x86_64)` PASS（实机 embedded Python 冒烟 + 更新契约门禁） |
-| **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新 |
+| **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新（发版流程标准详见 [docs/release-workflow.md](file:///d:/happyfishgame/docs/release-workflow.md)） |
 
 **自动更新说明**：v0.4.4 正式引入 `"github": "https://github.com/zhimaheiye/MaaHappyFish"` 字段，为后续程序内原生更新建立 Bootstrap 基础。已安装 v0.4.4 的客户端未来均可直接在 MFA 程序内一键检测并整包升级至最新 Release，无需再次手动解压覆盖。
 
