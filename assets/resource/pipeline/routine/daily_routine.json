@@ -105,6 +105,8 @@
             "DailyRoutineStepGemOrder",
             "DailyRoutineStepRomanticHouse",
             "DailyRoutineStepBandFishPass2",
+            "DailyRoutineStepGreenWildClaim",
+            "DailyRoutineStepPrincessClaim",
             "DailyRoutineStepAllDone"
         ]
     },
@@ -437,6 +439,44 @@
         "action": "DoNothing",
         "focus": {
             "Node.Action.Succeeded": "[日常收尾] 开始执行：公主任务。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTask"
+        ]
+    },
+    "DailyRoutineStepGreenWildClaim": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "GREEN_WILD_CLAIM"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：绿野寻仙踪奖励领取（末尾收尾）。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildTask"
+        ]
+    },
+    "DailyRoutineStepPrincessClaim": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "PRINCESS_CLAIM"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：公主任务奖励领取（末尾收尾）。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",

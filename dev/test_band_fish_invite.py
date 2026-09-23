@@ -51,6 +51,7 @@ class StopController:
 
     def post_screencap(self):
         frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+        frame[400:550, 400:880] = (0, 200, 255)  # 舞台页面门禁
         x, y, width, height = my_action.SLOT_INVITE_INFO[1]["roi"]
         frame[y:y + height, x:x + width] = (0, 255, 0)
         return Job(frame)

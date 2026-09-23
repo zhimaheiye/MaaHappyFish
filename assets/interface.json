@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.6.3",
+    "version": "0.7.0",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -83,12 +83,6 @@
             "entry": "ManateeTask",
             "default_check": false,
             "description": "周六、周日从主鱼缸、好友列表或海牛先生页面启动，连续喂食至识别到刷新体力后返回主鱼缸。"
-        },
-        {
-            "name": "秘境之门",
-            "entry": "SecretRealmGateTask",
-            "default_check": false,
-            "description": "自动完成秘境之门送鱼任务：依次送出并领取奖励，无鱼任务自动删除卡片"
         },
         {
             "name": "许愿神灯",
@@ -181,6 +175,21 @@
             ]
         },
         {
+            "name": "深海寻鱼（免费次数）",
+            "entry": "SeaDiveTask",
+            "default_check": false,
+            "description": "**仅消耗每日免费次数，进入100米后立即返航，不进行任何深度探索/寻宝/撞怪。** 自动判断剩余免费次数，跑完即退出。"
+        },
+        {
+            "name": "鱼宝乐园",
+            "entry": "FishBabyTask",
+            "default_check": false,
+            "description": "按逐只配置或统一配置完成一轮喂食、玩耍、喂奶；逐只模式可分别设置1~8号宝宝的鱼食、玩耍与牛奶，统一模式会把三类选择分别应用到本轮全部宝宝。玩耍选跳过表示整轮不处理该宝宝，睡眠中的宝宝自动跳过；完成后确认冷却并返回主鱼缸。绝不点击付费一键孵化。",
+            "option": [
+                "鱼宝配置方式"
+            ]
+        },
+        {
             "name": "日常收尾",
             "entry": "DailyRoutineTask",
             "default_check": false,
@@ -252,7 +261,7 @@
         {
             "name": "MaaHappyFishDefault",
             "label": "默认任务列表",
-            "description": "新安装使用的默认列表；手机看广告因仅适配特定真实手机环境，需从添加任务中手动加入。",
+            "description": "新安装使用的默认列表；手机看广告仅适配特定真实手机，深海寻鱼仍缺关键视觉素材，均需从添加任务中手动加入。",
             "task": [
                 {
                     "name": "启动游戏",
@@ -284,10 +293,6 @@
                 },
                 {
                     "name": "许愿神灯",
-                    "enabled": false
-                },
-                {
-                    "name": "秘境之门",
                     "enabled": false
                 },
                 {
@@ -354,6 +359,1337 @@
         }
     ],
     "option": {
+        "鱼宝配置方式": {
+            "type": "select",
+            "label": "配置方式",
+            "description": "逐只设置可为每个宝宝分别选择三类项目；统一设置会覆盖本轮全部1~8号宝宝的对应项目。",
+            "default_case": "逐只设置",
+            "cases": [
+                {
+                    "name": "逐只设置",
+                    "option": [
+                        "1号宝宝鱼食",
+                        "1号宝宝玩耍方式",
+                        "1号宝宝牛奶",
+                        "2号宝宝鱼食",
+                        "2号宝宝玩耍方式",
+                        "2号宝宝牛奶",
+                        "3号宝宝鱼食",
+                        "3号宝宝玩耍方式",
+                        "3号宝宝牛奶",
+                        "4号宝宝鱼食",
+                        "4号宝宝玩耍方式",
+                        "4号宝宝牛奶",
+                        "5号宝宝鱼食",
+                        "5号宝宝玩耍方式",
+                        "5号宝宝牛奶",
+                        "6号宝宝鱼食",
+                        "6号宝宝玩耍方式",
+                        "6号宝宝牛奶",
+                        "7号宝宝鱼食",
+                        "7号宝宝玩耍方式",
+                        "7号宝宝牛奶",
+                        "8号宝宝鱼食",
+                        "8号宝宝玩耍方式",
+                        "8号宝宝牛奶"
+                    ]
+                },
+                {
+                    "name": "统一设置",
+                    "option": [
+                        "全部宝宝鱼食",
+                        "全部宝宝玩耍方式",
+                        "全部宝宝牛奶"
+                    ]
+                }
+            ]
+        },
+        "1号宝宝鱼食": {
+            "type": "select",
+            "label": "1号宝宝鱼食",
+            "description": "逐只设置时生效；三档依次点击左、中、右鱼食气泡。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "1号宝宝玩耍方式": {
+            "type": "select",
+            "label": "1号宝宝玩耍方式",
+            "description": "跳过表示本轮喂食、玩耍和喂奶都不处理这只宝宝。",
+            "default_case": "跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "跳过",
+                    "pipeline_override": {
+                        "FishBabyPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "1号宝宝牛奶": {
+            "type": "select",
+            "label": "1号宝宝牛奶",
+            "description": "逐只设置时生效；三档依次点击左、中、右牛奶气泡。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference1": {
+                            "custom_action_param": {
+                                "number": 1,
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "2号宝宝鱼食": {
+            "type": "select",
+            "label": "2号宝宝鱼食",
+            "description": "逐只设置时生效；三档依次点击左、中、右鱼食气泡。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "2号宝宝玩耍方式": {
+            "type": "select",
+            "label": "2号宝宝玩耍方式",
+            "description": "跳过表示本轮喂食、玩耍和喂奶都不处理这只宝宝。",
+            "default_case": "跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "跳过",
+                    "pipeline_override": {
+                        "FishBabyPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "2号宝宝牛奶": {
+            "type": "select",
+            "label": "2号宝宝牛奶",
+            "description": "逐只设置时生效；三档依次点击左、中、右牛奶气泡。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference2": {
+                            "custom_action_param": {
+                                "number": 2,
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "3号宝宝鱼食": {
+            "type": "select",
+            "label": "3号宝宝鱼食",
+            "description": "逐只设置时生效；三档依次点击左、中、右鱼食气泡。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "3号宝宝玩耍方式": {
+            "type": "select",
+            "label": "3号宝宝玩耍方式",
+            "description": "跳过表示本轮喂食、玩耍和喂奶都不处理这只宝宝。",
+            "default_case": "跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "跳过",
+                    "pipeline_override": {
+                        "FishBabyPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "3号宝宝牛奶": {
+            "type": "select",
+            "label": "3号宝宝牛奶",
+            "description": "逐只设置时生效；三档依次点击左、中、右牛奶气泡。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference3": {
+                            "custom_action_param": {
+                                "number": 3,
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "4号宝宝鱼食": {
+            "type": "select",
+            "label": "4号宝宝鱼食",
+            "description": "逐只设置时生效；三档依次点击左、中、右鱼食气泡。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "4号宝宝玩耍方式": {
+            "type": "select",
+            "label": "4号宝宝玩耍方式",
+            "description": "跳过表示本轮喂食、玩耍和喂奶都不处理这只宝宝。",
+            "default_case": "跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "跳过",
+                    "pipeline_override": {
+                        "FishBabyPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "4号宝宝牛奶": {
+            "type": "select",
+            "label": "4号宝宝牛奶",
+            "description": "逐只设置时生效；三档依次点击左、中、右牛奶气泡。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference4": {
+                            "custom_action_param": {
+                                "number": 4,
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "5号宝宝鱼食": {
+            "type": "select",
+            "label": "5号宝宝鱼食",
+            "description": "逐只设置时生效；三档依次点击左、中、右鱼食气泡。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "5号宝宝玩耍方式": {
+            "type": "select",
+            "label": "5号宝宝玩耍方式",
+            "description": "跳过表示本轮喂食、玩耍和喂奶都不处理这只宝宝。",
+            "default_case": "跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "跳过",
+                    "pipeline_override": {
+                        "FishBabyPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "5号宝宝牛奶": {
+            "type": "select",
+            "label": "5号宝宝牛奶",
+            "description": "逐只设置时生效；三档依次点击左、中、右牛奶气泡。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference5": {
+                            "custom_action_param": {
+                                "number": 5,
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "6号宝宝鱼食": {
+            "type": "select",
+            "label": "6号宝宝鱼食",
+            "description": "逐只设置时生效；三档依次点击左、中、右鱼食气泡。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "6号宝宝玩耍方式": {
+            "type": "select",
+            "label": "6号宝宝玩耍方式",
+            "description": "跳过表示本轮喂食、玩耍和喂奶都不处理这只宝宝。",
+            "default_case": "跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "跳过",
+                    "pipeline_override": {
+                        "FishBabyPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "6号宝宝牛奶": {
+            "type": "select",
+            "label": "6号宝宝牛奶",
+            "description": "逐只设置时生效；三档依次点击左、中、右牛奶气泡。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference6": {
+                            "custom_action_param": {
+                                "number": 6,
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "7号宝宝鱼食": {
+            "type": "select",
+            "label": "7号宝宝鱼食",
+            "description": "逐只设置时生效；三档依次点击左、中、右鱼食气泡。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "7号宝宝玩耍方式": {
+            "type": "select",
+            "label": "7号宝宝玩耍方式",
+            "description": "跳过表示本轮喂食、玩耍和喂奶都不处理这只宝宝。",
+            "default_case": "跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "跳过",
+                    "pipeline_override": {
+                        "FishBabyPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "7号宝宝牛奶": {
+            "type": "select",
+            "label": "7号宝宝牛奶",
+            "description": "逐只设置时生效；三档依次点击左、中、右牛奶气泡。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference7": {
+                            "custom_action_param": {
+                                "number": 7,
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "8号宝宝鱼食": {
+            "type": "select",
+            "label": "8号宝宝鱼食",
+            "description": "逐只设置时生效；三档依次点击左、中、右鱼食气泡。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyFoodPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "8号宝宝玩耍方式": {
+            "type": "select",
+            "label": "8号宝宝玩耍方式",
+            "description": "跳过表示本轮喂食、玩耍和喂奶都不处理这只宝宝。",
+            "default_case": "跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "跳过",
+                    "pipeline_override": {
+                        "FishBabyPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "8号宝宝牛奶": {
+            "type": "select",
+            "label": "8号宝宝牛奶",
+            "description": "逐只设置时生效；三档依次点击左、中、右牛奶气泡。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyMilkPreference8": {
+                            "custom_action_param": {
+                                "number": 8,
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "全部宝宝鱼食": {
+            "type": "select",
+            "label": "全部宝宝鱼食",
+            "description": "统一设置时生效；本轮所有参与宝宝使用同一档鱼食。",
+            "default_case": "超级鱼食",
+            "cases": [
+                {
+                    "name": "黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyUniformFood": {
+                            "custom_action_param": {
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyUniformFood": {
+                            "custom_action_param": {
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyUniformFood": {
+                            "custom_action_param": {
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "全部宝宝玩耍方式": {
+            "type": "select",
+            "label": "全部宝宝玩耍方式",
+            "description": "统一设置时生效；具体玩法会覆盖1~8号逐只玩法，全部跳过则不进入活动。",
+            "default_case": "全部跳过",
+            "cases": [
+                {
+                    "name": "摸头",
+                    "pipeline_override": {
+                        "FishBabyUniformPlay": {
+                            "custom_action_param": {
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "篮球",
+                    "pipeline_override": {
+                        "FishBabyUniformPlay": {
+                            "custom_action_param": {
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "唱歌",
+                    "pipeline_override": {
+                        "FishBabyUniformPlay": {
+                            "custom_action_param": {
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部跳过",
+                    "pipeline_override": {
+                        "FishBabyUniformPlay": {
+                            "custom_action_param": {
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "全部宝宝牛奶": {
+            "type": "select",
+            "label": "全部宝宝牛奶",
+            "description": "统一设置时生效；本轮所有参与宝宝使用同一档牛奶。",
+            "default_case": "蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyUniformMilk": {
+                            "custom_action_param": {
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyUniformMilk": {
+                            "custom_action_param": {
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyUniformMilk": {
+                            "custom_action_param": {
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
         "开贝壳次数": {
             "type": "input",
             "label": "开贝壳次数",
@@ -1262,22 +2598,150 @@
             "label": "6×6 图片块 1~16 位置",
             "description": "图片块按完整 4×4 图片逐行编号 1~16。支持 1~36 格号、r行c列及中英文逗号；16 个位置不得重复。",
             "inputs": [
-                {"name": "6x6图片块1位置", "label": "图片块 1 所在格", "default": "1", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块2位置", "label": "图片块 2 所在格", "default": "2", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块3位置", "label": "图片块 3 所在格", "default": "3", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块4位置", "label": "图片块 4 所在格", "default": "4", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块5位置", "label": "图片块 5 所在格", "default": "7", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块6位置", "label": "图片块 6 所在格", "default": "8", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块7位置", "label": "图片块 7 所在格", "default": "9", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块8位置", "label": "图片块 8 所在格", "default": "10", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块9位置", "label": "图片块 9 所在格", "default": "13", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块10位置", "label": "图片块 10 所在格", "default": "14", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块11位置", "label": "图片块 11 所在格", "default": "15", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块12位置", "label": "图片块 12 所在格", "default": "16", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块13位置", "label": "图片块 13 所在格", "default": "19", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块14位置", "label": "图片块 14 所在格", "default": "20", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块15位置", "label": "图片块 15 所在格", "default": "21", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"},
-                {"name": "6x6图片块16位置", "label": "图片块 16 所在格", "default": "22", "description": "可填写 1~36、rNcN、行，列或行,列。", "pipeline_type": "string", "verify": "^\\s*\\S(?:.*\\S)?\\s*$", "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"}
+                {
+                    "name": "6x6图片块1位置",
+                    "label": "图片块 1 所在格",
+                    "default": "1",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块2位置",
+                    "label": "图片块 2 所在格",
+                    "default": "2",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块3位置",
+                    "label": "图片块 3 所在格",
+                    "default": "3",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块4位置",
+                    "label": "图片块 4 所在格",
+                    "default": "4",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块5位置",
+                    "label": "图片块 5 所在格",
+                    "default": "7",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块6位置",
+                    "label": "图片块 6 所在格",
+                    "default": "8",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块7位置",
+                    "label": "图片块 7 所在格",
+                    "default": "9",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块8位置",
+                    "label": "图片块 8 所在格",
+                    "default": "10",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块9位置",
+                    "label": "图片块 9 所在格",
+                    "default": "13",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块10位置",
+                    "label": "图片块 10 所在格",
+                    "default": "14",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块11位置",
+                    "label": "图片块 11 所在格",
+                    "default": "15",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块12位置",
+                    "label": "图片块 12 所在格",
+                    "default": "16",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块13位置",
+                    "label": "图片块 13 所在格",
+                    "default": "19",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块14位置",
+                    "label": "图片块 14 所在格",
+                    "default": "20",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块15位置",
+                    "label": "图片块 15 所在格",
+                    "default": "21",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                },
+                {
+                    "name": "6x6图片块16位置",
+                    "label": "图片块 16 所在格",
+                    "default": "22",
+                    "description": "可填写 1~36、rNcN、行，列或行,列。",
+                    "pipeline_type": "string",
+                    "verify": "^\\s*\\S(?:.*\\S)?\\s*$",
+                    "pattern_msg": "位置不能为空。推荐填写 r5c5，也可填写格号或 5，5。"
+                }
             ],
             "pipeline_override": {
                 "DailyMagicPuzzleSolve": {
@@ -1591,14 +3055,6 @@
                     "name": "绿野寻仙踪日常",
                     "pipeline_override": {
                         "DailyRoutineEnableGreenWildDaily": {
-                            "enabled": true
-                        }
-                    }
-                },
-                {
-                    "name": "秘境之门",
-                    "pipeline_override": {
-                        "DailyRoutineEnableSecretRealmGate": {
                             "enabled": true
                         }
                     }

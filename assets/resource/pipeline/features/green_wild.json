@@ -31,7 +31,12 @@
     "GreenWildEntry": {
         "recognition": "TemplateMatch",
         "template": "绿野寻仙踪_入口.png",
-        "roi": [120, 258, 90, 90],
+        "roi": [
+            120,
+            258,
+            90,
+            90
+        ],
         "threshold": 0.8,
         "action": "Click",
         "post_delay": 3000,
@@ -73,7 +78,12 @@
     "GreenWildOpenTask": {
         "recognition": "TemplateMatch",
         "template": "绿野寻仙踪_任务.png",
-        "roi": [20, 300, 140, 140],
+        "roi": [
+            20,
+            300,
+            140,
+            140
+        ],
         "threshold": 0.75,
         "action": "Click",
         "post_delay": 1500,
@@ -97,7 +107,12 @@
     "GreenWildOpenTaskByOcr": {
         "recognition": "OCR",
         "expected": "^任务$",
-        "roi": [20, 300, 140, 140],
+        "roi": [
+            20,
+            300,
+            140,
+            140
+        ],
         "action": "Click",
         "post_delay": 1500,
         "timeout": 6000,
@@ -120,7 +135,12 @@
     "GreenWildClaimAll": {
         "recognition": "OCR",
         "expected": "键领取",
-        "roi": [1050, 540, 200, 90],
+        "roi": [
+            1050,
+            540,
+            200,
+            90
+        ],
         "action": "Click",
         "post_delay": 1000,
         "timeout": 6000,
@@ -142,7 +162,12 @@
     "GreenWildReturn": {
         "recognition": "TemplateMatch",
         "template": "绿野寻仙踪_返回.png",
-        "roi": [1140, 20, 130, 100],
+        "roi": [
+            1140,
+            20,
+            130,
+            100
+        ],
         "threshold": 0.75,
         "action": "Click",
         "post_delay": 1200,
@@ -165,16 +190,26 @@
     "GreenWildVerifyTank": {
         "recognition": "TemplateMatch",
         "template": "主界面特征.png",
-        "roi": [0, 200, 150, 400],
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
         "threshold": 0.7,
-        "action": "DoNothing",
+        "action": "Custom",
         "timeout": 5000,
         "focus": {
             "Node.Recognition.Succeeded": "[绿野寻仙踪] 已确认返回主鱼缸。"
         },
         "on_error": [
             "GreenWildAbort"
-        ]
+        ],
+        "next": [
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ],
+        "custom_action": "GreenWildClaimDoneAction"
     },
     "GreenWildAbort": {
         "recognition": "DirectHit",
@@ -218,7 +253,12 @@
     "GreenWildDailyOpenShop": {
         "recognition": "TemplateMatch",
         "template": "买鱼入口.png",
-        "roi": [1171, 497, 44, 37],
+        "roi": [
+            1171,
+            497,
+            44,
+            37
+        ],
         "threshold": 0.8,
         "action": "Click",
         "post_delay": 1200,
@@ -240,7 +280,12 @@
     "GreenWildDailySelectShellFish": {
         "recognition": "OCR",
         "expected": "^贝币鱼儿$",
-        "roi": [411, 119, 116, 34],
+        "roi": [
+            411,
+            119,
+            116,
+            34
+        ],
         "action": "Click",
         "post_delay": 1000,
         "timeout": 4000,
@@ -262,7 +307,12 @@
     "GreenWildDailyClickFishCard": {
         "recognition": "DirectHit",
         "action": "Click",
-        "target": [93, 295, 208, 180],
+        "target": [
+            93,
+            295,
+            208,
+            180
+        ],
         "post_delay": 1000,
         "focus": {
             "Node.Action.Succeeded": "[绿野寻仙踪日常] 已在指定范围内点击鱼卡。"
@@ -279,7 +329,12 @@
     "GreenWildDailyPurchase": {
         "recognition": "OCR",
         "expected": "^购买$",
-        "roi": [856, 521, 81, 38],
+        "roi": [
+            856,
+            521,
+            81,
+            38
+        ],
         "action": "Click",
         "post_delay": 1000,
         "timeout": 4000,
@@ -301,7 +356,12 @@
     "GreenWildDailyContinue": {
         "recognition": "OCR",
         "expected": "^继续购物$",
-        "roi": [360, 543, 181, 39],
+        "roi": [
+            360,
+            543,
+            181,
+            39
+        ],
         "action": "Click",
         "post_delay": 1000,
         "timeout": 4000,
@@ -323,7 +383,12 @@
     "GreenWildDailyReturn1": {
         "recognition": "OCR",
         "expected": "^返回$",
-        "roi": [57, 28, 82, 45],
+        "roi": [
+            57,
+            28,
+            82,
+            45
+        ],
         "action": "Click",
         "post_delay": 1000,
         "timeout": 4000,
@@ -345,7 +410,12 @@
     "GreenWildDailyReturn2": {
         "recognition": "OCR",
         "expected": "^返回$",
-        "roi": [57, 28, 82, 45],
+        "roi": [
+            57,
+            28,
+            82,
+            45
+        ],
         "action": "Click",
         "post_delay": 1200,
         "timeout": 4000,
@@ -367,7 +437,12 @@
     "GreenWildDailyVerifyTank": {
         "recognition": "TemplateMatch",
         "template": "主界面特征.png",
-        "roi": [0, 200, 150, 400],
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
         "threshold": 0.7,
         "action": "Custom",
         "custom_action": "GreenWildDailyDoneAction",

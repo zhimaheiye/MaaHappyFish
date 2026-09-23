@@ -17,6 +17,7 @@ from maa.define import RectType
 try:
     from runtime_state import (
         friend_gem_state,
+        fish_baby_state,
         manatee_state,
         sea_otter_gem_state,
         band_fish_state,
@@ -35,6 +36,7 @@ try:
 except ImportError:
     from agent.runtime_state import (
         friend_gem_state,
+        fish_baby_state,
         manatee_state,
         sea_otter_gem_state,
         band_fish_state,
@@ -52,6 +54,35 @@ except ImportError:
     )
 
 timer_state = starfish_timer_state
+
+try:
+    from fish_baby import PREFERENCES, classify_sky, group_preferences, resolve_preferences
+except ImportError:
+    from agent.fish_baby import PREFERENCES, classify_sky, group_preferences, resolve_preferences
+
+
+@AgentServer.custom_recognition("FishBabyHomePageReco")
+class FishBabyHomePageReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        return (0, 0, 10, 10) if classify_sky(argv.image) == "HOME" else None
+
+
+@AgentServer.custom_recognition("FishBabyMainTankSkyReco")
+class FishBabyMainTankSkyReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        return (0, 0, 10, 10) if classify_sky(argv.image) == "MAIN_TANK" else None
+
+
+@AgentServer.custom_recognition("FishBabyHasTargetsReco")
+class FishBabyHasTargetsReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        preferences = resolve_preferences(
+            fish_baby_state["preferences"],
+            fish_baby_state["uniform_preferences"]["play"],
+            PREFERENCES,
+        )
+        groups = group_preferences(preferences)
+        return (0, 0, 10, 10) if len(groups["SKIP"]) < 8 else None
 
 patrol_timer_state = {
     "task_id": None,
@@ -831,7 +862,7 @@ class CheckSeaOtterLimitReco(CustomRecognition):
             return (0, 0, 10, 10)
 
         cur = sea_otter_gem_state.get("total_harvests", 0)
-        limit = sea_otter_gem_state.get("max_harvests", 200)
+        limit = sea_otter_gem_state.get("max_harvests", 1000)
         if cur >= limit:
             sea_otter_gem_state["completion_reason"] = "SAFETY_MAX_HARVESTS"
             print(f"[海獭摸宝] 达到摸宝上限安全保护 ({cur}/{limit})，任务安全停止 (Safety Limit Triggered)", flush=True)

@@ -18,7 +18,7 @@
 
 ## 禁止事项（负向边界）
 1. **绝对禁止**：实现任何涉及付费（氪金）的自动化操作。
-2. **暂不实现**：鱼苗养殖自动化。
+2. **鱼宝乐园边界**：仅自动执行用户手工配置的免费养成步骤；绝不点击付费“一键孵化”、购买资源或自动代选孵化完成后的鱼宝。
 3. **日志输出限制**：**严禁在 Python print 中使用任何 Emoji 字符**。Windows 控制台默认 GBK 编码不支持 Unicode Emoji，会导致 Python 进程 `UnicodeEncodeError` 崩溃。
 4. **界面同步限制**：**严禁仅修改某一处 `interface.json`**，修改 `assets/interface.json` 后必须手动复制到 `client_avalonia/` 和 `client/`。
 

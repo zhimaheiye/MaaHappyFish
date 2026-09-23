@@ -1,6 +1,14 @@
 # 海獭摸宝自动化 (docs/features/sea-otter-gem.md)
 
-**最后更新**: 2026-09-18
+**最后更新**: 2026-09-23
+
+## 2026-09-23 提前停止排查（2026-09-24 暂关闭）
+
+用户截图显示 00:33:32 海獭任务在好友仍有体力时结束，今日完整运行次数仍为 1/3。前一轮 23:51 的本机日志明确是到达 `LAST_FRIEND_EXHAUSTED` 后从 0/3 增至 1/3；本轮 `log-20260923.log` 为 0 字节，MaaFramework 调试日志只保留到约 00:08，因此无法从终止瞬间日志断言是哪种 Safety。约 24 分 50 秒的运行时长与旧版 200 次总摸宝上限相符，属于最有依据的原因推断。
+
+已把总摸宝安全上限由 200 放宽到 1000，保留连续耗尽 30 位与正常边界门禁；上限仍是防异常循环的兜底，不代表好友体力耗尽。安全停止时 `SeaOtterDoneDisplay` 现在明确显示”本轮未完成”，不会再显示”完整运行完成”。按用户要求未运行测试或操作模拟器；下次自然运行须记录尾日志中的 `SAFETY_MAX_HARVESTS`、`SAFETY_CONSECUTIVE_EXHAUSTED` 或正常终点原因，确认是否真正走到好友边界。
+
+**2026-09-24 更新**：用户后续测试未复现此问题，暂从 ISSUES.md 待修复移除。如再出现类似现象，优先核对尾日志中的 Safety 终止原因（`SAFETY_MAX_HARVESTS` / `SAFETY_CONSECUTIVE_EXHAUSTED`），并对比运行时长与累计摸宝次数。
 
 ## 功能定位
 
@@ -118,7 +126,7 @@ side == "right" → HARVEST_THEN_PREV
 1. **启动时已位于完整推荐好友列表页**：OCR 识别到“全部添加”或“推荐好友”；
 2. **末位好友耗尽后进入推荐玩家页**：`completion_reason == LAST_FRIEND_EXHAUSTED`；
 3. **末位好友右键变灰且体力耗尽**：好友身份门禁通过后，命中灰色右键模板与“刷新体力”；
-4. **Safety Limit 触发**：`total_harvests >= max_harvests (200)` 或 `consecutive_exhausted >= 30`。
+4. **Safety Limit 触发**：`total_harvests >= max_harvests (1000)` 或 `consecutive_exhausted >= 30`；安全停止不得显示为完整运行。
 
 **绝对不允许**仅因为遇到普通 exhausted 好友，或以 `side == "right"` 进入单个系统推荐玩家鱼缸，就触发 `SeaOtterDone`。
 

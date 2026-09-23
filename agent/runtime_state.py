@@ -11,6 +11,20 @@ friend_gem_state = {
     "max_bubble_misses": 12,
 }
 
+fish_baby_state = {
+    "preferences": {number: "SKIP" for number in range(1, 9)},
+    "food_preferences": {number: "FOOD_SUPER" for number in range(1, 9)},
+    "milk_preferences": {number: "MILK_BLUEBERRY" for number in range(1, 9)},
+    "uniform_preferences": {
+        "food": "PER_BABY",
+        "play": "PER_BABY",
+        "milk": "PER_BABY",
+    },
+    "babies": {},
+    "stages": {},
+    "completed": [],
+}
+
 manatee_state = {
     "return_mode": "standalone",
     "last_feed_count": 0,
@@ -19,7 +33,7 @@ manatee_state = {
 sea_otter_gem_state = {
     "current_side": "left",
     "total_harvests": 0,
-    "max_harvests": 200,
+    "max_harvests": 1000,
     "consecutive_exhausted": 0,
     "max_consecutive_exhausted": 30,
     "completion_reason": None,
@@ -84,8 +98,6 @@ secret_realm_gate_state = {
     "last_send_box": None,  # 最近一次点击的"送出"OCR 命中框 [x,y,w,h]，用于分支二相对位置定位垃圾桶
     "wait_task_id": None,  # "无送出"稳定观察窗口的任务隔离
     "send_wait_started": None,  # 观察窗口起点（monotonic 秒），点击送出后重置
-    "no_response_rows": [],  # 当前列表布局内已验证无响应的行 center_y 列表（列表业务变化时清空）
-    "last_row_signature": None,  # 上次 OCR 的行布局签名，用于检测列表变化
 }
 
 wishing_lamp_state = {

@@ -22,6 +22,7 @@ from maa.define import RectType
 try:
     from runtime_state import (
         friend_gem_state,
+        fish_baby_state,
         manatee_state,
         sea_otter_gem_state,
         band_fish_state,
@@ -42,6 +43,7 @@ try:
 except ImportError:
     from agent.runtime_state import (
         friend_gem_state,
+        fish_baby_state,
         manatee_state,
         sea_otter_gem_state,
         band_fish_state,
@@ -113,6 +115,425 @@ def _capture_720p(controller):
     if width != 1280 or height != 720:
         frame = cv2.resize(frame, (1280, 720))
     return frame
+
+
+try:
+    from fish_baby import (
+        PREFERENCES,
+        FOOD_PREFERENCES,
+        MILK_PREFERENCES,
+        PER_BABY,
+        make_preferences,
+        group_preferences,
+        resolve_preferences,
+        locate_numbered_babies,
+        count_completed_hearts,
+        has_green_check,
+    )
+except ImportError:
+    from agent.fish_baby import (
+        PREFERENCES,
+        FOOD_PREFERENCES,
+        MILK_PREFERENCES,
+        PER_BABY,
+        make_preferences,
+        group_preferences,
+        resolve_preferences,
+        locate_numbered_babies,
+        count_completed_hearts,
+        has_green_check,
+    )
+
+
+_fish_baby_number_templates = None
+
+
+def _load_fish_baby_number_templates():
+    global _fish_baby_number_templates
+    if _fish_baby_number_templates is not None:
+        return _fish_baby_number_templates
+    agent_dir = os.path.dirname(os.path.abspath(__file__))
+    candidate_dirs = [
+        os.path.join(agent_dir, "../resource/image/fish_baby"),
+        os.path.join(agent_dir, "../assets/resource/image/fish_baby"),
+        os.path.join(agent_dir, "../../assets/resource/image/fish_baby"),
+        os.path.abspath("assets/resource/image/fish_baby"),
+        os.path.abspath("client_avalonia/resource/image/fish_baby"),
+        os.path.abspath("resource/image/fish_baby"),
+    ]
+    for directory in candidate_dirs:
+        templates = {
+            number: cv2.imread(os.path.join(directory, f"number_{number}.png"))
+            for number in range(1, 9)
+        }
+        if all(template is not None for template in templates.values()):
+            _fish_baby_number_templates = templates
+            return templates
+    return None
+
+
+def _fish_baby_ocr_box(context, frame, expected, roi):
+    result = context.run_recognition(
+        "FishBabyDynamicOcr",
+        frame,
+        pipeline_override={
+            "FishBabyDynamicOcr": {
+                "expected": expected,
+                "roi": list(roi),
+            }
+        },
+    )
+    if not result or not result.hit:
+        return None
+    return tuple(int(value) for value in result.box)
+
+
+def _fish_baby_cost(context, frame):
+    result = context.run_recognition(
+        "FishBabyDynamicOcr",
+        frame,
+        pipeline_override={
+            "FishBabyDynamicOcr": {
+                "expected": "[0-9]+/[0-9]+",
+                "roi": [980, 580, 180, 65],
+            }
+        },
+    )
+    texts = _ocr_texts(result)
+    for text in texts:
+        match = re.fullmatch(r"\s*([0-9]+)\s*/\s*([0-9]+)\s*", text)
+        if match:
+            return tuple(int(value) for value in match.groups())
+    return None
+
+
+def _fish_baby_wait_ocr(context, expected, roi, seconds=8.0):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if _task_cancelled(context):
+            return None
+        frame = _capture_720p(context.tasker.controller)
+        if frame is None:
+            return None
+        if _fish_baby_ocr_box(context, frame, expected, roi) is not None:
+            return frame
+        time.sleep(0.5)
+    return None
+
+
+def _fish_baby_click(context, point):
+    context.tasker.controller.post_click(int(point[0]), int(point[1])).wait()
+
+
+def _fish_baby_normalize_category(context):
+    """只在已确认的孵化工具栏层级中点击金色返回箭头。"""
+    prompt_roi = (920, 590, 250, 100)
+    known_prompts = ("请选择鱼宝宝", "请选择鱼粮", "请选择玩耍方式", "请选择牛奶")
+    for _ in range(3):
+        frame = _capture_720p(context.tasker.controller)
+        if frame is None:
+            return False
+        if _fish_baby_ocr_box(context, frame, "请选择孵化方式", prompt_roi):
+            return True
+        if not any(_fish_baby_ocr_box(context, frame, text, prompt_roi) for text in known_prompts):
+            print("[鱼宝乐园] ERROR: 工具栏层级未知，拒绝点击返回箭头。", flush=True)
+            return False
+        _fish_baby_click(context, (851, 635))
+        time.sleep(0.6)
+    return False
+
+
+FISH_BABY_BATCHES = {
+    "FOOD_BASIC": {
+        "category": (510, 658),
+        "items_prompt": "请选择鱼粮",
+        "item": (510, 658),
+        "button": ".*(鱼粮|鱼食).*",
+        "label": "黄袋鱼粮",
+        "unit_cost": 15,
+    },
+    "FOOD_SUPER": {
+        "category": (510, 658),
+        "items_prompt": "请选择鱼粮",
+        "item": (636, 658),
+        "button": "超级鱼食",
+        "label": "超级鱼食",
+        "unit_cost": 15,
+    },
+    "FOOD_PORCELAIN": {
+        "category": (510, 658),
+        "items_prompt": "请选择鱼粮",
+        "item": (759, 658),
+        "button": ".*(鱼粮|鱼食).*",
+        "label": "青花瓷袋鱼粮",
+        "unit_cost": 15,
+    },
+    "PET": {
+        "category": (636, 658),
+        "items_prompt": "请选择玩耍方式",
+        "item": (510, 658),
+        "button": "摸摸头",
+        "label": "摸头",
+        "unit_cost": 100,
+    },
+    "BASKETBALL": {
+        "category": (636, 658),
+        "items_prompt": "请选择玩耍方式",
+        "item": (636, 658),
+        "button": "玩球",
+        "label": "篮球",
+        "unit_cost": 100,
+    },
+    "SING": {
+        "category": (636, 658),
+        "items_prompt": "请选择玩耍方式",
+        "item": (759, 658),
+        "button": "唱歌",
+        "label": "唱歌",
+        "unit_cost": 100,
+    },
+    "MILK_PINK": {
+        "category": (759, 658),
+        "items_prompt": "请选择牛奶",
+        "item": (510, 658),
+        "button": ".*牛奶.*",
+        "label": "粉色牛奶",
+        "unit_cost": 0,
+    },
+    "MILK_YELLOW": {
+        "category": (759, 658),
+        "items_prompt": "请选择牛奶",
+        "item": (636, 658),
+        "button": ".*牛奶.*",
+        "label": "黄色牛奶",
+        "unit_cost": 0,
+    },
+    "MILK_BLUEBERRY": {
+        "category": (759, 658),
+        "items_prompt": "请选择牛奶",
+        "item": (759, 658),
+        "button": "蓝莓味牛奶",
+        "label": "蓝莓味牛奶",
+        "unit_cost": 0,
+    },
+}
+
+
+def _fish_baby_run_batch(context, kind, targets, located):
+    if not targets:
+        return True
+    config = FISH_BABY_BATCHES[kind]
+    prompt_roi = (920, 590, 250, 100)
+    button_roi = (965, 590, 210, 120)
+    frame = _capture_720p(context.tasker.controller)
+    if frame is None or _fish_baby_ocr_box(context, frame, "请选择孵化方式", prompt_roi) is None:
+        print(f"[鱼宝乐园] ERROR: {kind} 前不在孵化大类层。", flush=True)
+        return False
+
+    _fish_baby_click(context, config["category"])
+    if _fish_baby_wait_ocr(context, config["items_prompt"], prompt_roi, 5.0) is None:
+        print(f"[鱼宝乐园] ERROR: {kind} 大类点击后未进入子项层。", flush=True)
+        return False
+    _fish_baby_click(context, config["item"])
+    if _fish_baby_wait_ocr(context, "请选择鱼宝宝", prompt_roi, 5.0) is None:
+        print(f"[鱼宝乐园] ERROR: {kind} 子项点击后未进入宝宝选择层。", flush=True)
+        return False
+
+    for number in targets:
+        center = located[number]["baby"]
+        _fish_baby_click(context, center)
+        time.sleep(0.4)
+        frame = _capture_720p(context.tasker.controller)
+        if frame is None or not has_green_check(frame, center):
+            print(f"[鱼宝乐园] ERROR: {kind} 未确认 {number} 号宝宝绿勾，未点击执行按钮。", flush=True)
+            return False
+
+    frame = _capture_720p(context.tasker.controller)
+    if frame is None or _fish_baby_ocr_box(context, frame, config["button"], button_roi) is None:
+        print(f"[鱼宝乐园] ERROR: 执行按钮未确认是“{config['button']}”，拒绝点击。", flush=True)
+        return False
+    if config["unit_cost"]:
+        cost = _fish_baby_cost(context, frame)
+        expected_cost = config["unit_cost"] * len(targets)
+        if cost is None or cost[0] != expected_cost or cost[1] < cost[0]:
+            print(
+                f"[鱼宝乐园] ERROR: {kind} 资源计数异常，页面={cost!r}，预期消耗={expected_cost}；拒绝点击执行按钮。",
+                flush=True,
+            )
+            return False
+    _fish_baby_click(context, (1066, 672))
+    if _fish_baby_wait_ocr(context, "请选择孵化方式", prompt_roi, 18.0) is None:
+        print(f"[鱼宝乐园] ERROR: {kind} 执行后未回到孵化大类层。", flush=True)
+        return False
+    print(f"[鱼宝乐园] {config['label']} 已执行：{targets}", flush=True)
+    return True
+
+
+@AgentServer.custom_action("FishBabyInitAction")
+class FishBabyInitAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        fish_baby_state["preferences"] = make_preferences()
+        fish_baby_state["food_preferences"] = make_preferences("FOOD_SUPER")
+        fish_baby_state["milk_preferences"] = make_preferences("MILK_BLUEBERRY")
+        fish_baby_state["uniform_preferences"] = {
+            "food": PER_BABY,
+            "play": PER_BABY,
+            "milk": PER_BABY,
+        }
+        fish_baby_state["babies"] = {}
+        fish_baby_state["stages"] = {}
+        fish_baby_state["completed"] = []
+        return True
+
+
+@AgentServer.custom_action("FishBabySetPreferenceAction")
+class FishBabySetPreferenceAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        number = param.get("number")
+        value = param.get("preference")
+        category = param.get("category", "play")
+        category_config = {
+            "food": ("food_preferences", FOOD_PREFERENCES),
+            "play": ("preferences", PREFERENCES),
+            "milk": ("milk_preferences", MILK_PREFERENCES),
+        }.get(category)
+        if (
+            type(number) is not int
+            or number not in range(1, 9)
+            or category_config is None
+            or value not in category_config[1]
+        ):
+            print(f"[鱼宝乐园] ERROR: 无效的宝宝偏好配置: {param!r}", flush=True)
+            return False
+        fish_baby_state[category_config[0]][number] = value
+        return True
+
+
+@AgentServer.custom_action("FishBabySetUniformPreferenceAction")
+class FishBabySetUniformPreferenceAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        category = param.get("category")
+        value = param.get("preference")
+        allowed = {
+            "food": FOOD_PREFERENCES,
+            "play": PREFERENCES,
+            "milk": MILK_PREFERENCES,
+        }.get(category)
+        if allowed is None or value not in allowed | {PER_BABY}:
+            print(f"[鱼宝乐园] ERROR: 无效的统一偏好配置: {param!r}", flush=True)
+            return False
+        fish_baby_state["uniform_preferences"][category] = value
+        if category == "milk":
+            mode = "逐只设置" if value == PER_BABY else "统一设置"
+            print(
+                f"[鱼宝乐园] 配置模式={mode}；宝宝更换后请核对成长日记与1~8号玩耍方式。",
+                flush=True,
+            )
+        return True
+
+
+@AgentServer.custom_action("FishBabyNormalizeCategoryAction")
+class FishBabyNormalizeCategoryAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        return _fish_baby_normalize_category(context)
+
+
+@AgentServer.custom_action("FishBabyRunRoundAction")
+class FishBabyRunRoundAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        frame = _capture_720p(context.tasker.controller)
+        if frame is None:
+            print("[鱼宝乐园] ERROR: 无法取得孵化模式当前帧，未开始养成。", flush=True)
+            return False
+        if _fish_baby_ocr_box(context, frame, "请选择孵化方式", (920, 590, 250, 100)) is None:
+            print("[鱼宝乐园] ERROR: 当前不是孵化大类层，未开始养成。", flush=True)
+            return False
+        templates = _load_fish_baby_number_templates()
+        if templates is None:
+            print("[鱼宝乐园] ERROR: 缺少 1~8 号红旗数字模板。", flush=True)
+            return False
+        located = locate_numbered_babies(frame, templates)
+        fish_baby_state["babies"] = located
+        uniform = fish_baby_state["uniform_preferences"]
+        play_preferences = resolve_preferences(
+            fish_baby_state["preferences"], uniform["play"], PREFERENCES
+        )
+        food_preferences = resolve_preferences(
+            fish_baby_state["food_preferences"], uniform["food"], FOOD_PREFERENCES
+        )
+        milk_preferences = resolve_preferences(
+            fish_baby_state["milk_preferences"], uniform["milk"], MILK_PREFERENCES
+        )
+        groups = group_preferences(play_preferences)
+        required = set(groups["PET"] + groups["BASKETBALL"] + groups["SING"])
+        missing = sorted(required - located.keys())
+        if missing:
+            print(f"[鱼宝乐园] ERROR: 未能可靠定位 {missing} 号宝宝，本轮未开始养成。", flush=True)
+            return False
+
+        stages = {}
+        for number in sorted(required):
+            item = located[number]
+            if _fish_baby_ocr_box(context, frame, r"[0-9]{1,2}:[0-9]{2}:[0-9]{2}", item["timer_roi"]):
+                stages[number] = "SLEEPING"
+                continue
+            hearts = count_completed_hearts(frame, item["baby"])
+            stage = {0: "FEED", 2: "PLAY", 4: "MILK"}.get(hearts)
+            if stage is None:
+                print(f"[鱼宝乐园] ERROR: {number} 号宝宝红心数={hearts}，阶段不明确。", flush=True)
+                return False
+            stages[number] = stage
+        fish_baby_state["stages"] = stages
+        active = sorted(number for number, stage in stages.items() if stage != "SLEEPING")
+        print(f"[鱼宝乐园] 当帧阶段={stages!r}，本轮可操作={active}", flush=True)
+        if not active:
+            return True
+
+        food_groups = group_preferences(food_preferences, FOOD_PREFERENCES, "FOOD_SUPER")
+        for food_kind in ("FOOD_BASIC", "FOOD_SUPER", "FOOD_PORCELAIN"):
+            feed_targets = [
+                number for number in food_groups[food_kind]
+                if number in active and stages[number] == "FEED"
+            ]
+            if not _fish_baby_run_batch(context, food_kind, feed_targets, located):
+                return False
+        for play_kind in ("PET", "BASKETBALL", "SING"):
+            play_targets = [
+                number for number in groups[play_kind]
+                if number in active and stages[number] in {"FEED", "PLAY"}
+            ]
+            if not _fish_baby_run_batch(context, play_kind, play_targets, located):
+                return False
+        milk_groups = group_preferences(milk_preferences, MILK_PREFERENCES, "MILK_BLUEBERRY")
+        for milk_kind in ("MILK_PINK", "MILK_YELLOW", "MILK_BLUEBERRY"):
+            milk_targets = [number for number in milk_groups[milk_kind] if number in active]
+            if not _fish_baby_run_batch(context, milk_kind, milk_targets, located):
+                return False
+
+        deadline = time.monotonic() + 25.0
+        sleeping = set()
+        while time.monotonic() < deadline:
+            frame = _capture_720p(context.tasker.controller)
+            if frame is None:
+                return False
+            sleeping = {
+                number for number in active
+                if _fish_baby_ocr_box(
+                    context,
+                    frame,
+                    r"[0-9]{1,2}:[0-9]{2}:[0-9]{2}",
+                    located[number]["timer_roi"],
+                )
+            }
+            if sleeping == set(active):
+                fish_baby_state["completed"] = active
+                print(f"[鱼宝乐园] 已确认目标进入睡眠冷却：{active}", flush=True)
+                return True
+            time.sleep(0.8)
+        print(f"[鱼宝乐园] ERROR: 未确认全部目标睡眠；已确认={sorted(sleeping)}，目标={active}", flush=True)
+        return False
 
 
 _golden_dolphin_ocr = None
@@ -1004,6 +1425,7 @@ class InitSeaOtterStateAction(CustomAction):
             sea_otter_gem_state["current_task_id"] = task_id
             sea_otter_gem_state["current_side"] = "left"
             sea_otter_gem_state["total_harvests"] = 0
+            sea_otter_gem_state["max_harvests"] = 1000
             sea_otter_gem_state["consecutive_exhausted"] = 0
             sea_otter_gem_state["completion_reason"] = None
             sea_otter_gem_state["normal_completion"] = False
@@ -1211,15 +1633,18 @@ class SeaOtterFinalizeAction(CustomAction):
             if not sea_otter_gem_state.get("normal_completion"):
                 reason = sea_otter_gem_state.get("completion_reason")
                 if reason and str(reason).startswith("SAFETY_"):
-                    print(
-                        f"[海獭摸宝] 本次因安全保护结束 ({reason})，不计入今日完整运行次数。",
-                        flush=True,
-                    )
+                    message = f"[海獭摸宝] 安全上限停止 ({reason})，本轮未完成；今日次数未增加。"
                 else:
-                    print(
-                        "[海獭摸宝] 本次未以正常业务终点结束（手动停止/异常/中断），不计入今日完整运行次数。",
-                        flush=True,
-                    )
+                    message = "[海獭摸宝] 本次未到正常业务终点（手动停止/异常/中断），今日次数未增加。"
+                print(message, flush=True)
+                try:
+                    context.override_pipeline({
+                        "SeaOtterDoneDisplay": {
+                            "focus": {"Node.Action.Succeeded": message}
+                        }
+                    })
+                except Exception:
+                    pass
                 return True
 
             if sea_otter_gem_state.get("daily_count_recorded"):
@@ -1256,6 +1681,7 @@ def _reset_band_fish_state():
     band_fish_state["status"] = None
     band_fish_state["invited_slots"] = []
     band_fish_state["performance_finished"] = False
+    band_fish_state["pending_since"] = None
     for slot in (1, 2, 4, 5):
         band_fish_state.setdefault("slots", {}).setdefault(slot, {})["state"] = "UNKNOWN"
 
@@ -1978,6 +2404,8 @@ class BandFishInviteLoopAction(CustomAction):
 
             if cancelled("邀请循环结束"):
                 return False
+            if band_fish_state.get("pending_since") is None:
+                band_fish_state["pending_since"] = time.monotonic()
             band_fish_state["status"] = "PENDING"
             print("[乐队鱼邀请] 动态邀请循环全部执行完毕，业务状态沉淀为 PENDING", flush=True)
             return True
@@ -1986,6 +2414,28 @@ class BandFishInviteLoopAction(CustomAction):
             print(f"[乐队鱼邀请] 运行异常: {e}", flush=True)
             return False
 
+
+
+@AgentServer.custom_action("BandFishPendingWaitAction")
+class BandFishPendingWaitAction(CustomAction):
+    """给独立任务的好友接受留出时间；下一次重进仍由页面 OCR 判定就绪。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        started = band_fish_state.get("pending_since")
+        if started is None:
+            print("[乐队鱼] ERROR: PENDING 缺少起始时间，停止回访", flush=True)
+            return False
+        if time.monotonic() - started >= 360:
+            print("[乐队鱼] ERROR: 等待好友接受已超过 6 分钟，仍未识别到开始演出", flush=True)
+            return False
+        print("[乐队鱼] 好友尚未就绪，等待 60 秒后重进检查", flush=True)
+        until = min(started + 360, time.monotonic() + 60)
+        while time.monotonic() < until:
+            if _task_cancelled(context):
+                print("[乐队鱼] 收到停止请求，结束好友等待", flush=True)
+                return False
+            time.sleep(min(0.5, until - time.monotonic()))
+        return not _task_cancelled(context)
 
 
 @AgentServer.custom_action("BandFishScanSlotsAction")
@@ -3301,6 +3751,9 @@ class GoldenDolphinPlayGameAction(CustomAction):
                     flush=True,
                 )
                 return False
+            if tpl_cancel is None or tpl_cancel.size == 0:
+                print("[金海豚游戏] ERROR: 结算取消模板未加载，安全终止任务", flush=True)
+                return False
 
             print(
                 f"[金海豚游戏] 当前策略：全屏识别四类奖励；最高优先级="
@@ -3313,8 +3766,9 @@ class GoldenDolphinPlayGameAction(CustomAction):
             game_done = False
             reward_clicks = {category: 0 for category in GOLDEN_DOLPHIN_REWARD_ORDER}
             loop_count = 0
+            settlement_wait_logged = False
 
-            while time.monotonic() - t_game_start < 75.0:
+            while time.monotonic() - t_game_start < 90.0:
                 if _task_cancelled(context):
                     print("[金海豚游戏] 收到停止请求，立即停止奖励点击", flush=True)
                     return False
@@ -3325,14 +3779,37 @@ class GoldenDolphinPlayGameAction(CustomAction):
                     continue
                 loop_count += 1
 
-                # 结算模板只需降频轮询，避免它阻塞每一帧奖励检测。
-                if elapsed > 20.0 and loop_count % 5 == 0 and tpl_cancel is not None:
-                    res_cancel = cv2.matchTemplate(img, tpl_cancel, cv2.TM_CCOEFF_NORMED)
-                    _, max_cancel, _, loc_cancel = cv2.minMaxLoc(res_cancel)
+                active_elapsed = (
+                    time.monotonic() - active_start if active_start is not None else None
+                )
+
+                # 正常游戏阶段降频识别；接近 45 秒结算边界后改为每帧识别，
+                # 避免弹窗恰好在旧硬超时之后出现而被误判为任务失败。
+                if elapsed > 20.0 and (
+                    loop_count % 5 == 0
+                    or (active_elapsed is not None and active_elapsed >= 40.0)
+                ):
+                    max_cancel, _ = _match_golden_dolphin_template(img, tpl_cancel)
                     if max_cancel >= 0.70:
                         print(f"[金海豚游戏] 检测到游戏结束结算弹窗 (score={max_cancel:.3f})，跳出游戏循环", flush=True)
                         game_done = True
                         break
+
+                if active_elapsed is not None and active_elapsed >= 45.0:
+                    if active_elapsed >= 60.0:
+                        print(
+                            "[金海豚游戏] ERROR: 正式掉落结束后等待结算页超过 15 秒，安全停止",
+                            flush=True,
+                        )
+                        return False
+                    if not settlement_wait_logged:
+                        print(
+                            "[金海豚游戏] 正式掉落已到 45 秒，停止奖励点击并等待结算页",
+                            flush=True,
+                        )
+                        settlement_wait_logged = True
+                    time.sleep(0.08)
+                    continue
 
                 if active_start is None:
                     # v0.5.1~v0.5.5 已实机验证的 XP-only 启动门禁：Heart/Gem 不参与
@@ -3406,13 +3883,6 @@ class GoldenDolphinPlayGameAction(CustomAction):
                                 )
 
                     time.sleep(0.01)
-
-                if active_start is not None and time.monotonic() - active_start >= 45.0:
-                    print(
-                        "[金海豚游戏] ERROR: 正式掉落阶段已超过 45 秒仍未识别到结算页，安全停止",
-                        flush=True,
-                    )
-                    return False
 
             duration = time.monotonic() - t_game_start
             average_fps = loop_count / duration if duration > 0 else 0.0
@@ -3581,6 +4051,24 @@ class GreenWildDailyDoneAction(CustomAction):
             return False
 
 
+@AgentServer.custom_action("GreenWildClaimDoneAction")
+class GreenWildClaimDoneAction(CustomAction):
+    """绿野寻仙踪奖励领取结算：确认回到主鱼缸后推进日常收尾队列。"""
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            print("[绿野寻仙踪] 已确认返回主鱼缸，奖励领取完成", flush=True)
+            if daily_routine_state.get("active"):
+                current_step = daily_routine_state.get("step")
+                task_status = daily_routine_state.get("tasks", {}).get("GreenWildClaim", {}).get("status")
+                if current_step == "GREEN_WILD_CLAIM" and task_status != "DONE":
+                    advance_daily_routine_step("GreenWildClaim", "DONE")
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[绿野寻仙踪] 领取完成状态写入异常: {e}", flush=True)
+            return False
+
+
 HANGUP_DAILY_ALL = {"all_enabled": True}
 
 
@@ -3663,6 +4151,8 @@ class InitDailyRoutineAction(CustomAction):
                 "RomanticHouse": {"status": "IDLE"},
                 "SecretRealmGate": {"status": "IDLE"},
                 "PrincessTask": {"status": "IDLE"},
+                "GreenWildClaim": {"status": "IDLE"},
+                "PrincessClaim": {"status": "IDLE"},
             }
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
@@ -3673,7 +4163,9 @@ class InitDailyRoutineAction(CustomAction):
                 enable_fg = enable_rf = enable_gsc = enable_gwd = True
                 enable_bf = enable_gd = enable_sg = enable_fi = True
                 enable_ggb = enable_go = enable_rh = True
-                enable_srg = enable_pt = True
+                # 秘境之门处于 Hidden 阶段；挂机的“默认全选”也不能绕过 UI 隐藏自动启动。
+                enable_srg = False
+                enable_pt = True
             elif has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
@@ -3742,6 +4234,10 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("ROMANTIC_HOUSE")
             if enable_bf:
                 queue.append("BAND_FISH_PASS2")
+            # 末尾无条件收尾：领取绿野寻仙踪和公主任务奖励
+            # 因为中间的金海豚/摇一摇/钓鱼等活动可能会完成这两个任务的条件
+            queue.append("GREEN_WILD_CLAIM")
+            queue.append("PRINCESS_CLAIM")
 
             print("=" * 60, flush=True)
             print("[日常收尾] DailyRoutineTask 初始化成功，勾选子任务配置:", flush=True)
@@ -3758,6 +4254,8 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 宝石礼盒兑换 : {'[ON]' if enable_ggb else '[OFF]'}", flush=True)
             print(f"  - 宝石订单     : {'[ON]' if enable_go else '[OFF]'}", flush=True)
             print(f"  - 浪漫满屋     : {'[ON]' if enable_rh else '[OFF]'}", flush=True)
+            print(f"  - 绿野奖励领取(末尾收尾) : [无条件]", flush=True)
+            print(f"  - 公主奖励领取(末尾收尾) : [无条件]", flush=True)
             print("=" * 60, flush=True)
 
             if queue:
@@ -3917,11 +4415,20 @@ class SecretRealmGateClickSendAction(CustomAction):
             if not ctrl:
                 print("[秘境之门] 错误: 未获取到 Controller", flush=True)
                 return False
-            box = getattr(argv, "box", None)
-            if not box or len(box) != 4:
+            original_box = getattr(argv, "box", None)
+            if not original_box or len(original_box) != 4:
                 print("[秘境之门] 错误: 送出按钮识别框缺失", flush=True)
                 return False
-            box = [int(v) for v in box]
+            frame = _capture_720p(ctrl)
+            if frame is None or _recognition_box(context, "SecretRealmGateMainPage", frame) is None:
+                print("[秘境之门] ERROR: 点击送出前主页门禁未通过", flush=True)
+                return False
+            original_y = int(original_box[1]) + int(original_box[3]) // 2
+            rows = _secret_realm_send_rows(context, frame)
+            box = next((row for row in rows if abs(row[1] + row[3] // 2 - original_y) <= 40), None)
+            if box is None:
+                print("[秘境之门] ERROR: 当前帧原订单送出文字已消失，拒绝点击旧坐标", flush=True)
+                return False
             cx = box[0] + box[2] // 2
             cy = box[1] + box[3] // 2
             ctrl.post_click(cx, cy).wait()
@@ -3932,6 +4439,155 @@ class SecretRealmGateClickSendAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[秘境之门] 点击送出异常: {e}", flush=True)
+            return False
+
+
+def _secret_realm_send_rows(context: Context, frame):
+    """只接受订单区完整的「送出」文字；绿色钞票按钮永不入选。"""
+    result = context.run_recognition("SecretRealmGateSendOcrAll", frame)
+    rows = []
+    for item in getattr(result, "all_results", None) or []:
+        box = getattr(item, "box", None)
+        if str(getattr(item, "text", "")).strip() != "送出" or not box or len(box) != 4:
+            continue
+        rows.append([int(v) for v in box])
+    if not rows and getattr(result, "hit", False) and str(getattr(result, "text", "")).strip() == "送出":
+        rows.append([int(v) for v in result.box])
+    return sorted(rows, key=lambda box: box[1] + box[3] // 2)
+
+
+def _secret_realm_selected_count(context: Context, frame):
+    """面板计数 N/M 是幼鱼实际选中数/需求数，订单的 A/B 不能代替它。"""
+    result = context.run_recognition("SecretRealmGateSelectedCount", frame)
+    texts = [str(getattr(item, "text", "")) for item in getattr(result, "all_results", None) or []]
+    if not texts:
+        texts = [str(getattr(result, "text", ""))]
+    compact = re.sub(r"\s+", "", "".join(texts))
+    match = re.search(r"(?:已经)?选中(\d+)/(\d+)条鱼", compact)
+    if not match:
+        return None
+    selected, required = map(int, match.groups())
+    return (selected, required) if required > 0 else None
+
+
+def _secret_realm_wait(context: Context, predicate, seconds=9.0):
+    """每 0.5 秒读取新帧；超时或截图失败返回 None。"""
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if _task_cancelled(context):
+            return None
+        frame = _capture_720p(context.tasker.controller)
+        if frame is None:
+            return None
+        value = predicate(frame)
+        if value is not None:
+            return value
+        time.sleep(0.5)
+    return None
+
+
+@AgentServer.custom_action("SecretRealmGateProcessOrderAction")
+class SecretRealmGateProcessOrderAction(CustomAction):
+    """在本次点击后完成一个订单；每次动作都由当帧页面及目标识别门禁保护。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            parse_dict_param(getattr(argv, "custom_action_param", None))
+            ctrl = context.tasker.controller
+            if ctrl is None or not secret_realm_gate_state.get("last_send_box"):
+                print("[秘境之门] ERROR: 缺少本次送出订单位置", flush=True)
+                return False
+
+            def first_result(frame):
+                if _recognition_box(context, "SecretRealmGateSendPopup", frame) is not None:
+                    return "select"
+                if _recognition_box(context, "SecretRealmGateNoFishCheck", frame) is not None:
+                    return "no_fish"
+                return None
+
+            def main_without_popup(frame):
+                if (_recognition_box(context, "SecretRealmGateMainPage", frame) is not None
+                    and _recognition_box(context, "SecretRealmGateSendPopup", frame) is None
+                    and _recognition_box(context, "SecretRealmGateNoFishCheck", frame) is None
+                    and _recognition_box(context, "SecretRealmGateClickClaim", frame) is None
+                    and _recognition_box(context, "SecretRealmGateClickConfirm", frame) is None
+                    and _recognition_box(context, "SecretRealmGateClickConfirmDelete", frame) is None):
+                    return True
+                return None
+
+            outcome = _secret_realm_wait(context, first_result)
+            if outcome is None:
+                print("[秘境之门] ERROR: 点击送出后 9 秒内未确认选择面板或无鱼提示；未跳过该订单", flush=True)
+                return False
+
+            if outcome == "select":
+                def count_result(frame):
+                    if _recognition_box(context, "SecretRealmGateSendPopup", frame) is None:
+                        return None
+                    return _secret_realm_selected_count(context, frame)
+
+                count = _secret_realm_wait(context, count_result)
+                if count is None:
+                    print("[秘境之门] ERROR: 未能可靠读取已经选中 N/M 条鱼", flush=True)
+                    return False
+                selected, required = count
+                print(f"[秘境之门] 鱼苗已选 {selected}/{required}", flush=True)
+                frame = _capture_720p(ctrl)
+                if frame is None or _recognition_box(context, "SecretRealmGateSendPopup", frame) is None:
+                    print("[秘境之门] ERROR: 选择面板状态已变化", flush=True)
+                    return False
+                if selected >= required:
+                    button = _recognition_box(context, "SecretRealmGateClickPopupSend", frame)
+                    if button is None:
+                        print("[秘境之门] ERROR: 选择面板底部未识别到送出，拒绝点击", flush=True)
+                        return False
+                    ctrl.post_click(*_box_center(button)).wait()
+                    claim = _secret_realm_wait(context, lambda f: _recognition_box(context, "SecretRealmGateClickClaim", f))
+                    if claim is None:
+                        print("[秘境之门] ERROR: 送鱼后未确认领取按钮", flush=True)
+                        return False
+                    ctrl.post_click(*_box_center(claim)).wait()
+                    confirm = _secret_realm_wait(context, lambda f: _recognition_box(context, "SecretRealmGateClickConfirm", f))
+                    if confirm is None:
+                        print("[秘境之门] ERROR: 领取后未等到随机奖励确定按钮", flush=True)
+                        return False
+                    ctrl.post_click(*_box_center(confirm)).wait()
+                    if _secret_realm_wait(context, main_without_popup) is None:
+                        print("[秘境之门] ERROR: 点击确定后未返回送鱼任务主页", flush=True)
+                        return False
+                    secret_realm_gate_state["last_send_box"] = None
+                    secret_realm_gate_state["send_wait_started"] = None
+                    print("[秘境之门] 送出、领取、确定完成；重新扫描订单", flush=True)
+                    return True
+                ctrl.post_click(1158, 82).wait()
+                print("[秘境之门] 鱼苗不足，已关闭选择面板，准备删除原订单", flush=True)
+            else:
+                frame = _capture_720p(ctrl)
+                if frame is None or _recognition_box(context, "SecretRealmGateNoFishCheck", frame) is None:
+                    print("[秘境之门] ERROR: 无鱼提示状态已变化", flush=True)
+                    return False
+                ctrl.post_click(300, 300).wait()
+                print("[秘境之门] 无鱼弹窗无 X，已点击窗外空白关闭", flush=True)
+
+            if _secret_realm_wait(context, main_without_popup) is None:
+                print("[秘境之门] ERROR: 删除前未确认弹窗关闭及主页恢复", flush=True)
+                return False
+            if not SecretRealmGateClickDeleteAction().run(context, argv):
+                return False
+            confirm_delete = _secret_realm_wait(context, lambda f: _recognition_box(context, "SecretRealmGateClickConfirmDelete", f))
+            if confirm_delete is None:
+                print("[秘境之门] ERROR: 未识别到删除订单确认对号", flush=True)
+                return False
+            ctrl.post_click(*_box_center(confirm_delete)).wait()
+            if _secret_realm_wait(context, main_without_popup) is None:
+                print("[秘境之门] ERROR: 删除后未确认回到订单列表", flush=True)
+                return False
+            secret_realm_gate_state["send_wait_started"] = None
+            print("[秘境之门] 原订单已删除，重新扫描当前送出", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[秘境之门] ERROR: 订单处理异常: {e}", flush=True)
             return False
 
 
@@ -3968,8 +4624,15 @@ class SecretRealmGateClickDeleteAction(CustomAction):
                 self.TOLERANCE * 2,
                 self.TOLERANCE * 2,
             ]
+            frame = _capture_720p(ctrl)
+            if (frame is None or _recognition_box(context, "SecretRealmGateMainPage", frame) is None
+                or _recognition_box(context, "SecretRealmGateSendPopup", frame) is not None
+                or _recognition_box(context, "SecretRealmGateNoFishCheck", frame) is not None):
+                print("[秘境之门] ERROR: 删除前主页门禁未通过", flush=True)
+                return False
             result = context.run_recognition(
                 "SecretRealmGateDeleteIcon",
+                frame,
                 pipeline_override={
                     "recognition": "TemplateMatch",
                     "template": "秘境之门_删除.png",
@@ -3988,6 +4651,9 @@ class SecretRealmGateClickDeleteAction(CustomAction):
             del_box = [int(v) for v in result.box]
             dx = del_box[0] + del_box[2] // 2
             dy = del_box[1] + del_box[3] // 2
+            if abs(dx - exp_cx) > self.TOLERANCE or abs(dy - exp_cy) > self.TOLERANCE:
+                print("[秘境之门] ERROR: 删除模板命中其它订单，拒绝跨槽点击", flush=True)
+                return False
             ctrl.post_click(dx, dy).wait()
             secret_realm_gate_state["last_send_box"] = None
             print(
@@ -4004,12 +4670,7 @@ class SecretRealmGateClickDeleteAction(CustomAction):
 
 @AgentServer.custom_recognition("SecretRealmGateFindSendCardReco")
 class SecretRealmGateFindSendCardReco(CustomRecognition):
-    """显式逐卡选择：OCR 任务列表全部“送出”，按 center_y 从上往下，
-    跳过当前布局内已验证无响应的行，返回第一张可处理卡的 OCR 命中框。
-    纯读取：只读 runtime_state，不修改任何状态（skip 清空由 Action 负责）。
-    """
-
-    ROW_TOLERANCE = 40
+    """只返回当帧从上到下第一张明确写着「送出」的订单。"""
 
     def analyze(
         self,
@@ -4019,41 +4680,8 @@ class SecretRealmGateFindSendCardReco(CustomRecognition):
         frame = argv.image
         if frame is None:
             return None
-        result = context.run_recognition(
-            "SecretRealmGateSendOcrAll",
-            frame,
-            pipeline_override={"SecretRealmGateSendOcrAll": {
-                "recognition": "OCR",
-                "expected": ".*送\\s*出.*",
-                "roi": [930, 149, 149, 522],
-            }},
-        )
-        rows = []
-        for item in getattr(result, "all_results", None) or []:
-            box = getattr(item, "box", None)
-            text = str(getattr(item, "text", ""))
-            if not box or len(box) != 4:
-                continue
-            if not re.search(".*送\\s*出.*", text):
-                continue
-            center_y = int(box[1]) + int(box[3]) // 2
-            rows.append((center_y, [int(v) for v in box]))
-        if not rows:
-            return None
-        rows.sort(key=lambda r: r[0])
-
-        # 列表布局签名：行集合变化 = 列表发生业务变化（完成/删除）→ skip 失效
-        signature = tuple(r[0] for r in rows)
-        if secret_realm_gate_state.get("last_row_signature") != signature:
-            secret_realm_gate_state["no_response_rows"] = []
-            secret_realm_gate_state["last_row_signature"] = signature
-
-        skipped = secret_realm_gate_state.get("no_response_rows", [])
-        for center_y, box in rows:
-            if any(abs(center_y - sy) <= self.ROW_TOLERANCE for sy in skipped):
-                continue
-            return box
-        return None
+        rows = _secret_realm_send_rows(context, frame)
+        return rows[0] if rows else None
 
 
 @AgentServer.custom_recognition("CheckSecretRealmGateSendWaitReco")
@@ -4087,85 +4715,8 @@ class CheckSecretRealmGateSendWaitReco(CustomRecognition):
         if now - started < self.WAIT_WINDOW_SECONDS:
             return (0, 0, 10, 10)
 
-        print("[秘境之门] 观察窗口内稳定无送出，判定任务列表为空", flush=True)
+        print("[秘境之门] 观察窗口内无送出文字，交由主页门禁确认可退出", flush=True)
         return None
-
-
-@AgentServer.custom_action("SecretRealmGateMarkNoResponseAction")
-class SecretRealmGateMarkNoResponseAction(CustomAction):
-    """无响应确认：主页仍在 + 刚点击行的“送出”仍在 → 该行标记 no-response。
-
-    主页 miss = 未知页面（弹窗盖住/未知状态）→ return False → 节点失败 →
-    on_error 列表交给 SendPopup/NoFishCheck/Abort 处理（不吞未知页）。
-    """
-
-    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
-        try:
-            frame = _capture_720p(context.tasker.controller)
-            if frame is None:
-                print("[秘境之门] ERROR: 标记无响应时截图失败", flush=True)
-                return False
-            main_box = _recognition_box(context, "SecretRealmGateMainPage", frame)
-            if main_box is None:
-                print("[秘境之门] 主页门禁未命中，无法确认无响应状态", flush=True)
-                return False
-
-            last_box = secret_realm_gate_state.get("last_send_box")
-            if not last_box or len(last_box) != 4:
-                print("[秘境之门] ERROR: 缺少送出按钮位置记录", flush=True)
-                return False
-            row_y = last_box[1] + last_box[3] // 2
-
-            result = context.run_recognition(
-                "SecretRealmGateSendOcrAll",
-                frame,
-                pipeline_override={"SecretRealmGateSendOcrAll": {
-                    "recognition": "OCR",
-                    "expected": ".*送\\s*出.*",
-                    "roi": [930, 149, 149, 522],
-                }},
-            )
-            same_row_found = False
-            for item in getattr(result, "all_results", None) or []:
-                b = getattr(item, "box", None)
-                if not b or len(b) != 4:
-                    continue
-                cy = int(b[1]) + int(b[3]) // 2
-                if abs(cy - row_y) <= 40:
-                    same_row_found = True
-                    break
-
-            if same_row_found:
-                rows = secret_realm_gate_state.setdefault("no_response_rows", [])
-                if not any(abs(r - row_y) <= 40 for r in rows):
-                    rows.append(row_y)
-                print(
-                    f"[秘境之门] 第 {row_y} 行送出确认无响应，已标记跳过"
-                    f"（当前跳过行: {sorted(secret_realm_gate_state['no_response_rows'])}）",
-                    flush=True,
-                )
-            return True
-        except Exception as e:
-            traceback.print_exc()
-            print(f"[秘境之门] 标记无响应异常: {e}", flush=True)
-            return False
-
-
-@AgentServer.custom_action("SecretRealmGateListChangedAction")
-class SecretRealmGateListChangedAction(CustomAction):
-    """列表业务变化（分支一完成 / 分支二删除）→ 清空 no-response 跳过行，
-    使逐卡扫描从顶部重新开始（卡片位置固定的前提是列表布局已变化）。"""
-
-    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
-        try:
-            if secret_realm_gate_state.get("no_response_rows"):
-                print("[秘境之门] 列表已发生业务变化，清空无响应跳过行记录", flush=True)
-            secret_realm_gate_state["no_response_rows"] = []
-            return True
-        except Exception as e:
-            traceback.print_exc()
-            print(f"[秘境之门] 清空跳过行异常: {e}", flush=True)
-            return False
 
 
 @AgentServer.custom_action("SecretRealmGateDoneAction")
@@ -4185,12 +4736,18 @@ class SecretRealmGateDoneAction(CustomAction):
 
 @AgentServer.custom_action("PrincessTaskDoneAction")
 class PrincessTaskDoneAction(CustomAction):
-    """公主任务结算：确认回到主鱼缸后标记完成；日常收尾中则推进队列。"""
+    """公主任务结算：确认回到主鱼缸后标记完成；日常收尾中则推进队列。
+    支持两种 step：PRINCESS_TASK（中间首次领取）和 PRINCESS_CLAIM（末尾二次领取）。
+    """
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             if daily_routine_state.get("active"):
-                advance_daily_routine_step("PrincessTask", "DONE")
+                current_step = daily_routine_state.get("step")
+                if current_step == "PRINCESS_CLAIM":
+                    advance_daily_routine_step("PrincessClaim", "DONE")
+                else:
+                    advance_daily_routine_step("PrincessTask", "DONE")
             return True
         except Exception as e:
             traceback.print_exc()

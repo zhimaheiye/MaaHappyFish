@@ -73,7 +73,9 @@ def test_interface_contracts():
     assert "MaaHappyFishDefault" in presets
     preset_names = {task["name"] for task in presets["MaaHappyFishDefault"]["task"]}
     assert "手机看广告" not in preset_names
-    assert task_names - {"手机看广告"} == preset_names
+    assert "深海寻鱼（免费次数）" not in preset_names
+    assert "鱼宝乐园" not in preset_names
+    assert task_names - {"手机看广告", "深海寻鱼（免费次数）", "鱼宝乐园"} == preset_names
     mobile_task = next(task for task in data["task"] if task["name"] == "手机看广告")
     for keyword in ("ADB", "2400x1080", "1600x720", "不适用于 MuMu", "添加任务"):
         assert keyword in mobile_task["description"]
@@ -81,7 +83,7 @@ def test_interface_contracts():
         (REPO_ROOT / "assets" / "default_instance.json").read_text(encoding="utf-8")
     )
     assert default_instance == {"InstancePresetKey": "MaaHappyFishDefault"}
-    print("[PASS] Fresh-install preset hides MobileAd while Add Task keeps it available.")
+    print("[PASS] Fresh-install preset hides MobileAd, SeaDive and FishBaby while Add Task keeps them available.")
 
 def test_install_workflow_safety():
     workflow_path = REPO_ROOT / ".github" / "workflows" / "install.yml"

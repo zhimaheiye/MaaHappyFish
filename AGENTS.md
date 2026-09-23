@@ -33,6 +33,8 @@
 | 维护"钓鱼达人"导航与活动 | `docs/features/fishing.md` |
 | 维护"海獭摸宝"特定宝石寻宝与采集 | `docs/features/sea-otter-gem.md` |
 | 维护"乐队鱼演出"邀请与演出活动 | `docs/features/band-fish.md` |
+| 维护"深海寻鱼（免费次数）"独立任务 | `docs/features/sea-dive.md` |
+| 维护"鱼宝乐园"手工偏好孵化任务 | `docs/features/fish-baby-hatch.md` |
 | 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
 | 维护"金海豚小游戏"活动自动化 | `docs/features/golden-dolphin.md` |
 | 维护"每日魔幻拼图"离线标格、最短路径与后续 Swipe 执行 | `docs/features/daily-magic-puzzle.md` |

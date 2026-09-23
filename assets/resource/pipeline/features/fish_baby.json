@@ -1,0 +1,799 @@
+{
+    "FishBabyTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FishBabyInit"
+        ]
+    },
+    "FishBabyInit": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabyInitAction",
+        "next": [
+            "FishBabyFoodPreference1"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyFoodPreference1": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 1,
+            "category": "food",
+            "preference": "FOOD_SUPER"
+        },
+        "next": [
+            "FishBabyPreference1"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyPreference1": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 1,
+            "category": "play",
+            "preference": "SKIP"
+        },
+        "next": [
+            "FishBabyMilkPreference1"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMilkPreference1": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 1,
+            "category": "milk",
+            "preference": "MILK_BLUEBERRY"
+        },
+        "next": [
+            "FishBabyFoodPreference2"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyFoodPreference2": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 2,
+            "category": "food",
+            "preference": "FOOD_SUPER"
+        },
+        "next": [
+            "FishBabyPreference2"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyPreference2": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 2,
+            "category": "play",
+            "preference": "SKIP"
+        },
+        "next": [
+            "FishBabyMilkPreference2"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMilkPreference2": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 2,
+            "category": "milk",
+            "preference": "MILK_BLUEBERRY"
+        },
+        "next": [
+            "FishBabyFoodPreference3"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyFoodPreference3": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 3,
+            "category": "food",
+            "preference": "FOOD_SUPER"
+        },
+        "next": [
+            "FishBabyPreference3"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyPreference3": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 3,
+            "category": "play",
+            "preference": "SKIP"
+        },
+        "next": [
+            "FishBabyMilkPreference3"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMilkPreference3": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 3,
+            "category": "milk",
+            "preference": "MILK_BLUEBERRY"
+        },
+        "next": [
+            "FishBabyFoodPreference4"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyFoodPreference4": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 4,
+            "category": "food",
+            "preference": "FOOD_SUPER"
+        },
+        "next": [
+            "FishBabyPreference4"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyPreference4": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 4,
+            "category": "play",
+            "preference": "SKIP"
+        },
+        "next": [
+            "FishBabyMilkPreference4"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMilkPreference4": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 4,
+            "category": "milk",
+            "preference": "MILK_BLUEBERRY"
+        },
+        "next": [
+            "FishBabyFoodPreference5"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyFoodPreference5": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 5,
+            "category": "food",
+            "preference": "FOOD_SUPER"
+        },
+        "next": [
+            "FishBabyPreference5"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyPreference5": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 5,
+            "category": "play",
+            "preference": "SKIP"
+        },
+        "next": [
+            "FishBabyMilkPreference5"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMilkPreference5": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 5,
+            "category": "milk",
+            "preference": "MILK_BLUEBERRY"
+        },
+        "next": [
+            "FishBabyFoodPreference6"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyFoodPreference6": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 6,
+            "category": "food",
+            "preference": "FOOD_SUPER"
+        },
+        "next": [
+            "FishBabyPreference6"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyPreference6": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 6,
+            "category": "play",
+            "preference": "SKIP"
+        },
+        "next": [
+            "FishBabyMilkPreference6"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMilkPreference6": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 6,
+            "category": "milk",
+            "preference": "MILK_BLUEBERRY"
+        },
+        "next": [
+            "FishBabyFoodPreference7"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyFoodPreference7": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 7,
+            "category": "food",
+            "preference": "FOOD_SUPER"
+        },
+        "next": [
+            "FishBabyPreference7"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyPreference7": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 7,
+            "category": "play",
+            "preference": "SKIP"
+        },
+        "next": [
+            "FishBabyMilkPreference7"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMilkPreference7": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 7,
+            "category": "milk",
+            "preference": "MILK_BLUEBERRY"
+        },
+        "next": [
+            "FishBabyFoodPreference8"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyFoodPreference8": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 8,
+            "category": "food",
+            "preference": "FOOD_SUPER"
+        },
+        "next": [
+            "FishBabyPreference8"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyPreference8": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 8,
+            "category": "play",
+            "preference": "SKIP"
+        },
+        "next": [
+            "FishBabyMilkPreference8"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMilkPreference8": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetPreferenceAction",
+        "custom_action_param": {
+            "number": 8,
+            "category": "milk",
+            "preference": "MILK_BLUEBERRY"
+        },
+        "next": [
+            "FishBabyUniformFood"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyUniformFood": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetUniformPreferenceAction",
+        "custom_action_param": {
+            "category": "food",
+            "preference": "PER_BABY"
+        },
+        "next": [
+            "FishBabyUniformPlay"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyUniformPlay": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetUniformPreferenceAction",
+        "custom_action_param": {
+            "category": "play",
+            "preference": "PER_BABY"
+        },
+        "next": [
+            "FishBabyUniformMilk"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyUniformMilk": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabySetUniformPreferenceAction",
+        "custom_action_param": {
+            "category": "milk",
+            "preference": "PER_BABY"
+        },
+        "next": [
+            "FishBabyHasTargets",
+            "FishBabySkipAll"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyHasTargets": {
+        "recognition": "Custom",
+        "custom_recognition": "FishBabyHasTargetsReco",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[鱼宝乐园] 已读取逐只/统一配置，按鱼食、玩耍、牛奶偏好分组执行。"
+        },
+        "next": [
+            "FishBabyStartRouter"
+        ]
+    },
+    "FishBabySkipAll": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[鱼宝乐园] 1~8号均为跳过，本轮未操作任何宝宝。"
+        }
+    },
+    "FishBabyStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FishBabyIncubationCategory",
+            "FishBabyIncubationSelected",
+            "FishBabyIncubationFoodItems",
+            "FishBabyIncubationPlayItems",
+            "FishBabyIncubationMilkItems",
+            "FishBabyAtHome",
+            "FishBabyAtMainTank",
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyIncubationCategory": {
+        "recognition": "OCR",
+        "expected": "请选择孵化方式",
+        "roi": [
+            930,
+            540,
+            330,
+            170
+        ],
+        "action": "DoNothing",
+        "next": [
+            "FishBabyRunRound"
+        ]
+    },
+    "FishBabyIncubationSelected": {
+        "recognition": "OCR",
+        "expected": "请选择鱼宝宝",
+        "roi": [
+            930,
+            540,
+            330,
+            170
+        ],
+        "action": "Custom",
+        "custom_action": "FishBabyNormalizeCategoryAction",
+        "next": [
+            "FishBabyRunRound"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyIncubationFoodItems": {
+        "recognition": "OCR",
+        "expected": "请选择鱼粮",
+        "roi": [
+            930,
+            540,
+            330,
+            170
+        ],
+        "action": "Custom",
+        "custom_action": "FishBabyNormalizeCategoryAction",
+        "next": [
+            "FishBabyRunRound"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyIncubationPlayItems": {
+        "recognition": "OCR",
+        "expected": "请选择玩耍方式",
+        "roi": [
+            930,
+            540,
+            330,
+            170
+        ],
+        "action": "Custom",
+        "custom_action": "FishBabyNormalizeCategoryAction",
+        "next": [
+            "FishBabyRunRound"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyIncubationMilkItems": {
+        "recognition": "OCR",
+        "expected": "请选择牛奶",
+        "roi": [
+            930,
+            540,
+            330,
+            170
+        ],
+        "action": "Custom",
+        "custom_action": "FishBabyNormalizeCategoryAction",
+        "next": [
+            "FishBabyRunRound"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyDynamicOcr": {
+        "recognition": "OCR",
+        "expected": ".*",
+        "roi": [
+            0,
+            0,
+            1280,
+            720
+        ],
+        "action": "DoNothing"
+    },
+    "FishBabyRunRound": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabyRunRoundAction",
+        "next": [
+            "FishBabyExitIncubation"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyAtHome": {
+        "recognition": "Custom",
+        "custom_recognition": "FishBabyHomePageReco",
+        "action": "DoNothing",
+        "next": [
+            "FishBabyHomeStart"
+        ]
+    },
+    "FishBabyHomeStart": {
+        "recognition": "OCR",
+        "expected": "开始孵化",
+        "roi": [
+            510,
+            600,
+            260,
+            110
+        ],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3000,
+        "next": [
+            "FishBabyVerifyIncubation"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyVerifyIncubation": {
+        "recognition": "OCR",
+        "expected": "请选择孵化方式",
+        "roi": [
+            930,
+            540,
+            330,
+            170
+        ],
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "FishBabyRunRound"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyAtMainTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "next": [
+            "FishBabyEntryCoral"
+        ]
+    },
+    "FishBabyEntryCoral": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
+        "threshold": 0.7,
+        "action": "Click",
+        "target": [
+            899,
+            587,
+            12,
+            12
+        ],
+        "post_delay": 800,
+        "timeout": 3000,
+        "next": [
+            "FishBabyEntryBubble"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyEntryBubble": {
+        "recognition": "DirectHit",
+        "action": "Click",
+        "target": [
+            781,
+            471,
+            12,
+            12
+        ],
+        "post_delay": 1200,
+        "next": [
+            "FishBabyEntryRouter"
+        ]
+    },
+    "FishBabyEntryRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "FishBabyAtHome",
+            "FishBabyMainTankSky",
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyMainTankSky": {
+        "recognition": "Custom",
+        "custom_recognition": "FishBabyMainTankSkyReco",
+        "action": "DoNothing",
+        "next": [
+            "FishBabyRetryTank"
+        ]
+    },
+    "FishBabyRetryTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "post_delay": 650,
+        "next": [
+            "FishBabyEntryCoral"
+        ]
+    },
+    "FishBabyExitIncubation": {
+        "recognition": "OCR",
+        "expected": "请选择孵化方式",
+        "roi": [
+            930,
+            540,
+            330,
+            170
+        ],
+        "action": "Click",
+        "target": [
+            1201,
+            57,
+            24,
+            24
+        ],
+        "post_delay": 1200,
+        "timeout": 4000,
+        "next": [
+            "FishBabyExitHome"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyExitHome": {
+        "recognition": "OCR",
+        "expected": "开始孵化",
+        "roi": [
+            510,
+            580,
+            280,
+            120
+        ],
+        "action": "Click",
+        "target": [
+            1201,
+            57,
+            24,
+            24
+        ],
+        "post_delay": 1500,
+        "timeout": 5000,
+        "next": [
+            "FishBabyVerifyTankAfterRound"
+        ],
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyVerifyTankAfterRound": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 8000,
+        "focus": {
+            "Node.Action.Succeeded": "[鱼宝乐园] 本轮已完成，并确认返回主鱼缸。"
+        },
+        "on_error": [
+            "FishBabyAbort"
+        ]
+    },
+    "FishBabyAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[鱼宝乐园] ERROR: 当前页面或门禁未知，已安全停止，未继续点击。"
+        }
+    }
+}

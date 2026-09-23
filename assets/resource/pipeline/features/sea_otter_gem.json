@@ -374,7 +374,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[海獭摸宝] 本次完整运行完成。"
+            "Node.Action.Succeeded": "[海獭摸宝] 任务已结束；是否完整运行以日志中的终点原因为准。"
         }
     }
 }

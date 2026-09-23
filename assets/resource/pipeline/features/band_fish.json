@@ -69,14 +69,15 @@
         ]
     },
     "BandFishStartAtTank": {
-        "recognition": "OCR",
-        "expected": "游乐园",
+        "recognition": "TemplateMatch",
+        "template": "游乐园入口.png",
         "roi": [
-            10,
-            500,
-            100,
-            70
+            15,
+            450,
+            90,
+            90
         ],
+        "threshold": 0.7,
         "action": "Click",
         "post_delay": 1500,
         "next": [
@@ -516,8 +517,8 @@
     "BandFishAfterExitStandalonePending": {
         "recognition": "Custom",
         "custom_recognition": "CheckBandFishStandalonePendingReco",
-        "action": "DoNothing",
-        "post_delay": 1500,
+        "action": "Custom",
+        "custom_action": "BandFishPendingWaitAction",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",

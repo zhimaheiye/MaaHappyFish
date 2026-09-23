@@ -1,0 +1,452 @@
+{
+    "SeaDiveTask": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveStartRouter"
+        ]
+    },
+    "SeaDiveStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveStartAtHome",
+            "SeaDiveStartAtPicker",
+            "SeaDiveStartAtTank3",
+            "SeaDiveStartAtTank1",
+            "SeaDiveStartAtTank2",
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveStartAtHome": {
+        "recognition": "OCR",
+        "expected": "深海寻鱼",
+        "roi": [
+            465,
+            35,
+            350,
+            115
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveFreeStateRouter"
+        ]
+    },
+    "SeaDiveStartAtPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_入口.png",
+        "roi": [
+            275,
+            10,
+            75,
+            80
+        ],
+        "threshold": 0.78,
+        "action": "Click",
+        "post_delay": 900,
+        "timeout": 4000,
+        "next": [
+            "SeaDiveVerifyTank3"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveStartAtTank3": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "threshold": 0.85,
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveSubmarineEntry"
+        ]
+    },
+    "SeaDiveStartAtTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 400,
+        "timeout": 4000,
+        "next": [
+            "SeaDiveStartAtPicker"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveStartAtTank2": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 400,
+        "timeout": 4000,
+        "next": [
+            "SeaDiveStartAtPicker"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveVerifyTank3": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "threshold": 0.85,
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveSubmarineEntry"
+        ]
+    },
+    "SeaDiveSubmarineEntry": {
+        "recognition": "TemplateMatch",
+        "template": "sea_dive/submarine_entry.png",
+        "roi": [
+            350,
+            480,
+            170,
+            150
+        ],
+        "threshold": 0.88,
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 6000,
+        "next": [
+            "SeaDiveVerifyHome"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveVerifyHome": {
+        "recognition": "OCR",
+        "expected": "深海寻鱼",
+        "roi": [
+            465,
+            35,
+            350,
+            115
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveFreeStateRouter"
+        ]
+    },
+    "SeaDiveFreeStateRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "SeaDivePaidState",
+            "SeaDiveFreeAvailable",
+            "SeaDiveUnknownState"
+        ]
+    },
+    "SeaDivePaidState": {
+        "recognition": "OCR",
+        "expected": "12",
+        "roi": [
+            520,
+            545,
+            260,
+            75
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveHomeClose"
+        ]
+    },
+    "SeaDiveFreeAvailable": {
+        "recognition": "TemplateMatch",
+        "template": "sea_dive/free_badge.png",
+        "roi": [
+            730,
+            540,
+            70,
+            60
+        ],
+        "threshold": 0.75,
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveClickFreeButton"
+        ]
+    },
+    "SeaDiveClickFreeButton": {
+        "recognition": "OCR",
+        "expected": "深海寻鱼",
+        "roi": [
+            530,
+            545,
+            240,
+            70
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 5000,
+        "next": [
+            "SeaDiveDepthSelectPage"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveDepthSelectPage": {
+        "recognition": "OCR",
+        "expected": "起始深度选择",
+        "roi": [
+            560,
+            185,
+            160,
+            45
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveChoose100m"
+        ]
+    },
+    "SeaDiveChoose100m": {
+        "recognition": "OCR",
+        "expected": "100米",
+        "roi": [
+            570,
+            290,
+            140,
+            55
+        ],
+        "action": "Click",
+        "post_delay": 3000,
+        "timeout": 8000,
+        "next": [
+            "SeaDiveInGame"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveInGame": {
+        "recognition": "OCR",
+        "expected": "返航",
+        "roi": [
+            1080,
+            45,
+            120,
+            55
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveClickInGameReturn"
+        ]
+    },
+    "SeaDiveClickInGameReturn": {
+        "recognition": "OCR",
+        "expected": "返航",
+        "roi": [
+            1080,
+            45,
+            120,
+            55
+        ],
+        "action": "Click",
+        "post_delay": 2000,
+        "timeout": 5000,
+        "next": [
+            "SeaDiveResultPage"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveResultPage": {
+        "recognition": "OCR",
+        "expected": "本次获得奖励",
+        "roi": [
+            550,
+            180,
+            200,
+            45
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveClickResultReturn"
+        ]
+    },
+    "SeaDiveClickResultReturn": {
+        "recognition": "OCR",
+        "expected": "返航",
+        "roi": [
+            380,
+            455,
+            180,
+            55
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 5000,
+        "next": [
+            "SeaDiveRetentionWait"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveRetentionWait": {
+        "recognition": "OCR",
+        "expected": "确定",
+        "roi": [
+            700,
+            425,
+            160,
+            55
+        ],
+        "action": "DoNothing",
+        "timeout": 8000,
+        "next": [
+            "SeaDiveConfirmReturn"
+        ]
+    },
+    "SeaDiveConfirmReturn": {
+        "recognition": "OCR",
+        "expected": "确定",
+        "roi": [
+            700,
+            425,
+            160,
+            55
+        ],
+        "action": "Click",
+        "post_delay": 3000,
+        "timeout": 5000,
+        "next": [
+            "SeaDiveVerifyHomeAfterCycle"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveVerifyHomeAfterCycle": {
+        "recognition": "OCR",
+        "expected": "深海寻鱼",
+        "roi": [
+            465,
+            35,
+            350,
+            115
+        ],
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveFreeStateRouter"
+        ]
+    },
+    "SeaDiveHomeClose": {
+        "recognition": "TemplateMatch",
+        "template": "sea_dive/home_close.png",
+        "roi": [
+            1160,
+            0,
+            120,
+            110
+        ],
+        "threshold": 0.9,
+        "action": "Click",
+        "post_delay": 700,
+        "timeout": 4000,
+        "next": [
+            "SeaDiveVerifyExitTank3"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveVerifyExitTank3": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 400,
+        "timeout": 4000,
+        "next": [
+            "SeaDiveSelectTank1"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveSelectTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_入口.png",
+        "roi": [
+            135,
+            10,
+            75,
+            80
+        ],
+        "threshold": 0.78,
+        "action": "Click",
+        "post_delay": 900,
+        "timeout": 4000,
+        "next": [
+            "SeaDiveVerifyMainTank1"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveVerifyMainTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "threshold": 0.85,
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[深海寻鱼] 已确认免费次数耗尽并返回主鱼缸；未点击付费按钮。"
+        }
+    },
+    "SeaDiveUnknownState": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[深海寻鱼] 未知状态，无法判断免费/付费，已安全停止。"
+        }
+    },
+    "SeaDiveAbortUnknownPage": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[深海寻鱼] 页面门禁未通过，已安全停止。"
+        }
+    }
+}
