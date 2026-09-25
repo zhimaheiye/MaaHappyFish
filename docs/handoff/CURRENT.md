@@ -1,6 +1,6 @@
 # 当前交接档案 (CURRENT.md)
 
-**更新时间**: 2026-09-24
+**更新时间**: 2026-09-25
 
 **本轮验证边界**：2026-09-24 已完成全仓独立任务步骤可恢复导航审查，并按现有截图、模板、OCR 与 fixture 补齐深海寻鱼、开贝壳、单次海星、公主任务、金海豚、乐队鱼和摇一摇结算恢复。鱼宝乐园三列配置也纳入代码级验证。已运行受影响专项、Pipeline 正则/资源加载、Agent 引用、更新契约与 Python 编译；全程未操作 MFA、模拟器、ADB 或 maa-mcp。摇一摇局内恢复因缺少可靠证据仍为 Live Blocked，乐队鱼好友邀请弹窗与通用选择喂食弹窗因缺少运行时身份上下文故意不支持。
 
@@ -22,8 +22,8 @@
 
 | 项目 | 信息 |
 | :--- | :--- |
-| **Current version** | `0.6.3` |
-| **Latest release** | [`v0.6.3`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.6.3) |
+| **Current version** | `0.7.1` |
+| **Latest release** | [`v0.7.1`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.1) |
 | **CI hard gate** | `verify (win, x86_64)` PASS（GitHub Windows Runner embedded Python 冒烟 + 更新契约门禁） |
 | **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新（发版流程标准详见 [release-workflow.md](../release-workflow.md)） |
 
