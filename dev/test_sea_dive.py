@@ -35,6 +35,22 @@ def test_free_state_router_three_way_split():
     ], "顺序必须是先试付费态，再试免费态，最后兜底停止"
 
 
+def test_start_router_recovers_deepest_state_first():
+    p = load_pipeline()
+    assert p["SeaDiveStartRouter"]["next"] == [
+        "SeaDiveRetentionWait",
+        "SeaDiveResultPage",
+        "SeaDiveInGame",
+        "SeaDiveDepthSelectPage",
+        "SeaDiveStartAtHome",
+        "SeaDiveStartAtPicker",
+        "SeaDiveStartAtTank3",
+        "SeaDiveStartAtTank1",
+        "SeaDiveStartAtTank2",
+        "SeaDiveAbortUnknownPage",
+    ]
+
+
 def test_paid_state_x12_detection():
     """Case: PAID 态通过 x12 OCR 识别，识别后走退出链，不点击下潜。"""
     p = load_pipeline()
@@ -170,6 +186,7 @@ def test_evidence_free_count_reduction():
 def main():
     tests = [
         test_free_state_router_three_way_split,
+        test_start_router_recovers_deepest_state_first,
         test_paid_state_x12_detection,
         test_free_available_positive_gate,
         test_unknown_state_aborts,

@@ -22,10 +22,51 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "BandFishStartAtSettlement",
+            "BandFishStartAtPlaying",
+            "BandFishStartAtScoreDialog",
             "BandFishStartAtMyPerformance",
             "BandFishStartAtAmusementGrid",
-            "BandFishStartAtTank"
+            "BandFishStartAtTank",
+            "BandFishStartUnknown"
         ]
+    },
+    "BandFishStartAtSettlement": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckBandFishSettlementReco",
+        "action": "Custom",
+        "custom_action": "BandFishResumePerformanceAction",
+        "next": [
+            "BandFishDone"
+        ]
+    },
+    "BandFishStartAtPlaying": {
+        "recognition": "TemplateMatch",
+        "template": "乐队鱼_跳过.png",
+        "roi": [1010, 575, 155, 139],
+        "threshold": 0.85,
+        "action": "Custom",
+        "custom_action": "BandFishResumePerformanceAction",
+        "next": [
+            "BandFishDone"
+        ]
+    },
+    "BandFishStartAtScoreDialog": {
+        "recognition": "OCR",
+        "expected": "请选择您要演奏的乐章",
+        "roi": [250, 310, 450, 100],
+        "action": "Custom",
+        "custom_action": "BandFishPerformAction",
+        "next": [
+            "BandFishDone"
+        ]
+    },
+    "BandFishStartUnknown": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[乐队鱼] 未识别到受支持起点；好友邀请弹窗缺少目标槽位上下文，已安全停止且未确认邀请。"
+        }
     },
     "BandFishStartAtMyPerformance": {
         "recognition": "OCR",

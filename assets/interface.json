@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.7.0",
+    "version": "0.7.1",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -184,9 +184,11 @@
             "name": "鱼宝乐园",
             "entry": "FishBabyTask",
             "default_check": false,
-            "description": "按逐只配置或统一配置完成一轮喂食、玩耍、喂奶；逐只模式可分别设置1~8号宝宝的鱼食、玩耍与牛奶，统一模式会把三类选择分别应用到本轮全部宝宝。玩耍选跳过表示整轮不处理该宝宝，睡眠中的宝宝自动跳过；完成后确认冷却并返回主鱼缸。绝不点击付费一键孵化。",
+            "description": "喂食、玩耍、喂奶分为三个独立配置组。每组都可选择逐只设置或一键统一；可为每个宝宝选择不同玩法，同时将全部宝宝的鱼食或牛奶统一为同一档。玩耍选跳过表示整轮不处理该宝宝，睡眠中的宝宝自动跳过；完成后确认冷却并返回主鱼缸。绝不点击付费一键孵化。",
             "option": [
-                "鱼宝配置方式"
+                "鱼宝喂食设置",
+                "鱼宝玩耍设置",
+                "鱼宝喂奶设置"
             ]
         },
         {
@@ -359,48 +361,176 @@
         }
     ],
     "option": {
-        "鱼宝配置方式": {
+        "鱼宝喂食设置": {
             "type": "select",
-            "label": "配置方式",
-            "description": "逐只设置可为每个宝宝分别选择三类项目；统一设置会覆盖本轮全部1~8号宝宝的对应项目。",
-            "default_case": "逐只设置",
+            "label": "喂食",
+            "description": "单独作为喂食一列：可逐只选择，也可一键让本轮全部参与宝宝使用同一档鱼食。",
+            "default_case": "全部超级鱼食",
             "cases": [
                 {
                     "name": "逐只设置",
                     "option": [
                         "1号宝宝鱼食",
-                        "1号宝宝玩耍方式",
-                        "1号宝宝牛奶",
                         "2号宝宝鱼食",
-                        "2号宝宝玩耍方式",
-                        "2号宝宝牛奶",
                         "3号宝宝鱼食",
-                        "3号宝宝玩耍方式",
-                        "3号宝宝牛奶",
                         "4号宝宝鱼食",
-                        "4号宝宝玩耍方式",
-                        "4号宝宝牛奶",
                         "5号宝宝鱼食",
-                        "5号宝宝玩耍方式",
-                        "5号宝宝牛奶",
                         "6号宝宝鱼食",
-                        "6号宝宝玩耍方式",
-                        "6号宝宝牛奶",
                         "7号宝宝鱼食",
+                        "8号宝宝鱼食"
+                    ]
+                },
+                {
+                    "name": "全部黄袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyUniformFood": {
+                            "custom_action_param": {
+                                "category": "food",
+                                "preference": "FOOD_BASIC"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部超级鱼食",
+                    "pipeline_override": {
+                        "FishBabyUniformFood": {
+                            "custom_action_param": {
+                                "category": "food",
+                                "preference": "FOOD_SUPER"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部青花瓷袋鱼粮",
+                    "pipeline_override": {
+                        "FishBabyUniformFood": {
+                            "custom_action_param": {
+                                "category": "food",
+                                "preference": "FOOD_PORCELAIN"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "鱼宝玩耍设置": {
+            "type": "select",
+            "label": "玩耍",
+            "description": "单独作为玩耍一列：默认逐只选择不同玩法，也支持一键统一全部宝宝。",
+            "default_case": "逐只设置",
+            "cases": [
+                {
+                    "name": "逐只设置",
+                    "option": [
+                        "1号宝宝玩耍方式",
+                        "2号宝宝玩耍方式",
+                        "3号宝宝玩耍方式",
+                        "4号宝宝玩耍方式",
+                        "5号宝宝玩耍方式",
+                        "6号宝宝玩耍方式",
                         "7号宝宝玩耍方式",
+                        "8号宝宝玩耍方式"
+                    ]
+                },
+                {
+                    "name": "全部摸头",
+                    "pipeline_override": {
+                        "FishBabyUniformPlay": {
+                            "custom_action_param": {
+                                "category": "play",
+                                "preference": "PET"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部篮球",
+                    "pipeline_override": {
+                        "FishBabyUniformPlay": {
+                            "custom_action_param": {
+                                "category": "play",
+                                "preference": "BASKETBALL"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部唱歌",
+                    "pipeline_override": {
+                        "FishBabyUniformPlay": {
+                            "custom_action_param": {
+                                "category": "play",
+                                "preference": "SING"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部跳过",
+                    "pipeline_override": {
+                        "FishBabyUniformPlay": {
+                            "custom_action_param": {
+                                "category": "play",
+                                "preference": "SKIP"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "鱼宝喂奶设置": {
+            "type": "select",
+            "label": "喂奶",
+            "description": "单独作为喂奶一列：可逐只选择，也可一键让本轮全部参与宝宝使用同一档牛奶。",
+            "default_case": "全部蓝莓味牛奶",
+            "cases": [
+                {
+                    "name": "逐只设置",
+                    "option": [
+                        "1号宝宝牛奶",
+                        "2号宝宝牛奶",
+                        "3号宝宝牛奶",
+                        "4号宝宝牛奶",
+                        "5号宝宝牛奶",
+                        "6号宝宝牛奶",
                         "7号宝宝牛奶",
-                        "8号宝宝鱼食",
-                        "8号宝宝玩耍方式",
                         "8号宝宝牛奶"
                     ]
                 },
                 {
-                    "name": "统一设置",
-                    "option": [
-                        "全部宝宝鱼食",
-                        "全部宝宝玩耍方式",
-                        "全部宝宝牛奶"
-                    ]
+                    "name": "全部粉色牛奶",
+                    "pipeline_override": {
+                        "FishBabyUniformMilk": {
+                            "custom_action_param": {
+                                "category": "milk",
+                                "preference": "MILK_PINK"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部黄色牛奶",
+                    "pipeline_override": {
+                        "FishBabyUniformMilk": {
+                            "custom_action_param": {
+                                "category": "milk",
+                                "preference": "MILK_YELLOW"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "全部蓝莓味牛奶",
+                    "pipeline_override": {
+                        "FishBabyUniformMilk": {
+                            "custom_action_param": {
+                                "category": "milk",
+                                "preference": "MILK_BLUEBERRY"
+                            }
+                        }
+                    }
                 }
             ]
         },
@@ -1556,140 +1686,6 @@
                 }
             ]
         },
-        "全部宝宝鱼食": {
-            "type": "select",
-            "label": "全部宝宝鱼食",
-            "description": "统一设置时生效；本轮所有参与宝宝使用同一档鱼食。",
-            "default_case": "超级鱼食",
-            "cases": [
-                {
-                    "name": "黄袋鱼粮",
-                    "pipeline_override": {
-                        "FishBabyUniformFood": {
-                            "custom_action_param": {
-                                "category": "food",
-                                "preference": "FOOD_BASIC"
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "超级鱼食",
-                    "pipeline_override": {
-                        "FishBabyUniformFood": {
-                            "custom_action_param": {
-                                "category": "food",
-                                "preference": "FOOD_SUPER"
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "青花瓷袋鱼粮",
-                    "pipeline_override": {
-                        "FishBabyUniformFood": {
-                            "custom_action_param": {
-                                "category": "food",
-                                "preference": "FOOD_PORCELAIN"
-                            }
-                        }
-                    }
-                }
-            ]
-        },
-        "全部宝宝玩耍方式": {
-            "type": "select",
-            "label": "全部宝宝玩耍方式",
-            "description": "统一设置时生效；具体玩法会覆盖1~8号逐只玩法，全部跳过则不进入活动。",
-            "default_case": "全部跳过",
-            "cases": [
-                {
-                    "name": "摸头",
-                    "pipeline_override": {
-                        "FishBabyUniformPlay": {
-                            "custom_action_param": {
-                                "category": "play",
-                                "preference": "PET"
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "篮球",
-                    "pipeline_override": {
-                        "FishBabyUniformPlay": {
-                            "custom_action_param": {
-                                "category": "play",
-                                "preference": "BASKETBALL"
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "唱歌",
-                    "pipeline_override": {
-                        "FishBabyUniformPlay": {
-                            "custom_action_param": {
-                                "category": "play",
-                                "preference": "SING"
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "全部跳过",
-                    "pipeline_override": {
-                        "FishBabyUniformPlay": {
-                            "custom_action_param": {
-                                "category": "play",
-                                "preference": "SKIP"
-                            }
-                        }
-                    }
-                }
-            ]
-        },
-        "全部宝宝牛奶": {
-            "type": "select",
-            "label": "全部宝宝牛奶",
-            "description": "统一设置时生效；本轮所有参与宝宝使用同一档牛奶。",
-            "default_case": "蓝莓味牛奶",
-            "cases": [
-                {
-                    "name": "粉色牛奶",
-                    "pipeline_override": {
-                        "FishBabyUniformMilk": {
-                            "custom_action_param": {
-                                "category": "milk",
-                                "preference": "MILK_PINK"
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "黄色牛奶",
-                    "pipeline_override": {
-                        "FishBabyUniformMilk": {
-                            "custom_action_param": {
-                                "category": "milk",
-                                "preference": "MILK_YELLOW"
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "蓝莓味牛奶",
-                    "pipeline_override": {
-                        "FishBabyUniformMilk": {
-                            "custom_action_param": {
-                                "category": "milk",
-                                "preference": "MILK_BLUEBERRY"
-                            }
-                        }
-                    }
-                }
-            ]
-        },
         "开贝壳次数": {
             "type": "input",
             "label": "开贝壳次数",
@@ -1758,7 +1754,7 @@
                     "label": "购买袋数",
                     "default": "1",
                     "pipeline_type": "int",
-                    "verify": "^[1-9]\\d{0,2}$"
+                    "verify": "^[1-9]\\d{0,3}$"
                 }
             ],
             "pipeline_override": {
@@ -2782,6 +2778,11 @@
                             "custom_action_param": {
                                 "score_mode": "latest"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "latest"
+                            }
                         }
                     }
                 },
@@ -2789,6 +2790,13 @@
                     "name": "欢乐颂",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "欢乐颂",
+                                "score_ocr_keyword": "欢乐"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "欢乐颂",
@@ -2806,6 +2814,13 @@
                                 "score_name": "噜啦啦",
                                 "score_ocr_keyword": "噜啦"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "噜啦啦",
+                                "score_ocr_keyword": "噜啦"
+                            }
                         }
                     }
                 },
@@ -2813,6 +2828,13 @@
                     "name": "玛丽有只小绵羊",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "玛丽有只小绵羊",
+                                "score_ocr_keyword": "小绵羊"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "玛丽有只小绵羊",
@@ -2830,6 +2852,13 @@
                                 "score_name": "幸福拍手歌",
                                 "score_ocr_keyword": "拍手"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "幸福拍手歌",
+                                "score_ocr_keyword": "拍手"
+                            }
                         }
                     }
                 },
@@ -2837,6 +2866,13 @@
                     "name": "斗牛士之歌",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "斗牛士之歌",
+                                "score_ocr_keyword": "斗牛士"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "斗牛士之歌",
@@ -2854,6 +2890,13 @@
                                 "score_name": "蓝色多瑙河",
                                 "score_ocr_keyword": "多瑙河"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "蓝色多瑙河",
+                                "score_ocr_keyword": "多瑙河"
+                            }
                         }
                     }
                 },
@@ -2861,6 +2904,13 @@
                     "name": "铃儿响叮当",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "铃儿响叮当",
+                                "score_ocr_keyword": "叮当"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "铃儿响叮当",
@@ -2878,6 +2928,13 @@
                                 "score_name": "莫扎特40交响曲",
                                 "score_ocr_keyword": "莫扎特"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "莫扎特40交响曲",
+                                "score_ocr_keyword": "莫扎特"
+                            }
                         }
                     }
                 },
@@ -2885,6 +2942,13 @@
                     "name": "小星星",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "小星星",
+                                "score_ocr_keyword": "星星"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "小星星",
@@ -2902,6 +2966,13 @@
                                 "score_name": "生日歌",
                                 "score_ocr_keyword": "生日"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "生日歌",
+                                "score_ocr_keyword": "生日"
+                            }
                         }
                     }
                 },
@@ -2909,6 +2980,13 @@
                     "name": "新年好",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "新年好",
+                                "score_ocr_keyword": "新年"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "新年好",
@@ -2926,6 +3004,13 @@
                                 "score_name": "春天在哪里",
                                 "score_ocr_keyword": "春天"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "春天在哪里",
+                                "score_ocr_keyword": "春天"
+                            }
                         }
                     }
                 },
@@ -2933,6 +3018,13 @@
                     "name": "洋娃娃和小熊跳舞",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "洋娃娃和小熊跳舞",
+                                "score_ocr_keyword": "小熊"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "洋娃娃和小熊跳舞",
@@ -2950,6 +3042,13 @@
                                 "score_name": "孤独的牧羊人",
                                 "score_ocr_keyword": "牧羊人"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "孤独的牧羊人",
+                                "score_ocr_keyword": "牧羊人"
+                            }
                         }
                     }
                 },
@@ -2957,6 +3056,13 @@
                     "name": "蜗牛与黄鹂鸟",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "蜗牛与黄鹂鸟",
+                                "score_ocr_keyword": "黄鹂鸟"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "蜗牛与黄鹂鸟",
@@ -2974,6 +3080,13 @@
                                 "score_name": "空之精灵",
                                 "score_ocr_keyword": "精灵"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "空之精灵",
+                                "score_ocr_keyword": "精灵"
+                            }
                         }
                     }
                 },
@@ -2981,6 +3094,13 @@
                     "name": "四小天鹅",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "四小天鹅",
+                                "score_ocr_keyword": "天鹅"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "四小天鹅",
@@ -2998,6 +3118,13 @@
                                 "score_name": "小燕子",
                                 "score_ocr_keyword": "燕子"
                             }
+                        },
+                        "BandFishStartAtScoreDialog": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "小燕子",
+                                "score_ocr_keyword": "燕子"
+                            }
                         }
                     }
                 },
@@ -3005,6 +3132,13 @@
                     "name": "少女心声",
                     "pipeline_override": {
                         "BandFishCheckReady": {
+                            "custom_action_param": {
+                                "score_mode": "named",
+                                "score_name": "少女心声",
+                                "score_ocr_keyword": "心声"
+                            }
+                        },
+                        "BandFishStartAtScoreDialog": {
                             "custom_action_param": {
                                 "score_mode": "named",
                                 "score_name": "少女心声",
@@ -3024,7 +3158,7 @@
                 "金海豚",
                 "摇一摇",
                 "钓鱼达人",
-                "浪漫满屋"
+                "浪漫满屋祝福"
             ],
             "cases": [
                 {
@@ -3116,10 +3250,28 @@
                     }
                 },
                 {
-                    "name": "浪漫满屋",
+                    "name": "浪漫满屋祝福",
                     "pipeline_override": {
                         "DailyRoutineEnableRomanticHouse": {
                             "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "购买鱼食",
+                    "pipeline_override": {
+                        "DailyRoutineEnableBuyFishFood": {
+                            "enabled": true
+                        },
+                        "BuyFishFoodStartAtDetail": {
+                            "custom_action_param": {
+                                "bags": "{袋数}"
+                            }
+                        },
+                        "BuyFishFoodPurchaseOnDetail": {
+                            "custom_action_param": {
+                                "bags": "{袋数}"
+                            }
                         }
                     }
                 }

@@ -363,9 +363,92 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "DismissFishBannerIfOpen_Standalone",
-            "ClickSettingsIcon_Standalone"
+            "FeedStarfishStandaloneStartRouter"
         ]
+    },
+    "FeedStarfishStandaloneStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "VerifyStarfishPanel_Standalone",
+            "VerifyTankSettings_Standalone",
+            "FeedStarfishOpenManagementFromTank1",
+            "FeedStarfishOpenManagementFromTank2",
+            "FeedStarfishOpenManagementFromTank3",
+            "FeedStarfishStandaloneAbort"
+        ]
+    },
+    "FeedStarfishOpenManagementFromTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "roi": [40, 32, 45, 48],
+        "threshold": 0.85,
+        "action": "Click",
+        "target": [176, 54, 4, 4],
+        "post_delay": 1800,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "VerifyTankSettings_Standalone"
+        ],
+        "on_error": [
+            "FeedStarfishStandaloneAbort"
+        ]
+    },
+    "FeedStarfishOpenManagementFromTank2": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "roi": [40, 32, 45, 48],
+        "threshold": 0.85,
+        "action": "Click",
+        "target": [176, 54, 4, 4],
+        "post_delay": 1800,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "VerifyTankSettings_Standalone"
+        ],
+        "on_error": [
+            "FeedStarfishStandaloneAbort"
+        ]
+    },
+    "FeedStarfishOpenManagementFromTank3": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "roi": [40, 32, 45, 48],
+        "threshold": 0.85,
+        "action": "Click",
+        "target": [176, 54, 4, 4],
+        "post_delay": 1800,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "VerifyTankSettings_Standalone"
+        ],
+        "on_error": [
+            "FeedStarfishStandaloneAbort"
+        ]
+    },
+    "FeedStarfishStandaloneAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {
+            "Node.Action.Succeeded": "[海星喂食] 未识别到主鱼缸、管理页或海星页；选择鱼食弹窗缺少可靠上下文门禁，已安全停止。"
+        }
     },
     "DismissFishBannerIfOpen_Standalone": {
         "recognition": "OCR",

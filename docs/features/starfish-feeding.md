@@ -9,6 +9,13 @@
 - **触发器**: `CheckStarfishTimerReco` (自定义识别器，基于 `time.time()`)
 - **周期**: 由 UI 选项提供（如 30秒测试/1分/30分/不喂食）。
 
+## Start Contract
+
+- 独立 `FeedStarfishStandalone` 按海星面板 → 鱼缸管理页 → 鱼缸 1/2/3 主页面的顺序恢复。
+- 已在海星面板时直接从“补充”继续；已在鱼缸管理页时从 OCR“海星”入口继续；只有命中当前鱼缸编号模板后才允许点击管理入口 `[176,54,4,4]`。
+- “选择喂食”弹窗仅凭普通鱼食袋或通用文字无法证明来自海星流程，也缺少当前海星身份上下文，登记为 `Intentional Unsupported / Missing Context`。从该弹窗启动时安全停止，不点击鱼食。
+- 该补强只调整独立单次入口；CollectFish/Patrol 的既有三海星补充业务顺序不变。
+
 ## 执行流程 (Workflow)
 
 ### 1. 通用三海星喂食主流程（CollectFish 与 Patrol 统一规范）
@@ -137,4 +144,3 @@ ResumeHarvest (万能返回节点)
     - `assets/resource/image/鱼食已装满.png`
     - `assets/resource/image/普通鱼食袋.png`
     - `assets/resource/image/patrol/鱼缸1_主页面编号.png`、`鱼缸2_主页面编号.png`、`鱼缸3_主页面编号.png`
-

@@ -5,6 +5,13 @@
 
 任务实现**默认每日最多 3 局循环**并已集成至**日常收尾任务 (DailyRoutineTask)**。若中途检测到今日次数用尽或体力耗尽，将与金海豚一致标记 `NO_STAMINA`，安全关闭弹窗并推进后续日常任务，不记为错误。
 
+## Start Contract
+
+- 支持从主鱼缸、游乐园面板、进入确认弹窗和结算页启动。
+- 启动帧命中 `金海豚_结束取消.png` 时设置 `SETTLEMENT`，直接执行 `ShakeGameExitAction`；退出动作只在模板命中后点击，并把该局计数一次。
+- 已在摇晃中的页面目前缺少独立、可靠且不会与其它小游戏混淆的现有模板或截图证据，登记为 `Live Blocked / Missing Evidence`。此状态不会通过“入口没找到”反推为局内，也不会默认 VM index 0。
+- MuMuManager 路径、VM index、RPC 频率、失败熔断与三局上限未改变。本次仅做离线代码验证，未操作模拟器。
+
 ---
 
 ## 核心状态机模型
@@ -99,3 +106,8 @@ ShakeGameNavigation (ShakeGameNavigationAction)
 - `assets/resource/image/金海豚_确定按钮.png`：进入小游戏确认弹窗（绿色对号按钮）；
 - `assets/resource/image/金海豚_结束取消.png`：小游戏结束结算弹窗取消按钮；
 - `assets/resource/image/主界面特征.png`：返回主鱼缸最终视觉验证。
+
+## 验证状态
+
+- 2026-09-24 结算页恢复路由、单局只计一次、三局循环、VM index 不得默认 0、RPC 熔断与独立/日常双出口通过离线专项；Pipeline 正则/资源加载与 Agent 引用门禁通过。
+- 本轮未操作模拟器。局内恢复仍等待用户提供可区分摇一摇与其它小游戏的完整截图或模板。

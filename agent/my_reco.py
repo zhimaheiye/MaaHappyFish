@@ -1071,6 +1071,23 @@ class CheckBandFishStandaloneDoneReco(CustomRecognition):
         return None
 
 
+@AgentServer.custom_recognition("CheckBandFishSettlementReco")
+class CheckBandFishSettlementReco(CustomRecognition):
+    """Pure visual gate for the bottom green settlement button."""
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        image = argv.image
+        if image is None:
+            return None
+        if image.shape[:2] != (720, 1280):
+            image = cv2.resize(image, (1280, 720))
+        crop = image[650:700, 595:685]
+        if crop.size == 0:
+            return None
+        hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, np.array([35, 80, 80]), np.array([85, 255, 255]))
+        return (595, 650, 90, 50) if int(np.count_nonzero(mask)) >= 150 else None
+
+
 @AgentServer.custom_recognition("CheckGoldenDolphinCanPlayReco")
 class CheckGoldenDolphinCanPlayReco(CustomRecognition):
     """
@@ -1080,6 +1097,15 @@ class CheckGoldenDolphinCanPlayReco(CustomRecognition):
     """
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
         if golden_dolphin_state.get("status") == "READY_TO_PLAY":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckGoldenDolphinSettlementReco")
+class CheckGoldenDolphinSettlementReco(CustomRecognition):
+    """Route an externally completed round straight to the idempotent exit action."""
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if golden_dolphin_state.get("status") == "SETTLEMENT":
             return (0, 0, 10, 10)
         return None
 
@@ -1102,6 +1128,15 @@ class CheckShakeGameCanPlayReco(CustomRecognition):
     """
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
         if shake_game_state.get("status") == "READY_TO_PLAY":
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckShakeGameSettlementReco")
+class CheckShakeGameSettlementReco(CustomRecognition):
+    """Route an already visible shake-game settlement to the exit action."""
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if shake_game_state.get("status") == "SETTLEMENT":
             return (0, 0, 10, 10)
         return None
 

@@ -12,7 +12,11 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent.runtime_state import golden_dolphin_state, daily_routine_state
-from agent.my_reco import CheckGoldenDolphinCanPlayReco, CheckGoldenDolphinRepeatReco
+from agent.my_reco import (
+    CheckGoldenDolphinCanPlayReco,
+    CheckGoldenDolphinRepeatReco,
+    CheckGoldenDolphinSettlementReco,
+)
 from agent.my_action import (
     GOLDEN_DOLPHIN_REWARD_ORDER,
     GoldenDolphinInitAction,
@@ -21,6 +25,7 @@ from agent.my_action import (
     GoldenDolphinExitAction,
     GoldenDolphinDoneAction,
     _complete_golden_dolphin_round,
+    _classify_golden_dolphin_resume_frame,
     advance_daily_routine_step,
     _find_golden_dolphin_coin,
     _find_golden_dolphin_template_targets,
@@ -51,6 +56,7 @@ def run_tests():
     expected_nodes = [
         'GoldenDolphinTask',
         'GoldenDolphinNavigation',
+        'GoldenDolphinResumeSettlement',
         'GoldenDolphinPlayGame',
         'GoldenDolphinExit',
         'GoldenDolphinRepeat',
@@ -62,7 +68,13 @@ def run_tests():
     assert pipe['GoldenDolphinTask']['custom_action'] == 'GoldenDolphinInitAction'
     assert '任务开始' in pipe['GoldenDolphinTask']['focus']['Node.Action.Succeeded']
     assert business_next('GoldenDolphinTask') == ['GoldenDolphinNavigation']
-    assert business_next('GoldenDolphinNavigation') == ['GoldenDolphinPlayGame', 'GoldenDolphinDone']
+    assert business_next('GoldenDolphinNavigation') == [
+        'GoldenDolphinResumeSettlement',
+        'GoldenDolphinPlayGame',
+        'GoldenDolphinDone',
+    ]
+    assert pipe['GoldenDolphinResumeSettlement']['custom_recognition'] == 'CheckGoldenDolphinSettlementReco'
+    assert business_next('GoldenDolphinResumeSettlement') == ['GoldenDolphinExit']
     assert pipe['GoldenDolphinNavigation']['custom_action'] == 'GoldenDolphinNavigationAction'
     assert pipe['GoldenDolphinPlayGame']['custom_recognition'] == 'CheckGoldenDolphinCanPlayReco'
     assert pipe['GoldenDolphinPlayGame']['custom_action'] == 'GoldenDolphinPlayGameAction'
@@ -87,6 +99,12 @@ def run_tests():
         assert reco.analyze(None, None) == expected
     print('[PASS] Check 2: CheckGoldenDolphinCanPlayReco 状态分支判定正确！')
 
+    settlement_reco = CheckGoldenDolphinSettlementReco()
+    golden_dolphin_state['status'] = 'SETTLEMENT'
+    assert settlement_reco.analyze(None, None) == (0, 0, 10, 10)
+    golden_dolphin_state['status'] = 'READY_TO_PLAY'
+    assert settlement_reco.analyze(None, None) is None
+
     print("\n--- Test 3: 四类奖励模板完整加载 ---")
     templates = _get_golden_dolphin_templates()
     rewards = templates['rewards']
@@ -99,6 +117,15 @@ def run_tests():
     }
     assert len(templates['activation_coin']) == 1
     assert np.array_equal(templates['activation_coin'][0], rewards['coin'][0])
+    fixture_dir = os.path.join('dev', 'exploration', 'golden_dolphin')
+    active_frame = cv2.imread(os.path.join(fixture_dir, '03_middle_falling_dense.png'))
+    settlement_frame = cv2.imread(os.path.join(fixture_dir, '04_game_over.png'))
+    tank_frame = cv2.imread(os.path.join(fixture_dir, '00_initial_screen.png'))
+    after_cancel_frame = cv2.imread(os.path.join(fixture_dir, '05_after_cancel.png'))
+    assert _classify_golden_dolphin_resume_frame(active_frame, templates) == 'ACTIVE'
+    assert _classify_golden_dolphin_resume_frame(settlement_frame, templates) == 'SETTLEMENT'
+    assert _classify_golden_dolphin_resume_frame(tank_frame, templates) is None
+    assert _classify_golden_dolphin_resume_frame(after_cancel_frame, templates) is None
     print('[PASS] Check 3: 经验星/爱心/宝石/贝币全部模板变体已加载！')
 
     print("\n--- Test 4: 四类奖励均使用全屏识别 ---")

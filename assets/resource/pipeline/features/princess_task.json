@@ -21,6 +21,9 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "PrincessTreasureClaimSuccess",
+            "PrincessClaimSuccess",
+            "PrincessClaimFailure",
             "PrincessTreasureTaskPage",
             "PrincessPageReady",
             "PrincessOpenEntry"
@@ -418,9 +421,18 @@
     },
     "PrincessAbort": {
         "recognition": "DirectHit",
-        "action": "StopTask",
+        "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[公主任务] 页面门禁或领取结果未通过，已安全停止且未继续点击。"
-        }
+            "Node.Action.Succeeded": "[公主任务] 页面门禁或领取结果未通过，跳过本步骤。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ]
     }
 }

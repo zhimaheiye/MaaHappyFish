@@ -22,8 +22,17 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "ShakeGameResumeSettlement",
             "ShakeGamePlay",
             "ShakeGameDone"
+        ]
+    },
+    "ShakeGameResumeSettlement": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckShakeGameSettlementReco",
+        "action": "DoNothing",
+        "next": [
+            "ShakeGameExit"
         ]
     },
     "ShakeGamePlay": {

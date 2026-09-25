@@ -35,6 +35,9 @@ def run_tests():
     pipeline = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
 
     assert business_next(pipeline["PrincessStartRouter"]) == [
+        "PrincessTreasureClaimSuccess",
+        "PrincessClaimSuccess",
+        "PrincessClaimFailure",
         "PrincessTreasureTaskPage",
         "PrincessPageReady",
         "PrincessOpenEntry",
@@ -158,7 +161,7 @@ def run_tests():
     assert exit_node["action"] == "Click"
     assert "target" not in exit_node
     assert pipeline["PrincessVerifyTank"]["template"] == "主界面特征.png"
-    assert pipeline["PrincessAbort"]["action"] == "StopTask"
+    assert pipeline["PrincessAbort"]["action"] == "DoNothing"
 
     for node in pipeline.values():
         successors = node.get("next")

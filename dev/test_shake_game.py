@@ -303,6 +303,7 @@ def test_pipeline_contract_and_agent_registration():
     expected_nodes = [
         "ShakeGameTask",
         "ShakeGameNavigation",
+        "ShakeGameResumeSettlement",
         "ShakeGamePlay",
         "ShakeGameExit",
         "ShakeGameRepeat",
@@ -317,7 +318,12 @@ def test_pipeline_contract_and_agent_registration():
         return [x for x in node.get("next", []) if not x.startswith("[JumpBack]")]
 
     assert business_next(data["ShakeGameTask"]) == ["ShakeGameNavigation"]
-    assert business_next(data["ShakeGameNavigation"]) == ["ShakeGamePlay", "ShakeGameDone"]
+    assert business_next(data["ShakeGameNavigation"]) == [
+        "ShakeGameResumeSettlement",
+        "ShakeGamePlay",
+        "ShakeGameDone",
+    ]
+    assert business_next(data["ShakeGameResumeSettlement"]) == ["ShakeGameExit"]
     assert business_next(data["ShakeGamePlay"]) == ["ShakeGameExit"]
     assert business_next(data["ShakeGameExit"]) == ["ShakeGameRepeat", "ShakeGameDone"]
     assert business_next(data["ShakeGameRepeat"]) == ["ShakeGameNavigation"]
@@ -340,6 +346,7 @@ def test_pipeline_contract_and_agent_registration():
         assert hasattr(my_action, ca), f"agent.my_action 缺少 CustomAction: {ca}"
 
     assert hasattr(my_reco, "CheckShakeGameCanPlayReco"), "agent.my_reco 缺少 CustomRecognition: CheckShakeGameCanPlayReco"
+    assert hasattr(my_reco, "CheckShakeGameSettlementReco"), "agent.my_reco 缺少 CustomRecognition: CheckShakeGameSettlementReco"
     assert hasattr(my_reco, "CheckShakeGameRepeatReco"), "agent.my_reco 缺少 CustomRecognition: CheckShakeGameRepeatReco"
     assert hasattr(my_reco, "CheckDailyRoutineActiveReco"), "agent.my_reco 缺少 CustomRecognition: CheckDailyRoutineActiveReco"
 

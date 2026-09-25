@@ -111,19 +111,18 @@ class FishBabyContract(unittest.TestCase):
         self.assertEqual(nodes["FishBabyRetryTank"]["next"], ["FishBabyEntryCoral"])
         self.assertEqual(nodes["FishBabyAbort"]["action"], "StopTask")
 
-    def test_interface_supports_per_baby_and_uniform_modes(self):
+    def test_interface_has_three_independent_preference_groups(self):
         interface = json.loads((ROOT / "assets/interface.json").read_text(encoding="utf-8"))
         task = next(task for task in interface["task"] if task["name"] == "鱼宝乐园")
         self.assertFalse(task["default_check"])
-        self.assertEqual(task["option"], ["鱼宝配置方式"])
-        mode = interface["option"]["鱼宝配置方式"]
-        self.assertEqual(mode["default_case"], "逐只设置")
-        self.assertEqual([case["name"] for case in mode["cases"]], ["逐只设置", "统一设置"])
+        self.assertEqual(task["option"], ["鱼宝喂食设置", "鱼宝玩耍设置", "鱼宝喂奶设置"])
+        self.assertEqual(interface["option"]["鱼宝喂食设置"]["default_case"], "全部超级鱼食")
+        self.assertEqual(interface["option"]["鱼宝玩耍设置"]["default_case"], "逐只设置")
+        self.assertEqual(interface["option"]["鱼宝喂奶设置"]["default_case"], "全部蓝莓味牛奶")
         for number in range(1, 9):
             self.assertEqual(interface["option"][f"{number}号宝宝鱼食"]["default_case"], "超级鱼食")
             self.assertEqual(interface["option"][f"{number}号宝宝玩耍方式"]["default_case"], "跳过")
             self.assertEqual(interface["option"][f"{number}号宝宝牛奶"]["default_case"], "蓝莓味牛奶")
-        self.assertEqual(interface["option"]["全部宝宝玩耍方式"]["default_case"], "全部跳过")
 
 
 if __name__ == "__main__":

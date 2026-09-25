@@ -107,6 +107,7 @@
             "DailyRoutineStepBandFishPass2",
             "DailyRoutineStepGreenWildClaim",
             "DailyRoutineStepPrincessClaim",
+            "DailyRoutineStepBuyFishFood",
             "DailyRoutineStepAllDone"
         ]
     },
@@ -486,5 +487,32 @@
             "[JumpBack]GlobalLevelUpPopup",
             "PrincessTask"
         ]
+    },
+    "DailyRoutineStepBuyFishFood": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "BUY_FISH_FOOD"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：购买鱼食。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "BuyFishFoodTask"
+        ]
+    },
+    "DailyRoutineEnableBuyFishFood": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "next": [
+            "DailyRoutineStepBuyFishFood"
+        ],
+        "enabled": false
     }
 }

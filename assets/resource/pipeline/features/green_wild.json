@@ -153,10 +153,10 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "GreenWildReturn"
+            "GreenWildOpenReward"
         ],
         "on_error": [
-            "GreenWildReturn"
+            "GreenWildOpenReward"
         ]
     },
     "GreenWildReturn": {
@@ -213,10 +213,14 @@
     },
     "GreenWildAbort": {
         "recognition": "DirectHit",
-        "action": "StopTask",
+        "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[绿野寻仙踪] 页面门禁未通过，已安全停止。"
-        }
+            "Node.Action.Succeeded": "[绿野寻仙踪] 页面门禁未通过，跳过本步骤。"
+        },
+        "next": [
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ]
     },
     "GreenWildDailyTask": {
         "recognition": "DirectHit",
@@ -461,6 +465,86 @@
         ],
         "on_error": [
             "GreenWildAbort"
+        ]
+    },
+    "GreenWildOpenReward": {
+        "recognition": "OCR",
+        "expected": "^奖励$",
+        "roi": [
+            20,
+            170,
+            140,
+            140
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 6000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪] 已点击奖励tab，准备领取等级奖励。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildClaimReward"
+        ],
+        "on_error": [
+            "GreenWildClaimReward"
+        ]
+    },
+    "GreenWildClaimReward": {
+        "recognition": "DirectHit",
+        "action": "Click",
+        "target": [
+            613,
+            299,
+            54,
+            67
+        ],
+        "post_delay": 1000,
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪] 已点击等级奖励格子，等待确认弹窗。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildConfirmReward"
+        ],
+        "on_error": [
+            "GreenWildReturn"
+        ]
+    },
+    "GreenWildConfirmReward": {
+        "recognition": "OCR",
+        "expected": "^确定$",
+        "roi": [
+            460,
+            568,
+            77,
+            35
+        ],
+        "action": "Click",
+        "post_delay": 1000,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[绿野寻仙踪] 已确认领取等级奖励。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildReturn"
+        ],
+        "on_error": [
+            "GreenWildReturn"
         ]
     }
 }

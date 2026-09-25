@@ -46,6 +46,7 @@
 | 维护"许愿神灯"独立活动任务 | `docs/features/wishing-lamp.md` |
 | 维护"秘境之门"独立与日常送鱼任务 | `docs/features/secret-realm-gate.md` |
 | 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |
+| 查询全任务步骤可恢复导航审查与新增任务接入要求 | `docs/features/start-navigation-audit.md` |
 | 打包发布新版本、推送 Tag、发布 CI 门禁核验与版本号升级 | `docs/release-workflow.md`（唯一权威文档；调度技能：`.agents/skills/maa-release-workflow/SKILL.md`） |
 | 当且仅当项目版本号达到 1.0.0 正式完结发版时触发小红书抽奖活动 | `docs/v1.0-rednote-lottery.md`（维护者本机私有/本地里程碑文档；仅在版本号达到 1.0.0 且文件存在时触发，文件不存在时不得猜测，其余所有版本绝对不触发） |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
@@ -99,6 +100,17 @@
 - 修复 Bug 时不要求先新增或运行“预期失败”的回归测试来复现失败；先直接阅读当前文档、代码和已有现场证据，能够确认根因时立即做最小修改。
 - 测试用于修改完成后的代码级验证和防止以后回退；可以按需补充契约断言，但不得把“先制造一次失败测试”作为开始修复的固定步骤。
 - 根因仍不明确、且属于用户准备后续实机观察或优化的事项时，保留为待验证/待优化，不为满足测试流程而猜测性修改。
+
+### 通用能力文档闭环规则 (Cross-feature Documentation Closure)
+
+当一次修改新增、统一或审查可跨多个任务复用的能力时，例如步骤可恢复启动、Deepest-First 导航、全局弹窗处理、通用返回、统一配置方式、调度容器或资源安全门禁，文档是实现的一部分，禁止只改代码：
+
+1. **更新全局规则**：把可复用契约写入 `AGENTS.md`、`docs/handoff/DEVELOPMENT_PLAYBOOK.md` 或对应全局专题文档，使后续新功能默认遵守；不能只留在一次性提示词或对话里。
+2. **更新全部受影响功能文档**：每个实际修改的 `docs/features/*.md` 必须同步真实 Start Contract、支持状态、故意不支持状态、证据和验证边界。
+3. **维护全局审查表**：步骤可恢复导航统一维护 `docs/features/start-navigation-audit.md`；其它通用能力若已有专题文档则更新原文档，没有时建立轻量级矩阵或清单，避免复制全部业务说明。
+4. **同步项目现状**：实现状态变化必须更新 `docs/handoff/CURRENT.md` 与 `PROJECT_STATUS.md`；涉及 Bug 时继续按 Bug 文档闭环规则维护 `ISSUES.md`。
+5. **新功能必须接入**：以后新增独立任务或扩展合理启动状态时，交付前必须检查并更新相应全局清单；若不适用或故意不支持，必须写明业务上下文或安全原因。
+6. **验证措辞分层**：文档必须区分代码已实现、代码级验证、MFA/模拟器实测和 Live Blocked，不能因通用框架已存在就把尚未取证的单项功能写成已通过。
 
 ### 步骤可恢复导航架构 (Step-resumable Navigation)
 对于存在连续多步 GUI 流程的任务（`Step 1 -> Step 2 -> Step 3 -> ...`）：

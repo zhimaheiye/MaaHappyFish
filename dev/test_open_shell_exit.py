@@ -368,6 +368,10 @@ def run_entry_retry_tests():
     assert business_next(pipeline["GreenWildDailyTask"]) == ["OpenShellStartRouter"]
     start_router_next = business_next(pipeline["OpenShellStartRouter"])
     assert start_router_next == [
+        "OpenShellOctopus",
+        "OpenShellFinish",
+        "OpenShellContinue",
+        "OpenShellOpenFirst",
         "OpenShellStartPage",
         "OpenShellCategoryPage",
         "OpenShellEntry",
@@ -473,6 +477,14 @@ class OpenShellStartSimulator:
             return True  # DirectHit
         if name == "OpenShellStartPage":
             return self.page == "octopus"
+        if name == "OpenShellOctopus":
+            return self.page == "random_prize"
+        if name == "OpenShellFinish":
+            return self.page == "finish"
+        if name == "OpenShellContinue":
+            return self.page == "continue"
+        if name == "OpenShellOpenFirst":
+            return self.page == "open_shell"
         if name == "OpenShellCategoryPage":
             return self.page == "category"
         if name == "OpenShellEntry":

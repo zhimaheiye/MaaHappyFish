@@ -738,59 +738,215 @@ class FindCheapFishFoodAction(CustomAction):
                 return False
 
             param = parse_dict_param(argv.custom_action_param)
-            max_scrolls = safe_int(param.get("max_scrolls"), 4, min_val=0, max_val=8)
+            max_scrolls = safe_int(param.get("max_scrolls"), 8, min_val=0, max_val=8)
 
-            first_frame = _capture_720p(controller)
-            if (
-                _recognition_box(context, "BuyFishFoodDetailIdentity", first_frame) is not None
-                and _recognition_box(context, "BuyFishFoodUnitPrice", first_frame) is not None
-            ):
-                print("[购买鱼食] 已在廉价鱼食详情页，跳过商品列表查找", flush=True)
-                return True
-
-            for scroll_index in range(max_scrolls + 1):
-                if _task_cancelled(context):
-                    print("[购买鱼食] 已收到停止请求，终止查找", flush=True)
-                    return False
-                frame = _capture_720p(controller)
-                store_box = _recognition_box(context, "BuyFishFoodStoreIdentity", frame)
-                item_box = _recognition_box(context, "BuyFishFoodStoreItemIdentity", frame)
-                if store_box is None or item_box is None:
-                    print("[购买鱼食] 当前页面不是已确认的商品列表，停止查找", flush=True)
-                    return False
-
-                target_box = _recognition_box(context, "BuyFishFoodTargetCard", frame)
-                if target_box is not None:
-                    if _task_cancelled(context):
-                        print("[购买鱼食] 已收到停止请求，未点击商品", flush=True)
-                        return False
-                    target_x, target_y = _box_center(target_box)
-                    print(f"[购买鱼食] OCR 命中廉价鱼食，点击识别框中心 ({target_x}, {target_y})", flush=True)
-                    controller.post_click(target_x, target_y).wait()
-                    time.sleep(1.0)
-                    detail_frame = _capture_720p(controller)
-                    if _recognition_box(context, "BuyFishFoodDetailIdentity", detail_frame) is not None:
-                        return True
-                    print("[购买鱼食] 点击后未进入廉价鱼食详情页，停止操作", flush=True)
-                    return False
-
-                if scroll_index == max_scrolls:
-                    break
-
-                print(f"[购买鱼食] 当前屏未找到廉价鱼食，向下查找 ({scroll_index + 1}/{max_scrolls})", flush=True)
-                # 已由 StoreIdentity + StoreItemIdentity 双重确认商品列表，滑动轨迹只作用于商品区域。
-                if _task_cancelled(context):
-                    print("[购买鱼食] 已收到停止请求，未继续滑动", flush=True)
-                    return False
-                controller.post_swipe(640, 580, 640, 240, 400).wait()
-                time.sleep(0.8)
-
-            print("[购买鱼食] 有限次滑动后仍未找到廉价鱼食，安全停止", flush=True)
-            return False
+            return _find_and_enter_cheap_fish_food(context, controller, max_scrolls)
         except Exception as e:
             traceback.print_exc()
             print(f"[购买鱼食] 查找廉价鱼食异常: {e}", flush=True)
             return False
+
+
+def _find_and_enter_cheap_fish_food(context: Context, controller, max_scrolls: int) -> bool:
+    """Shared helper: find cheap fish food in store list and click to enter detail page."""
+    first_frame = _capture_720p(controller)
+    if (
+        _recognition_box(context, "BuyFishFoodDetailIdentity", first_frame) is not None
+        and _recognition_box(context, "BuyFishFoodUnitPrice", first_frame) is not None
+    ):
+        print("[购买鱼食] 已在廉价鱼食详情页，跳过商品列表查找", flush=True)
+        return True
+
+    for scroll_index in range(max_scrolls + 1):
+        if _task_cancelled(context):
+            print("[购买鱼食] 已收到停止请求，终止查找", flush=True)
+            return False
+        frame = _capture_720p(controller)
+        store_box = _recognition_box(context, "BuyFishFoodStoreIdentity", frame)
+        item_box = _recognition_box(context, "BuyFishFoodStoreItemIdentity", frame)
+        if store_box is None or item_box is None:
+            print("[购买鱼食] 当前页面不是已确认的商品列表，停止查找", flush=True)
+            return False
+
+        target_box = _recognition_box(context, "BuyFishFoodTargetCard", frame)
+        if target_box is not None:
+            if _task_cancelled(context):
+                print("[购买鱼食] 已收到停止请求，未点击商品", flush=True)
+                return False
+            target_x, target_y = _box_center(target_box)
+            print(f"[购买鱼食] OCR 命中廉价鱼食，点击识别框中心 ({target_x}, {target_y})", flush=True)
+            controller.post_click(target_x, target_y).wait()
+            time.sleep(1.0)
+            detail_frame = _capture_720p(controller)
+            if _recognition_box(context, "BuyFishFoodDetailIdentity", detail_frame) is not None:
+                return True
+            print("[购买鱼食] 点击后未进入廉价鱼食详情页，停止操作", flush=True)
+            return False
+
+        if scroll_index == max_scrolls:
+            break
+
+        print(f"[购买鱼食] 当前屏未找到廉价鱼食，向下查找 ({scroll_index + 1}/{max_scrolls})", flush=True)
+        if _task_cancelled(context):
+            print("[购买鱼食] 已收到停止请求，未继续滑动", flush=True)
+            return False
+        controller.post_swipe(640, 580, 640, 400, 400).wait()
+        time.sleep(0.8)
+
+    print("[购买鱼食] 有限次滑动后仍未找到廉价鱼食，安全停止", flush=True)
+    return False
+
+
+def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
+    """Buy one batch of cheap fish food. batch_bags <= 999.
+    If batch_bags == 999, use fast mode: long press to max, single final OCR check.
+    Otherwise use precise mode: existing fine-tuned logic.
+    """
+    required_nodes = (
+        "BuyFishFoodDetailIdentity",
+        "BuyFishFoodUnitPrice",
+        "BuyFishFoodPlusButton",
+        "BuyFishFoodPurchaseButton",
+    )
+    frame = _capture_720p(controller)
+    missing = [node for node in required_nodes if _recognition_box(context, node, frame) is None]
+    if missing:
+        print(f"[购买鱼食] 廉价鱼食详情页门禁不完整，缺: {', '.join(missing)}", flush=True)
+        return False
+
+    current_quantity = _recognition_number(context, "BuyFishFoodQuantity", frame)
+    if current_quantity is None or current_quantity < 1 or current_quantity > batch_bags:
+        print(
+            f"[购买鱼食] 当前购买数量无法安全确认（读到={current_quantity}，目标={batch_bags}袋），未执行购买",
+            flush=True,
+        )
+        return False
+
+    is_max_batch = (batch_bags >= 999)
+    if is_max_batch:
+        print(f"[购买鱼食] 本轮目标 999 袋（上限批次），快速触顶模式", flush=True)
+    else:
+        print(f"[购买鱼食] 已确认廉价鱼食单价 400 金币，计划购买 {batch_bags} 袋", flush=True)
+
+    if is_max_batch:
+        # Fast mode: long press to max, single final check
+        plus_box = _recognition_box(context, "BuyFishFoodPlusButton", frame)
+        if plus_box is None:
+            print("[购买鱼食] 加号按钮识别失败，停止操作", flush=True)
+            return False
+
+        # Long press for 6 seconds to reach 999
+        print(f"[购买鱼食] 长按加号 6000ms 触顶到 999", flush=True)
+        action_detail = context.run_action_direct(
+            JActionType.LongPress,
+            JLongPress(duration=6000),
+            box=plus_box,
+        )
+        if _task_cancelled(context):
+            print("[购买鱼食] 长按期间收到停止请求，终止购买", flush=True)
+            return False
+        if not action_detail or not action_detail.success:
+            print("[购买鱼食] 长按动作失败，停止操作", flush=True)
+            return False
+
+        # Single final OCR check: must be 999
+        quantity_frame = _capture_720p(controller)
+        final_quantity = _recognition_number(context, "BuyFishFoodQuantity", quantity_frame)
+        if final_quantity is None or final_quantity != 999:
+            print(f"[购买鱼食] 快速触顶后数量不是 999（读到={final_quantity}），安全停止", flush=True)
+            return False
+        print(f"[购买鱼食] 已确认触顶 999 袋", flush=True)
+        current_quantity = final_quantity
+    else:
+        # Precise mode: existing logic
+        last_hold_delta = None
+        while batch_bags - current_quantity >= (20 if last_hold_delta is None else last_hold_delta + 3):
+            if _task_cancelled(context):
+                print("[购买鱼食] 已收到停止请求，终止长按", flush=True)
+                return False
+            current_frame = _capture_720p(controller)
+            detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", current_frame)
+            plus_box = _recognition_box(context, "BuyFishFoodPlusButton", current_frame)
+            if detail_box is None or plus_box is None:
+                print("[购买鱼食] 长按前页面或加号识别失败，停止操作", flush=True)
+                return False
+
+            hold_ms = 1000 if last_hold_delta is None else min(
+                5000,
+                max(1000, int((batch_bags - current_quantity - 3) * 1000 / last_hold_delta)),
+            )
+            print(f"[购买鱼食] 剩余 {batch_bags - current_quantity} 袋，长按加号 {hold_ms}ms", flush=True)
+            action_detail = context.run_action_direct(
+                JActionType.LongPress,
+                JLongPress(duration=hold_ms),
+                box=plus_box,
+            )
+            if _task_cancelled(context):
+                print("[购买鱼食] 长按期间收到停止请求，终止购买", flush=True)
+                return False
+            if not action_detail or not action_detail.success:
+                print("[购买鱼食] 长按动作失败，停止操作", flush=True)
+                return False
+
+            quantity_frame = _capture_720p(controller)
+            new_quantity = _recognition_number(context, "BuyFishFoodQuantity", quantity_frame)
+            if new_quantity is None or new_quantity <= current_quantity:
+                print("[购买鱼食] 长按后数量未可靠增加，停止操作", flush=True)
+                return False
+            last_hold_delta = new_quantity - current_quantity
+            current_quantity = new_quantity
+
+        if current_quantity > batch_bags + 2:
+            print("[购买鱼食] 长按后的数量超过允许误差，未提交购买", flush=True)
+            return False
+
+        for index in range(max(0, batch_bags - current_quantity)):
+            if _task_cancelled(context):
+                print("[购买鱼食] 已收到停止请求，终止增加数量", flush=True)
+                return False
+            current_frame = _capture_720p(controller)
+            detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", current_frame)
+            plus_box = _recognition_box(context, "BuyFishFoodPlusButton", current_frame)
+            if detail_box is None or plus_box is None:
+                print(f"[购买鱼食] 第 {index + 2} 袋前页面或加号识别失败，停止操作", flush=True)
+                return False
+            plus_x, plus_y = _box_center(plus_box)
+            controller.post_click(plus_x, plus_y).wait()
+            if _task_cancelled(context):
+                print("[购买鱼食] 点击后收到停止请求，未继续操作", flush=True)
+                return False
+            time.sleep(0.15)
+
+    # Final gate before purchase
+    if _task_cancelled(context):
+        print("[购买鱼食] 已收到停止请求，未提交购买", flush=True)
+        return False
+    final_frame = _capture_720p(controller)
+    detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", final_frame)
+    price_box = _recognition_box(context, "BuyFishFoodUnitPrice", final_frame)
+    purchase_box = _recognition_box(context, "BuyFishFoodPurchaseButton", final_frame)
+    if detail_box is None or price_box is None or purchase_box is None:
+        print("[购买鱼食] 点击购买前最终门禁失败，未提交购买", flush=True)
+        return False
+
+    purchase_x, purchase_y = _box_center(purchase_box)
+    print(f"[购买鱼食] 点击识别到的购买按钮中心 ({purchase_x}, {purchase_y})", flush=True)
+    controller.post_click(purchase_x, purchase_y).wait()
+    return True
+
+
+def _wait_back_to_store_list(context: Context, controller) -> bool:
+    """Wait until we are back at the store item list page."""
+    for _ in range(10):
+        if _task_cancelled(context):
+            return False
+        time.sleep(0.3)
+        candidate = _capture_720p(controller)
+        candidate_back = _recognition_box(context, "BuyFishFoodStoreIdentity", candidate)
+        candidate_item = _recognition_box(context, "BuyFishFoodStoreItemIdentity", candidate)
+        if candidate_back is not None and candidate_item is not None:
+            return True
+    return False
 
 
 @AgentServer.custom_action("BuyCheapFishFoodAction")
@@ -803,139 +959,66 @@ class BuyCheapFishFoodAction(CustomAction):
                 return False
 
             param = parse_dict_param(argv.custom_action_param)
-            bags = safe_int(param.get("bags"), 1, min_val=1, max_val=999)
+            bags = safe_int(param.get("bags"), 1, min_val=1, max_val=9999)
 
             if _task_cancelled(context):
                 print("[购买鱼食] 已收到停止请求，未开始购买", flush=True)
                 return False
 
-            frame = _capture_720p(controller)
-            required_nodes = (
-                "BuyFishFoodDetailIdentity",
-                "BuyFishFoodUnitPrice",
-                "BuyFishFoodPlusButton",
-                "BuyFishFoodPurchaseButton",
+            # If we're already on detail page, skip find step
+            first_frame = _capture_720p(controller)
+            already_on_detail = (
+                _recognition_box(context, "BuyFishFoodDetailIdentity", first_frame) is not None
+                and _recognition_box(context, "BuyFishFoodUnitPrice", first_frame) is not None
             )
-            missing = [node for node in required_nodes if _recognition_box(context, node, frame) is None]
-            if missing:
-                print(f"[购买鱼食] 廉价鱼食详情页门禁不完整，缺: {', '.join(missing)}", flush=True)
-                return False
 
-            current_quantity = _recognition_number(context, "BuyFishFoodQuantity", frame)
-            if current_quantity is None or current_quantity < 1 or current_quantity > bags:
-                print(
-                    f"[购买鱼食] 当前购买数量无法安全确认（读到={current_quantity}，目标={bags}袋），未执行购买",
-                    flush=True,
-                )
-                return False
+            remaining = bags
+            batch_num = 0
 
-            print(f"[购买鱼食] 已确认廉价鱼食单价 400 金币，计划购买 {bags} 袋", flush=True)
-            last_hold_delta = None
-            while bags - current_quantity >= (20 if last_hold_delta is None else last_hold_delta + 3):
-                if _task_cancelled(context):
-                    print("[购买鱼食] 已收到停止请求，终止长按", flush=True)
-                    return False
-                current_frame = _capture_720p(controller)
-                detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", current_frame)
-                plus_box = _recognition_box(context, "BuyFishFoodPlusButton", current_frame)
-                if detail_box is None or plus_box is None:
-                    print("[购买鱼食] 长按前页面或加号识别失败，停止操作", flush=True)
+            while remaining > 0:
+                batch_num += 1
+                batch = min(remaining, 999)
+                print(f"[购买鱼食] 第 {batch_num} 轮：本轮买 {batch} 袋，剩余 {remaining - batch} 袋", flush=True)
+
+                # If not on detail page, find and enter
+                if not already_on_detail:
+                    if not _find_and_enter_cheap_fish_food(context, controller, 8):
+                        print("[购买鱼食] 查找廉价鱼食失败，终止购买", flush=True)
+                        return False
+                already_on_detail = False  # after each purchase we go back to store list
+
+                # Buy this batch
+                if not _buy_one_batch(context, controller, batch):
+                    print(f"[购买鱼食] 第 {batch_num} 轮购买失败", flush=True)
                     return False
 
-                hold_ms = 1000 if last_hold_delta is None else min(
-                    5000,
-                    max(1000, int((bags - current_quantity - 3) * 1000 / last_hold_delta)),
-                )
-                print(f"[购买鱼食] 剩余 {bags - current_quantity} 袋，长按加号 {hold_ms}ms", flush=True)
-                action_detail = context.run_action_direct(
-                    JActionType.LongPress,
-                    JLongPress(duration=hold_ms),
-                    box=plus_box,
-                )
-                if _task_cancelled(context):
-                    print("[购买鱼食] 长按期间收到停止请求，终止购买", flush=True)
-                    return False
-                if not action_detail or not action_detail.success:
-                    print("[购买鱼食] 长按动作失败，停止操作", flush=True)
+                # Wait back to store list
+                if not _wait_back_to_store_list(context, controller):
+                    print("[购买鱼食] 购买后未确认返回商品列表，停止操作", flush=True)
                     return False
 
-                quantity_frame = _capture_720p(controller)
-                new_quantity = _recognition_number(context, "BuyFishFoodQuantity", quantity_frame)
-                if new_quantity is None or new_quantity <= current_quantity:
-                    print("[购买鱼食] 长按后数量未可靠增加，停止操作", flush=True)
-                    return False
-                last_hold_delta = new_quantity - current_quantity
-                current_quantity = new_quantity
+                remaining -= batch
+                print(f"[购买鱼食] 第 {batch_num} 轮完成，已累计购买 {bags - remaining} 袋", flush=True)
 
-            if current_quantity > bags + 2:
-                print("[购买鱼食] 长按后的数量超过允许误差，未提交购买", flush=True)
-                return False
-
-            for index in range(max(0, bags - current_quantity)):
-                if _task_cancelled(context):
-                    print("[购买鱼食] 已收到停止请求，终止增加数量", flush=True)
-                    return False
-                current_frame = _capture_720p(controller)
-                detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", current_frame)
-                plus_box = _recognition_box(context, "BuyFishFoodPlusButton", current_frame)
-                if detail_box is None or plus_box is None:
-                    print(f"[购买鱼食] 第 {index + 2} 袋前页面或加号识别失败，停止操作", flush=True)
-                    return False
-                plus_x, plus_y = _box_center(plus_box)
-                controller.post_click(plus_x, plus_y).wait()
-                if _task_cancelled(context):
-                    print("[购买鱼食] 点击后收到停止请求，未继续操作", flush=True)
-                    return False
-                time.sleep(0.15)
-
-            if _task_cancelled(context):
-                print("[购买鱼食] 已收到停止请求，未提交购买", flush=True)
-                return False
-            final_frame = _capture_720p(controller)
-            detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", final_frame)
-            price_box = _recognition_box(context, "BuyFishFoodUnitPrice", final_frame)
-            purchase_box = _recognition_box(context, "BuyFishFoodPurchaseButton", final_frame)
-            if detail_box is None or price_box is None or purchase_box is None:
-                print("[购买鱼食] 点击购买前最终门禁失败，未提交购买", flush=True)
-                return False
-
-            purchase_x, purchase_y = _box_center(purchase_box)
-            print(f"[购买鱼食] 点击识别到的购买按钮中心 ({purchase_x}, {purchase_y})", flush=True)
-            controller.post_click(purchase_x, purchase_y).wait()
-
-            store_frame = None
-            store_back_box = None
-            for _ in range(10):
-                if _task_cancelled(context):
-                    print("[购买鱼食] 已收到停止请求，终止购买后导航", flush=True)
-                    return False
-                time.sleep(0.3)
-                candidate = _capture_720p(controller)
-                candidate_back = _recognition_box(context, "BuyFishFoodStoreIdentity", candidate)
-                candidate_item = _recognition_box(context, "BuyFishFoodStoreItemIdentity", candidate)
-                if candidate_back is not None and candidate_item is not None:
-                    store_frame = candidate
-                    store_back_box = candidate_back
-                    break
-            if store_frame is None or store_back_box is None:
-                print("[购买鱼食] 购买后未确认返回商品列表，停止操作", flush=True)
+            # All batches done: click back to tank
+            store_back_box = _recognition_box(context, "BuyFishFoodStoreIdentity", _capture_720p(controller))
+            if store_back_box is None:
+                print("[购买鱼食] 未找到返回按钮，停止操作", flush=True)
                 return False
 
             back_x, back_y = _box_center(store_back_box)
-            print(f"[购买鱼食] 商品列表已确认，点击 OCR 返回按钮中心 ({back_x}, {back_y})", flush=True)
+            print(f"[购买鱼食] 全部完成，点击商品列表返回按钮 ({back_x}, {back_y})", flush=True)
             if _task_cancelled(context):
-                print("[购买鱼食] 已收到停止请求，未点击返回", flush=True)
                 return False
             controller.post_click(back_x, back_y).wait()
 
             for _ in range(10):
                 if _task_cancelled(context):
-                    print("[购买鱼食] 已收到停止请求，终止返回确认", flush=True)
                     return False
                 time.sleep(0.3)
                 tank_frame = _capture_720p(controller)
                 if _recognition_box(context, "BuyFishFoodTankIdentity", tank_frame) is not None:
-                    print("[购买鱼食] 购买流程完成，已确认返回鱼缸", flush=True)
+                    print(f"[购买鱼食] 全部完成，共购买 {bags} 袋，已确认返回鱼缸", flush=True)
                     return True
 
             print("[购买鱼食] 返回后未识别到鱼缸，停止操作", flush=True)
@@ -1788,6 +1871,73 @@ def check_band_fish_skip_button(frame: Optional[np.ndarray]) -> Optional[Tuple[i
     return None
 
 
+def _band_fish_settlement_button(frame: Optional[np.ndarray]) -> Optional[Tuple[int, int]]:
+    """Return the verified bottom settlement button center, without clicking."""
+    if frame is None:
+        return None
+    if frame.shape[:2] != (720, 1280):
+        frame = cv2.resize(frame, (1280, 720))
+    crop = frame[650:700, 595:685]
+    if crop.size == 0:
+        return None
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, np.array([35, 80, 80]), np.array([85, 255, 255]))
+    return (639, 680) if int(np.count_nonzero(mask)) >= 150 else None
+
+
+def _resume_band_fish_performance(context: Context, ctrl, initial_frame=None) -> bool:
+    """Resume an already playing/settled performance and record completion once."""
+    started = time.time()
+    frame = initial_frame
+    while time.time() - started < 45.0:
+        if _task_cancelled(context):
+            print("[乐队鱼演出] 已收到停止请求，停止恢复演出。", flush=True)
+            return False
+        if frame is None:
+            frame = _capture_720p(ctrl)
+        if frame is None:
+            time.sleep(0.4)
+            continue
+
+        settle_pos = _band_fish_settlement_button(frame)
+        if settle_pos is not None:
+            print(f"[乐队鱼演出] 已确认结算按钮，点击 {settle_pos} 领取奖励。", flush=True)
+            ctrl.post_click(*settle_pos).wait()
+            time.sleep(2.0)
+            band_fish_state["status"] = "DONE"
+            band_fish_state["performance_finished"] = True
+            return True
+
+        if hasattr(context, "run_recognition"):
+            done = context.run_recognition("BandFishCheckDone", frame)
+            if done and done.hit:
+                print("[乐队鱼演出] 已回到返场演出页，本局完成。", flush=True)
+                band_fish_state["status"] = "DONE"
+                band_fish_state["performance_finished"] = True
+                return True
+
+        skip_pos = check_band_fish_skip_button(frame)
+        if skip_pos is not None:
+            print(f"[乐队鱼演出] 恢复到演出中，点击识别到的跳过按钮 {skip_pos}。", flush=True)
+            ctrl.post_click(*skip_pos).wait()
+            time.sleep(1.0)
+
+        frame = None
+        time.sleep(1.0)
+
+    print("[乐队鱼演出] 错误: 恢复演出后 45 秒内未识别到结算或返场状态。", flush=True)
+    return False
+
+
+@AgentServer.custom_action("BandFishResumePerformanceAction")
+class BandFishResumePerformanceAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        ctrl = context.tasker.controller
+        if not ctrl:
+            return False
+        return _resume_band_fish_performance(context, ctrl, _capture_720p(ctrl))
+
+
 def _band_fish_score_candidates(context: Context, frame, expected: str = ".+"):
     """读取选曲列表中的 OCR 结果，返回 [(name, box), ...]。"""
     if frame is None or not hasattr(context, "run_recognition"):
@@ -1887,35 +2037,41 @@ class BandFishPerformAction(CustomAction):
                         f = cv2.resize(f, (1280, 720))
                 return f
 
-            # 职责 1: 验证当前处于“开始演出”状态并点击，识别失败绝不盲点。
+            # 职责 1: 支持从开始按钮或已经打开的选曲弹窗恢复。
             f_init = capture_frame()
-            ready_box = _recognition_box(context, "BandFishCheckReady", f_init)
-            if ready_box is None:
-                print("[乐队鱼演出] 错误: 未确认当前页面的“开始演出”按钮，安全停止", flush=True)
-                return False
-            btn_x, btn_y = _box_center(ready_box)
-            print(f"[乐队鱼演出] 识别到“开始演出”按钮中心: ({btn_x}, {btn_y})", flush=True)
-
-            print(f"[乐队鱼演出] 点击【开始演出】按钮 ({btn_x}, {btn_y})...", flush=True)
-            ctrl.post_click(btn_x, btn_y).wait()
-            time.sleep(1.8)
-
-            # 职责 2: 必须同时识别弹窗标题和确定按钮，才允许在列表内操作。
-            t_dlg = time.time()
             f_dlg = None
-            confirm_box = None
-            while time.time() - t_dlg < 5.0:
-                candidate = capture_frame()
-                if candidate is None:
-                    time.sleep(0.3)
-                    continue
-                title_box = _recognition_box(context, "BandFishScoreDialogTitle", candidate)
-                candidate_confirm = _recognition_box(context, "BandFishScoreConfirm", candidate)
-                if title_box is not None and candidate_confirm is not None:
-                    f_dlg = candidate
-                    confirm_box = candidate_confirm
-                    break
-                time.sleep(0.4)
+            confirm_box = _recognition_box(context, "BandFishScoreConfirm", f_init)
+            if (
+                _recognition_box(context, "BandFishScoreDialogTitle", f_init) is not None
+                and confirm_box is not None
+            ):
+                print("[乐队鱼演出] 当前已在选曲弹窗，按本次乐章配置继续。", flush=True)
+                f_dlg = f_init
+            else:
+                ready_box = _recognition_box(context, "BandFishCheckReady", f_init)
+                if ready_box is None:
+                    print("[乐队鱼演出] 错误: 未确认开始按钮或选曲弹窗，安全停止", flush=True)
+                    return False
+                btn_x, btn_y = _box_center(ready_box)
+                print(f"[乐队鱼演出] 点击【开始演出】按钮 ({btn_x}, {btn_y})...", flush=True)
+                ctrl.post_click(btn_x, btn_y).wait()
+                time.sleep(1.8)
+
+                # 职责 2: 必须同时识别弹窗标题和确定按钮，才允许在列表内操作。
+                t_dlg = time.time()
+                confirm_box = None
+                while time.time() - t_dlg < 5.0:
+                    candidate = capture_frame()
+                    if candidate is None:
+                        time.sleep(0.3)
+                        continue
+                    title_box = _recognition_box(context, "BandFishScoreDialogTitle", candidate)
+                    candidate_confirm = _recognition_box(context, "BandFishScoreConfirm", candidate)
+                    if title_box is not None and candidate_confirm is not None:
+                        f_dlg = candidate
+                        confirm_box = candidate_confirm
+                        break
+                    time.sleep(0.4)
 
             if f_dlg is None or confirm_box is None:
                 print("[乐队鱼演出] 错误: 未同时识别选曲弹窗标题与“确定”按钮，未消耗体力", flush=True)
@@ -3403,6 +3559,28 @@ def _match_golden_dolphin_template(frame, template):
     )
 
 
+def _classify_golden_dolphin_resume_frame(frame, templates):
+    """Recognize only resume states backed by existing live fixtures/templates."""
+    cancel_score, _ = _match_golden_dolphin_template(frame, templates.get("cancel"))
+    if cancel_score >= 0.70:
+        return "SETTLEMENT"
+
+    xp_targets = _find_golden_dolphin_xp(
+        frame, templates.get("rewards", {}).get("xp", ())
+    )
+    activation_templates = templates.get("activation_coin", ())
+    activation_coin = _find_golden_dolphin_activation_coin(
+        frame,
+        activation_templates[0] if activation_templates else None,
+    )
+    # Resume detection is deliberately stricter than click detection. The
+    # amusement panel has a weak XP-like false positive (~0.50), while all
+    # retained active fixtures are either an activation coin hit or XP >= 0.55.
+    if any(score >= 0.55 for _, _, score in xp_targets) or activation_coin is not None:
+        return "ACTIVE"
+    return None
+
+
 def _return_golden_dolphin_to_tank(ctrl, templates, timeout: float = 8.0):
     """从结算页或已确认的游乐园面板安全归位，并以主界面模板作为成功门禁。"""
     tpl_main = templates.get("main")
@@ -3493,6 +3671,19 @@ class GoldenDolphinNavigationAction(CustomAction):
                 print("[金海豚导航] ERROR: 无法获取截屏，安全终止任务", flush=True)
                 golden_dolphin_state["status"] = "FAILED"
                 return False
+
+            resume_state = _classify_golden_dolphin_resume_frame(
+                screen,
+                tpls,
+            )
+            if resume_state == "SETTLEMENT":
+                print("[金海豚导航] 已识别现成结算页，直接进入退出归位流程。", flush=True)
+                golden_dolphin_state["status"] = "SETTLEMENT"
+                return True
+            if resume_state == "ACTIVE":
+                print("[金海豚导航] 已识别现成游戏奖励/隐藏启动目标，直接恢复游戏循环。", flush=True)
+                golden_dolphin_state["status"] = "READY_TO_PLAY"
+                return True
 
             # Deepest-First 状态检查 0: 检查是否已经处于确认/机会用完弹窗
             gc_init = _find_green_check(screen)
@@ -5090,6 +5281,17 @@ class ShakeGameNavigationAction(CustomAction):
                 print("[摇一摇导航] ERROR: 无法获取截屏，安全终止任务", flush=True)
                 shake_game_state["status"] = "FAILED"
                 return False
+
+            settlement_score, _ = _match_golden_dolphin_template(
+                screen, tpls.get("cancel")
+            )
+            if settlement_score >= 0.70:
+                print(
+                    f"[摇一摇导航] 已识别现成结算页 (score={settlement_score:.3f})，直接进入退出归位流程。",
+                    flush=True,
+                )
+                shake_game_state["status"] = "SETTLEMENT"
+                return True
 
             # Deepest-First 状态检查 0: 检查是否已经处于确认/机会用完弹窗
             gc_init = _find_green_check(screen)

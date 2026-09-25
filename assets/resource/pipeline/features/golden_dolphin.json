@@ -25,8 +25,17 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "GoldenDolphinResumeSettlement",
             "GoldenDolphinPlayGame",
             "GoldenDolphinDone"
+        ]
+    },
+    "GoldenDolphinResumeSettlement": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckGoldenDolphinSettlementReco",
+        "action": "DoNothing",
+        "next": [
+            "GoldenDolphinExit"
         ]
     },
     "GoldenDolphinPlayGame": {
