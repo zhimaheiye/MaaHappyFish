@@ -1,6 +1,6 @@
 # 当前交接档案 (CURRENT.md)
 
-**更新时间**: 2026-09-27
+**更新时间**: 2026-09-28
 
 **乐队鱼/驯鹿鱼两处误识别（2026-09-27）**：00:37 主鱼缸被底部绿色像素误判为乐队鱼结算，恢复动作等 45 秒后失败；结算现统一要求“我的乐章”标题和底部“确定”同帧命中，正常演出与恢复共用门禁并点文字中心。00:41 驯鹿鱼“直接赠送”子串选中了弹窗说明段落；现全屏匹配完整按钮文字，赠送后有界确认消失才返回，超时 StopTask。门禁/选曲/等待/恢复与 12 个驯鹿场景、244 条正则/822 节点资源、Agent 引用和编译通过；5 项 Maa 固定图片离线 OCR 校验通过，本次未做 MFA/模拟器交互。
 
@@ -30,8 +30,8 @@
 
 | 项目 | 信息 |
 | :--- | :--- |
-| **Current version** | `0.7.1` |
-| **Latest release** | [`v0.7.1`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.1) |
+| **Current version** | `0.7.2` |
+| **Latest release** | [`v0.7.2`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.2) |
 | **CI hard gate** | `verify (win, x86_64)` PASS（GitHub Windows Runner embedded Python 冒烟 + 更新契约门禁） |
 | **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新（发版流程标准详见 [release-workflow.md](../release-workflow.md)） |
 
