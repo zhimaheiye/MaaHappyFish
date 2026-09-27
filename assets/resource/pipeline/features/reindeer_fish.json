@@ -67,20 +67,40 @@
     },
     "ReindeerFishDirectGift": {
         "recognition": "OCR",
-        "expected": "直接赠送",
+        "expected": "^直接赠送$",
         "action": "Click",
         "post_delay": 1000,
+        "timeout": 5000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "ReindeerFishCommonBack"
+            "ReindeerFishDirectGiftGone"
         ],
         "focus": {
             "Node.Action.Succeeded": "[驯鹿鱼送收礼] 已识别并点击直接赠送"
-        }
+        },
+        "on_error": ["ReindeerFishAbort"]
+    },
+    "ReindeerFishDirectGiftGone": {
+        "recognition": "OCR",
+        "expected": "直接赠送",
+        "inverse": true,
+        "action": "DoNothing",
+        "timeout": 6000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "ReindeerFishVerifyTank",
+            "ReindeerFishReplyPopupReturn",
+            "ReindeerFishCommonBack"
+        ],
+        "on_error": ["ReindeerFishAbort"]
     },
     "ReindeerFishCollectAll": {
         "recognition": "OCR",
@@ -277,7 +297,7 @@
     },
     "ReindeerFishAbort": {
         "recognition": "DirectHit",
-        "action": "DoNothing",
+        "action": "StopTask",
         "focus": {
             "Node.Action.Succeeded": "[驯鹿鱼送收礼] 未识别到当前页面可执行操作，已安全停止且未盲目点击；请查看识别日志，若为新页面再补充流程"
         }

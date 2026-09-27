@@ -44,6 +44,14 @@
         "custom_action_param": {
             "bags": 1
         },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "BuyFishFoodDone"
+        ],
         "on_error": [
             "BuyFishFoodAbort"
         ]
@@ -229,6 +237,14 @@
         "focus": {
             "Node.Action.Succeeded": "[购买鱼食] 廉价鱼食购买完成，已返回鱼缸"
         },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "BuyFishFoodDone"
+        ],
         "on_error": [
             "BuyFishFoodAbort"
         ]
@@ -337,9 +353,32 @@
     },
     "BuyFishFoodAbort": {
         "recognition": "DirectHit",
-        "action": "DoNothing",
+        "action": "StopTask",
         "focus": {
             "Node.Action.Succeeded": "[购买鱼食] 购买流程未完成，已安全停止。请查看识别日志。"
         }
+    },
+    "BuyFishFoodDone": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "Custom",
+        "custom_action": "DailyRoutineSubtaskDoneAction",
+        "custom_action_param": {
+            "task_name": "BuyFishFood",
+            "expected_step": "BUY_FISH_FOOD"
+        },
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ],
+        "on_error": ["BuyFishFoodAbort"]
     }
 }

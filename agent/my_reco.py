@@ -1073,19 +1073,18 @@ class CheckBandFishStandaloneDoneReco(CustomRecognition):
 
 @AgentServer.custom_recognition("CheckBandFishSettlementReco")
 class CheckBandFishSettlementReco(CustomRecognition):
-    """Pure visual gate for the bottom green settlement button."""
+    """结算页须同时命中“我的乐章”标题与底部确定，绿色像素不能证明页面身份。"""
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
         image = argv.image
         if image is None:
             return None
         if image.shape[:2] != (720, 1280):
             image = cv2.resize(image, (1280, 720))
-        crop = image[650:700, 595:685]
-        if crop.size == 0:
+        title = context.run_recognition("BandFishSettlementTitle", image)
+        if not title or not title.hit:
             return None
-        hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, np.array([35, 80, 80]), np.array([85, 255, 255]))
-        return (595, 650, 90, 50) if int(np.count_nonzero(mask)) >= 150 else None
+        confirm = context.run_recognition("BandFishSettlementConfirm", image)
+        return confirm.box if confirm and confirm.hit else None
 
 
 @AgentServer.custom_recognition("CheckGoldenDolphinCanPlayReco")

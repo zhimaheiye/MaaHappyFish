@@ -61,9 +61,15 @@ EmulatorAdTask -> EmulatorAdRouter
         ├─ MobileAdCheckContinueCondition (达到轮数时 Recognition 命中 -> 点击红叉退出)
         └─ MobileAdClickContinueCheck (未达轮数时自然 Fallthrough 命中对号 -> 拉起下一条)
   ```
-  `MobileAdCheckCycleLimitReco` 严格保持无副作用的纯函数特性，仅只读判断 `completed_cycles >= max_cycles`，彻底规避了候选轮询评估期间的计数虚增。
-- **绿色对号快捷继续**：弹窗右下角检测到绿色对号 `✔`（ROI `[930, 455, 120, 130]`），只要未达到本次任务配置的目标轮数（`completed_cycles < max_cycles`），自动点击拉起下一条广告（实测拉起耗时 ~3.07s）。
+  `MobileAdCheckCycleLimitReco` 严格保持无副作用的纯函数特性：`max_cycles > 0` 时只读判断 `completed_cycles >= max_cycles`；`max_cycles = 0` 时永不命中轮数终态，由用户手动停止任务。该设计彻底规避候选轮询评估期间的计数虚增。
+- **绿色对号快捷继续**：弹窗右下角检测到绿色对号 `✔`（ROI `[930, 455, 120, 130]`）；有限轮数尚未达到上限，或 `max_cycles = 0` 处于一直运行模式时，自动点击拉起下一条广告（实测拉起耗时 ~3.07s）。
 - **红色叉号安全退出**：达到用户设定的运行轮数（如完成 3 轮）时，识别点击红色 `✖`（ROI `[840, 455, 100, 110]`），安全返回大厅优雅终止任务。严禁无模板盲点保底。
+
+### 5. 自动续播返回大厅恢复（2026-09-26）
+- 现场 20:27、21:13、21:40、22:00、22:16 五次失败均停在 `MobileAdClickContinueCheck`；点击继续后未启动下一条广告，画面回到“看视频赚大奖”大厅。日志确认该节点只等待播放/结束页，15 秒后超时。五张错误截图的既有大厅模板匹配分数均为 `0.998455`。
+- `MobileAdClickContinueCheck` 保留 15 秒广告启动窗口；超时通过 `on_error` 重新评估 `MobileAdCenter` / `MobileAdCenterByOCR`。只有当帧大厅模板或入口 OCR 命中才点击入口续跑；未知页仍停止。
+- 恢复不经过 `MobileAdTask`，不清零完成轮数与 `reward_recorded`；新广告确认播放后仍由 `MobileAdOnAdStartAction` 清除奖励记录锁。有限轮数和一直运行均沿用原计数规则。
+- 此处修复的是已知大厅状态无法续跑；游戏/广告 SDK 偶尔未拉起下一条的内部原因无法由现有视觉日志确定。专项回归与通用门禁完成代码级验证，本次未做真机长跑测试。
 
 ---
 
@@ -72,6 +78,7 @@ EmulatorAdTask -> EmulatorAdRouter
 - `3 轮(默认测试)`：单次运行观看 3 条广告并转盘结算，适合日常快速取证与验收。
 - `5 轮`：连续观看 5 条广告并转盘结算。
 - `10 轮`：连续观看 10 条广告并转盘结算。
+- `一直运行`：手机与模拟器均将 `max_cycles` 设为 `0`，持续进入下一轮，直到用户在 MFA 中手动停止任务。
 
 ---
 

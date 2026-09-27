@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -3259,19 +3259,25 @@
                 },
                 {
                     "name": "购买鱼食",
+                    "option": [
+                        "购买廉价鱼食袋数"
+                    ],
                     "pipeline_override": {
                         "DailyRoutineEnableBuyFishFood": {
                             "enabled": true
-                        },
-                        "BuyFishFoodStartAtDetail": {
-                            "custom_action_param": {
-                                "bags": "{袋数}"
-                            }
-                        },
-                        "BuyFishFoodPurchaseOnDetail": {
-                            "custom_action_param": {
-                                "bags": "{袋数}"
-                            }
+                        }
+                    }
+                },
+                {
+                    "name": "鱼宝乐园",
+                    "option": [
+                        "鱼宝喂食设置",
+                        "鱼宝玩耍设置",
+                        "鱼宝喂奶设置"
+                    ],
+                    "pipeline_override": {
+                        "DailyRoutineEnableFishBaby": {
+                            "enabled": true
                         }
                     }
                 }
@@ -3318,7 +3324,7 @@
         "手机广告轮数": {
             "type": "select",
             "label": "连续看广告轮数",
-            "description": "选择单次运行连续观看并领取的广告轮数（每轮包含一条视频广告与一次转盘）",
+            "description": "选择连续观看轮数；一直运行会持续执行，直到用户手动停止任务。每轮包含一条视频广告与一次转盘。",
             "default_case": "3 轮(默认测试)",
             "cases": [
                 {
@@ -3365,6 +3371,22 @@
                         "MobileAdCheckContinueCondition": {
                             "custom_recognition_param": {
                                 "max_cycles": 10
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "一直运行",
+                    "pipeline_override": {
+                        "MobileAdTask": {
+                            "custom_action_param": {
+                                "max_cycles": 0,
+                                "log_tag": "手机看广告"
+                            }
+                        },
+                        "MobileAdCheckContinueCondition": {
+                            "custom_recognition_param": {
+                                "max_cycles": 0
                             }
                         }
                     }

@@ -104,10 +104,11 @@
             "DailyRoutineStepGemGiftBox",
             "DailyRoutineStepGemOrder",
             "DailyRoutineStepRomanticHouse",
+            "DailyRoutineStepBuyFishFood",
+            "DailyRoutineStepFishBaby",
             "DailyRoutineStepBandFishPass2",
             "DailyRoutineStepGreenWildClaim",
             "DailyRoutineStepPrincessClaim",
-            "DailyRoutineStepBuyFishFood",
             "DailyRoutineStepAllDone"
         ]
     },
@@ -510,9 +511,30 @@
     "DailyRoutineEnableBuyFishFood": {
         "recognition": "DirectHit",
         "action": "DoNothing",
-        "next": [
-            "DailyRoutineStepBuyFishFood"
-        ],
         "enabled": false
+    },
+    "DailyRoutineEnableFishBaby": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineStepFishBaby": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "FISH_BABY"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：鱼宝乐园。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FishBabyTask"
+        ]
     }
 }

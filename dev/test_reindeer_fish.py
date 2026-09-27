@@ -3,6 +3,7 @@ dev/test_reindeer_fish.py
 驯鹿鱼送收礼状态机与拓扑契约测试套件 (Case 1 ~ Case 7)
 """
 import json
+import re
 import os
 import sys
 
@@ -130,7 +131,11 @@ class MockMaaSimulator:
                         break
                     elif cand_reco == "OCR":
                         expected = cand_def.get("expected")
-                        if candidate in current_screen_elements or expected in current_screen_elements:
+                        hit = candidate in current_screen_elements or expected in current_screen_elements or any(
+                            re.search(expected, text) for text in current_screen_elements)
+                        if cand_def.get("inverse", False):
+                            hit = not hit
+                        if hit:
                             matched_next = candidate
                             break
                     elif cand_reco == "TemplateMatch":
@@ -342,6 +347,47 @@ def test_cases():
     assert "ReindeerFishReplyPopupReturn" in hist10
     assert "ReindeerFishCommonBack" in hist10
     print("[PASS] Case 10: 一键回礼后的结算弹窗点击返回，再离开页面")
+
+    direct = pdata["ReindeerFishDirectGift"]
+    # 使用本次真实 OCR 的两个竞争结果：旧子串会先命中说明段落。
+    texts = ["有好友哦，是否直接赠送部分好友呢？", "直接赠送"]
+    assert [text for text in texts if re.search(direct["expected"], text)] == ["直接赠送"]
+    assert "roi" not in direct, "保留用户要求的全屏文字识别"
+    assert direct["next"][-1] == "ReindeerFishDirectGiftGone"
+    assert direct["timeout"] == 5000
+    assert direct["on_error"] == ["ReindeerFishAbort"]
+    assert pdata["ReindeerFishAbort"]["action"] == "StopTask"
+
+    def frames_case_11(node, elapsed_ms, history):
+        if "ReindeerFishCommonBack" in history:
+            return {"主界面特征.png"}
+        if "ReindeerFishReplyAll" not in history:
+            return {"键回礼"}
+        if "ReindeerFishDirectGift" not in history:
+            return set(texts) | {"ReindeerFishCommonBack"}
+        if "ReindeerFishReplyPopupReturn" not in history:
+            return {"ReindeerFishReplyPopupReturn"}
+        return {"ReindeerFishCommonBack"}
+
+    hist11 = sim.run("ReindeerFishStartRouter", frames_case_11)
+    assert hist11.count("ReindeerFishDirectGift") == 1
+    assert "ReindeerFishDirectGiftGone" in hist11
+    assert "ReindeerFishReplyPopupReturn" in hist11
+    assert hist11[-1] == "ReindeerFishVerifyTank"
+    print("[PASS] Case 11: 直接赠送只命中按钮，消失确认后处理结果并回缸")
+
+    def frames_case_12(node, elapsed_ms, history):
+        if "ReindeerFishReplyAll" not in history:
+            return {"键回礼"}
+        # 模拟点击未生效；背景左上角返回虽可 OCR，也不能穿透点击。
+        return set(texts) | {"ReindeerFishCommonBack"}
+
+    hist12 = sim.run("ReindeerFishStartRouter", frames_case_12)
+    assert hist12.count("ReindeerFishDirectGift") == 1
+    assert "ReindeerFishDirectGiftGone" not in hist12
+    assert "ReindeerFishCommonBack" not in hist12
+    assert hist12[-1] == "ReindeerFishAbort"
+    print("[PASS] Case 12: 赠送弹窗未消失时有界停止，不点击背景返回")
 
 
 def main():

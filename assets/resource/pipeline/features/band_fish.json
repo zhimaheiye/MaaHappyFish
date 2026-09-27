@@ -40,6 +40,18 @@
             "BandFishDone"
         ]
     },
+    "BandFishSettlementTitle": {
+        "recognition": "OCR",
+        "expected": "^我的乐章$",
+        "roi": [500, 170, 280, 100],
+        "action": "DoNothing"
+    },
+    "BandFishSettlementConfirm": {
+        "recognition": "OCR",
+        "expected": "^确定$",
+        "roi": [500, 630, 280, 85],
+        "action": "DoNothing"
+    },
     "BandFishStartAtPlaying": {
         "recognition": "TemplateMatch",
         "template": "乐队鱼_跳过.png",

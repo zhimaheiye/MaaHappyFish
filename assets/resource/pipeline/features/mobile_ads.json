@@ -225,6 +225,10 @@
         "action": "Click",
         "post_delay": 2000,
         "timeout": 15000,
+        "on_error": [
+            "MobileAdCenter",
+            "MobileAdCenterByOCR"
+        ],
         "next": [
             "MobileAdPlaying",
             "MobileAdPlayingByOCR",

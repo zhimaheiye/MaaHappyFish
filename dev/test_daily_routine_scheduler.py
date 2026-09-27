@@ -284,7 +284,7 @@ def test_pipeline_topology():
     # 2026-09-15 现场 OCR 把“一键回礼”稳定识别为“键回礼”；使用共同稳定子串。
     assert pdata["ReindeerFishReplyAll"]["expected"] == "键回礼"
     assert pdata["ReindeerFishReplyAll"]["roi"] == [537, 611, 128, 44]
-    assert pdata["ReindeerFishDirectGift"]["expected"] == "直接赠送"
+    assert pdata["ReindeerFishDirectGift"]["expected"] == "^直接赠送$"
     assert "roi" not in pdata["ReindeerFishDirectGift"]
     assert pdata["ReindeerFishCommonBack"]["expected"] == "返回"
     assert pdata["ReindeerFishCommonBack"]["roi"] == [1, 0, 189, 119]

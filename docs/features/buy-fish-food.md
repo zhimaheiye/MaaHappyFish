@@ -2,7 +2,7 @@
 
 ## 功能定位
 
-`BuyFishFoodTask` 是可独立运行、也可供后续海星自动补粮流程调用的金币购买模块。当前仅支持单价 400 金币、每袋 30 粒的“廉价鱼食”，不涉及贝币、钻石或现实付费商品。
+`BuyFishFoodTask` 是可独立运行、也可作为日常收尾可选子任务或供后续海星自动补粮流程调用的金币购买模块。当前仅支持单价 400 金币、每袋 30 粒的“廉价鱼食”，不涉及贝币、钻石或现实付费商品。
 
 廉价鱼食的资源属性及实机测试授权见 `docs/game-knowledge.md`：在视觉门禁确认类别后，允许为跑通完整流程进行充分、重复的购买测试。
 
@@ -50,9 +50,15 @@ BuyFishFoodTask
 
 ## 参数与复用
 
-- UI 参数：`购买廉价鱼食袋数`，范围 1 到 999，默认 1；先采用最低风险默认值，用户可按需增大。
+- UI 参数：`购买廉价鱼食袋数`，范围 1 到 9999，默认 1；既有购买动作按每批最多 999 袋拆分，用户可按需增大。
 - Pipeline 参数：`BuyCheapFishFoodAction.custom_action_param.bags`。
+- 日常收尾勾选“购买鱼食”后通过 case 的 `option` 展开同一个 `购买廉价鱼食袋数` 输入组，统一覆盖详情页直启和商品列表进入两个购买节点，避免 checkbox 中引用未绑定的 `{袋数}`。
+- 调度器读取 `DailyRoutineEnableBuyFishFood`，安排在浪漫满屋后、鱼宝乐园前。两条购买成功路径均经过 `BuyFishFoodDone` 再次确认主鱼缸，由 `DailyRoutineSubtaskDoneAction` 写入完成状态；日常继续队列，独立任务正常结束。失败进入 `BuyFishFoodAbort` / `StopTask`，不伪报完成或推进队列。
 - 后续海星大功能可复用 `BuyFishFoodTask`，或覆盖 `BuyFishFoodStartAtDetail` 与 `BuyFishFoodPurchaseOnDetail` 的 `bags` 参数后进入该模块。
+
+## 2026-09-27 日常接入验证
+
+`dev/test_daily_routine_food_baby.py` 的 6 项配置/调度/主鱼缸门禁/双出口契约、既有购买专项、Pipeline 正则与 819 节点资源加载、Agent 引用、三份界面一致性、更新契约及 Python 编译通过。代码级验证完成，本次未做 MFA/模拟器测试；原独立模块实机证据不等同于新日常串联通过。
 
 ## 实机依据
 

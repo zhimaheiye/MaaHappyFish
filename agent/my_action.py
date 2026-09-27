@@ -589,6 +589,81 @@ def _box_center(box):
     return x + width // 2, y + height // 2
 
 
+@AgentServer.custom_action("DailySignCloseAction")
+class DailySignCloseAction(CustomAction):
+    """关闭签到页：fresh-frame 门禁、中心点击、有界重试与消失确认。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            params = parse_dict_param(argv.custom_action_param)
+            click_roi = params.get("click_roi")
+            if click_roi is not None:
+                if not isinstance(click_roi, (list, tuple)) or len(click_roi) != 4:
+                    print("[每日签到] ERROR: 关闭点击范围无效", flush=True)
+                    return False
+                click_roi = tuple(int(value) for value in click_roi)
+                if click_roi[2] <= 0 or click_roi[3] <= 0:
+                    print("[每日签到] ERROR: 关闭点击范围为空", flush=True)
+                    return False
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[每日签到] ERROR: 未获取到 Controller", flush=True)
+                return False
+            for attempt in range(4):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    print("[每日签到] ERROR: 截图失败，无法确认关闭状态", flush=True)
+                    return False
+                # run_recognition().hit 是原始识别结果，不包含 Pipeline inverse 的反转。
+                popup = context.run_recognition("GlobalDailySignPopup", frame)
+                if popup is None:
+                    print("[每日签到] ERROR: 签到标题识别调用失败", flush=True)
+                    return False
+                if not popup.hit:
+                    print("[每日签到] 已确认签到弹窗消失", flush=True)
+                    return True
+                if attempt == 3:
+                    break
+                box = _recognition_box(context, "GlobalDailySignClose", frame)
+                if not box or box[2] <= 0 or box[3] <= 0:
+                    print("[每日签到] ERROR: 关闭模板未命中，请检查签到_关闭.png", flush=True)
+                    return False
+                if _task_cancelled(context):
+                    return False
+                target = box
+                if click_roi is not None:
+                    left, top = max(box[0], click_roi[0]), max(box[1], click_roi[1])
+                    right = min(box[0] + box[2], click_roi[0] + click_roi[2])
+                    bottom = min(box[1] + box[3], click_roi[1] + click_roi[3])
+                    if right <= left or bottom <= top:
+                        print("[每日签到] ERROR: 关闭模板与指定点击范围不相交，拒绝点击", flush=True)
+                        return False
+                    target = (left, top, right - left, bottom - top)
+                cx, cy = _box_center(target)
+                result = ctrl.post_click(cx, cy).wait()
+                if not result.succeeded:
+                    print("[每日签到] ERROR: 关闭触摸下发失败", flush=True)
+                    return False
+                print(
+                    f"[每日签到] 第 {attempt + 1}/3 次关闭触摸已下发 "
+                    f"box={box}, center=({cx}, {cy})，等待消失确认",
+                    flush=True,
+                )
+                deadline = time.monotonic() + 1.0
+                while time.monotonic() < deadline:
+                    if _task_cancelled(context):
+                        return False
+                    time.sleep(0.1)
+            print("[每日签到] ERROR: 三次中心点击后弹窗仍在，停止；触摸下发成功不代表游戏响应", flush=True)
+            return False
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[每日签到] ERROR: 关闭验证异常: {e}", flush=True)
+            return False
+
+
 def _task_cancelled(context: Context) -> bool:
     try:
         return bool(context.tasker.stopping) or not bool(context.tasker.running)
@@ -1871,18 +1946,10 @@ def check_band_fish_skip_button(frame: Optional[np.ndarray]) -> Optional[Tuple[i
     return None
 
 
-def _band_fish_settlement_button(frame: Optional[np.ndarray]) -> Optional[Tuple[int, int]]:
-    """Return the verified bottom settlement button center, without clicking."""
-    if frame is None:
-        return None
-    if frame.shape[:2] != (720, 1280):
-        frame = cv2.resize(frame, (1280, 720))
-    crop = frame[650:700, 595:685]
-    if crop.size == 0:
-        return None
-    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, np.array([35, 80, 80]), np.array([85, 255, 255]))
-    return (639, 680) if int(np.count_nonzero(mask)) >= 150 else None
+def _band_fish_settlement_button(context: Context, frame: Optional[np.ndarray]) -> Optional[Tuple[int, int]]:
+    """与启动恢复共用标题/按钮双门禁，返回当帧确定文字中心。"""
+    box = _recognition_box(context, "BandFishStartAtSettlement", frame)
+    return _box_center(box) if box else None
 
 
 def _resume_band_fish_performance(context: Context, ctrl, initial_frame=None) -> bool:
@@ -1899,7 +1966,7 @@ def _resume_band_fish_performance(context: Context, ctrl, initial_frame=None) ->
             time.sleep(0.4)
             continue
 
-        settle_pos = _band_fish_settlement_button(frame)
+        settle_pos = _band_fish_settlement_button(context, frame)
         if settle_pos is not None:
             print(f"[乐队鱼演出] 已确认结算按钮，点击 {settle_pos} 领取奖励。", flush=True)
             ctrl.post_click(*settle_pos).wait()
@@ -2001,7 +2068,7 @@ class BandFishPerformAction(CustomAction):
     1. 开始演出: 识别底部绿色“开始演出”按钮后点击;
     2. 选曲确认: 选择最新乐章或指定乐章，验证黄色选中态后才点击【确定】消耗体力;
     3. 演出与跳过检测: 4 阶段状态机 (PLAYING -> WAIT_SKIP_BUTTON -> CLICK_SKIP -> WAIT_RESULT);
-    4. 结算等待与领取: 等待“我的乐章”结算弹窗并点击【确定】按钮 (639, 680) 领取结算奖励;
+    4. 结算等待与领取: 同帧确认“我的乐章”与底部【确定】，点击文字框中心领取结算奖励;
     5. 状态沉淀: band_fish_state["status"] = "DONE", band_fish_state["performance_finished"] = True.
     """
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -2208,7 +2275,7 @@ class BandFishPerformAction(CustomAction):
             t_skip_start = time.time()
             skip_window_sec = 6.0  # 前置跳过探测时间窗口
             settlement_detected = False
-            confirm_settle_x, confirm_settle_y = 639, 680
+            confirm_settle_x, confirm_settle_y = None, None
             skip_x, skip_y = None, None
 
             stage = "PLAYING"
@@ -2230,13 +2297,8 @@ class BandFishPerformAction(CustomAction):
                         stage = "CLICK_SKIP"
                     else:
                         # 检查是否已直接出现结算特征（防跳过窗口内演出已直接完成）
-                        crop_confirm = f_cur[650:700, 595:685]
-                        has_confirm = False
-                        if crop_confirm.size > 0:
-                            hsv_c = cv2.cvtColor(crop_confirm, cv2.COLOR_BGR2HSV)
-                            mask_c = cv2.inRange(hsv_c, np.array([35, 80, 80]), np.array([85, 255, 255]))
-                            if int(np.sum(mask_c > 0)) >= 150:
-                                has_confirm = True
+                        settle_pos = _band_fish_settlement_button(context, f_cur)
+                        has_confirm = settle_pos is not None
 
                         has_done = False
                         if hasattr(context, "run_recognition"):
@@ -2247,6 +2309,8 @@ class BandFishPerformAction(CustomAction):
                         if has_confirm or has_done:
                             print("[乐队鱼演出] 检测到结算弹窗或演出已自然结束，状态流转: WAIT_SKIP_BUTTON -> WAIT_RESULT", flush=True)
                             settlement_detected = True
+                            if has_confirm:
+                                confirm_settle_x, confirm_settle_y = settle_pos
                             if has_done and not has_confirm:
                                 confirm_settle_x = None
                             stage = "WAIT_RESULT"
@@ -2266,15 +2330,12 @@ class BandFishPerformAction(CustomAction):
                     continue
 
                 if stage == "WAIT_RESULT":
-                    # 检测结算弹窗底部绿色【确定】按钮 [580, 640, 120, 60]
-                    crop_confirm = f_cur[650:700, 595:685]
-                    if crop_confirm.size > 0:
-                        hsv_c = cv2.cvtColor(crop_confirm, cv2.COLOR_BGR2HSV)
-                        mask_c = cv2.inRange(hsv_c, np.array([35, 80, 80]), np.array([85, 255, 255]))
-                        if int(np.sum(mask_c > 0)) >= 150:
-                            settlement_detected = True
-                            print("[乐队鱼演出] 检测到结算弹窗底部【确定】按钮！", flush=True)
-                            break
+                    settle_pos = _band_fish_settlement_button(context, f_cur)
+                    if settle_pos is not None:
+                        confirm_settle_x, confirm_settle_y = settle_pos
+                        settlement_detected = True
+                        print("[乐队鱼演出] 已确认我的乐章结算页与确定按钮！", flush=True)
+                        break
 
                     # 辅助检查：如果已经返回“返场演出”页面，说明演出已自然结束
                     if hasattr(context, "run_recognition"):
@@ -4340,6 +4401,8 @@ class InitDailyRoutineAction(CustomAction):
                 "GemGiftBox": {"status": "IDLE"},
                 "GemOrder": {"status": "IDLE"},
                 "RomanticHouse": {"status": "IDLE"},
+                "BuyFishFood": {"status": "IDLE"},
+                "FishBaby": {"status": "IDLE"},
                 "SecretRealmGate": {"status": "IDLE"},
                 "PrincessTask": {"status": "IDLE"},
                 "GreenWildClaim": {"status": "IDLE"},
@@ -4348,7 +4411,7 @@ class InitDailyRoutineAction(CustomAction):
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate", "princess_task"))
+            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate", "princess_task", "buy_fish_food", "fish_baby"))
 
             if param.get("all_enabled"):
                 enable_fg = enable_rf = enable_gsc = enable_gwd = True
@@ -4357,6 +4420,9 @@ class InitDailyRoutineAction(CustomAction):
                 # 秘境之门处于 Hidden 阶段；挂机的“默认全选”也不能绕过 UI 隐藏自动启动。
                 enable_srg = False
                 enable_pt = True
+                # 新增消耗类任务必须显式勾选；不扩张挂机历史 all_enabled 的范围。
+                enable_bff = bool(param.get("buy_fish_food", False))
+                enable_fb = bool(param.get("fish_baby", False))
             elif has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
@@ -4371,6 +4437,8 @@ class InitDailyRoutineAction(CustomAction):
                 enable_rh = bool(param.get("romantic_house", False))
                 enable_srg = bool(param.get("secret_realm_gate", False))
                 enable_pt = bool(param.get("princess_task", False))
+                enable_bff = bool(param.get("buy_fish_food", False))
+                enable_fb = bool(param.get("fish_baby", False))
             else:
                 # 2. 从 pipeline override 中的 Enable 节点读取配置
                 def _is_node_enabled(node_name: str) -> bool:
@@ -4393,6 +4461,8 @@ class InitDailyRoutineAction(CustomAction):
                 enable_rh = _is_node_enabled("DailyRoutineEnableRomanticHouse")
                 enable_srg = _is_node_enabled("DailyRoutineEnableSecretRealmGate")
                 enable_pt = _is_node_enabled("DailyRoutineEnablePrincessTask")
+                enable_bff = _is_node_enabled("DailyRoutineEnableBuyFishFood")
+                enable_fb = _is_node_enabled("DailyRoutineEnableFishBaby")
 
             # 3. 按固定安全顺序构建待执行队列。
             queue = []
@@ -4423,6 +4493,10 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("GEM_ORDER")
             if enable_rh:
                 queue.append("ROMANTIC_HOUSE")
+            if enable_bff:
+                queue.append("BUY_FISH_FOOD")
+            if enable_fb:
+                queue.append("FISH_BABY")
             if enable_bf:
                 queue.append("BAND_FISH_PASS2")
             # 末尾无条件收尾：领取绿野寻仙踪和公主任务奖励
@@ -4445,6 +4519,8 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 宝石礼盒兑换 : {'[ON]' if enable_ggb else '[OFF]'}", flush=True)
             print(f"  - 宝石订单     : {'[ON]' if enable_go else '[OFF]'}", flush=True)
             print(f"  - 浪漫满屋     : {'[ON]' if enable_rh else '[OFF]'}", flush=True)
+            print(f"  - 购买鱼食     : {'[ON]' if enable_bff else '[OFF]'}", flush=True)
+            print(f"  - 鱼宝乐园     : {'[ON]' if enable_fb else '[OFF]'}", flush=True)
             print(f"  - 绿野奖励领取(末尾收尾) : [无条件]", flush=True)
             print(f"  - 公主奖励领取(末尾收尾) : [无条件]", flush=True)
             print("=" * 60, flush=True)
@@ -4465,6 +4541,7 @@ class InitDailyRoutineAction(CustomAction):
                 ("金海豚", enable_gd), ("摇一摇", enable_sg),
                 ("钓鱼达人", enable_fi), ("宝石礼盒兑换", enable_ggb),
                 ("宝石订单", enable_go), ("浪漫满屋", enable_rh),
+                ("购买鱼食", enable_bff), ("鱼宝乐园", enable_fb),
             )
             selected = "、".join(label for label, enabled in task_labels if enabled) or "无"
             skipped = "、".join(label for label, enabled in task_labels if not enabled) or "无"
@@ -4485,6 +4562,25 @@ class InitDailyRoutineAction(CustomAction):
             traceback.print_exc()
             print(f"[日常收尾] 初始化异常: {e}", flush=True)
             return False
+
+
+@AgentServer.custom_action("DailyRoutineSubtaskDoneAction")
+class DailyRoutineSubtaskDoneAction(CustomAction):
+    """由购买鱼食/鱼宝的主鱼缸确认节点提交完成，重复调用不推进下一任务。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        task_name = param.get("task_name")
+        expected_step = param.get("expected_step")
+        status = param.get("status", "DONE")
+        if (task_name, expected_step) not in (
+            ("BuyFishFood", "BUY_FISH_FOOD"), ("FishBaby", "FISH_BABY")
+        ) or status not in ("DONE", "SKIPPED"):
+            print("[日常收尾] ERROR: 子任务完成参数无效", flush=True)
+            return False
+        if daily_routine_state.get("active") and daily_routine_state.get("step") == expected_step:
+            advance_daily_routine_step(task_name, status)
+        return True
 
 
 @AgentServer.custom_action("DailyFreeGiftDoneAction")
@@ -5067,6 +5163,8 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 宝石礼盒兑换 (GemGiftBox)   : {ggb_st}", flush=True)
             print(f"  - 宝石订单 (GemOrder)         : {go_st}", flush=True)
             print(f"  - 浪漫满屋 (RomanticHouse)    : {rh_st}", flush=True)
+            print(f"  - 购买鱼食 (BuyFishFood)     : {tasks.get('BuyFishFood', {}).get('status', 'SKIPPED')}", flush=True)
+            print(f"  - 鱼宝乐园 (FishBaby)         : {tasks.get('FishBaby', {}).get('status', 'SKIPPED')}", flush=True)
             print(f"  - 秘境之门 (SecretRealmGate)  : {srg_st}", flush=True)
             print(f"  - 公主任务 (PrincessTask)     : {pt_st}", flush=True)
             print("=" * 60, flush=True)

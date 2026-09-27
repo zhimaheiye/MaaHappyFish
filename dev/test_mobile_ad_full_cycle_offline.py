@@ -4,6 +4,7 @@
 
 import os
 import re
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -109,6 +110,31 @@ class TestFullCycleAdComponents(unittest.TestCase):
         self.assertEqual(dest, "MobileAdCenter", f"Lobby screen should route to MobileAdCenter, but got {dest}")
         self.assertNotEqual(dest, "MobileAdWaitReturn")
         self.assertNotEqual(dest, "MobileAdWheelStop")
+
+    def test_continue_timeout_recovers_only_from_verified_lobby(self):
+        """Auto-continue may return to the lobby without starting an ad."""
+        pipeline = json.loads(
+            (REPO_ROOT / "assets/resource/pipeline/features/mobile_ads.json")
+            .read_text(encoding="utf-8")
+        )
+        continuation = pipeline["MobileAdClickContinueCheck"]
+        # Give the SDK its existing startup window before clicking the lobby again.
+        self.assertEqual(continuation["timeout"], 15000)
+        self.assertEqual(
+            continuation["on_error"], ["MobileAdCenter", "MobileAdCenterByOCR"]
+        )
+        raw = cv2.imread(str(self.evidence_dir / "current_phone_screen.png"))
+        lobby = cv2.resize(raw, (1600, 720), interpolation=cv2.INTER_AREA)
+        recognized = simulate_pipeline_router(lobby)
+        self.assertNotIn(recognized, continuation["next"])
+        self.assertIn(recognized, continuation["on_error"])
+        # Recovery enters the existing guarded click, never task initialization.
+        for name in continuation["on_error"]:
+            node = pipeline[name]
+            self.assertIn(node["recognition"], ("TemplateMatch", "OCR"))
+            self.assertEqual(node["action"], "Click")
+            self.assertNotIn("MobileAdTask", node["next"])
+            self.assertNotIn("custom_action", node)
 
     def test_case2_wheel_spinning_routes_to_wheel_stop(self):
         """Case 2: When wheel is spinning with '停止', router MUST route to MobileAdWheelStop."""

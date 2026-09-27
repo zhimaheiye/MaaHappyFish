@@ -128,6 +128,8 @@ class FakeContext:
             )
         if node_name == "BandFishCheckDone":
             return _result(False, (0, 0, 0, 0))
+        if node_name == "BandFishStartAtSettlement":
+            return _result(ctrl.screen == "performance", (595, 662, 90, 30))
         return None
 
 

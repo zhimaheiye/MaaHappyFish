@@ -67,9 +67,23 @@
         "template": "签到_识别.png",
         "threshold": 0.8,
         "action": "DoNothing",
+        "timeout": 4000,
         "next": [
-            "GlobalDailySignClaim"
-        ]
+            "GlobalDailySignAlreadySigned",
+            "GlobalDailySignClaim",
+            "GlobalDailySignClaimByOcr",
+            "GlobalDailySignAutoClosed"
+        ],
+        "on_error": ["GlobalDailySignFailed"]
+    },
+    "GlobalDailySignAlreadySigned": {
+        "recognition": "OCR",
+        "expected": "^已签到$",
+        "roi": [0, 400, 1280, 320],
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": ["GlobalDailySignClose", "GlobalDailySignAutoClosed"],
+        "on_error": ["GlobalDailySignFailed"]
     },
     "GlobalDailySignClaim": {
         "recognition": "TemplateMatch",
@@ -85,7 +99,7 @@
             "GlobalDailySignAutoClosed"
         ],
         "on_error": [
-            "GlobalDailySignClaimByOcr"
+            "GlobalDailySignFailed"
         ]
     },
     "GlobalDailySignClaimByOcr": {
@@ -101,7 +115,7 @@
             "GlobalDailySignAutoClosed"
         ],
         "on_error": [
-            "GlobalDailySignClose"
+            "GlobalDailySignFailed"
         ]
     },
     "GlobalDailySignClose": {
@@ -109,10 +123,17 @@
         "template": "签到_关闭.png",
         "threshold": 0.75,
         "roi": [1000, 0, 220, 160],
-        "action": "Click",
-        "post_delay": 800,
+        "action": "Custom",
+        "custom_action": "DailySignCloseAction",
+        "custom_action_param": {"click_roi": [1084, 45, 41, 43]},
+        "post_delay": 0,
         "timeout": 4000,
-        "focus": "已点击签到弹窗右上角关闭"
+        "focus": "正在点击签到弹窗关闭按钮并确认页面消失",
+        "on_error": ["GlobalDailySignFailed"]
+    },
+    "GlobalDailySignFailed": {
+        "action": "StopTask",
+        "focus": "ERROR: 签到弹窗领取或关闭验证失败，已停止任务，避免反复点击"
     },
     "GlobalDailySignAutoClosed": {
         "recognition": "TemplateMatch",

@@ -123,10 +123,21 @@ class TestEmulatorAds(unittest.TestCase):
                 count,
             )
 
-        # Phone ad UI remains intact and has no "一直运行"
+        # Phone ad UI exposes the same unlimited-cycle contract.
         phone_opt = self.interface["option"]["手机广告轮数"]
-        phone_cases = [c["name"] for c in phone_opt["cases"]]
-        self.assertNotIn("一直运行", phone_cases)
+        phone_cycles = {
+            case["name"]: case["pipeline_override"]
+            for case in phone_opt["cases"]
+        }
+        self.assertEqual(
+            phone_cycles["一直运行"]["MobileAdTask"]["custom_action_param"],
+            {"max_cycles": 0, "log_tag": "手机看广告"},
+        )
+        self.assertEqual(
+            phone_cycles["一直运行"]["MobileAdCheckContinueCondition"]
+            ["custom_recognition_param"]["max_cycles"],
+            0,
+        )
 
     def test_external_ad_pipeline_is_isolated_from_game_popup_handlers(self):
         source = (ROOT / "dev" / "test_daily_sign_global.py").read_text(encoding="utf-8")

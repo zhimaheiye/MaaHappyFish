@@ -48,20 +48,20 @@
 | `CollectFishTask` | 鱼缸 1/2/3、选择器、单/双缸初始化及收宝循环 | 支持 | `CollectFishStartRouter` | 单调缸位、双缸时间锚 | 当前画面优先并重新校准 | 已支持 |
 | `PatrolTask` | 鱼缸 1/2/3、选择器、管理页、海星页 | 支持 | `PatrolStartRouter` | 巡检槽位/喂食上下文 | 通用选择喂食弹窗故意 Abort | 已支持；弹窗故意不支持 |
 | `FeedStarfishStandalone` | 鱼缸 1/2/3、管理页、海星页 | 支持 | `FeedStarfishStandaloneStartRouter` | 选择喂食需海星身份 | 只有编号鱼缸可点管理；选择喂食弹窗停止 | 本轮补齐；弹窗故意不支持 |
-| `BuyFishFoodTask` | 主鱼缸、喂食弹窗、商店列表、商品详情 | 支持 | `BuyFishFoodStartRouter` | 购买袋数 | 每批重新验证详情/商店页 | 已支持 |
+| `BuyFishFoodTask` | 主鱼缸、喂食弹窗、商店列表、商品详情 | 支持，独立/日常共用 | `BuyFishFoodStartRouter` | 购买袋数 | 每批重新验证详情/商店页；完成须确认主鱼缸后双出口分流 | 已支持；日常接入代码级通过 |
 | `FishingTask` | 主鱼缸、活动网格、地点页、选饵、等待咬钩、结算、购买提示 | 支持 | `FishingStartRouter` | 杆数、饵食模式 | 只点实际命中退出/饵食目标 | 已支持 |
 | `SeaOtterGemTask` | 好友列表、好友鱼缸 | 支持两类约定起点 | `SeaOtterStartRouter` | 当前好友和体力扫描 | 主鱼缸及其它页面不自动导航 | Intentional Unsupported：仅好友列表/好友缸 |
-| `BandFishTask` | 主鱼缸、游乐园、我的演出、选曲、演出、结算 | 除好友邀请弹窗外支持 | `BandFishStartRouter` | 好友邀请需要 `target_slot/name` | 选曲保留黄色选中门禁；邀请弹窗停止 | 本轮补齐；邀请弹窗故意不支持 |
+| `BandFishTask` | 主鱼缸、游乐园、我的演出、选曲、演出、结算 | 除好友邀请弹窗外支持 | `BandFishStartRouter` | 好友邀请需要 `target_slot/name` | 结算须标题/确定双门禁，绿色像素不足；选曲保留黄色选中门禁；邀请弹窗停止 | 已支持；2026-09-27 误判修复代码级/离线 OCR 通过；邀请弹窗故意不支持 |
 | `SeaDiveTask` | 鱼缸 1/2/3、选择器、主页、深度选择、局内、结算、挽留 | 支持 | `SeaDiveStartRouter` | 否；每轮回主页重判 FREE/PAID | 只选 100 米、只点免费、绝不点继续下潜/x12 | 本轮补齐 |
-| `FishBabyTask` | 主鱼缸、鱼宝主页、孵化大类、三类子项、选宝宝层 | 支持 | `FishBabyStartRouter` | 本轮偏好与编号映射 | 未知工具栏/编号冲突停止 | 已支持；新三列配置待用户运行 |
-| `DailyRoutineTask` | 任意可由首个子任务识别的安全页面 | 调度器本身可恢复队列；UI 恢复由子任务负责 | `DailyRoutineDispatcher` | 必须：队列与 active 状态 | 不跨子任务猜页面 | 容器支持；逐项以本表为准 |
+| `FishBabyTask` | 主鱼缸、鱼宝主页、孵化大类、三类子项、选宝宝层 | 支持，独立/日常共用 | `FishBabyStartRouter` | 本轮偏好与编号映射 | 未知工具栏/编号冲突停止；日常配置全跳过只支持主鱼缸，不从活动中间页直接推进 | 已支持；日常接入代码级通过，三列扩展待用户运行 |
+| `DailyRoutineTask` | 任意可由首个子任务识别的安全页面 | 调度器本身可恢复队列；UI 恢复由子任务负责，包括购买鱼食/鱼宝 | `DailyRoutineDispatcher` | 必须：队列与 active 状态 | 不跨子任务猜页面；主鱼缸确认后提交完成，全跳过须同样确认 | 容器支持；逐项以本表为准 |
 | `GoldenDolphinTask` | 主鱼缸、游乐园、确认弹窗、隐藏启动/奖励雨、结算 | 支持 | `GoldenDolphinNavigationAction` | 奖励优先级、局数 | 局内须命中奖励/启动贝币；结算计数一次 | 本轮补齐 |
 | `DailyMagicPuzzleTask` | 拼图页面 | 仅支持该页 | `DailyMagicPuzzleSolve` | 6×6 当前盘面 | 非拼图页不导航 | Intentional Unsupported：只允许拼图页 |
 | `ShakeGameTask` | 主鱼缸、游乐园、确认弹窗、局内、结算 | 结算及浅层支持；局内缺证据 | `ShakeGameNavigationAction` | MuMu 路径与明确 VM index | 结算模板命中才退出；绝不默认 VM 0 | Live Blocked：局内缺截图/模板 |
 | `ShakeGemCollectTestTask` | 指定主鱼缸测试场景 | 仅固定测试入口 | `ShakeGemCollectVerifyTank` | 明确 VM index | 不扩展为通用任务 | Intentional Unsupported：测试专用 |
 | `GoldShellCouponTask` | 主鱼缸、分类页、金贝壳页、兑换后确认/结果 | 支持 | `GoldShellCouponRouter` | 当轮兑换确认 | 海星误入可返回；未知页停止 | 已支持 |
 | `EmulatorAdTask` | 主鱼缸、广告中、广告后 | 支持既有路由 | `EmulatorAdRouter` | 广告轮次/启动标记 | 只在适配模拟器路径运行 | 已支持 |
-| `MobileAdTask` | 主鱼缸、广告页、返回后页面 | 支持既有路由 | `MobileAdRouter` | 周期与设备分辨率 | 仅 ADB 真机约定；MuMu 不支持 | 已支持其既定设备边界 |
+| `MobileAdTask` | 广告大厅、奖励弹窗、转盘停止、播放/结束页；自动续播未启动后返回大厅 | 支持既有路由；续播启动等待超时后重新匹配大厅入口 | `MobileAdRouter`；`MobileAdClickContinueCheck.on_error` → 大厅入口 | 周期与设备分辨率；运行中恢复保留计数 | 仅 ADB 真机约定；大厅门禁命中才重试，未知页停止；MuMu 不支持 | 已支持其既定设备边界；大厅续播恢复代码级通过，未做长跑实测 |
 
 ## 维护规则
 

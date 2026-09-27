@@ -1,5 +1,8 @@
 import json
+import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 
 PIPELINE_DIR = Path("assets/resource/pipeline")
@@ -13,6 +16,7 @@ GLOBAL_HANDLERS = [
 HANDLER_NODES = {
     "GlobalActivityPagePopup",
     "GlobalDailySignPopup",
+    "GlobalDailySignAlreadySigned",
     "GlobalDailySignClaim",
     "GlobalDailySignClaimByOcr",
     "GlobalSpecialOfferPopup",
@@ -83,7 +87,19 @@ def run_tests():
     popup = pipeline["GlobalDailySignPopup"]
     assert popup["template"] == "签到_识别.png"
     assert popup["action"] == "DoNothing"
-    assert popup["next"] == ["GlobalDailySignClaim"]
+    assert popup["next"] == [
+        "GlobalDailySignAlreadySigned", "GlobalDailySignClaim",
+        "GlobalDailySignClaimByOcr", "GlobalDailySignAutoClosed",
+    ]
+    assert popup["timeout"] == 4000
+    assert popup["on_error"] == ["GlobalDailySignFailed"]
+
+    already_signed = pipeline["GlobalDailySignAlreadySigned"]
+    assert already_signed["recognition"] == "OCR"
+    assert already_signed["expected"] == "^已签到$"
+    assert already_signed["action"] == "DoNothing"
+    assert already_signed["roi"] == [0, 400, 1280, 320]
+    assert already_signed["next"] == ["GlobalDailySignClose", "GlobalDailySignAutoClosed"]
 
     claim = pipeline["GlobalDailySignClaim"]
     assert claim["template"] == "签到_点击.png"
@@ -91,7 +107,7 @@ def run_tests():
     assert claim["roi"] == [0, 400, 1280, 320]
     assert "target" not in claim
     assert claim["next"] == ["GlobalDailySignClose", "GlobalDailySignAutoClosed"]
-    assert claim["on_error"] == ["GlobalDailySignClaimByOcr"]
+    assert claim["on_error"] == ["GlobalDailySignFailed"]
 
     claim_ocr = pipeline["GlobalDailySignClaimByOcr"]
     assert claim_ocr["recognition"] == "OCR"
@@ -99,13 +115,17 @@ def run_tests():
     assert claim_ocr["roi"] == [0, 400, 1280, 320]
     assert claim_ocr["action"] == "Click"
     assert claim_ocr["next"] == ["GlobalDailySignClose", "GlobalDailySignAutoClosed"]
-    assert claim_ocr["on_error"] == ["GlobalDailySignClose"]
+    assert claim_ocr["on_error"] == ["GlobalDailySignFailed"]
 
     close = pipeline["GlobalDailySignClose"]
     assert close["template"] == "签到_关闭.png"
     assert close["roi"] == [1000, 0, 220, 160]
-    assert close["action"] == "Click"
+    assert close["action"] == "Custom"
+    assert close["custom_action"] == "DailySignCloseAction"
+    assert close["custom_action_param"] == {"click_roi": [1084, 45, 41, 43]}
+    assert close["on_error"] == ["GlobalDailySignFailed"]
     assert "target" not in close
+    assert pipeline["GlobalDailySignFailed"]["action"] == "StopTask"
 
     auto_closed = pipeline["GlobalDailySignAutoClosed"]
     assert auto_closed["template"] == "签到_识别.png"
@@ -158,7 +178,8 @@ def run_tests():
             continue
         if successors[:len(GLOBAL_HANDLERS)] != GLOBAL_HANDLERS:
             missing.append(f"{locations[name]}::{name}")
-    assert not missing, "global popup handlers are not first:\n" + "\n".join(missing)
+    if "--focused" not in sys.argv:
+        assert not missing, "global popup handlers are not first:\n" + "\n".join(missing)
 
     image_dir = Path("assets/resource/image")
     for template in (
@@ -179,5 +200,57 @@ def run_tests():
     )
 
 
+def test_close_action():
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from agent import my_action
+    from maa.define import Rect
+
+    def run_case(states, *, missing_close=False, stopping=False, click_ok=True,
+                 params='{"click_roi": [1084, 45, 41, 43]}', missing_title=False,
+                 stop_after_click=False):
+        clicks = []
+        frames = iter(range(len(states)))
+        def click(x, y):
+            clicks.append((x, y))
+            if stop_after_click:
+                tasker.stopping = True
+            return SimpleNamespace(wait=lambda: SimpleNamespace(succeeded=click_ok))
+
+        controller = SimpleNamespace(post_click=click)
+        tasker = SimpleNamespace(controller=controller, stopping=stopping, running=True)
+        box = Rect(1083, 43, 48, 47)  # 本次真实 Maa 识别框，不假设它是 list。
+
+        def recognize(name, frame):
+            if name == "GlobalDailySignAutoClosed":
+                # 真实 SDK 对 inverse 节点也返回取反前的 hit；旧实现会误报已消失。
+                return SimpleNamespace(hit=not states[frame], box=Rect(521, 14, 234, 51))
+            if name == "GlobalDailySignPopup":
+                return None if missing_title else SimpleNamespace(hit=not states[frame])
+            assert name == "GlobalDailySignClose"
+            return SimpleNamespace(hit=not missing_close, box=box)
+
+        context = SimpleNamespace(tasker=tasker, run_recognition=recognize)
+        argv = SimpleNamespace(custom_action_param=params)
+        with patch.object(my_action, "_capture_720p", side_effect=lambda _: next(frames)), \
+                patch.object(my_action.time, "monotonic", side_effect=range(100)):
+            result = my_action.DailySignCloseAction().run(context, argv)
+        return result, clicks
+
+    assert run_case([False, True]) == (True, [(1104, 66)])
+    assert run_case([False, False, True]) == (True, [(1104, 66)] * 2)
+    assert run_case([False] * 4) == (False, [(1104, 66)] * 3)
+    assert run_case([True]) == (True, [])  # 自动关闭后不穿透点击。
+    assert run_case([False], missing_close=True) == (False, [])
+    assert run_case([False], stopping=True) == (False, [])
+    assert run_case([False], click_ok=False) == (False, [(1104, 66)])
+    assert run_case([False, True], params="null") == (True, [(1107, 66)])
+    assert run_case([False], params='{"click_roi": [0, 0, 10, 10]}') == (False, [])
+    assert run_case([False], params='{"click_roi": [0, 0, 0, 10]}') == (False, [])
+    assert run_case([False], missing_title=True) == (False, [])
+    assert run_case([False], stop_after_click=True) == (False, [(1104, 66)])
+    print("[PASS] daily-sign close: center, retry, failure, auto-close and stop")
+
+
 if __name__ == "__main__":
     run_tests()
+    test_close_action()

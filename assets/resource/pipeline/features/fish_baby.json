@@ -463,7 +463,39 @@
         "action": "DoNothing",
         "focus": {
             "Node.Action.Succeeded": "[鱼宝乐园] 1~8号均为跳过，本轮未操作任何宝宝。"
-        }
+        },
+        "next": ["FishBabySkipAllDaily", "DailyRoutineStandaloneDone"]
+    },
+    "FishBabySkipAllDaily": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineActiveReco",
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FishBabySkipAllVerifyTank"
+        ],
+        "on_error": ["FishBabyAbort"]
+    },
+    "FishBabySkipAllVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "Custom",
+        "custom_action": "DailyRoutineSubtaskDoneAction",
+        "custom_action_param": {
+            "task_name": "FishBaby",
+            "expected_step": "FISH_BABY",
+            "status": "SKIPPED"
+        },
+        "timeout": 5000,
+        "next": ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"],
+        "on_error": ["FishBabyAbort"]
     },
     "FishBabyStartRouter": {
         "recognition": "DirectHit",
@@ -780,13 +812,27 @@
             400
         ],
         "threshold": 0.7,
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "DailyRoutineSubtaskDoneAction",
+        "custom_action_param": {
+            "task_name": "FishBaby",
+            "expected_step": "FISH_BABY"
+        },
         "timeout": 8000,
         "focus": {
             "Node.Action.Succeeded": "[鱼宝乐园] 本轮已完成，并确认返回主鱼缸。"
         },
         "on_error": [
             "FishBabyAbort"
+        ],
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
         ]
     },
     "FishBabyAbort": {

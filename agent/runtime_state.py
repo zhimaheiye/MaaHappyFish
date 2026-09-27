@@ -85,6 +85,8 @@ daily_routine_state = {
         "GemGiftBox": {"status": "IDLE"},
         "GemOrder": {"status": "IDLE"},
         "RomanticHouse": {"status": "IDLE"},
+        "BuyFishFood": {"status": "IDLE"},
+        "FishBaby": {"status": "IDLE"},
         "SecretRealmGate": {"status": "IDLE"},
         "PrincessTask": {"status": "IDLE"},
     },
