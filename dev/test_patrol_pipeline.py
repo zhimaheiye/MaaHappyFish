@@ -154,6 +154,10 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(
             business_next(self.open_shell_pipeline["OpenShellStartRouter"]),
             [
+                "OpenShellOctopus",
+                "OpenShellFinish",
+                "OpenShellContinue",
+                "OpenShellOpenFirst",
                 "OpenShellStartPage",
                 "OpenShellCategoryPage",
                 "OpenShellEntry",
@@ -715,7 +719,7 @@ class PatrolPipelineTest(unittest.TestCase):
             self.assertIn(f"PatrolVerifyMainTank{tank}AfterCycle", next_nodes)
             self.assertEqual(
                 business_next(self.pipeline[f"PatrolVerifyMainTank{tank}AfterCycle"]),
-                ["PatrolWaitLoop"],
+                ["DailyRoutineMagicSummonDone", "DailyRoutineGemFusionDone", "PatrolWaitLoop"],
             )
 
     def test_interfaces_are_synced_and_expose_patrol(self):

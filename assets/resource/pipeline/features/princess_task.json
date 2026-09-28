@@ -1,7 +1,8 @@
 {
     "PrincessTask": {
         "recognition": "DirectHit",
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "ResetPrincessClaimHitsAction",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",

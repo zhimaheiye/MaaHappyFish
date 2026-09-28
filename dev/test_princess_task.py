@@ -2,10 +2,16 @@
 """公主任务 Pipeline、ROI、模板和界面入口契约测试。"""
 import json
 import struct
+import sys
 from pathlib import Path
-
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from agent.my_action import ResetPrincessClaimHitsAction
+
+
 PIPELINE_PATH = ROOT / "assets/resource/pipeline/features/princess_task.json"
 IMAGE_DIR = ROOT / "assets/resource/image"
 GLOBAL_HANDLERS = [
@@ -33,6 +39,28 @@ def png_size(path):
 
 def run_tests():
     pipeline = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+
+    entry = pipeline["PrincessTask"]
+    assert entry["action"] == "Custom"
+    assert entry["custom_action"] == "ResetPrincessClaimHitsAction"
+
+    class HitContext:
+        def __init__(self, failed_name=None):
+            self.cleared = []
+            self.failed_name = failed_name
+
+        def clear_hit_count(self, name):
+            self.cleared.append(name)
+            return name != self.failed_name
+
+    claim_names = ["PrincessClaimTop", "PrincessClaimMiddle", "PrincessClaimBottom"]
+    context = HitContext()
+    action = ResetPrincessClaimHitsAction()
+    argv = SimpleNamespace(custom_action_param="null")
+    assert action.run(context, argv) is True
+    assert action.run(context, argv) is True  # 同一轮日常收尾的末尾再次进入
+    assert context.cleared == claim_names * 2
+    assert action.run(HitContext(failed_name="PrincessClaimMiddle"), argv) is False
 
     assert business_next(pipeline["PrincessStartRouter"]) == [
         "PrincessTreasureClaimSuccess",
@@ -201,7 +229,7 @@ def run_tests():
     assert princess_tasks[0]["name"] == "公主任务"
     assert princess_tasks[0]["default_check"] is False
 
-    print("[PASS] PrincessTask three-slot + treasure-task topology, ROI, assets, and interface contract")
+    print("[PASS] PrincessTask per-entry hit reset, three-slot topology, ROI, assets, and interface contract")
 
 
 if __name__ == "__main__":

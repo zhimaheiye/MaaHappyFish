@@ -28,6 +28,8 @@ import sys
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -587,7 +589,78 @@ def run_start_retry_tests():
     print("[PASS] OpenShell 启动遮挡重试 5 项语义场景全部通过")
 
 
+def run_finish_confirmation_tests():
+    from agent import my_action as actions
+
+    pipeline = json.loads(OPEN_SHELL_PATH.read_text(encoding="utf-8"))
+    assert pipeline["OpenShellFinish"]["custom_action"] == "ConfirmOpenShellFinishAction"
+    assert pipeline["OpenShellFinish"]["on_error"] == ["OpenShellAbort"]
+
+    class Controller:
+        def __init__(self, effective_click=1, transition_frames=0):
+            self.clicks = []
+            self.effective_click = effective_click
+            self.transition_frames = transition_frames
+            self.page = "finish"
+
+        def post_click(self, x, y):
+            self.clicks.append((x, y))
+            if len(self.clicks) >= self.effective_click:
+                self.page = "animation" if self.transition_frames else "home"
+            return SimpleNamespace(wait=lambda: SimpleNamespace(succeeded=True))
+
+    def run_case(controller):
+        context = SimpleNamespace(tasker=SimpleNamespace(controller=controller, stopping=False, running=True))
+
+        def capture(_controller):
+            if controller.page == "animation":
+                controller.transition_frames -= 1
+                if controller.transition_frames == 0:
+                    controller.page = "home"
+            return object()
+
+        def recognize(_context, name, _frame):
+            if name == "OpenShellConfirmReturn" and controller.page == "home":
+                return (600, 620, 100, 40)
+            if name == "OpenShellFinish" and controller.page == "finish":
+                return (590, 620, 100, 40)
+            return None
+
+        with patch.object(actions, "_capture_720p", side_effect=capture), \
+             patch.object(actions, "_recognition_box", side_effect=recognize), \
+             patch.object(actions.time, "sleep"):
+            return actions.ConfirmOpenShellFinishAction().run(context, SimpleNamespace())
+
+    first = Controller()
+    assert run_case(first) is True
+    assert first.clicks == [(640, 640)]
+
+    ignored_first = Controller(effective_click=2)
+    assert run_case(ignored_first) is True
+    assert ignored_first.clicks == [(640, 640), (640, 640)]
+
+    delayed_home = Controller(transition_frames=2)
+    assert run_case(delayed_home) is True
+    assert delayed_home.clicks == [(640, 640)]
+
+    already_home = Controller()
+    already_home.page = "home"
+    assert run_case(already_home) is True
+    assert already_home.clicks == []
+
+    never_responds = Controller(effective_click=99)
+    assert run_case(never_responds) is False
+    assert never_responds.clicks == [(640, 640)] * 3
+
+    unknown = Controller()
+    unknown.page = "unknown"
+    assert run_case(unknown) is False
+    assert unknown.clicks == []
+    print("[PASS] 章鱼结算：首次生效、首次点击无效、动画过渡、已返回、始终无响应及未知页安全停止")
+
+
 if __name__ == "__main__":
     run_tests()
     run_entry_retry_tests()
     run_start_retry_tests()
+    run_finish_confirmation_tests()

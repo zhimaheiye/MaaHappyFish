@@ -589,6 +589,37 @@ def _box_center(box):
     return x + width // 2, y + height // 2
 
 
+@AgentServer.custom_action("ConfirmOpenShellFinishAction")
+class ConfirmOpenShellFinishAction(CustomAction):
+    """只在结算按钮仍可见时重试点击，并确认回到大章鱼主页。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ctrl = context.tasker.controller
+            clicks = 0
+            for _ in range(12):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    break
+                if _recognition_box(context, "OpenShellConfirmReturn", frame) is not None:
+                    return True
+                button = _recognition_box(context, "OpenShellFinish", frame)
+                if button is not None and clicks < 3:
+                    result = ctrl.post_click(*_box_center(button)).wait()
+                    if not result.succeeded:
+                        break
+                    clicks += 1
+                time.sleep(1.0)
+            print("[开贝壳] ERROR: 结算按钮点击后未确认返回大章鱼主页，安全停止。", flush=True)
+            return False
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[开贝壳] ERROR: 结算确认异常: {e}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("DailySignCloseAction")
 class DailySignCloseAction(CustomAction):
     """关闭签到页：fresh-frame 门禁、中心点击、有界重试与消失确认。"""
@@ -813,7 +844,7 @@ class FindCheapFishFoodAction(CustomAction):
                 return False
 
             param = parse_dict_param(argv.custom_action_param)
-            max_scrolls = safe_int(param.get("max_scrolls"), 8, min_val=0, max_val=8)
+            max_scrolls = safe_int(param.get("max_scrolls"), 12, min_val=0, max_val=12)
 
             return _find_and_enter_cheap_fish_food(context, controller, max_scrolls)
         except Exception as e:
@@ -838,8 +869,7 @@ def _find_and_enter_cheap_fish_food(context: Context, controller, max_scrolls: i
             return False
         frame = _capture_720p(controller)
         store_box = _recognition_box(context, "BuyFishFoodStoreIdentity", frame)
-        item_box = _recognition_box(context, "BuyFishFoodStoreItemIdentity", frame)
-        if store_box is None or item_box is None:
+        if store_box is None:
             print("[购买鱼食] 当前页面不是已确认的商品列表，停止查找", flush=True)
             return False
 
@@ -853,9 +883,16 @@ def _find_and_enter_cheap_fish_food(context: Context, controller, max_scrolls: i
             controller.post_click(target_x, target_y).wait()
             time.sleep(1.0)
             detail_frame = _capture_720p(controller)
-            if _recognition_box(context, "BuyFishFoodDetailIdentity", detail_frame) is not None:
+            if (
+                _recognition_box(context, "BuyFishFoodDetailIdentity", detail_frame) is not None
+                and _recognition_box(context, "BuyFishFoodUnitPrice", detail_frame) is not None
+            ):
                 return True
             print("[购买鱼食] 点击后未进入廉价鱼食详情页，停止操作", flush=True)
+            return False
+
+        if _recognition_box(context, "BuyFishFoodStoreItemIdentity", frame) is None:
+            print("[购买鱼食] 当前页面缺少商品卡片门禁，停止查找", flush=True)
             return False
 
         if scroll_index == max_scrolls:
@@ -865,7 +902,7 @@ def _find_and_enter_cheap_fish_food(context: Context, controller, max_scrolls: i
         if _task_cancelled(context):
             print("[购买鱼食] 已收到停止请求，未继续滑动", flush=True)
             return False
-        controller.post_swipe(640, 580, 640, 400, 400).wait()
+        controller.post_swipe(640, 580, 640, 480, 500).wait()
         time.sleep(0.8)
 
     print("[购买鱼食] 有限次滑动后仍未找到廉价鱼食，安全停止", flush=True)
@@ -1057,7 +1094,7 @@ class BuyCheapFishFoodAction(CustomAction):
 
                 # If not on detail page, find and enter
                 if not already_on_detail:
-                    if not _find_and_enter_cheap_fish_food(context, controller, 8):
+                    if not _find_and_enter_cheap_fish_food(context, controller, 12):
                         print("[购买鱼食] 查找廉价鱼食失败，终止购买", flush=True)
                         return False
                 already_on_detail = False  # after each purchase we go back to store list
@@ -4403,6 +4440,9 @@ class InitDailyRoutineAction(CustomAction):
                 "RomanticHouse": {"status": "IDLE"},
                 "BuyFishFood": {"status": "IDLE"},
                 "FishBaby": {"status": "IDLE"},
+                "MagicSummon": {"status": "IDLE"},
+                "GemFusion": {"status": "IDLE"},
+                "ActivityEnergy": {"status": "IDLE"},
                 "SecretRealmGate": {"status": "IDLE"},
                 "PrincessTask": {"status": "IDLE"},
                 "GreenWildClaim": {"status": "IDLE"},
@@ -4411,7 +4451,7 @@ class InitDailyRoutineAction(CustomAction):
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
-            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate", "princess_task", "buy_fish_food", "fish_baby"))
+            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate", "princess_task", "buy_fish_food", "fish_baby", "magic_summon", "gem_fusion", "activity_energy"))
 
             if param.get("all_enabled"):
                 enable_fg = enable_rf = enable_gsc = enable_gwd = True
@@ -4423,6 +4463,9 @@ class InitDailyRoutineAction(CustomAction):
                 # 新增消耗类任务必须显式勾选；不扩张挂机历史 all_enabled 的范围。
                 enable_bff = bool(param.get("buy_fish_food", False))
                 enable_fb = bool(param.get("fish_baby", False))
+                enable_ms = bool(param.get("magic_summon", False))
+                enable_gf = bool(param.get("gem_fusion", False))
+                enable_ae = bool(param.get("activity_energy", False))
             elif has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
@@ -4439,6 +4482,9 @@ class InitDailyRoutineAction(CustomAction):
                 enable_pt = bool(param.get("princess_task", False))
                 enable_bff = bool(param.get("buy_fish_food", False))
                 enable_fb = bool(param.get("fish_baby", False))
+                enable_ms = bool(param.get("magic_summon", False))
+                enable_gf = bool(param.get("gem_fusion", False))
+                enable_ae = bool(param.get("activity_energy", False))
             else:
                 # 2. 从 pipeline override 中的 Enable 节点读取配置
                 def _is_node_enabled(node_name: str) -> bool:
@@ -4463,6 +4509,9 @@ class InitDailyRoutineAction(CustomAction):
                 enable_pt = _is_node_enabled("DailyRoutineEnablePrincessTask")
                 enable_bff = _is_node_enabled("DailyRoutineEnableBuyFishFood")
                 enable_fb = _is_node_enabled("DailyRoutineEnableFishBaby")
+                enable_ms = _is_node_enabled("DailyRoutineEnableMagicSummon")
+                enable_gf = _is_node_enabled("DailyRoutineEnableGemFusion")
+                enable_ae = _is_node_enabled("DailyRoutineEnableActivityEnergy")
 
             # 3. 按固定安全顺序构建待执行队列。
             queue = []
@@ -4497,6 +4546,12 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("BUY_FISH_FOOD")
             if enable_fb:
                 queue.append("FISH_BABY")
+            if enable_ms:
+                queue.append("MAGIC_SUMMON")
+            if enable_gf:
+                queue.append("GEM_FUSION")
+            if enable_ae:
+                queue.append("ACTIVITY_ENERGY")
             if enable_bf:
                 queue.append("BAND_FISH_PASS2")
             # 末尾无条件收尾：领取绿野寻仙踪和公主任务奖励
@@ -4521,6 +4576,9 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 浪漫满屋     : {'[ON]' if enable_rh else '[OFF]'}", flush=True)
             print(f"  - 购买鱼食     : {'[ON]' if enable_bff else '[OFF]'}", flush=True)
             print(f"  - 鱼宝乐园     : {'[ON]' if enable_fb else '[OFF]'}", flush=True)
+            print(f"  - 魔力召唤     : {'[ON]' if enable_ms else '[OFF]'}", flush=True)
+            print(f"  - 宝石融合     : {'[ON]' if enable_gf else '[OFF]'}", flush=True)
+            print(f"  - 活动体力     : {'[ON]' if enable_ae else '[OFF]'}", flush=True)
             print(f"  - 绿野奖励领取(末尾收尾) : [无条件]", flush=True)
             print(f"  - 公主奖励领取(末尾收尾) : [无条件]", flush=True)
             print("=" * 60, flush=True)
@@ -4542,6 +4600,8 @@ class InitDailyRoutineAction(CustomAction):
                 ("钓鱼达人", enable_fi), ("宝石礼盒兑换", enable_ggb),
                 ("宝石订单", enable_go), ("浪漫满屋", enable_rh),
                 ("购买鱼食", enable_bff), ("鱼宝乐园", enable_fb),
+                ("魔力召唤", enable_ms), ("宝石融合", enable_gf),
+                ("领取活动体力", enable_ae),
             )
             selected = "、".join(label for label, enabled in task_labels if enabled) or "无"
             skipped = "、".join(label for label, enabled in task_labels if not enabled) or "无"
@@ -4566,7 +4626,7 @@ class InitDailyRoutineAction(CustomAction):
 
 @AgentServer.custom_action("DailyRoutineSubtaskDoneAction")
 class DailyRoutineSubtaskDoneAction(CustomAction):
-    """由购买鱼食/鱼宝的主鱼缸确认节点提交完成，重复调用不推进下一任务。"""
+    """由已确认主鱼缸的子任务节点提交完成，重复调用不推进下一任务。"""
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         param = parse_dict_param(argv.custom_action_param)
@@ -4574,13 +4634,68 @@ class DailyRoutineSubtaskDoneAction(CustomAction):
         expected_step = param.get("expected_step")
         status = param.get("status", "DONE")
         if (task_name, expected_step) not in (
-            ("BuyFishFood", "BUY_FISH_FOOD"), ("FishBaby", "FISH_BABY")
+            ("BuyFishFood", "BUY_FISH_FOOD"), ("FishBaby", "FISH_BABY"),
+            ("MagicSummon", "MAGIC_SUMMON"), ("GemFusion", "GEM_FUSION"),
+            ("ActivityEnergy", "ACTIVITY_ENERGY")
         ) or status not in ("DONE", "SKIPPED"):
             print("[日常收尾] ERROR: 子任务完成参数无效", flush=True)
             return False
         if daily_routine_state.get("active") and daily_routine_state.get("step") == expected_step:
             advance_daily_routine_step(task_name, status)
         return True
+
+
+@AgentServer.custom_action("DailyActivityEnergyClaimAction")
+class DailyActivityEnergyClaimAction(CustomAction):
+    """在酿月食香页面有界查找并领取“收下”；没有按钮就交给退出节点。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        parse_dict_param(argv.custom_action_param)
+        try:
+            controller = context.tasker.controller
+            for _ in range(4):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(controller)
+                if frame is None or _recognition_box(context, "DailyActivityEnergyPage", frame) is None:
+                    print("[活动体力] ERROR: 未确认酿月食香页面，停止领取。", flush=True)
+                    return False
+                claim_box = _recognition_box(context, "DailyActivityEnergyClaimButton", frame)
+                if claim_box is not None:
+                    if _task_cancelled(context):
+                        return False
+                    result = controller.post_click(*_box_center(claim_box)).wait()
+                    if not result.succeeded:
+                        print("[活动体力] ERROR: 收下触摸下发失败。", flush=True)
+                        return False
+                    absent_frames = 0
+                    for _ in range(8):
+                        if _task_cancelled(context):
+                            return False
+                        time.sleep(0.5)
+                        fresh = _capture_720p(controller)
+                        if fresh is None:
+                            return False
+                        known_page = (
+                            _recognition_box(context, "DailyActivityEnergyPage", fresh) is not None
+                            or _recognition_box(context, "DailyActivityEnergyListBack", fresh) is not None
+                        )
+                        if known_page and _recognition_box(context, "DailyActivityEnergyClaimButton", fresh) is None:
+                            absent_frames += 1
+                            if absent_frames >= 2:
+                                print("[活动体力] 已点击收下并确认按钮消失。", flush=True)
+                                return True
+                        else:
+                            absent_frames = 0
+                    print("[活动体力] ERROR: 点击后收下按钮仍在，停止退出以免漏领。", flush=True)
+                    return False
+                time.sleep(0.5)
+            print("[活动体力] 未出现收下按钮，直接退出酿月食香。", flush=True)
+            return True
+        except Exception as exc:
+            traceback.print_exc()
+            print(f"[活动体力] ERROR: 领取检查异常: {exc}", flush=True)
+            return False
 
 
 @AgentServer.custom_action("DailyFreeGiftDoneAction")
@@ -5021,6 +5136,24 @@ class SecretRealmGateDoneAction(CustomAction):
             return False
 
 
+@AgentServer.custom_action("ResetPrincessClaimHitsAction")
+class ResetPrincessClaimHitsAction(CustomAction):
+    """每次进入公主任务时重置三格的本次扫描点击上限。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            parse_dict_param(getattr(argv, "custom_action_param", None))
+            for name in ("PrincessClaimTop", "PrincessClaimMiddle", "PrincessClaimBottom"):
+                if not context.clear_hit_count(name):
+                    print(f"[公主任务] ERROR: 无法重置 {name} 的命中次数，安全停止。", flush=True)
+                    return False
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[公主任务] ERROR: 重置领奖扫描次数异常: {e}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("PrincessTaskDoneAction")
 class PrincessTaskDoneAction(CustomAction):
     """公主任务结算：确认回到主鱼缸后标记完成；日常收尾中则推进队列。
@@ -5165,6 +5298,9 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 浪漫满屋 (RomanticHouse)    : {rh_st}", flush=True)
             print(f"  - 购买鱼食 (BuyFishFood)     : {tasks.get('BuyFishFood', {}).get('status', 'SKIPPED')}", flush=True)
             print(f"  - 鱼宝乐园 (FishBaby)         : {tasks.get('FishBaby', {}).get('status', 'SKIPPED')}", flush=True)
+            print(f"  - 魔力召唤 (MagicSummon)     : {tasks.get('MagicSummon', {}).get('status', 'SKIPPED')}", flush=True)
+            print(f"  - 宝石融合 (GemFusion)       : {tasks.get('GemFusion', {}).get('status', 'SKIPPED')}", flush=True)
+            print(f"  - 领取活动体力 (ActivityEnergy) : {tasks.get('ActivityEnergy', {}).get('status', 'SKIPPED')}", flush=True)
             print(f"  - 秘境之门 (SecretRealmGate)  : {srg_st}", flush=True)
             print(f"  - 公主任务 (PrincessTask)     : {pt_st}", flush=True)
             print("=" * 60, flush=True)

@@ -68,7 +68,7 @@
         "action": "Custom",
         "custom_action": "FindCheapFishFoodAction",
         "custom_action_param": {
-            "max_scrolls": 4
+            "max_scrolls": 12
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -204,7 +204,7 @@
         "action": "Custom",
         "custom_action": "FindCheapFishFoodAction",
         "custom_action_param": {
-            "max_scrolls": 4
+            "max_scrolls": 12
         },
         "timeout": 5000,
         "next": [
@@ -262,7 +262,7 @@
     },
     "BuyFishFoodStoreItemIdentity": {
         "recognition": "OCR",
-        "expected": "成长豆|糖",
+        "expected": "成长豆|糖|雪花鱼食|粉光鱼食|珀光鱼食|宝光鱼食|紫光鱼食|霞光鱼食",
         "roi": [
             0,
             120,

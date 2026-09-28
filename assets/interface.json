@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.7.2",
+    "version": "0.7.3",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -195,7 +195,7 @@
             "name": "日常收尾",
             "entry": "DailyRoutineTask",
             "default_check": false,
-            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（含宝石礼盒、宝石订单等），明确记录每项开始、完成和未勾选跳过原因；每个子任务结束后均安全返回主鱼缸。",
+            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（含魔力召唤、宝石融合和酿月食香活动体力检查），明确记录每项开始、完成和未勾选跳过原因；每个子任务结束后均安全返回主鱼缸。",
             "option": [
                 "日常收尾任务",
                 "乐队鱼乐章",
@@ -3277,6 +3277,30 @@
                     ],
                     "pipeline_override": {
                         "DailyRoutineEnableFishBaby": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "魔力召唤",
+                    "pipeline_override": {
+                        "DailyRoutineEnableMagicSummon": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "宝石融合",
+                    "pipeline_override": {
+                        "DailyRoutineEnableGemFusion": {
+                            "enabled": true
+                        }
+                    }
+                },
+                {
+                    "name": "领取活动体力（酿月食香）",
+                    "pipeline_override": {
+                        "DailyRoutineEnableActivityEnergy": {
                             "enabled": true
                         }
                     }

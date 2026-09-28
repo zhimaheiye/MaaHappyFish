@@ -59,12 +59,26 @@
         "action": "DoNothing",
         "enabled": false
     },
+    "DailyRoutineEnableMagicSummon": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableGemFusion": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
+    "DailyRoutineEnableActivityEnergy": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineTask": {
         "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "InitDailyRoutineAction",
         "next": [
-            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
@@ -86,11 +100,12 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
-            "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineStepActivityEnergy",
+            "[JumpBack]GlobalActivityPagePopup",
             "DailyRoutineStepFreeGift",
             "DailyRoutineStepReindeerFish",
             "DailyRoutineStepGoldShellCoupon",
@@ -106,6 +121,8 @@
             "DailyRoutineStepRomanticHouse",
             "DailyRoutineStepBuyFishFood",
             "DailyRoutineStepFishBaby",
+            "DailyRoutineStepMagicSummon",
+            "DailyRoutineStepGemFusion",
             "DailyRoutineStepBandFishPass2",
             "DailyRoutineStepGreenWildClaim",
             "DailyRoutineStepPrincessClaim",
@@ -536,5 +553,202 @@
             "[JumpBack]GlobalLevelUpPopup",
             "FishBabyTask"
         ]
+    },
+    "DailyRoutineStepMagicSummon": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {"expected_step": "MAGIC_SUMMON"},
+        "action": "DoNothing",
+        "focus": {"Node.Action.Succeeded": "[日常收尾] 开始执行：魔力召唤一次检查。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolMagicVerifyPage",
+            "DailyRoutineMagicSummonTank",
+            "PatrolMagicAbort"
+        ]
+    },
+    "DailyRoutineMagicSummonTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "next": ["PatrolMagicOpenTreasure"]
+    },
+    "DailyRoutineStepGemFusion": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {"expected_step": "GEM_FUSION"},
+        "action": "DoNothing",
+        "focus": {"Node.Action.Succeeded": "[日常收尾] 开始执行：宝石融合一次检查。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolGemFusionPutInStorage",
+            "PatrolGemFusionVerifyPage",
+            "DailyRoutineGemFusionTank",
+            "PatrolGemFusionAbort"
+        ]
+    },
+    "DailyRoutineGemFusionTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "next": ["PatrolGemFusionOpenTreasure"]
+    },
+    "DailyRoutineMagicSummonDone": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {"expected_step": "MAGIC_SUMMON"},
+        "action": "Custom",
+        "custom_action": "DailyRoutineSubtaskDoneAction",
+        "custom_action_param": {"task_name": "MagicSummon", "expected_step": "MAGIC_SUMMON"},
+        "focus": {"Node.Action.Succeeded": "[日常收尾] 魔力召唤已完成一次检查并确认回缸，继续下一项。"},
+        "next": ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"],
+        "on_error": ["PatrolMagicAbort"]
+    },
+    "DailyRoutineGemFusionDone": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {"expected_step": "GEM_FUSION"},
+        "action": "Custom",
+        "custom_action": "DailyRoutineSubtaskDoneAction",
+        "custom_action_param": {"task_name": "GemFusion", "expected_step": "GEM_FUSION"},
+        "focus": {"Node.Action.Succeeded": "[日常收尾] 宝石融合已完成一次检查并确认回缸，继续下一项。"},
+        "next": ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"],
+        "on_error": ["PatrolGemFusionAbort"]
+    },
+    "DailyRoutineStepActivityEnergy": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {"expected_step": "ACTIVITY_ENERGY"},
+        "action": "DoNothing",
+        "focus": {"Node.Action.Succeeded": "[日常收尾] 开始执行：酿月食香活动体力检查。"},
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyActivityEnergyPage",
+            "DailyActivityEnergyListPage",
+            "DailyActivityEnergyAtTank"
+        ],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyAtTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": ["DailyActivityEnergyEntry"],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyEntry": {
+        "recognition": "TemplateMatch",
+        "template": "精彩活动_入口.png",
+        "roi": [27, 187, 58, 39],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 800,
+        "focus": {"Node.Action.Succeeded": "[活动体力] 已点击精彩活动入口，正在确认活动列表。"},
+        "timeout": 6000,
+        "next": ["DailyActivityEnergyListPage"],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyListPage": {
+        "recognition": "TemplateMatch",
+        "template": "活动页面_退出.png",
+        "roi": [0, 0, 136, 116],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "timeout": 6000,
+        "next": ["DailyActivityEnergyCard1"],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyCard1": {
+        "recognition": "OCR",
+        "expected": "酿月食香",
+        "roi": [36, 208, 221, 410],
+        "action": "Click",
+        "target": [126, 393, 40, 40],
+        "post_delay": 800,
+        "focus": {"Node.Action.Succeeded": "[活动体力] 已确认活动列表并点击第一张酿月食香卡片。"},
+        "timeout": 6000,
+        "next": ["DailyActivityEnergyPage"],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyPage": {
+        "recognition": "TemplateMatch",
+        "template": "酿月食香_关闭.png",
+        "roi": [1219, 22, 37, 49],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "next": ["DailyActivityEnergyClaim"]
+    },
+    "DailyActivityEnergyClaimButton": {
+        "recognition": "OCR",
+        "expected": "^收下$",
+        "roi": [0, 0, 1280, 720],
+        "action": "DoNothing"
+    },
+    "DailyActivityEnergyClaim": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "DailyActivityEnergyClaimAction",
+        "timeout": 6000,
+        "next": ["DailyActivityEnergyClose", "DailyActivityEnergyListBack"],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyClose": {
+        "recognition": "TemplateMatch",
+        "template": "酿月食香_关闭.png",
+        "roi": [1219, 22, 37, 49],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 800,
+        "focus": {"Node.Action.Succeeded": "[活动体力] 已点击酿月食香专属退出，正在确认活动列表。"},
+        "timeout": 6000,
+        "next": ["DailyActivityEnergyListBack"],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyListBack": {
+        "recognition": "TemplateMatch",
+        "template": "活动页面_退出.png",
+        "roi": [0, 0, 136, 116],
+        "threshold": 0.8,
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 6000,
+        "next": ["DailyActivityEnergyVerifyTank"],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "Custom",
+        "custom_action": "DailyRoutineSubtaskDoneAction",
+        "custom_action_param": {"task_name": "ActivityEnergy", "expected_step": "ACTIVITY_ENERGY"},
+        "focus": {"Node.Action.Succeeded": "[日常收尾] 活动体力检查结束并确认回缸，继续下一项。"},
+        "next": ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"],
+        "on_error": ["DailyActivityEnergyAbort"]
+    },
+    "DailyActivityEnergyAbort": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {"Node.Action.Succeeded": "[活动体力] ERROR: 页面门禁或回缸确认失败，已安全停止。"}
     }
 }

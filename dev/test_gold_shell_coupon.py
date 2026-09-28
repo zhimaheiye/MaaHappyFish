@@ -351,6 +351,10 @@ def test_case_8_gold_page_identity_resume_and_starfish_recovery():
         "GoldShellCouponStarfishMisTouch",
         "GoldShellCouponOctopusMisTouch",
         "GoldShellCouponReturnCategory",
+        "GoldShellCouponPickerTank1",
+        "GoldShellCouponTank2ToPicker",
+        "GoldShellCouponTank3ToPicker",
+        "GoldShellCouponRetryEntryFromMainTank",
         "GoldShellCouponAbort",
     ]
     assert pdata["GoldShellCouponVerifyGoldPage"].get("on_error") == ["GoldShellCouponNoExchange"]
@@ -376,6 +380,49 @@ def test_case_8_gold_page_identity_resume_and_starfish_recovery():
     print("  >>> PASS: Case 8 验证通过 (金贝壳主页优先恢复，误入海星页先返回再重试)")
 
 
+def test_case_9_tank3_switches_to_tank1_before_shell_entry():
+    """3 缸没有贝壳入口；先按已识别的鱼缸编号切缸，并逐级确认。"""
+    pdata = load_pipeline()
+    for tank in (2, 3):
+        switch = pdata[f"GoldShellCouponTank{tank}ToPicker"]
+        assert switch["template"] == f"patrol/鱼缸{tank}_主页面编号.png"
+        assert switch["action"] == "Click"
+        assert business_next(switch) == ["GoldShellCouponPickerTank1"]
+        assert switch["on_error"] == ["GoldShellCouponAbort"]
+
+    picker = pdata["GoldShellCouponPickerTank1"]
+    assert picker["template"] == "patrol/鱼缸1_入口.png"
+    assert picker["action"] == "Click"
+    assert business_next(picker) == ["GoldShellCouponVerifyTank1BeforeEntry"]
+    assert picker["on_error"] == ["GoldShellCouponAbort"]
+
+    verify = pdata["GoldShellCouponVerifyTank1BeforeEntry"]
+    assert verify["template"] == "patrol/鱼缸1_主页面编号.png"
+    assert verify["action"] == "DoNothing"
+    assert business_next(verify) == [
+        "GoldShellCouponEntry", "GoldShellCouponRetryEntryFromMainTank"
+    ]
+    assert verify["on_error"] == ["GoldShellCouponAbort"]
+    print("  >>> PASS: Case 9 验证通过 (3 缸先切到 1 缸并确认，再进入贝壳入口)")
+
+
+def test_case_10_hidden_shell_entry_waits_on_verified_tank():
+    """贝壳入口暂时被游鱼遮住时，仅在主鱼缸视觉门禁下有界重试。"""
+    pdata = load_pipeline()
+    retry = pdata["GoldShellCouponRetryEntryFromMainTank"]
+    assert retry["recognition"] == "TemplateMatch"
+    assert retry["template"] == "主界面特征.png"
+    assert retry["action"] == "DoNothing"
+    assert retry["post_delay"] >= 500
+    assert 2 <= retry["max_hit"] <= 20
+    assert business_next(retry) == ["GoldShellCouponRouter"]
+    assert retry["on_error"] == ["GoldShellCouponAbort"]
+    assert business_next(pdata["GoldShellCouponRouter"])[-2:] == [
+        "GoldShellCouponRetryEntryFromMainTank", "GoldShellCouponAbort"
+    ]
+    print("  >>> PASS: Case 10 验证通过 (入口暂时不可见时有界等待并重新截图识别)")
+
+
 def run_all():
     print("=" * 70)
     print("=== [GoldShellCouponTask] 离线安全性全量测试套件开始 ===")
@@ -389,9 +436,11 @@ def run_all():
     test_case_6_done_action_idempotency()
     test_case_7_standalone_safety()
     test_case_8_gold_page_identity_resume_and_starfish_recovery()
+    test_case_9_tank3_switches_to_tank1_before_shell_entry()
+    test_case_10_hidden_shell_entry_waits_on_verified_tank()
 
     print("\n" + "=" * 70)
-    print("=== [ALL 8 CASES PASSED 100%] 金贝壳券代码安全性加固验证全部通过！ ===")
+    print("=== [ALL 10 CASES PASSED 100%] 金贝壳券代码安全性加固验证全部通过！ ===")
     print("=" * 70)
 
 

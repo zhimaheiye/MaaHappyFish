@@ -43,6 +43,7 @@
 | 维护"摇一摇小游戏"活动自动化 | `docs/features/shake-game.md` |
 | 维护"驯鹿鱼送收礼物"日常子任务 | `docs/features/reindeer-fish.md` |
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
+| 维护"精彩活动体力"酿月食香第一卡片 | `docs/features/activity-energy.md` |
 | 维护"许愿神灯"独立活动任务 | `docs/features/wishing-lamp.md` |
 | 维护"秘境之门"独立与日常送鱼任务 | `docs/features/secret-realm-gate.md` |
 | 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |

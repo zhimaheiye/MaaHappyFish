@@ -312,7 +312,8 @@
             650,
             160
         ],
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ConfirmOpenShellFinishAction",
         "post_delay": 500,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -321,7 +322,8 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "OpenShellConfirmReturn"
-        ]
+        ],
+        "on_error": ["OpenShellAbort"]
     },
     "OpenShellConfirmReturn": {
         "recognition": "OCR",

@@ -2,7 +2,7 @@
 
 ## 一、功能定位
 
-“兑换金贝壳券”(`GoldShellCouponTask`) 是开心水族箱贝壳体系下的常驻自动化子功能。支持从主鱼缸识别贝壳分类入口、从贝壳分类页就地启动，进入金贝壳页面后检查右上角“兑换”按钮，完成金贝壳券兑换；点击兑换后必须经过兑换后状态验证（按钮消失或结算弹窗）；若经多次复核无可兑换或今日已兑换，则作为正常完成分支退出；随后通过两级状态驱动返回安全回到主鱼缸。
+“兑换金贝壳券”(`GoldShellCouponTask`) 是开心水族箱贝壳体系下的常驻自动化子功能。支持从鱼缸 1/2 贝壳入口、鱼缸 3、鱼缸选择器或贝壳分类页就地启动。鱼缸 3 没有贝壳入口，须先识别鱼缸编号、切回鱼缸 1 并确认页面，才能点击入口。进入金贝壳页面后检查右上角“兑换”按钮；点击兑换后必须经过兑换后状态验证（按钮消失或结算弹窗）；若经多次复核无可兑换或今日已兑换，则作为正常完成分支退出；随后通过两级状态驱动返回安全回到主鱼缸。
 
 > 金贝壳主页使用用户提供的 `金贝壳_识别.png`（ROI `[515, 360, 232, 195]`）作为正向门禁。仅有左上角返回按钮不能当作金贝壳主页，避免海星宠物页误判。
 
@@ -18,14 +18,19 @@
 GoldShellCouponTask -> GoldShellCouponRouter
                          ├─ 阶段 3: 已在金贝壳主页 (GoldShellCouponVerifyGoldPage / 金贝壳_识别.png)
                          ├─ 阶段 2: 已在贝壳分类页 (GoldShellCouponVerifyCategoryPage) -> 点击进入金贝壳
-                         ├─ 阶段 1: 处于主鱼缸 (GoldShellCouponEntry) -> 点击贝壳入口
+                         ├─ 阶段 1: 鱼缸 1/2 有贝壳入口 -> 点击贝壳入口
+                         ├─ 鱼缸 3 / 2 编号门禁 -> 展开选择器 -> 选择鱼缸 1 -> 确认鱼缸 1 -> 再识别入口
+                         ├─ 鱼缸选择器已展开 -> 选择鱼缸 1 -> 确认鱼缸 1 -> 再识别入口
+                         ├─ 仍在主鱼缸但入口暂不可见 -> 等待 700ms 重新截图，最多 12 次
                          ├─ 误入海星宠物页 (萌/乖/亮海星) -> 点击返回后重新走 Router
                          └─ 未知状态 -> GoldShellCouponAbort (安全停止，严禁盲点)
 ```
 
 - **阶段 3（金贝壳主页）**：命中 `金贝壳_识别.png`（ROI `[515, 360, 232, 195]`）后直接检查兑换按钮。
 - **阶段 2（贝壳分类页）**：命中顶部 `开贝壳_误触识别.png`（ROI `[498, 80, 280, 191]`），在 `[904, 579, 108, 40]` OCR 识别点击右侧“进入”按钮。
-- **阶段 1（主鱼缸）**：命中 `开贝壳_入口.png`（ROI `[289, 492, 168, 139]`），点击进入分类页。
+- **阶段 1（鱼缸 1/2）**：命中 `开贝壳_入口.png`（ROI `[289, 492, 168, 139]`），点击进入分类页。
+- **主鱼缸入口暂不可见**：先以 `主界面特征.png` 确认仍在鱼缸，再等待 700ms 重走入口识别，最多 12 次；该分支与绿野寻仙踪日常复用的普通开贝壳入口恢复方式一致，但加了上限。超限或主鱼缸门禁失败时安全停止，不降低贝壳入口匹配阈值。
+- **鱼缸 3 / 2**：入口未命中时，先用对应的 `patrol/鱼缸*_主页面编号.png` 核实当前鱼缸，点击编号展开选择器；只在 `patrol/鱼缸1_入口.png` 命中后选择鱼缸 1，待 `patrol/鱼缸1_主页面编号.png` 再次命中才寻找贝壳入口。选择器已展开时直接从该层恢复。切缸门禁未命中安全停止；进入 1 缸后入口暂不可见可按上述方式等待重试，不用固定坐标兜底。
 - **误入海星宠物页**：顶部 OCR `[萌乖亮]海星` 后点击左上角“返回”，再从 Router 重试。
 - **未识别到兑换 / 误入开贝壳大章鱼页**：点击左上角返回两次回到鱼缸，经双出口继续日常收尾，不报错停止。
 
@@ -39,7 +44,11 @@ flowchart TD
     
     Router -- 阶段3: 已在金贝壳主页 --> VerifyGold[GoldShellCouponVerifyGoldPage]
     Router -- 阶段2: 已在分类页 --> VerifyCat[GoldShellCouponVerifyCategoryPage]
-    Router -- 阶段1: 在主鱼缸 --> Entry[GoldShellCouponEntry: 点击开贝壳_入口.png]
+    Router -- 阶段1: 鱼缸1/2有入口 --> Entry[GoldShellCouponEntry: 点击开贝壳_入口.png]
+    Router -- 鱼缸3/2编号或已展开选择器 --> Switch[选择鱼缸1并确认编号]
+    Switch --> Entry
+    Router -- 仍在主鱼缸但入口不可见 --> Wait[主鱼缸门禁 + 700ms 有界等待]
+    Wait --> Router
     Router -- 误入海星宠物页 --> Starfish[GoldShellCouponStarfishMisTouch -> 返回 -> Router]
     Router -- 未知状态 --> Abort[GoldShellCouponAbort: 安全停止]
 
@@ -96,6 +105,10 @@ flowchart TD
 | 节点名称 | 识别方式 | 模板 / Expected | ROI `[x, y, w, h]` | 动作 | 说明 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `GoldShellCouponEntry` | `TemplateMatch` (0.8) | `开贝壳_入口.png` | `[289, 492, 168, 139]` | `Click` | 主鱼缸贝壳入口 |
+| `GoldShellCouponRetryEntryFromMainTank` | `TemplateMatch` (0.7) | `主界面特征.png` | `[0, 200, 150, 400]` | `DoNothing` | 入口暂不可见时等待 700ms 并重走路由，最多 12 次 |
+| `GoldShellCouponTank2ToPicker` / `GoldShellCouponTank3ToPicker` | `TemplateMatch` (0.85) | `patrol/鱼缸2/3_主页面编号.png` | `[40, 32, 45, 48]` | `Click` | 识别当前缸编号后展开选择器 |
+| `GoldShellCouponPickerTank1` | `TemplateMatch` (0.78) | `patrol/鱼缸1_入口.png` | `[135, 10, 75, 80]` | `Click` | 仅在选择器展开时选择鱼缸 1 |
+| `GoldShellCouponVerifyTank1BeforeEntry` | `TemplateMatch` (0.85) | `patrol/鱼缸1_主页面编号.png` | `[40, 32, 45, 48]` | `DoNothing` | 切缸后确认鱼缸 1，方可重新识别贝壳入口 |
 | `GoldShellCouponVerifyCategoryPage` | `TemplateMatch` (0.8) | `开贝壳_误触识别.png` | `[498, 80, 280, 191]` | `DoNothing` | 贝壳分类页门禁（粉色小章鱼特征） |
 | `GoldShellCouponEnterGold` | `OCR` | `^进入$` | `[904, 579, 108, 40]` | `Click` | 分类页右侧金贝壳“进入”按钮 |
 | `GoldShellCouponGoldPageIdentity` | `TemplateMatch` (0.8) | `金贝壳_识别.png` | `[515, 360, 232, 195]` | `DoNothing` | 金贝壳主页正向识别模板 |

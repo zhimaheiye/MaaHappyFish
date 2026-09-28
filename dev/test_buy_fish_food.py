@@ -28,6 +28,7 @@ class Controller:
         self.clicks = []
         self.swipes = []
         self.on_click = None
+        self.on_swipe = None
 
     def post_screencap(self):
         return Job(np.zeros((720, 1280, 3), dtype=np.uint8))
@@ -48,6 +49,8 @@ class Controller:
 
     def post_swipe(self, *args):
         self.swipes.append(args)
+        if self.on_swipe is not None:
+            self.on_swipe(len(self.swipes))
         return Job()
 
 
@@ -72,6 +75,15 @@ class Context:
             "store": {
                 "BuyFishFoodStoreIdentity": (10, 10, 20, 20),
                 "BuyFishFoodStoreItemIdentity": (40, 40, 20, 20),
+                "BuyFishFoodTargetCard": (300, 300, 40, 40),
+            },
+            "fish_store": {
+                "BuyFishFoodStoreIdentity": (10, 10, 20, 20),
+                "BuyFishFoodStoreItemIdentity": (40, 40, 20, 20),
+                "BuyFishFoodTargetCard": (300, 300, 40, 40),
+            },
+            "last_store": {
+                "BuyFishFoodStoreIdentity": (10, 10, 20, 20),
                 "BuyFishFoodTargetCard": (300, 300, 40, 40),
             },
             "tank": {
@@ -116,7 +128,12 @@ def run_tests():
     assert pipeline["BuyFishFoodQuantity"]["only_rec"] is True
     assert "」" in pipeline["BuyFishFoodQuantity"]["expected"]
     assert pipeline["BuyFishFoodQuantity"]["roi"] == [892, 345, 125, 92]
-    assert "鱼食" not in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
+    assert "雪花鱼食" in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
+    assert "粉光鱼食" in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
+    assert "珀光鱼食" in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
+    assert "廉价鱼食" not in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
+    assert pipeline["BuyFishFoodStartAtStore"]["custom_action_param"]["max_scrolls"] == 12
+    assert pipeline["BuyFishFoodVerifyStore"]["custom_action_param"]["max_scrolls"] == 12
     assert pipeline["BuyFishFoodStartAtDetail"]["expected"] == "廉价.*鱼食"
     assert pipeline["BuyFishFoodDetailIdentity"]["expected"] == "廉价.*鱼食"
 
@@ -173,6 +190,24 @@ def run_tests():
         assert actions.FindCheapFishFoodAction().run(missing_context, find_arg) is False
         assert missing_context.tasker.controller.clicks == []
         assert len(missing_context.tasker.controller.swipes) == 2
+
+        recovery_context = Context("store", target_visible=False)
+        def after_swipe(count):
+            recovery_context.tasker.controller.state = "fish_store"
+            recovery_context.target_visible = count >= 2
+        recovery_context.tasker.controller.on_swipe = after_swipe
+        assert actions.FindCheapFishFoodAction().run(
+            recovery_context, SimpleNamespace(custom_action_param={"max_scrolls": 3})
+        ) is True
+        assert recovery_context.tasker.controller.swipes == [
+            (640, 580, 640, 480, 500),
+            (640, 580, 640, 480, 500),
+        ]
+        assert recovery_context.tasker.controller.clicks == [(320, 320)]
+
+        last_card_context = Context("last_store")
+        assert actions.FindCheapFishFoodAction().run(last_card_context, find_arg) is True
+        assert last_card_context.tasker.controller.clicks == [(320, 320)]
     finally:
         actions.time.sleep = original_sleep
 

@@ -15,7 +15,7 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[兑换金贝壳券] 启动步骤恢复路由（金贝壳主页优先，其次分类页、主鱼缸入口；若误入海星宠物页则先返回鱼缸）。"
+            "Node.Action.Succeeded": "[兑换金贝壳券] 启动步骤恢复路由（金贝壳主页、分类页、鱼缸 1 或 2 的贝壳入口，以及鱼缸 3 切回鱼缸 1）。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -29,8 +29,79 @@
             "GoldShellCouponStarfishMisTouch",
             "GoldShellCouponOctopusMisTouch",
             "GoldShellCouponReturnCategory",
+            "GoldShellCouponPickerTank1",
+            "GoldShellCouponTank2ToPicker",
+            "GoldShellCouponTank3ToPicker",
+            "GoldShellCouponRetryEntryFromMainTank",
             "GoldShellCouponAbort"
         ]
+    },
+    "GoldShellCouponRetryEntryFromMainTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "threshold": 0.7,
+        "roi": [0, 200, 150, 400],
+        "action": "DoNothing",
+        "post_delay": 700,
+        "max_hit": 12,
+        "focus": {
+            "Node.Recognition.Succeeded": "[兑换金贝壳券] 已确认仍在主鱼缸，贝壳入口暂未识别到；等待游鱼移开后重试。"
+        },
+        "next": ["GoldShellCouponRouter"],
+        "on_error": ["GoldShellCouponAbort"]
+    },
+    "GoldShellCouponTank2ToPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "Click",
+        "post_delay": 400,
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 已确认鱼缸 2 并展开选择器，准备切到鱼缸 1。"
+        },
+        "next": ["GoldShellCouponPickerTank1"],
+        "on_error": ["GoldShellCouponAbort"]
+    },
+    "GoldShellCouponTank3ToPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "Click",
+        "post_delay": 400,
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 已确认鱼缸 3 并展开选择器，准备切到有贝壳入口的鱼缸 1。"
+        },
+        "next": ["GoldShellCouponPickerTank1"],
+        "on_error": ["GoldShellCouponAbort"]
+    },
+    "GoldShellCouponPickerTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_入口.png",
+        "threshold": 0.78,
+        "roi": [135, 10, 75, 80],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 已在鱼缸选择器点击鱼缸 1，正在验证主页面。"
+        },
+        "next": ["GoldShellCouponVerifyTank1BeforeEntry"],
+        "on_error": ["GoldShellCouponAbort"]
+    },
+    "GoldShellCouponVerifyTank1BeforeEntry": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[兑换金贝壳券] 已确认进入鱼缸 1，重新识别贝壳入口。"
+        },
+        "next": ["GoldShellCouponEntry", "GoldShellCouponRetryEntryFromMainTank"],
+        "on_error": ["GoldShellCouponAbort"]
     },
     "GoldShellCouponOctopusMisTouch": {
         "recognition": "TemplateMatch",

@@ -54,12 +54,12 @@
 | `BandFishTask` | 主鱼缸、游乐园、我的演出、选曲、演出、结算 | 除好友邀请弹窗外支持 | `BandFishStartRouter` | 好友邀请需要 `target_slot/name` | 结算须标题/确定双门禁，绿色像素不足；选曲保留黄色选中门禁；邀请弹窗停止 | 已支持；2026-09-27 误判修复代码级/离线 OCR 通过；邀请弹窗故意不支持 |
 | `SeaDiveTask` | 鱼缸 1/2/3、选择器、主页、深度选择、局内、结算、挽留 | 支持 | `SeaDiveStartRouter` | 否；每轮回主页重判 FREE/PAID | 只选 100 米、只点免费、绝不点继续下潜/x12 | 本轮补齐 |
 | `FishBabyTask` | 主鱼缸、鱼宝主页、孵化大类、三类子项、选宝宝层 | 支持，独立/日常共用 | `FishBabyStartRouter` | 本轮偏好与编号映射 | 未知工具栏/编号冲突停止；日常配置全跳过只支持主鱼缸，不从活动中间页直接推进 | 已支持；日常接入代码级通过，三列扩展待用户运行 |
-| `DailyRoutineTask` | 任意可由首个子任务识别的安全页面 | 调度器本身可恢复队列；UI 恢复由子任务负责，包括购买鱼食/鱼宝 | `DailyRoutineDispatcher` | 必须：队列与 active 状态 | 不跨子任务猜页面；主鱼缸确认后提交完成，全跳过须同样确认 | 容器支持；逐项以本表为准 |
+| `DailyRoutineTask` | 任意可由首个子任务识别的安全页面；魔力/融合支持各自已知页，活动体力支持酿月食香页、精彩活动列表、主鱼缸 | 调度器恢复队列；UI 恢复由各子任务负责 | `DailyRoutineDispatcher` | 必须：队列与 active 状态 | 活动体力先验卡片名称，只点第一张；未知页停止；完成后确认主鱼缸再推进 | 容器支持；活动体力代码级通过，未实机验证 |
 | `GoldenDolphinTask` | 主鱼缸、游乐园、确认弹窗、隐藏启动/奖励雨、结算 | 支持 | `GoldenDolphinNavigationAction` | 奖励优先级、局数 | 局内须命中奖励/启动贝币；结算计数一次 | 本轮补齐 |
 | `DailyMagicPuzzleTask` | 拼图页面 | 仅支持该页 | `DailyMagicPuzzleSolve` | 6×6 当前盘面 | 非拼图页不导航 | Intentional Unsupported：只允许拼图页 |
 | `ShakeGameTask` | 主鱼缸、游乐园、确认弹窗、局内、结算 | 结算及浅层支持；局内缺证据 | `ShakeGameNavigationAction` | MuMu 路径与明确 VM index | 结算模板命中才退出；绝不默认 VM 0 | Live Blocked：局内缺截图/模板 |
 | `ShakeGemCollectTestTask` | 指定主鱼缸测试场景 | 仅固定测试入口 | `ShakeGemCollectVerifyTank` | 明确 VM index | 不扩展为通用任务 | Intentional Unsupported：测试专用 |
-| `GoldShellCouponTask` | 主鱼缸、分类页、金贝壳页、兑换后确认/结果 | 支持 | `GoldShellCouponRouter` | 当轮兑换确认 | 海星误入可返回；未知页停止 | 已支持 |
+| `GoldShellCouponTask` | 鱼缸 1/2/3、鱼缸选择器、分类页、金贝壳页、兑换后确认/结果 | 支持；3 缸需先切至 1 缸 | `GoldShellCouponRouter` | 当轮兑换确认 | 识别鱼缸编号才展开选择器；切至 1 缸并复核后才找贝壳入口；入口被鱼暂时遮挡时在主鱼缸门禁下最多重试 12 次；未知页停止 | 2026-09-28 两次导航修复代码级通过，待 MFA 自然复测 |
 | `EmulatorAdTask` | 主鱼缸、广告中、广告后 | 支持既有路由 | `EmulatorAdRouter` | 广告轮次/启动标记 | 只在适配模拟器路径运行 | 已支持 |
 | `MobileAdTask` | 广告大厅、奖励弹窗、转盘停止、播放/结束页；自动续播未启动后返回大厅 | 支持既有路由；续播启动等待超时后重新匹配大厅入口 | `MobileAdRouter`；`MobileAdClickContinueCheck.on_error` → 大厅入口 | 周期与设备分辨率；运行中恢复保留计数 | 仅 ADB 真机约定；大厅门禁命中才重试，未知页停止；MuMu 不支持 | 已支持其既定设备边界；大厅续播恢复代码级通过，未做长跑实测 |
 
