@@ -1,6 +1,6 @@
 # 当前交接档案 (CURRENT.md)
 
-**更新时间**: 2026-09-28
+**更新时间**: 2026-09-29
 
 **日常收尾末尾公主礼盒漏领（2026-09-28）**：13:25 首次检查上格礼盒时模板分数 0.995980，但出现“当前积分不足无法领取奖励”；13:28 末尾重进 `PrincessTask`，MaaFramework 的上格 `max_hit=1` 仍已耗尽，识别器未运行便退出。现入口通过 `Context.clear_hit_count()` 重置三格计数，使每次进入均基于当前画面检查，同时每格本次最多点击一次。专项、Pipeline 正则/资源和 Agent 引用代码级通过，本次未做 MFA/模拟器交互，真实领奖待自然复测；礼盒模板无需重截。详见 [princess-task.md](../features/princess-task.md)。
 
@@ -42,8 +42,8 @@
 
 | 项目 | 信息 |
 | :--- | :--- |
-| **Current version** | `0.7.2` |
-| **Latest release** | [`v0.7.2`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.2) |
+| **Current version** | `0.7.3` |
+| **Latest release** | [`v0.7.3`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.3) |
 | **CI hard gate** | `verify (win, x86_64)` PASS（GitHub Windows Runner embedded Python 冒烟 + 更新契约门禁） |
 | **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新（发版流程标准详见 [release-workflow.md](../release-workflow.md)） |
 
