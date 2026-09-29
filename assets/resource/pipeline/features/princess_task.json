@@ -27,9 +27,9 @@
             "PrincessClaimFailure",
             "PrincessTreasureTaskPage",
             "PrincessPageReady",
+            "PrincessBountyTab",
             "PrincessBountyDeliver",
             "PrincessDiaryTab",
-            "PrincessBountyTab",
             "PrincessOpenEntry"
         ],
         "on_error": [
@@ -59,9 +59,9 @@
             "[JumpBack]GlobalLevelUpPopup",
             "PrincessTreasureTaskPage",
             "PrincessPageReady",
+            "PrincessBountyTab",
             "PrincessBountyDeliver",
-            "PrincessDiaryTab",
-            "PrincessBountyTab"
+            "PrincessDiaryTab"
         ],
         "on_error": [
             "PrincessAbort"
@@ -71,15 +71,15 @@
         "recognition": "OCR",
         "expected": "日记",
         "roi": [
-            512,
-            62,
-            253,
-            143
+            600,
+            112,
+            112,
+            44
         ],
         "action": "DoNothing",
         "timeout": 4000,
         "focus": {
-            "Node.Recognition.Succeeded": "[公主任务] 顶部标题为日记，按公主日记流程领取。"
+            "Node.Recognition.Succeeded": "[公主任务] 已识别公主日记页签，按日记流程领取。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -101,15 +101,15 @@
         "recognition": "OCR",
         "expected": "悬赏|赏金",
         "roi": [
-            512,
-            62,
-            253,
-            143
+            786,
+            112,
+            100,
+            44
         ],
         "action": "DoNothing",
         "timeout": 4000,
         "focus": {
-            "Node.Recognition.Succeeded": "[公主任务] 顶部标题为悬赏/赏金，只点击交付任务。"
+            "Node.Recognition.Succeeded": "[公主任务] 已识别赏金奖励页签，只点击交付任务。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -127,10 +127,10 @@
         "recognition": "OCR",
         "expected": "^交付任务$",
         "roi": [
-            260,
-            250,
-            720,
-            430
+            772,
+            566,
+            112,
+            42
         ],
         "action": "Click",
         "post_delay": 800,

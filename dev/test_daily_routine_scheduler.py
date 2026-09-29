@@ -160,27 +160,25 @@ def test_pipeline_topology():
     assert business_next(pdata["DailyFreeGiftAlreadySoldOut"]) == ["DailyFreeGiftExitRecharge"]
     assert pdata["DailyFreeGiftTankEntry"]["roi"] == [455, 0, 140, 115]
     assert pdata["DailyFreeGiftTankEntry"]["threshold"] == 0.8
-    assert "target" not in pdata["DailyFreeGiftTankEntry"]
-    assert business_next(pdata["DailyFreeGiftStartRouter"])[-3:] == [
+    assert pdata["DailyFreeGiftTankEntry"]["target"] == [652, 48, 6, 6]
+    assert "DailyFreeGiftTankEntryByOcr" not in pdata
+    assert "DailyFreeGiftTankEntryRelaxed" not in pdata
+    assert business_next(pdata["DailyFreeGiftStartRouter"])[-2:] == [
+        "DailyFreeGiftRechargePage",
         "DailyFreeGiftTankEntry",
-        "DailyFreeGiftTankEntryByOcr",
-        "DailyFreeGiftTankEntryRelaxed",
     ]
-    entry_ocr = pdata["DailyFreeGiftTankEntryByOcr"]
-    assert entry_ocr["recognition"] == "OCR"
-    assert entry_ocr["expected"] == "充值|商城"
-    assert entry_ocr["roi"] == [455, 0, 140, 115]
-    assert entry_ocr["action"] == "Click"
-    assert "target" not in entry_ocr
-    assert business_next(entry_ocr) == ["DailyFreeGiftRechargePage"]
-    entry_relaxed = pdata["DailyFreeGiftTankEntryRelaxed"]
-    assert entry_relaxed["recognition"] == "TemplateMatch"
-    assert entry_relaxed["template"] == "充值页面入口.png"
-    assert entry_relaxed["roi"] == [455, 0, 140, 115]
-    assert entry_relaxed["threshold"] == 0.75
-    assert entry_relaxed["action"] == "Click"
-    assert "target" not in entry_relaxed
-    assert business_next(entry_relaxed) == ["DailyFreeGiftRechargePage"]
+    assert business_next(pdata["DailyFreeGiftTankEntry"]) == [
+        "DailyFreeGiftRechargePage",
+        "DailyFreeGiftTankEntryRetry",
+    ]
+    entry_retry = pdata["DailyFreeGiftTankEntryRetry"]
+    assert entry_retry["recognition"] == "TemplateMatch"
+    assert entry_retry["template"] == "充值页面入口.png"
+    assert entry_retry["roi"] == [455, 0, 140, 115]
+    assert entry_retry["threshold"] == 0.8
+    assert entry_retry["action"] == "Click"
+    assert entry_retry["target"] == [652, 48, 6, 6]
+    assert business_next(entry_retry) == ["DailyFreeGiftRechargePage"]
     print("[PASS] 免费领取/已售罄分支独立，并在识别返回鱼缸后汇合")
 
     # 6. 乐队鱼退出后必须按运行模式分流，独立任务不能跌入未激活的日常调度器。

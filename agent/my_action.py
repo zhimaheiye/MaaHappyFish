@@ -760,7 +760,8 @@ def _recognition_number(context: Context, node_name: str, frame):
     text = texts[0] if texts else ""
     # Maa OCR 在这个白底数量框里会把单独的“1”认成相似笔画。
     # 该兼容只作用于数量专用 ROI，避免把同形字符扩散到其他 OCR 节点。
-    if node_name == "BuyFishFoodQuantity" and text in {"」", "丨", "|", "I", "l", "i", "/", "／"}:
+    # 2026-09-30 详情页白底「1」被读成单独的 F。只把这一整个字符当成 1，其它字母仍拒绝。
+    if node_name == "BuyFishFoodQuantity" and text in {"」", "丨", "|", "I", "l", "i", "/", "／", "F", "f"}:
         text = "1"
     digits = "".join(char for char in text if char.isdigit())
     if digits:

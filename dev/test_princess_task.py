@@ -68,9 +68,9 @@ def run_tests():
         "PrincessClaimFailure",
         "PrincessTreasureTaskPage",
         "PrincessPageReady",
+        "PrincessBountyTab",
         "PrincessBountyDeliver",
         "PrincessDiaryTab",
-        "PrincessBountyTab",
         "PrincessOpenEntry",
     ]
     assert_fields(pipeline["PrincessOpenEntry"], {
@@ -82,22 +82,22 @@ def run_tests():
     assert business_next(pipeline["PrincessOpenEntry"]) == [
         "PrincessTreasureTaskPage",
         "PrincessPageReady",
+        "PrincessBountyTab",
         "PrincessBountyDeliver",
         "PrincessDiaryTab",
-        "PrincessBountyTab",
     ]
     diary_tab = pipeline["PrincessDiaryTab"]
     assert_fields(diary_tab, {
         "recognition": "OCR",
         "expected": "日记",
-        "roi": [512, 62, 253, 143],
+        "roi": [600, 112, 112, 44],
         "action": "DoNothing",
     })
     bounty_tab = pipeline["PrincessBountyTab"]
     assert_fields(bounty_tab, {
         "recognition": "OCR",
         "expected": "悬赏|赏金",
-        "roi": [512, 62, 253, 143],
+        "roi": [786, 112, 100, 44],
         "action": "DoNothing",
     })
     assert business_next(bounty_tab) == ["PrincessBountyDeliver"]
@@ -105,7 +105,7 @@ def run_tests():
     assert_fields(deliver, {
         "recognition": "OCR",
         "expected": "^交付任务$",
-        "roi": [260, 250, 720, 430],
+        "roi": [772, 566, 112, 42],
         "action": "Click",
     })
     assert "target" not in deliver
@@ -130,7 +130,7 @@ def run_tests():
     assert "PrincessBountyDeliver" not in business_next(diary_tab)
     for router_name in ("PrincessStartRouter", "PrincessOpenEntry"):
         route = business_next(pipeline[router_name])
-        assert route.index("PrincessPageReady") < route.index("PrincessBountyDeliver") < route.index("PrincessDiaryTab")
+        assert route.index("PrincessPageReady") < route.index("PrincessBountyTab") < route.index("PrincessBountyDeliver") < route.index("PrincessDiaryTab")
     claim_slots = [
         ("PrincessClaimTop", [1028, 290, 62, 96]),
         ("PrincessClaimMiddle", [1028, 386, 62, 96]),

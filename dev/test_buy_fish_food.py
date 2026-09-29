@@ -137,6 +137,7 @@ def run_tests():
     assert "target" not in pipeline["BuyFishFoodOpenStore"]
     assert pipeline["BuyFishFoodQuantity"]["only_rec"] is True
     assert "」" in pipeline["BuyFishFoodQuantity"]["expected"]
+    assert "F" in pipeline["BuyFishFoodQuantity"]["expected"]
     assert pipeline["BuyFishFoodQuantity"]["roi"] == [892, 345, 125, 92]
     assert "雪花鱼食" in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
     assert "粉光鱼食" in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
@@ -164,6 +165,14 @@ def run_tests():
         confused_one_context = Context("detail", initial_quantity_text="」")
         assert actions.BuyCheapFishFoodAction().run(confused_one_context, purchase_arg) is True
         assert confused_one_context.tasker.controller.quantity == 3
+
+        misread_f_context = Context("detail", initial_quantity_text="F")
+        assert actions.BuyCheapFishFoodAction().run(misread_f_context, purchase_arg) is True
+        assert misread_f_context.tasker.controller.quantity == 3
+
+        other_letter_context = Context("detail", initial_quantity_text="A")
+        assert actions.BuyCheapFishFoodAction().run(other_letter_context, purchase_arg) is False
+        assert other_letter_context.tasker.controller.clicks == []
 
         stopped_context = Context("detail")
         stopped_context.tasker.controller.on_click = lambda x, y: setattr(

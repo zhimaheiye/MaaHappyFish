@@ -318,7 +318,7 @@
     },
     "BuyFishFoodQuantity": {
         "recognition": "OCR",
-        "expected": "^(?:[1-9]\\d{0,2}|」|丨)$",
+        "expected": "^(?:[1-9]\\d{0,2}|」|丨|F|f)$",
         "only_rec": true,
         "roi": [
             892,

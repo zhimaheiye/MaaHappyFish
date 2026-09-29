@@ -25,9 +25,7 @@
             "DailyFreeGiftAlreadySoldOut",
             "DailyFreeGiftClaimable",
             "DailyFreeGiftRechargePage",
-            "DailyFreeGiftTankEntry",
-            "DailyFreeGiftTankEntryByOcr",
-            "DailyFreeGiftTankEntryRelaxed"
+            "DailyFreeGiftTankEntry"
         ],
         "on_error": [
             "DailyFreeGiftAbort"
@@ -132,6 +130,7 @@
         ],
         "threshold": 0.8,
         "action": "Click",
+        "target": [652, 48, 6, 6],
         "post_delay": 1000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -139,40 +138,14 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "DailyFreeGiftRechargePage"
+            "DailyFreeGiftRechargePage",
+            "DailyFreeGiftTankEntryRetry"
         ],
         "on_error": [
             "DailyFreeGiftAbort"
         ]
     },
-    "DailyFreeGiftTankEntryByOcr": {
-        "recognition": "OCR",
-        "expected": "充值|商城",
-        "roi": [
-            455,
-            0,
-            140,
-            115
-        ],
-        "action": "Click",
-        "post_delay": 1000,
-        "timeout": 4000,
-        "focus": {
-            "Node.Action.Succeeded": "[每日免费礼包] 入口模板未命中，已按充值/商城文字打开入口。"
-        },
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "DailyFreeGiftRechargePage"
-        ],
-        "on_error": [
-            "DailyFreeGiftAbort"
-        ]
-    },
-    "DailyFreeGiftTankEntryRelaxed": {
+    "DailyFreeGiftTankEntryRetry": {
         "recognition": "TemplateMatch",
         "template": "充值页面入口.png",
         "roi": [
@@ -181,12 +154,13 @@
             140,
             115
         ],
-        "threshold": 0.75,
+        "threshold": 0.8,
         "action": "Click",
+        "target": [652, 48, 6, 6],
         "post_delay": 1000,
-        "timeout": 4000,
+        "timeout": 2000,
         "focus": {
-            "Node.Action.Succeeded": "[每日免费礼包] 入口模板严格阈值未命中，已在同一入口区域内再次匹配并点击。"
+            "Node.Action.Succeeded": "[每日免费礼包] 充值页未打开，已再次点击顶部加号。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
