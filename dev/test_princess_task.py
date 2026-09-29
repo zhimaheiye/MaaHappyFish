@@ -68,6 +68,9 @@ def run_tests():
         "PrincessClaimFailure",
         "PrincessTreasureTaskPage",
         "PrincessPageReady",
+        "PrincessBountyDeliver",
+        "PrincessDiaryTab",
+        "PrincessBountyTab",
         "PrincessOpenEntry",
     ]
     assert_fields(pipeline["PrincessOpenEntry"], {
@@ -79,20 +82,55 @@ def run_tests():
     assert business_next(pipeline["PrincessOpenEntry"]) == [
         "PrincessTreasureTaskPage",
         "PrincessPageReady",
+        "PrincessBountyDeliver",
+        "PrincessDiaryTab",
+        "PrincessBountyTab",
     ]
+    diary_tab = pipeline["PrincessDiaryTab"]
+    assert_fields(diary_tab, {
+        "recognition": "OCR",
+        "expected": "日记",
+        "roi": [512, 62, 253, 143],
+        "action": "DoNothing",
+    })
+    bounty_tab = pipeline["PrincessBountyTab"]
+    assert_fields(bounty_tab, {
+        "recognition": "OCR",
+        "expected": "悬赏|赏金",
+        "roi": [512, 62, 253, 143],
+        "action": "DoNothing",
+    })
+    assert business_next(bounty_tab) == ["PrincessBountyDeliver"]
+    deliver = pipeline["PrincessBountyDeliver"]
+    assert_fields(deliver, {
+        "recognition": "OCR",
+        "expected": "^交付任务$",
+        "roi": [260, 250, 720, 430],
+        "action": "Click",
+    })
+    assert "target" not in deliver
+    assert deliver.get("max_hit") == 1
+    assert business_next(deliver) == ["PrincessExit"]
     assert_fields(pipeline["PrincessPageReady"], {
         "recognition": "TemplateMatch",
         "template": "公主任务_识别.png",
         "roi": [512, 62, 253, 143],
         "action": "DoNothing",
     })
-    assert business_next(pipeline["PrincessPageReady"]) == [
+    page_ready_next = [
         "PrincessClaimTop",
         "PrincessClaimMiddle",
         "PrincessClaimBottom",
         "PrincessTreasureTaskPage",
         "PrincessExit",
     ]
+    assert business_next(pipeline["PrincessPageReady"]) == page_ready_next
+    assert business_next(diary_tab) == page_ready_next
+    assert "PrincessBountyDeliver" not in business_next(pipeline["PrincessPageReady"])
+    assert "PrincessBountyDeliver" not in business_next(diary_tab)
+    for router_name in ("PrincessStartRouter", "PrincessOpenEntry"):
+        route = business_next(pipeline[router_name])
+        assert route.index("PrincessPageReady") < route.index("PrincessBountyDeliver") < route.index("PrincessDiaryTab")
     claim_slots = [
         ("PrincessClaimTop", [1028, 290, 62, 96]),
         ("PrincessClaimMiddle", [1028, 386, 62, 96]),
@@ -129,13 +167,8 @@ def run_tests():
     assert failure["template"] == "公主任务_领取失败.png"
     assert failure["action"] == "Click"
     assert "target" not in failure
-    assert business_next(pipeline["PrincessPageAfterClaim"]) == [
-        "PrincessClaimTop",
-        "PrincessClaimMiddle",
-        "PrincessClaimBottom",
-        "PrincessTreasureTaskPage",
-        "PrincessExit",
-    ]
+    assert business_next(pipeline["PrincessPageAfterClaim"]) == page_ready_next
+    assert "PrincessBountyDeliver" not in business_next(pipeline["PrincessPageAfterClaim"])
     assert pipeline["PrincessPageAfterClaim"]["on_error"] == [
         "PrincessTreasureTaskPage"
     ]

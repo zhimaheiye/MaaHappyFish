@@ -27,6 +27,9 @@
             "PrincessClaimFailure",
             "PrincessTreasureTaskPage",
             "PrincessPageReady",
+            "PrincessBountyDeliver",
+            "PrincessDiaryTab",
+            "PrincessBountyTab",
             "PrincessOpenEntry"
         ],
         "on_error": [
@@ -55,7 +58,94 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "PrincessTreasureTaskPage",
-            "PrincessPageReady"
+            "PrincessPageReady",
+            "PrincessBountyDeliver",
+            "PrincessDiaryTab",
+            "PrincessBountyTab"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessDiaryTab": {
+        "recognition": "OCR",
+        "expected": "日记",
+        "roi": [
+            512,
+            62,
+            253,
+            143
+        ],
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[公主任务] 顶部标题为日记，按公主日记流程领取。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessClaimTop",
+            "PrincessClaimMiddle",
+            "PrincessClaimBottom",
+            "PrincessTreasureTaskPage",
+            "PrincessExit"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessBountyTab": {
+        "recognition": "OCR",
+        "expected": "悬赏|赏金",
+        "roi": [
+            512,
+            62,
+            253,
+            143
+        ],
+        "action": "DoNothing",
+        "timeout": 4000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[公主任务] 顶部标题为悬赏/赏金，只点击交付任务。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessBountyDeliver"
+        ],
+        "on_error": [
+            "PrincessAbort"
+        ]
+    },
+    "PrincessBountyDeliver": {
+        "recognition": "OCR",
+        "expected": "^交付任务$",
+        "roi": [
+            260,
+            250,
+            720,
+            430
+        ],
+        "action": "Click",
+        "post_delay": 800,
+        "max_hit": 1,
+        "timeout": 4000,
+        "focus": {
+            "Node.Action.Succeeded": "[公主任务] 已点击悬赏页的交付任务，准备退出。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PrincessExit"
         ],
         "on_error": [
             "PrincessAbort"

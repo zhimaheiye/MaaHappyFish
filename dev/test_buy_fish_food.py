@@ -35,9 +35,10 @@ class Controller:
 
     def post_click(self, x, y):
         self.clicks.append((x, y))
-        if self.on_click is not None:
-            self.on_click(x, y)
-        if (x, y) == (110, 110):
+        override = self.on_click(x, y) if self.on_click is not None else None
+        if isinstance(override, str):
+            self.state = override
+        elif (x, y) == (110, 110):
             self.quantity += 1
         elif (x, y) == (320, 320):
             self.state = "detail"
@@ -85,6 +86,15 @@ class Context:
             "last_store": {
                 "BuyFishFoodStoreIdentity": (10, 10, 20, 20),
                 "BuyFishFoodTargetCard": (300, 300, 40, 40),
+            },
+            "detail_back": {
+                "BuyFishFoodStoreIdentity": (10, 10, 20, 20),
+                "BuyFishFoodDetailIdentity": (50, 50, 20, 20),
+                "BuyFishFoodUnitPrice": (70, 70, 20, 20),
+                "BuyFishFoodTargetCard": (300, 300, 40, 40),
+                "BuyFishFoodPlusButton": (100, 100, 20, 20),
+                "BuyFishFoodQuantity": (150, 150, 20, 20),
+                "BuyFishFoodPurchaseButton": (200, 200, 20, 20),
             },
             "tank": {
                 "BuyFishFoodTankIdentity": (1, 1, 20, 20),
@@ -208,6 +218,25 @@ def run_tests():
         last_card_context = Context("last_store")
         assert actions.FindCheapFishFoodAction().run(last_card_context, find_arg) is True
         assert last_card_context.tasker.controller.clicks == [(320, 320)]
+
+        def purchase_lands(state):
+            def on_click(x, y):
+                if (x, y) == (210, 210):
+                    return state
+                return None
+            return on_click
+
+        one_bag = SimpleNamespace(custom_action_param={"bags": 1})
+        last_return = Context("detail")
+        last_return.tasker.controller.on_click = purchase_lands("last_store")
+        assert actions.BuyCheapFishFoodAction().run(last_return, one_bag) is True
+        assert last_return.tasker.controller.clicks == [(210, 210), (20, 20)]
+        assert last_return.tasker.controller.state == "tank"
+
+        stuck_detail = Context("detail")
+        stuck_detail.tasker.controller.on_click = purchase_lands("detail_back")
+        assert actions.BuyCheapFishFoodAction().run(stuck_detail, one_bag) is False
+        assert stuck_detail.tasker.controller.clicks == [(210, 210)]
     finally:
         actions.time.sleep = original_sleep
 

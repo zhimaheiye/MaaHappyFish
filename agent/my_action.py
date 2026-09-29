@@ -1047,16 +1047,34 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
     return True
 
 
+def _on_confirmed_store_list(context: Context, frame) -> bool:
+    """列表页有左上角“返回”，且不能仍是廉价鱼食详情（标题 + 400 金币）。
+
+    其它商品名门禁故意不含“廉价鱼食”。买完回到只剩这张卡片的末屏时，
+    仍要用这张卡片确认已经离开详情，否则购买会被误判失败。
+    """
+    if frame is None:
+        return False
+    if _recognition_box(context, "BuyFishFoodStoreIdentity", frame) is None:
+        return False
+    on_detail = (
+        _recognition_box(context, "BuyFishFoodDetailIdentity", frame) is not None
+        and _recognition_box(context, "BuyFishFoodUnitPrice", frame) is not None
+    )
+    if on_detail:
+        return False
+    if _recognition_box(context, "BuyFishFoodStoreItemIdentity", frame) is not None:
+        return True
+    return _recognition_box(context, "BuyFishFoodTargetCard", frame) is not None
+
+
 def _wait_back_to_store_list(context: Context, controller) -> bool:
     """Wait until we are back at the store item list page."""
     for _ in range(10):
         if _task_cancelled(context):
             return False
         time.sleep(0.3)
-        candidate = _capture_720p(controller)
-        candidate_back = _recognition_box(context, "BuyFishFoodStoreIdentity", candidate)
-        candidate_item = _recognition_box(context, "BuyFishFoodStoreItemIdentity", candidate)
-        if candidate_back is not None and candidate_item is not None:
+        if _on_confirmed_store_list(context, _capture_720p(controller)):
             return True
     return False
 
