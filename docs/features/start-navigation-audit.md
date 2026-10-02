@@ -40,21 +40,22 @@
 | `OpenShellTask` | 主鱼缸、分类页、待开始页、打开贝壳、继续、随机奖品、完成结果 | 全部接入 | `OpenShellStartRouter` | 循环次数由现有 Reco 维护 | 半轮只计一次；未知页 StopTask | 本轮补齐 |
 | `GemGiftBoxTask` | 主鱼缸、宝藏页、兑换页 | 支持已知页面 | 入口节点并列路由 | 配方选择 | 消耗确认弹窗缺上下文时停止 | 已支持；确认弹窗故意不支持 |
 | `GemOrderTask` | 主鱼缸、订单页 | 支持 | `GemOrderTask` / `GemOrderRouter` | 删除目标与循环状态 | 删除确认弹窗单独启动不处理 | 已支持；删除确认故意不支持 |
-| `FriendGemTask` | 主鱼缸、好友列表、海牛好友缸、普通好友缸 | 支持 | `FriendGemStartRouter` | 当前好友/访问状态由画面重建 | 未知好友页停止 | 已支持 |
-| `ManateeTask` | 好友列表、海牛页面 | 支持 | `ManateeStartRouter` | 好友访问状态 | 未知页停止 | 已支持 |
+| `FriendGemTask` | 主鱼缸、留言箱、好友列表、海牛好友缸、普通好友缸 | 支持 | `FriendGemStartRouter` | 当前好友/访问状态由画面重建 | 留言箱独有 OCR 后点第 3 页签并验证列表，未知资料页停止 | 2026-10-02 留言箱桥接代码级通过，未做 MFA 测试 |
+| `ManateeTask` | 主鱼缸/留言箱（周末）、好友列表、海牛页面/选食页 | 支持 | `ManateeStartRouter` / `ManateeWeekendGate` | 好友访问状态 | 留言箱桥接共用列表复核；工作日不进入留言箱导航 | 2026-10-02 桥接代码级通过，未做 MFA 测试 |
 | `WishingLampTask` | 主鱼缸、神灯活动页、循环结果页 | 支持既有循环状态 | `WishingLampStartRouter` | 当轮结果 | 只点正向门禁 | 已支持 |
 | `GreenWildTask` | 主鱼缸、活动页、任务/奖励页 | 支持 | `GreenWildStartRouter` | 日常子流程由 DailyRoutine 管理 | 未知页跳过并返回调度 | 已支持 |
 | `PrincessTask` | 主鱼缸、普通页、宝箱任务页、成功/失败结果弹窗 | 支持 | `PrincessStartRouter` | 否 | 积分不足文字不直接推断关闭位置 | 本轮补齐 |
 | `CollectFishTask` | 鱼缸 1/2/3、选择器、单/双缸初始化及收宝循环 | 支持 | `CollectFishStartRouter` | 单调缸位、双缸时间锚 | 当前画面优先并重新校准 | 已支持 |
-| `PatrolTask` | 鱼缸 1/2/3、选择器、管理页、海星页 | 支持 | `PatrolStartRouter` | 巡检槽位/喂食上下文 | 通用选择喂食弹窗故意 Abort | 已支持；弹窗故意不支持 |
+| `PatrolTask` | 鱼缸 1/2/3、选择器、管理页、海星页 | 支持 | `PatrolStartRouter` | 巡检槽位/喂食上下文 | 气泡限定右侧 ROI 且本缸门禁；双向扫底各复核；通用喂食弹窗及未录入活动页不盲退 | 2026-10-02 防活动误点/原生 FAILED 代码级回放通过，活动页启动不支持 |
 | `FeedStarfishStandalone` | 鱼缸 1/2/3、管理页、海星页 | 支持 | `FeedStarfishStandaloneStartRouter` | 选择喂食需海星身份 | 只有编号鱼缸可点管理；选择喂食弹窗停止 | 本轮补齐；弹窗故意不支持 |
 | `BuyFishFoodTask` | 主鱼缸、喂食弹窗、商店列表、商品详情 | 支持，独立/日常共用 | `BuyFishFoodStartRouter` | 购买袋数 | 每批重新验证详情/商店页；完成须确认主鱼缸后双出口分流 | 已支持；日常接入代码级通过 |
 | `FishingTask` | 主鱼缸、活动网格、地点页、选饵、等待咬钩、结算、购买提示 | 支持 | `FishingStartRouter` | 杆数、饵食模式 | 只点实际命中退出/饵食目标 | 已支持 |
 | `SeaOtterGemTask` | 好友列表、好友鱼缸 | 支持两类约定起点 | `SeaOtterStartRouter` | 当前好友和体力扫描 | 主鱼缸及其它页面不自动导航 | Intentional Unsupported：仅好友列表/好友缸 |
 | `BandFishTask` | 主鱼缸、游乐园、我的演出、选曲、演出、结算 | 除好友邀请弹窗外支持 | `BandFishStartRouter` | 好友邀请需要 `target_slot/name` | 结算须标题/确定双门禁，绿色像素不足；选曲保留黄色选中门禁；邀请弹窗停止 | 已支持；2026-09-27 误判修复代码级/离线 OCR 通过；邀请弹窗故意不支持 |
 | `SeaDiveTask` | 鱼缸 1/2/3、选择器、主页、深度选择、局内、结算、挽留 | 支持 | `SeaDiveStartRouter` | 否；每轮回主页重判 FREE/PAID | 只选 100 米、只点免费、绝不点继续下潜/x12 | 本轮补齐 |
-| `FishBabyTask` | 主鱼缸、鱼宝主页、孵化大类、三类子项、选宝宝层 | 支持，独立/日常共用 | `FishBabyStartRouter` | 本轮偏好与编号映射 | 未知工具栏/编号冲突停止；日常配置全跳过只支持主鱼缸，不从活动中间页直接推进 | 已支持；日常接入代码级通过，三列扩展待用户运行 |
-| `DailyRoutineTask` | 任意可由首个子任务识别的安全页面；魔力/融合支持各自已知页，活动体力支持酿月食香页、精彩活动列表、主鱼缸 | 调度器恢复队列；UI 恢复由各子任务负责 | `DailyRoutineDispatcher` | 必须：队列与 active 状态 | 活动体力先验卡片名称，只点第一张；未知页停止；完成后确认主鱼缸再推进 | 容器支持；活动体力代码级通过，未实机验证 |
+| `FishBabyTask` | 主鱼缸、鱼宝主页、孵化大类、三类子项、选宝宝层 | 支持，独立/日常共用 | `FishBabyStartRouter` | 本轮偏好与编号映射 | 牛奶后自动回主页须确认所有本批目标睡眠，直接主页退出；未知页安全失败；全跳过日常只支持主鱼缸 | 2026-10-02 牛奶收尾与原生 FAILED 回放代码级通过，未实机测试 |
+| `RomanticHouseTask` | 主鱼缸、浪漫满屋主页、热恋时刻舞台 | 支持，舞台优先 | `RomanticHouseStartRouter` | 当次入场命中上限；入口重置 | 主页木牌中心点击；仍有主页门禁才重试，最多三次；不在错误恢复链跨层回主鱼缸入口 | 2026-10-02 原生漏点回放与入口/退出专项代码级通过，未实机测试 |
+| `DailyRoutineTask` | 任意可由首个子任务识别的安全页面；魔力/融合支持各自已知页，活动体力支持酿月食香页、精彩活动列表、主鱼缸 | 调度器恢复队列；UI 恢复由各子任务负责 | `DailyRoutineDispatcher` | 必须：队列与 active 状态 | 按勾选入队；乐队鱼回访后绿野/公主各一次；绿野买鱼后继续现有领奖恢复路由，领奖回缸才推进；活动体力只点已确认的第一卡片 | 容器支持；2026-10-01 调度优化代码级通过，未实机验证 |
 | `GoldenDolphinTask` | 主鱼缸、游乐园、确认弹窗、隐藏启动/奖励雨、结算 | 支持 | `GoldenDolphinNavigationAction` | 奖励优先级、局数 | 局内须命中奖励/启动贝币；结算计数一次 | 本轮补齐 |
 | `DailyMagicPuzzleTask` | 拼图页面 | 仅支持该页 | `DailyMagicPuzzleSolve` | 6×6 当前盘面 | 非拼图页不导航 | Intentional Unsupported：只允许拼图页 |
 | `ShakeGameTask` | 主鱼缸、游乐园、确认弹窗、局内、结算 | 结算及浅层支持；局内缺证据 | `ShakeGameNavigationAction` | MuMu 路径与明确 VM index | 结算模板命中才退出；绝不默认 VM 0 | Live Blocked：局内缺截图/模板 |

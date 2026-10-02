@@ -69,7 +69,7 @@ class DailyPatrolFeatureContract(unittest.TestCase):
     def test_one_time_queue_and_explicit_hangup_opt_in(self):
         self.init(Context("DailyRoutineEnableMagicSummon", "DailyRoutineEnableGemFusion"))
         self.assertEqual(daily_routine_state["step"], "MAGIC_SUMMON")
-        self.assertEqual(daily_routine_state["queue"], ["GEM_FUSION", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM"])
+        self.assertEqual(daily_routine_state["queue"], ["GEM_FUSION"])
         self.init(Context(), {"all_enabled": True})
         steps = [daily_routine_state["step"]] + daily_routine_state["queue"]
         self.assertNotIn("MAGIC_SUMMON", steps)
@@ -109,7 +109,7 @@ class DailyPatrolFeatureContract(unittest.TestCase):
 
     def test_completion_is_once_after_verified_tank(self):
         self.init(Context(), {"magic_summon": True, "gem_fusion": True})
-        for suffix, next_step in (("MagicSummon", "GEM_FUSION"), ("GemFusion", "GREEN_WILD_CLAIM")):
+        for suffix, next_step in (("MagicSummon", "GEM_FUSION"), ("GemFusion", "ALL_DONE")):
             done = "DailyRoutine" + suffix + "Done"
             self.assertTrue(self.complete(done))
             self.assertEqual(daily_routine_state["tasks"][suffix]["status"], "DONE")

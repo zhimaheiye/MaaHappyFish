@@ -3,6 +3,8 @@
 import json
 import os
 import sys
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -75,14 +77,15 @@ def test_reco_windows():
 def test_resume_stack():
     reset_state()
     ctx = MockContext()
-    InitHangupScheduledDailyAction().run(ctx, MockArg({"resume_to": "collect_fish"}))
-    assert hangup_schedule_state["resume_stack"] == ["collect_fish"]
-    assert daily_routine_state.get("active") is True
-    reco = CheckHangupResumeReco()
-    assert reco.analyze(ctx, MockArg({"target": "collect_fish"})) == (0, 0, 10, 10)
-    assert reco.analyze(ctx, MockArg({"target": "patrol"})) is None
-    HangupPopResumeAction().run(ctx, MockArg())
-    assert hangup_schedule_state["resume_stack"] == []
+    with tempfile.TemporaryDirectory() as state_dir, patch.dict(os.environ, {"MAAHAPPYFISH_STATE_DIR": state_dir}):
+        InitHangupScheduledDailyAction().run(ctx, MockArg({"resume_to": "collect_fish"}))
+        assert hangup_schedule_state["resume_stack"] == ["collect_fish"]
+        assert daily_routine_state.get("active") is True
+        reco = CheckHangupResumeReco()
+        assert reco.analyze(ctx, MockArg({"target": "collect_fish"})) == (0, 0, 10, 10)
+        assert reco.analyze(ctx, MockArg({"target": "patrol"})) is None
+        HangupPopResumeAction().run(ctx, MockArg())
+        assert hangup_schedule_state["resume_stack"] == []
     print("[PASS] hang-up resume stack")
 
 

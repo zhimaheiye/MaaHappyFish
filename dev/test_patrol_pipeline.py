@@ -327,9 +327,17 @@ class PatrolPipelineTest(unittest.TestCase):
             self.assertEqual(image_window["timeout"], 30000)
             self.assertIn(f"PatrolCollectTank{tank}Bubble", image_window["next"])
             self.assertEqual(image_window["on_error"], [expected_next])
-            self.assertEqual(bubble["roi"], [0, 100, 1280, 560])
+            self.assertEqual(bubble["recognition"], "And")
+            self.assertEqual(bubble["all_of"], [f"PatrolTank{tank}MainIdentity", "PatrolCoinIdentity"])
+            self.assertEqual(bubble["box_index"], 1)
+            self.assertEqual(bubble["custom_action"], "ClickRecognizedCenterAction")
+            self.assertEqual(self.pipeline["PatrolCoinIdentity"]["roi"], self.collect_fish_pipeline["ClickFishBubble"]["roi"])
             sweep_name = f"PatrolSweepTank{tank}AfterBubble"
             reverse_sweep_name = f"PatrolSweepTank{tank}BackAfterBubble"
+            for name in (sweep_name, reverse_sweep_name):
+                self.assertEqual(self.pipeline[name]["recognition"], "And")
+                self.assertEqual(self.pipeline[name]["all_of"], [f"PatrolTank{tank}MainIdentity"])
+                self.assertEqual(self.pipeline[name]["on_error"], [f"PatrolCollectTank{tank}ImageWindow"])
             self.assertEqual(business_next(bubble), [sweep_name])
             self.assertEqual(
                 business_next(self.pipeline[sweep_name]),

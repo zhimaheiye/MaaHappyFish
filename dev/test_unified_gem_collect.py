@@ -102,8 +102,9 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
 
             # Node definition check
             shake_def = self.patrol_pipeline[shake_name]
-            self.assertEqual(shake_def["recognition"], "Custom")
-            self.assertEqual(shake_def["custom_recognition"], "CheckGemCollectModeReco")
+            self.assertEqual(shake_def["recognition"], "And")
+            self.assertEqual(shake_def["all_of"][0]["custom_recognition"], "CheckGemCollectModeReco")
+            self.assertEqual(shake_def["all_of"][1], f"PatrolTank{tank}MainIdentity")
             self.assertEqual(shake_def["action"], "Custom")
             self.assertEqual(shake_def["custom_action"], "UnifiedShakeGemCollectAction")
 
@@ -126,16 +127,19 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
             self.assertEqual(shake_def["action"], "Custom")
             self.assertEqual(shake_def["custom_action"], "UnifiedShakeGemCollectAction")
 
-    def test_image_mode_pipeline_elements_untouched(self):
-        """证明 IMAGE 模式的关键气泡模板、阈值与扫底参数字节级未被破坏"""
+    def test_image_mode_preserves_template_and_sweep_with_safe_page_and_roi(self):
+        """金币模板和扫底保留；巡检与单缸使用相同安全 ROI，先确认本缸。"""
         for tank in (1, 2, 3):
             bubble_name = f"PatrolCollectTank{tank}Bubble"
             bubble_node = self.patrol_pipeline[bubble_name]
-            self.assertEqual(bubble_node["recognition"], "TemplateMatch")
-            self.assertEqual(bubble_node["template"], "金币气泡.png")
-            self.assertEqual(bubble_node["threshold"], 0.75)
-            self.assertEqual(bubble_node["roi"], [0, 100, 1280, 560])
-            self.assertEqual(bubble_node["action"], "Click")
+            self.assertEqual(bubble_node["recognition"], "And")
+            self.assertEqual(bubble_node["all_of"], [f"PatrolTank{tank}MainIdentity", "PatrolCoinIdentity"])
+            self.assertEqual(bubble_node["box_index"], 1)
+            coin = self.patrol_pipeline["PatrolCoinIdentity"]
+            self.assertEqual(coin["template"], "金币气泡.png")
+            self.assertEqual(coin["threshold"], 0.75)
+            self.assertEqual(coin["roi"], [428, 126, 679, 360])
+            self.assertEqual(bubble_node["custom_action"], "ClickRecognizedCenterAction")
 
             sweep_name = f"PatrolSweepTank{tank}AfterBubble"
             sweep_node = self.patrol_pipeline[sweep_name]

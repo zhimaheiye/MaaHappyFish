@@ -54,6 +54,45 @@
         "action": "DoNothing"
     },
     "GlobalActivityPagePopup": {
+        "recognition": "Or",
+        "any_of": ["GlobalLuckyMomentTitle", "GlobalActivityPageReturn"],
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": ["GlobalLuckyMomentClose", "GlobalActivityPageReturn"],
+        "on_error": ["GlobalActivityPopupFailed"]
+    },
+    "GlobalLuckyMomentTitle": {
+        "recognition": "OCR",
+        "expected": "^幸运时刻$",
+        "roi": [400, 0, 470, 125],
+        "action": "DoNothing"
+    },
+    "GlobalLuckyMomentText": {
+        "recognition": "OCR",
+        "expected": "赌上你的宝石.*挪动杯子",
+        "roi": [340, 400, 600, 130],
+        "action": "DoNothing"
+    },
+    "GlobalLuckyMomentIdentity": {
+        "recognition": "And",
+        "all_of": ["GlobalLuckyMomentTitle", "GlobalLuckyMomentText"],
+        "action": "DoNothing"
+    },
+    "GlobalLuckyMomentClose": {
+        "recognition": "OCR",
+        "expected": "^幸运时刻$",
+        "roi": [400, 0, 470, 125],
+        "action": "Custom",
+        "custom_action": "CloseLuckyMomentAction",
+        "on_error": ["GlobalActivityPopupFailed"],
+        "focus": {"Node.Action.Succeeded": "[幸运时刻] 已确认弹窗关闭，继续当前任务。"}
+    },
+    "GlobalActivityPopupFailed": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {"Node.Action.Succeeded": "[活动弹窗] ERROR: 页面识别或关闭验证失败，安全停止。"}
+    },
+    "GlobalActivityPageReturn": {
         "recognition": "TemplateMatch",
         "template": "活动页面_退出.png",
         "roi": [0, 0, 136, 116],
@@ -61,6 +100,29 @@
         "action": "Click",
         "post_delay": 1000,
         "focus": "检测到活动页面弹出，已点击左上角退出并返回鱼缸，继续当前任务"
+    },
+    "FriendPageMessageBoxToStarFriends": {
+        "recognition": "OCR",
+        "expected": "未读留言最多保留",
+        "roi": [40, 90, 660, 80],
+        "action": "Click",
+        "target": [489, 41, 8, 8],
+        "post_delay": 1000,
+        "timeout": 5000,
+        "next": ["FriendPageStarFriendsIdentity"],
+        "on_error": ["FriendPageNavigationFailed"],
+        "focus": {"Node.Action.Succeeded": "[好友导航] 已确认留言箱，点击星级好友页签并等待列表。"}
+    },
+    "FriendPageStarFriendsIdentity": {
+        "recognition": "OCR",
+        "expected": "星级好友",
+        "roi": [110, 100, 200, 55],
+        "action": "DoNothing"
+    },
+    "FriendPageNavigationFailed": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {"Node.Action.Succeeded": "[好友导航] ERROR: 星级好友列表未确认，安全停止。"}
     },
     "GlobalDailySignPopup": {
         "recognition": "TemplateMatch",

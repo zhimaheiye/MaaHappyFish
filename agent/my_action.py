@@ -129,6 +129,7 @@ try:
         locate_numbered_babies,
         count_completed_hearts,
         has_green_check,
+        classify_sky,
     )
 except ImportError:
     from agent.fish_baby import (
@@ -142,6 +143,7 @@ except ImportError:
         locate_numbered_babies,
         count_completed_hearts,
         has_green_check,
+        classify_sky,
     )
 
 
@@ -319,6 +321,41 @@ FISH_BABY_BATCHES = {
 }
 
 
+def _fish_baby_at_home(context, frame):
+    # 工具栏展开时没有“开始孵化”；颜色指纹不能单独作为主页门禁。
+    return classify_sky(frame) == "HOME" and _fish_baby_ocr_box(
+        context, frame, "开始孵化", (510, 580, 280, 120)
+    ) is not None
+
+
+def _fish_baby_sleeping(context, frame, targets, located, *, at_home=False):
+    # 工具栏关闭后浮具整体下移 30px（2026-10-02 MFA 失败帧）。
+    sleeping = set()
+    for number in targets:
+        x, y, width, height = located[number]["timer_roi"]
+        roi = (x, y + (30 if at_home else 0), width, height)
+        if _fish_baby_ocr_box(context, frame, r"[0-9]{1,2}:[0-9]{2}:[0-9]{2}", roi):
+            sleeping.add(number)
+    return sleeping
+
+
+def _fish_baby_wait_batch_result(context, kind, targets, located, seconds=18.0):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if _task_cancelled(context):
+            return False
+        frame = _capture_720p(context.tasker.controller)
+        if frame is None:
+            return False
+        if _fish_baby_ocr_box(context, frame, "请选择孵化方式", (920, 590, 250, 100)):
+            return True
+        if kind in MILK_PREFERENCES and _fish_baby_at_home(context, frame):
+            if _fish_baby_sleeping(context, frame, targets, located, at_home=True) == set(targets):
+                return True
+        time.sleep(0.5)
+    return False
+
+
 def _fish_baby_run_batch(context, kind, targets, located):
     if not targets:
         return True
@@ -362,8 +399,8 @@ def _fish_baby_run_batch(context, kind, targets, located):
             )
             return False
     _fish_baby_click(context, (1066, 672))
-    if _fish_baby_wait_ocr(context, "请选择孵化方式", prompt_roi, 18.0) is None:
-        print(f"[鱼宝乐园] ERROR: {kind} 执行后未回到孵化大类层。", flush=True)
+    if not _fish_baby_wait_batch_result(context, kind, targets, located):
+        print(f"[鱼宝乐园] ERROR: {kind} 执行后未确认大类层或牛奶完成后的睡眠主页。", flush=True)
         return False
     print(f"[鱼宝乐园] {config['label']} 已执行：{targets}", flush=True)
     return True
@@ -515,18 +552,18 @@ class FishBabyRunRoundAction(CustomAction):
         deadline = time.monotonic() + 25.0
         sleeping = set()
         while time.monotonic() < deadline:
+            if _task_cancelled(context):
+                return False
             frame = _capture_720p(context.tasker.controller)
             if frame is None:
                 return False
-            sleeping = {
-                number for number in active
-                if _fish_baby_ocr_box(
-                    context,
-                    frame,
-                    r"[0-9]{1,2}:[0-9]{2}:[0-9]{2}",
-                    located[number]["timer_roi"],
-                )
-            }
+            at_home = _fish_baby_at_home(context, frame)
+            if not at_home and not _fish_baby_ocr_box(
+                context, frame, "请选择孵化方式", (920, 590, 250, 100)
+            ):
+                time.sleep(0.8)
+                continue
+            sleeping = _fish_baby_sleeping(context, frame, active, located, at_home=at_home)
             if sleeping == set(active):
                 fish_baby_state["completed"] = active
                 print(f"[鱼宝乐园] 已确认目标进入睡眠冷却：{active}", flush=True)
@@ -587,6 +624,89 @@ def _recognition_box(context: Context, node_name: str, frame):
 def _box_center(box):
     x, y, width, height = box
     return x + width // 2, y + height // 2
+
+
+@AgentServer.custom_action("FailTaskAction")
+class FailTaskAction(CustomAction):
+    """终止失败分支并保留 FAILED；StopTask 会被框架视为正常结束。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(argv.custom_action_param)
+        print(param.get("message", "[任务] ERROR: 门禁未通过，安全失败，未继续点击。"), flush=True)
+        return False
+
+
+@AgentServer.custom_action("RomanticHouseResetEntryAction")
+class RomanticHouseResetEntryAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            parse_dict_param(argv.custom_action_param)
+            return bool(context.clear_hit_count("RomanticHouseInHomePage"))
+        except Exception as e:
+            print(f"[浪漫满屋] ERROR: 无法重置本次入场重试次数: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("ClickRecognizedCenterAction")
+class ClickRecognizedCenterAction(CustomAction):
+    """只点击当前节点已确认目标的中心，拒绝无效框和随机边角落点。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            parse_dict_param(argv.custom_action_param)
+            box = tuple(int(value) for value in argv.box)
+            if _task_cancelled(context) or len(box) != 4 or box[2] <= 0 or box[3] <= 0:
+                return False
+            ctrl = context.tasker.controller
+            if not ctrl:
+                return False
+            return bool(ctrl.post_click(*_box_center(box)).wait().succeeded)
+        except Exception as e:
+            print(f"[中心点击] ERROR: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("CloseLuckyMomentAction")
+class CloseLuckyMomentAction(CustomAction):
+    """幸运时刻双 OCR 门禁下只关右上红叉，最多三次且确认消失。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            parse_dict_param(argv.custom_action_param)
+            ctrl = context.tasker.controller
+            if not ctrl:
+                return False
+            for attempt in range(4):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    print("[幸运时刻] ERROR: 截图失败，拒绝点击", flush=True)
+                    return False
+                title = context.run_recognition("GlobalLuckyMomentTitle", frame)
+                if title is None:
+                    return False
+                if not title.hit:
+                    # 防止 OCR 单帧漏字被当成关闭；必须看到正向主鱼缸特征。
+                    body = context.run_recognition("GlobalLuckyMomentText", frame)
+                    return bool(body is not None and not body.hit
+                                and _recognition_box(context, "ConfirmMainScreen", frame))
+                if attempt == 3:
+                    break
+                if not _recognition_box(context, "GlobalLuckyMomentIdentity", frame):
+                    print("[幸运时刻] ERROR: 弹窗正文门禁未通过，拒绝点击", flush=True)
+                    return False
+                if _task_cancelled(context):
+                    return False
+                # 2026-10-02 1280×720 现场图确认的红叉中心；不点底部消耗按钮。
+                if not ctrl.post_click(1015, 103).wait().succeeded:
+                    return False
+                time.sleep(0.8)
+            print("[幸运时刻] ERROR: 三次关闭后弹窗仍在，安全停止", flush=True)
+            return False
+        except Exception as e:
+            print(f"[幸运时刻] ERROR: 关闭异常: {e}", flush=True)
+            return False
 
 
 @AgentServer.custom_action("ConfirmOpenShellFinishAction")
@@ -971,9 +1091,14 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
         print(f"[购买鱼食] 已确认触顶 999 袋", flush=True)
         current_quantity = final_quantity
     else:
-        # Precise mode: existing logic
-        last_hold_delta = None
-        while batch_bags - current_quantity >= (20 if last_hold_delta is None else last_hold_delta + 3):
+        # Segment gains depend on the actual hold duration. Keep the fastest
+        # observed rate so a short hold's startup delay cannot lengthen the next
+        # hold; reserve 20 bags for individual clicks near the target.
+        peak_hold_rate = None
+        while batch_bags - current_quantity >= 20:
+            remaining = batch_bags - current_quantity
+            if peak_hold_rate is not None and remaining - 20 < peak_hold_rate:
+                break
             if _task_cancelled(context):
                 print("[购买鱼食] 已收到停止请求，终止长按", flush=True)
                 return False
@@ -984,9 +1109,9 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
                 print("[购买鱼食] 长按前页面或加号识别失败，停止操作", flush=True)
                 return False
 
-            hold_ms = 1000 if last_hold_delta is None else min(
+            hold_ms = 1000 if peak_hold_rate is None else min(
                 5000,
-                max(1000, int((batch_bags - current_quantity - 3) * 1000 / last_hold_delta)),
+                int((remaining - 20) * 1000 / peak_hold_rate),
             )
             print(f"[购买鱼食] 剩余 {batch_bags - current_quantity} 袋，长按加号 {hold_ms}ms", flush=True)
             action_detail = context.run_action_direct(
@@ -1006,7 +1131,8 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
             if new_quantity is None or new_quantity <= current_quantity:
                 print("[购买鱼食] 长按后数量未可靠增加，停止操作", flush=True)
                 return False
-            last_hold_delta = new_quantity - current_quantity
+            hold_rate = (new_quantity - current_quantity) * 1000 / hold_ms
+            peak_hold_rate = max(peak_hold_rate or 0, hold_rate)
             current_quantity = new_quantity
 
         if current_quantity > batch_bags + 2:
@@ -1040,6 +1166,10 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
     purchase_box = _recognition_box(context, "BuyFishFoodPurchaseButton", final_frame)
     if detail_box is None or price_box is None or purchase_box is None:
         print("[购买鱼食] 点击购买前最终门禁失败，未提交购买", flush=True)
+        return False
+    final_quantity = _recognition_number(context, "BuyFishFoodQuantity", final_frame)
+    if final_quantity is None or not batch_bags <= final_quantity <= batch_bags + 2:
+        print(f"[购买鱼食] 提交前数量复核失败（目标={batch_bags}，读到={final_quantity}），未提交购买", flush=True)
         return False
 
     purchase_x, purchase_y = _box_center(purchase_box)
@@ -1684,6 +1814,34 @@ class InitSeaOtterStateAction(CustomAction):
             return False
 
 
+def _sea_otter_refresh_last_friend(context, ctrl):
+    """末位好友的刷新跳板：每次跨层点击后必须确认真实好友与箭头状态。"""
+    for x, expect_last in ((1085, False), (1205, True)):
+        if _task_cancelled(context) or not ctrl.post_click(x, 68).wait().succeeded:
+            return False
+        verified = False
+        for _ in range(12):
+            if _task_cancelled(context):
+                return False
+            time.sleep(0.5)
+            frame = _capture_720p(ctrl)
+            if frame is None:
+                return False
+            friend = any(_recognition_box(context, name, frame) for name in (
+                "SeaOtterHasStaminaPanel", "SeaOtterFriendLiked", "SeaOtterFriendUnliked"
+            ))
+            arrow = context.run_recognition("SeaOtterGrayRightArrow", frame)
+            if arrow is None:
+                return False
+            if friend and bool(arrow.hit) == expect_last:
+                verified = True
+                break
+        if not verified:
+            print("[海獭摸宝] ERROR: 末位好友刷新跳板未确认，拒绝后续点击", flush=True)
+            return False
+    return True
+
+
 @AgentServer.custom_action("SeaOtterHarvestAction")
 class SeaOtterHarvestAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -1695,31 +1853,49 @@ class SeaOtterHarvestAction(CustomAction):
 
             side = sea_otter_gem_state.get("current_side", "left")
             param = parse_dict_param(getattr(argv, "custom_action_param", None))
-            stay_on_current = bool(param.get("stay_on_current", False))
+            refresh_last_friend = bool(param.get("refresh_last_friend", False))
+
+            last_box = None
+            if refresh_last_friend:
+                frame = _capture_720p(ctrl)
+                if (frame is None
+                        or not _recognition_box(context, "SeaOtterGrayRightArrow", frame)
+                        or not any(_recognition_box(context, name, frame) for name in (
+                            "SeaOtterHasStaminaPanel", "SeaOtterFriendLiked", "SeaOtterFriendUnliked"
+                        ))):
+                    print("[海獭摸宝] ERROR: 末位真实好友门禁未通过", flush=True)
+                    return False
+                last_box = _recognition_box(context, "SeaOtterLastFriendHarvestable", frame)
+                if not last_box or last_box[2] <= 0 or last_box[3] <= 0:
+                    print("[海獭摸宝] ERROR: 当前摸宝模板未确认，拒绝点击", flush=True)
+                    return False
 
             otter_x, otter_y = 85, 565
             try:
-                raw_box = getattr(argv, "box", None)
+                raw_box = last_box or getattr(argv, "box", None)
                 box = tuple(int(value) for value in raw_box) if raw_box is not None else None
                 if box and len(box) == 4 and box[2] > 0 and box[3] > 0:
                     otter_x, otter_y = _box_center(box)
             except Exception:
                 otter_x, otter_y = 85, 565
+            if _task_cancelled(context):
+                return False
             ctrl.post_touch_down(otter_x, otter_y).wait()
             time.sleep(0.08)
             ctrl.post_touch_up(0).wait()
 
-            sea_otter_gem_state["total_harvests"] += 1
-            sea_otter_gem_state["consecutive_exhausted"] = 0
-            cur = sea_otter_gem_state["total_harvests"]
+            cur = sea_otter_gem_state["total_harvests"] + 1
             limit = sea_otter_gem_state["max_harvests"]
 
             time.sleep(0.8)
 
             # 2. 依据当前 side 决定下一步导航
-            if stay_on_current:
+            if refresh_last_friend:
+                if not _sea_otter_refresh_last_friend(context, ctrl):
+                    sea_otter_gem_state["completion_reason"] = "LAST_FRIEND_REFRESH_FAILED"
+                    return False
                 print(
-                    f"[SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_STAY_LAST_FRIEND "
+                    f"[SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND "
                     f"(累计摸宝: {cur}/{limit})",
                     flush=True,
                 )
@@ -1733,6 +1909,8 @@ class SeaOtterHarvestAction(CustomAction):
                 ctrl.post_click(1085, 68).wait()
                 sea_otter_gem_state["current_side"] = "left"
 
+            sea_otter_gem_state["total_harvests"] = cur
+            sea_otter_gem_state["consecutive_exhausted"] = 0
             time.sleep(2.0)
             return True
         except Exception as e:
@@ -4333,7 +4511,7 @@ class InitGreenWildDailyAction(CustomAction):
                 })
             except Exception:
                 pass
-            print("[绿野寻仙踪日常] 开始执行：先开贝壳 1 次，再去商店买鱼。", flush=True)
+            print("[绿野寻仙踪日常] 开始执行：开贝壳 1 次、商店买鱼，然后领取奖励。", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
@@ -4343,15 +4521,12 @@ class InitGreenWildDailyAction(CustomAction):
 
 @AgentServer.custom_action("GreenWildDailyDoneAction")
 class GreenWildDailyDoneAction(CustomAction):
+    """买鱼阶段结束，清除待买鱼标记；领奖回缸后才完成整个子任务。"""
+
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             green_wild_daily_state["pending_buy_fish"] = False
-            print("[绿野寻仙踪日常] 已确认返回主鱼缸，任务完成", flush=True)
-            if daily_routine_state.get("active"):
-                current_step = daily_routine_state.get("step")
-                task_status = daily_routine_state.get("tasks", {}).get("GreenWildDaily", {}).get("status")
-                if current_step == "GREEN_WILD_DAILY" and task_status != "DONE":
-                    advance_daily_routine_step("GreenWildDaily", "DONE")
+            print("[绿野寻仙踪日常] 买鱼后已确认返回主鱼缸，继续领取奖励", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
@@ -4367,9 +4542,9 @@ class GreenWildClaimDoneAction(CustomAction):
             print("[绿野寻仙踪] 已确认返回主鱼缸，奖励领取完成", flush=True)
             if daily_routine_state.get("active"):
                 current_step = daily_routine_state.get("step")
-                task_status = daily_routine_state.get("tasks", {}).get("GreenWildClaim", {}).get("status")
-                if current_step == "GREEN_WILD_CLAIM" and task_status != "DONE":
-                    advance_daily_routine_step("GreenWildClaim", "DONE")
+                task_status = daily_routine_state.get("tasks", {}).get("GreenWildDaily", {}).get("status")
+                if current_step == "GREEN_WILD_DAILY" and task_status != "DONE":
+                    advance_daily_routine_step("GreenWildDaily", "DONE")
             return True
         except Exception as e:
             traceback.print_exc()
@@ -4386,9 +4561,13 @@ class InitHangupScheduledDailyAction(CustomAction):
         try:
             param = parse_dict_param(getattr(argv, "custom_action_param", None))
             resume_to = param.get("resume_to") or "collect_fish"
+            now = datetime.now()
+            if not local_state.record_hangup_schedule_attempt("noon_daily_last_date", now):
+                print("[挂机日程] ERROR: 十二点日程去重记录无法落盘，未启动子任务。", flush=True)
+                return False
             stack = hangup_schedule_state.setdefault("resume_stack", [])
             stack.append(resume_to)
-            hangup_schedule_state["noon_daily_last_date"] = datetime.now().date().isoformat()
+            hangup_schedule_state["noon_daily_last_date"] = now.date().isoformat()
             print(
                 f"[挂机日程] 已到 12:00，开始执行日常收尾（默认全选），完成后返回 {resume_to}。",
                 flush=True,
@@ -4408,10 +4587,15 @@ class InitHangupFriendGemAction(CustomAction):
         try:
             param = parse_dict_param(getattr(argv, "custom_action_param", None))
             resume_to = param.get("resume_to") or "collect_fish"
+            now = datetime.now()
+            key = "friend_gem_evening_date" if now.hour >= 22 else "friend_gem_morning_date"
+            if not local_state.record_hangup_schedule_attempt(key, now):
+                print("[挂机日程] ERROR: 好友摸宝日程去重记录无法落盘，未启动子任务。", flush=True)
+                return False
             stack = hangup_schedule_state.setdefault("resume_stack", [])
             stack.append(resume_to)
-            hour = datetime.now().hour
-            today = datetime.now().date().isoformat()
+            hour = now.hour
+            today = now.date().isoformat()
             if hour >= 22:
                 hangup_schedule_state["friend_gem_evening_date"] = today
                 slot = "晚上十点"
@@ -4464,8 +4648,6 @@ class InitDailyRoutineAction(CustomAction):
                 "ActivityEnergy": {"status": "IDLE"},
                 "SecretRealmGate": {"status": "IDLE"},
                 "PrincessTask": {"status": "IDLE"},
-                "GreenWildClaim": {"status": "IDLE"},
-                "PrincessClaim": {"status": "IDLE"},
             }
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
@@ -4543,12 +4725,8 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("REINDEER_FISH")
             if enable_gsc:
                 queue.append("GOLD_SHELL_COUPON")
-            if enable_gwd:
-                queue.append("GREEN_WILD_DAILY")
             if enable_srg:
                 queue.append("SECRET_REALM_GATE")
-            if enable_pt:
-                queue.append("PRINCESS_TASK")
             if enable_gd:
                 queue.append("GOLDEN_DOLPHIN")
             if enable_sg:
@@ -4573,10 +4751,11 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("ACTIVITY_ENERGY")
             if enable_bf:
                 queue.append("BAND_FISH_PASS2")
-            # 末尾无条件收尾：领取绿野寻仙踪和公主任务奖励
-            # 因为中间的金海豚/摇一摇/钓鱼等活动可能会完成这两个任务的条件
-            queue.append("GREEN_WILD_CLAIM")
-            queue.append("PRINCESS_CLAIM")
+            # 乐队鱼回访也可能完成任务条件；绿野/公主在其后按勾选各执行一次。
+            if enable_gwd:
+                queue.append("GREEN_WILD_DAILY")
+            if enable_pt:
+                queue.append("PRINCESS_TASK")
 
             print("=" * 60, flush=True)
             print("[日常收尾] DailyRoutineTask 初始化成功，勾选子任务配置:", flush=True)
@@ -4598,8 +4777,6 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 魔力召唤     : {'[ON]' if enable_ms else '[OFF]'}", flush=True)
             print(f"  - 宝石融合     : {'[ON]' if enable_gf else '[OFF]'}", flush=True)
             print(f"  - 活动体力     : {'[ON]' if enable_ae else '[OFF]'}", flush=True)
-            print(f"  - 绿野奖励领取(末尾收尾) : [无条件]", flush=True)
-            print(f"  - 公主奖励领取(末尾收尾) : [无条件]", flush=True)
             print("=" * 60, flush=True)
 
             if queue:
@@ -5175,18 +5352,14 @@ class ResetPrincessClaimHitsAction(CustomAction):
 
 @AgentServer.custom_action("PrincessTaskDoneAction")
 class PrincessTaskDoneAction(CustomAction):
-    """公主任务结算：确认回到主鱼缸后标记完成；日常收尾中则推进队列。
-    支持两种 step：PRINCESS_TASK（中间首次领取）和 PRINCESS_CLAIM（末尾二次领取）。
-    """
+    """公主任务结算：确认回到主鱼缸后，推进当前公主子任务一次。"""
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
-            if daily_routine_state.get("active"):
-                current_step = daily_routine_state.get("step")
-                if current_step == "PRINCESS_CLAIM":
-                    advance_daily_routine_step("PrincessClaim", "DONE")
-                else:
-                    advance_daily_routine_step("PrincessTask", "DONE")
+            if (daily_routine_state.get("active")
+                    and daily_routine_state.get("step") == "PRINCESS_TASK"
+                    and daily_routine_state.get("tasks", {}).get("PrincessTask", {}).get("status") != "DONE"):
+                advance_daily_routine_step("PrincessTask", "DONE")
             return True
         except Exception as e:
             traceback.print_exc()

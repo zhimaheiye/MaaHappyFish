@@ -98,7 +98,7 @@ class FishBabyContract(unittest.TestCase):
     def test_pipeline_runs_round_and_returns_to_tank(self):
         nodes = json.loads((ROOT / "assets/resource/pipeline/features/fish_baby.json").read_text(encoding="utf-8"))
         self.assertEqual(nodes["FishBabyRunRound"]["custom_action"], "FishBabyRunRoundAction")
-        self.assertEqual(nodes["FishBabyRunRound"]["next"], ["FishBabyExitIncubation"])
+        self.assertEqual(nodes["FishBabyRunRound"]["next"], ["FishBabyExitIncubation", "FishBabyExitHome"])
         self.assertEqual(nodes["FishBabyExitIncubation"]["next"], ["FishBabyExitHome"])
         self.assertEqual(nodes["FishBabyExitHome"]["next"], ["FishBabyVerifyTankAfterRound"])
         self.assertNotIn("一键孵化", json.dumps(nodes, ensure_ascii=False))
@@ -109,7 +109,8 @@ class FishBabyContract(unittest.TestCase):
             "FishBabyAtHome", "FishBabyMainTankSky", "FishBabyAbort"])
         self.assertEqual(nodes["FishBabyMainTankSky"]["next"], ["FishBabyRetryTank"])
         self.assertEqual(nodes["FishBabyRetryTank"]["next"], ["FishBabyEntryCoral"])
-        self.assertEqual(nodes["FishBabyAbort"]["action"], "StopTask")
+        self.assertEqual(nodes["FishBabyAbort"]["custom_action"], "FailTaskAction")
+        self.assertNotIn("on_error", nodes["FishBabyAbort"])
 
     def test_interface_has_three_independent_preference_groups(self):
         interface = json.loads((ROOT / "assets/interface.json").read_text(encoding="utf-8"))

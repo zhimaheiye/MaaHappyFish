@@ -79,8 +79,8 @@ def run_tests():
     assert claim["roi"] == [1050, 540, 200, 90]
     assert claim["action"] == "Click"
     assert "target" not in claim
-    assert business_next(claim) == ["GreenWildReturn"]
-    assert claim.get("on_error") == ["GreenWildReturn"]
+    assert business_next(claim) == ["GreenWildOpenReward"]
+    assert claim.get("on_error") == ["GreenWildOpenReward"]
     assert pipeline["GreenWildReturn"]["template"] == "绿野寻仙踪_返回.png"
     assert pipeline["GreenWildReturn"]["roi"] == [1140, 20, 130, 100]
     assert pipeline["GreenWildReturn"]["action"] == "Click"
@@ -113,13 +113,14 @@ def run_tests():
     assert pipeline["GreenWildDailyReturn2"]["roi"] == [57, 28, 82, 45]
     assert pipeline["GreenWildDailyVerifyTank"]["custom_action"] == "GreenWildDailyDoneAction"
     assert business_next(pipeline["GreenWildDailyVerifyTank"]) == [
-        "DailyRoutineReturnIfActive",
-        "DailyRoutineStandaloneDone",
+        "GreenWildTask",
     ]
 
     for node_name, node in pipeline.items():
         successors = node.get("next")
-        if successors:
+        if node_name in ("GreenWildVerifyTank", "GreenWildAbort"):
+            assert successors == ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"]
+        elif successors:
             assert successors[:len(GLOBAL_HANDLERS)] == GLOBAL_HANDLERS, node_name
 
     for name in (
@@ -155,7 +156,7 @@ def run_tests():
 
     from agent.runtime_state import daily_routine_state, green_wild_daily_state
     from agent.my_reco import CheckGreenWildDailyPendingReco
-    from agent.my_action import InitGreenWildDailyAction, GreenWildDailyDoneAction
+    from agent.my_action import InitGreenWildDailyAction, GreenWildDailyDoneAction, GreenWildClaimDoneAction
 
     class MockArg:
         def __init__(self, param=None):
@@ -190,6 +191,12 @@ def run_tests():
     daily_routine_state["queue"] = ["GOLDEN_DOLPHIN"]
     assert GreenWildDailyDoneAction().run(ctx, MockArg()) is True
     assert green_wild_daily_state["pending_buy_fish"] is False
+    assert daily_routine_state["step"] == "GREEN_WILD_DAILY"
+    assert daily_routine_state["tasks"]["GreenWildDaily"]["status"] == "IDLE"
+    assert GreenWildClaimDoneAction().run(ctx, MockArg()) is True
+    assert daily_routine_state["tasks"]["GreenWildDaily"]["status"] == "DONE"
+    assert daily_routine_state["step"] == "GOLDEN_DOLPHIN"
+    assert GreenWildClaimDoneAction().run(ctx, MockArg()) is True
     assert daily_routine_state["step"] == "GOLDEN_DOLPHIN"
     daily_routine_state["active"] = False
 

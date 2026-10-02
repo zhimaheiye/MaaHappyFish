@@ -232,8 +232,9 @@
         "action": "Custom",
         "custom_action": "SeaOtterHarvestAction",
         "custom_action_param": {
-            "stay_on_current": true
+            "refresh_last_friend": true
         },
+        "on_error": ["SeaOtterNavigationFailed"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -263,6 +264,11 @@
             "[JumpBack]GlobalLevelUpPopup",
             "SeaOtterFriendRouter"
         ]
+    },
+    "SeaOtterNavigationFailed": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {"Node.Action.Succeeded": "[海獭摸宝] ERROR: 末位好友刷新失败，停止；本轮不计完整运行。"}
     },
     "SeaOtterAddFriendPage": {
         "recognition": "OCR",

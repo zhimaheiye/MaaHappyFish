@@ -190,6 +190,53 @@ def run_tests():
         assert bulk_context.long_presses
         assert bulk_context.tasker.controller.quantity == 25
 
+        # 现场：1 秒只增 5 袋、5 秒约增 92 袋，短段因启动延迟只增 7 袋。
+        # 短段不能使后续长按从较短时长突然扩大至 5 秒。
+        timed_context = Context("detail")
+        hold_history = []
+        def timed_hold(_action_type, action_param, box):
+            duration = action_param.duration
+            before = timed_context.tasker.controller.quantity
+            gain = 5 if not hold_history else (92 if duration == 5000 else 7)
+            hold_history.append((before, duration, gain))
+            timed_context.tasker.controller.quantity += gain
+            return SimpleNamespace(success=True)
+        timed_context.run_action_direct = timed_hold
+        assert actions.BuyCheapFishFoodAction().run(
+            timed_context, SimpleNamespace(custom_action_param={"bags": 900})
+        ) is True
+        assert timed_context.tasker.controller.quantity == 900
+        assert any(1000 < duration < 5000 for _, duration, _ in hold_history)
+        for index, (before, duration, gain) in enumerate(hold_history):
+            if index >= 2:
+                assert duration * 18.4 / 1000 <= 900 - before - 20 + 0.01
+            if index and hold_history[index - 1][1] < 5000:
+                assert duration <= hold_history[index - 1][1] or index == 1
+
+        overshoot_context = Context("detail")
+        def excessive_hold(_action_type, action_param, box):
+            overshoot_context.tasker.controller.quantity += 50
+            return SimpleNamespace(success=True)
+        overshoot_context.run_action_direct = excessive_hold
+        assert actions.BuyCheapFishFoodAction().run(overshoot_context, bulk_arg) is False
+        assert overshoot_context.tasker.controller.clicks == []
+
+        missed_click_context = Context("detail")
+        missed_click_context.tasker.controller.on_click = lambda x, y: "detail"
+        assert actions.BuyCheapFishFoodAction().run(missed_click_context, purchase_arg) is False
+        assert (210, 210) not in missed_click_context.tasker.controller.clicks
+
+        capped_context = Context("detail")
+        def capped_hold(_action_type, action_param, box):
+            assert action_param.duration == 6000
+            capped_context.tasker.controller.quantity = 999
+            return SimpleNamespace(success=True)
+        capped_context.run_action_direct = capped_hold
+        assert actions.BuyCheapFishFoodAction().run(
+            capped_context, SimpleNamespace(custom_action_param={"bags": 999})
+        ) is True
+        assert capped_context.tasker.controller.quantity == 999
+
         stopped_hold_context = Context("detail")
         stopped_hold_context.stop_after_long_press = True
         assert actions.BuyCheapFishFoodAction().run(stopped_hold_context, bulk_arg) is False

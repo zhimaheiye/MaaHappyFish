@@ -11,7 +11,8 @@
         ]
     },
     "RomanticHouseStartRouter": {
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "RomanticHouseResetEntryAction",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -93,9 +94,10 @@
     },
     "RomanticHouseAbort": {
         "recognition": "DirectHit",
-        "action": "StopTask",
-        "focus": {
-            "Node.Action.Succeeded": "[浪漫满屋] 页面门禁未通过，已安全停止且未继续点击。"
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[浪漫满屋] ERROR: 页面门禁未通过，已安全失败且未继续点击。"
         }
     },
     "RomanticHouseInHomePage": {
@@ -108,7 +110,9 @@
             100
         ],
         "threshold": 0.7,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
+        "max_hit": 3,
         "post_delay": 1800,
         "timeout": 5000,
         "next": [
@@ -119,10 +123,11 @@
             "[JumpBack]GlobalLevelUpPopup",
             "RomanticHouseCheckDone",
             "RomanticHouseTryBless",
-            "RomanticHouseNextCouple"
+            "RomanticHouseNextCouple",
+            "RomanticHouseInHomePage"
         ],
         "on_error": [
-            "RomanticHouseInFishTank"
+            "RomanticHouseAbort"
         ]
     },
     "RomanticHouseCheckDone": {

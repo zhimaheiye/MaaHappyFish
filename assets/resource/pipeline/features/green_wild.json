@@ -452,7 +452,7 @@
         "custom_action": "GreenWildDailyDoneAction",
         "timeout": 5000,
         "focus": {
-            "Node.Action.Succeeded": "[绿野寻仙踪日常] 已确认返回主鱼缸，任务完成。"
+            "Node.Action.Succeeded": "[绿野寻仙踪日常] 买鱼后已确认返回主鱼缸，开始领取奖励。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -460,8 +460,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "DailyRoutineReturnIfActive",
-            "DailyRoutineStandaloneDone"
+            "GreenWildTask"
         ],
         "on_error": [
             "GreenWildAbort"

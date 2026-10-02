@@ -44,6 +44,8 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]FriendPageMessageBoxToStarFriends",
+            "ManateeStartFromFriendList",
             "ManateeOpenFriendPage"
         ]
     },
@@ -72,6 +74,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]FriendPageMessageBoxToStarFriends",
             "ManateeStartFromFriendList"
         ],
         "on_error": [

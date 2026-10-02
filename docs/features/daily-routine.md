@@ -1,10 +1,20 @@
 # 日常收尾总控任务 (docs/features/daily-routine.md)
 
-**最后更新**: 2026-09-28
-**版本**: v15（日常收尾新增酿月食香活动体力检查）
+**最后更新**: 2026-10-02
+**版本**: v16（绿野/公主按勾选各执行一次，位于乐队鱼回访之后）
 **状态**: 已实现串行容器、自由多选组合、逐项日志、宝石订单、绿野寻仙踪日常及乐队鱼异步调度；已落地双出口路由消除独立运行超时失败。
 
-**2026-09-27 验证**：购买鱼食/鱼宝日常接入的 6 项 `dev/test_daily_routine_food_baby.py`、既有购买专项与 8 项鱼宝专项、241 条正则/819 节点资源加载、Agent 引用、三份界面一致性/更新契约及 Python 编译通过。本次未做 MFA/模拟器测试；后文早期调度组合的历史验证记录不代表当前末尾二次领取队列的完整回归。
+**2026-10-02 新报告修复**：鱼宝牛奶结束自动回主页兼容直接退出；浪漫满屋木牌中心点击、主页门禁下最多三次重试，去除错误恢复环。两项失败出口保留原生 `FAILED`，不会误显示成功；只有各自确认回主鱼缸才推进队列。新专项含原生框架文件图片回放通过，本次未做 MFA/模拟器测试，详见对应功能文档。
+
+### 挂机日程跨 Agent 重启去重（2026-10-02）
+
+好友摸宝 10:00–11:59、22:00–23:59 两档和日常收尾 12:00–23:59 档，沿用按自然日“每档自动尝试一次”的语义。开始执行前，将对应日期写入本机 `%LOCALAPPDATA%/MaaHappyFish/state.json` 的 `hangup_schedule`；Agent 启动只恢复三项已启动日期，不恢复旧页面、返回栈或业务完成状态。Recognition 只读内存、不落盘；持久化在真正激活的初始化 Action 中完成，写入失败不启动子任务。复用现有原子写入且保留海獭等其它状态。
+
+11:31 重建 Agent 后，纯内存 latch 清零，11:36 同一上午档重复触发，现已堵住此路线。日期表示“已自动尝试”，不是“已成功领奖”；失败后的同档不因重启自动重复消耗，仍可手动启动独立任务处理。跨自然日重新允许触发，凌晨 00:00–09:59 不补发晚上档，不套用海獭 04:00 游戏日。真实子进程重启、下一日/窗口、写入失败与三个初始化入口测试通过，未做实机测试。
+
+**2026-09-27 验证**：购买鱼食/鱼宝日常接入的 6 项 `dev/test_daily_routine_food_baby.py`、既有购买专项与 8 项鱼宝专项、241 条正则/819 节点资源加载、Agent 引用、三份界面一致性/更新契约及 Python 编译通过。本次未做 MFA/模拟器测试。
+
+**2026-10-01 顺序优化**：取消末尾无条件二次领取。其它已选子任务完成后，先乐队鱼 Pass 2 回访，再绿野寻仙踪日常，最后公主任务；绿野/公主未勾选则跳过。绿野同一次子任务先开贝壳、买鱼，再复用 `GreenWildTask` 领取任务/等级奖励，领奖退出并确认主鱼缸后才提交完成。调度组合、空勾选、单项、重复结算、绿野/公主及相关日常专项和静态门禁完成代码级验证，本次未做 MFA/模拟器测试。
 
 **2026-09-28 新增**：魔力召唤与宝石融合各设一个默认关闭的日常子任务开关。每次日常队列仅检查一次，复用巡检原有页面门禁、结果处理和资源确认，不复用每小时计时器；两项均在鱼宝乐园后、乐队鱼回访前执行。完成后由鱼缸 1/2/3 主页面编号模板确认回缸，才推进日常队列。当前为代码级实现，未做 MFA/模拟器验证。
 
@@ -34,10 +44,10 @@
 
 在 Phase 2 中，【日常收尾】(`DailyRoutineTask`) 明确降级为确定性的**“串行任务容器”**：
 1. **自由多选组合**：用户可在 MFAAvalonia 界面中按需自由勾选任意子任务组合；
-2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请，再执行每日免费礼包、驯鹿鱼送收礼物、兑换金贝壳券、绿野寻仙踪日常、秘境之门（当前 UI 隐藏）、公主任务、金海豚、摇一摇、钓鱼达人、宝石礼盒兑换、宝石订单、浪漫满屋、购买鱼食、鱼宝乐园、魔力召唤、宝石融合、领取活动体力等其他已勾选任务，最后执行乐队鱼 Pass 2 回访演出；**队列末尾无条件追加**绿野寻仙踪奖励领取 + 公主任务奖励领取（因为中间的金海豚/摇一摇/钓鱼等活动可能会完成这两个任务的条件，需要在最后统一收尾领取）；
+2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请；随后按勾选执行每日免费礼包、驯鹿鱼送收礼物、兑换金贝壳券、秘境之门（当前 UI 隐藏）、金海豚、摇一摇、钓鱼达人、宝石礼盒兑换、宝石订单、浪漫满屋、购买鱼食、鱼宝乐园、魔力召唤、宝石融合、领取活动体力；再执行乐队鱼 Pass 2 回访演出；最后按勾选执行绿野寻仙踪日常、公主任务。未勾选的子任务不入队；
 3. **安全退出保障**：每个子任务执行结束（成功、次数用尽、体力不足等）后，必须 100% 返回主鱼缸珊瑚，方可推进下一任务；
 4. **两阶段异步执行**：乐队鱼 Pass 1 / Pass 2 已接入调度；中间任务的执行时间用于等待人机好友接受邀请。
-5. **末尾二次领取**：绿野寻仙踪日常只做"开贝壳+买鱼"（完成任务条件），不领取奖励；公主任务在中间领取一次。但中间的金海豚、摇一摇、钓鱼等活动可能会顺便完成新的任务条件，因此在队列末尾无条件再执行一次绿野领取 + 公主领取。每次进入 `PrincessTask` 都重置三格礼盒的 `max_hit` 计数，再按当前画面重新识别；每格仍限本次进入时点击一次。
+5. **末尾各执行一次**：绿野寻仙踪日常完成“开贝壳+买鱼+领奖”完整子流程，公主任务检查奖励列与额外宝箱。二者都位于乐队鱼回访之后，以覆盖此前活动完成的任务条件；不再有独立的 `GREEN_WILD_CLAIM` / `PRINCESS_CLAIM` 队列步骤。每次进入 `PrincessTask` 仍重置三格 `max_hit` 计数，每格本次最多点击一次。
 
 ---
 
@@ -87,7 +97,8 @@ flowchart TD
     Dispatcher -- step=FREE_GIFT --> FG[DailyFreeGiftTask: 每日免费礼包]
     Dispatcher -- step=REINDEER_FISH --> RF[ReindeerFishGiftTask: 驯鹿鱼送收礼物]
     Dispatcher -- step=GOLD_SHELL_COUPON --> GSC[GoldShellCouponTask: 兑换金贝壳券]
-    Dispatcher -- step=GREEN_WILD_DAILY --> GWD[GreenWildDailyTask: 开贝壳一次后买一条贝币鱼]
+    Dispatcher -- step=GREEN_WILD_DAILY --> GWD[GreenWildDailyTask: 开贝壳一次、买贝币鱼、领取奖励]
+    Dispatcher -- step=PRINCESS_TASK --> PT[PrincessTask: 奖励列与额外宝箱]
     Dispatcher -- step=BAND_FISH_PASS1 --> BF[BandFishStartRouter: 乐队鱼]
     Dispatcher -- step=GOLDEN_DOLPHIN --> GD[GoldenDolphinTask: 金海豚]
     Dispatcher -- step=SHAKE_GAME --> SG[ShakeGameTask: 摇一摇]
@@ -106,7 +117,8 @@ flowchart TD
     FG --> FG_Exit[识别回到鱼缸 -> DailyFreeGiftDoneAction]
     RF --> RF_Exit[识别回到鱼缸 -> ReindeerFishDoneAction]
     GSC --> GSC_Exit[GoldShellCouponVerifyTank: 回主鱼缸 -> GoldShellCouponDoneAction]
-    GWD --> GWD_Exit[GreenWildDailyVerifyTank: 回主鱼缸 -> GreenWildDailyDoneAction]
+    GWD --> GWD_Exit[GreenWildVerifyTank: 领奖后回主鱼缸 -> GreenWildClaimDoneAction]
+    PT --> PT_Exit[确认主鱼缸 -> PrincessTaskDoneAction]
     BF --> BF_Exit[BandFishExitToTankAction: 回主鱼缸 -> advance_daily_routine_step]
     GD --> GD_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
     SG --> SG_Exit[最多连续三局；无次数或三局完成 -> advance_daily_routine_step]
@@ -124,6 +136,7 @@ flowchart TD
     RF_Exit --> Dispatcher
     GSC_Exit --> Dispatcher
     GWD_Exit --> Dispatcher
+    PT_Exit --> Dispatcher
     BF_Exit --> Dispatcher
     GD_Exit --> Dispatcher
     SG_Exit --> Dispatcher
@@ -182,7 +195,7 @@ flowchart TD
 - **`InitDailyRoutineAction`**:
   - 优先解析 `custom_action_param`（支持单元测试与直接调用）；
   - 否则通过 `context.get_node_data()` 读取各 `DailyRoutineEnable*` 节点的 `enabled` 状态，包括购买鱼食、鱼宝乐园、魔力召唤、宝石融合和活动体力；
-  - 按上述固定顺序组装待执行队列；即使没有勾选常规子任务，仍按现有契约执行末尾 `GREEN_WILD_CLAIM`、`PRINCESS_CLAIM`，队列耗尽才进入 `ALL_DONE`；
+  - 按上述固定顺序组装待执行队列；仅加入已选任务，空勾选直接进入 `ALL_DONE`；绿野/公主在乐队鱼回访之后各入队一次；
   - 初始化后通过 `DailyRoutineInitLog` 在 MFA 日志展示“已选择”和“因未勾选跳过”摘要；每个 `DailyRoutineStep*` 在真正分发前显示“开始执行”，避免摇一摇等任务看起来被静默跳过。
 - **`GoldShellCouponDoneAction`**:
   - 主鱼缸验证成功后调用 `advance_daily_routine_step("GoldShellCoupon", "DONE")`，推进流水线经双出口路由返回 `DailyRoutineDispatcher`。

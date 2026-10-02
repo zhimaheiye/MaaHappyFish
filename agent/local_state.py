@@ -4,9 +4,10 @@
 存储位置：`%LOCALAPPDATA%\\MaaHappyFish\\state.json`
 （LOCALAPPDATA 缺失时回退到用户目录下的 AppData/Local，再退回家目录）。
 
-游戏日定义：游戏每日刷新时间为凌晨 04:00，因此
+海獭游戏日定义：游戏每日刷新时间为凌晨 04:00，因此
     game_day = (当前时间 - 4 小时).date()
 电脑在 04:00 时刻无需开机或运行，读取时按当前时间惰性计算即可。
+挂机日程使用自然日，每档已启动日期独立保存，不套用海獭游戏日。
 
 JSON 损坏时记录 warning 并安全视为空状态，绝不因计数文件问题中断自动化任务。
 写入使用「临时文件 + os.replace」原子替换，避免程序中断产生半个 JSON。
@@ -24,6 +25,38 @@ SEA_OTTER_DAILY_LIMIT = 3
 # 海獭摸宝游戏每日上限（仅用于日志展示，不用于拦截任务）
 # 游戏日刷新偏移：每天 04:00 为新一天
 _GAME_DAY_SHIFT = timedelta(hours=4)
+
+HANGUP_SCHEDULE_KEYS = (
+    "noon_daily_last_date", "friend_gem_morning_date", "friend_gem_evening_date"
+)
+
+
+def get_hangup_schedule_dates():
+    """只恢复自然日的已启动记录；不恢复旧画面的返回栈或业务进度。"""
+    stored = load_local_state().get("hangup_schedule", {})
+    if not isinstance(stored, dict):
+        return {}
+    dates = {}
+    for key in HANGUP_SCHEDULE_KEYS:
+        value = stored.get(key)
+        try:
+            if isinstance(value, str) and datetime.strptime(value, "%Y-%m-%d").date().isoformat() == value:
+                dates[key] = value
+        except ValueError:
+            pass
+    return dates
+
+
+def record_hangup_schedule_attempt(key, now=None):
+    """启动前落盘，每档每日自动尝试一次；不是业务成功计数。"""
+    if key not in HANGUP_SCHEDULE_KEYS:
+        return False
+    state = load_local_state()
+    stored = state.get("hangup_schedule")
+    dates = dict(stored) if isinstance(stored, dict) else {}
+    dates[key] = (now or datetime.now()).date().isoformat()
+    state["hangup_schedule"] = dates
+    return save_local_state(state)
 
 
 def get_current_game_day(now=None):

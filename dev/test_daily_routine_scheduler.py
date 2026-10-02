@@ -25,6 +25,7 @@ from agent.my_action import (
     ReindeerFishDoneAction,
     GoldShellCouponDoneAction,
     GreenWildDailyDoneAction,
+    GreenWildClaimDoneAction,
     ShakeGameDoneAction,
     GemGiftBoxDoneAction,
     GemOrderDoneAction,
@@ -118,11 +119,11 @@ def test_pipeline_topology():
         "DailyRoutineStepMagicSummon",
         "DailyRoutineStepGemFusion",
         "DailyRoutineStepBandFishPass2",
-        "DailyRoutineStepGreenWildClaim",
-        "DailyRoutineStepPrincessClaim",
         "DailyRoutineStepAllDone",
     ]
     assert candidates == expected_order, f"Dispatcher candidates mismatch: {candidates} vs {expected_order}"
+    assert "DailyRoutineStepGreenWildClaim" not in pdata
+    assert "DailyRoutineStepPrincessClaim" not in pdata
     print("[PASS] DailyRoutineDispatcher 候选节点顺序与保留项完全匹配")
 
     # 3. 验证共享双出口路由节点配置
@@ -143,7 +144,8 @@ def test_pipeline_topology():
     assert business_next(pdata["DailyFreeGiftVerifyTank"]) == dual_exit, "DailyFreeGiftVerifyTank 未接入双出口路由"
     assert business_next(pdata["ReindeerFishVerifyTank"]) == dual_exit, "ReindeerFishVerifyTank 未接入双出口路由"
     assert business_next(pdata["GoldShellCouponVerifyTank"]) == dual_exit, "GoldShellCouponVerifyTank 未接入双出口路由"
-    assert business_next(pdata["GreenWildDailyVerifyTank"]) == dual_exit, "GreenWildDailyVerifyTank 未接入双出口路由"
+    assert business_next(pdata["GreenWildDailyVerifyTank"]) == ["GreenWildTask"]
+    assert business_next(pdata["GreenWildVerifyTank"]) == dual_exit
     assert business_next(pdata["GemGiftBoxVerifyTank"]) == dual_exit, "GemGiftBoxVerifyTank 未接入双出口路由"
     assert business_next(pdata["GemOrderVerifyTank"]) == dual_exit, "GemOrderVerifyTank 未接入双出口路由"
     assert business_next(pdata["RomanticHouseDone"]) == dual_exit, "RomanticHouseDone 未接入双出口路由"
@@ -355,8 +357,6 @@ def simulate_flow(config_param):
         "GEM_FUSION": ("GemFusion", "DONE"),
         "ACTIVITY_ENERGY": ("ActivityEnergy", "DONE"),
         "BAND_FISH_PASS2": ("BandFish", "DONE"),
-        "GREEN_WILD_CLAIM": ("GreenWildClaim", "DONE"),
-        "PRINCESS_CLAIM": ("PrincessClaim", "DONE"),
     }
 
     while loops < max_loops:
@@ -389,6 +389,11 @@ def simulate_flow(config_param):
 
         if cur_step == "GREEN_WILD_DAILY":
             assert GreenWildDailyDoneAction().run(ctx, arg) is True
+            assert daily_routine_state["step"] == "GREEN_WILD_DAILY", "买鱼结束不能跳过领奖"
+            assert GreenWildClaimDoneAction().run(ctx, arg) is True
+            next_step = daily_routine_state["step"]
+            assert GreenWildClaimDoneAction().run(ctx, arg) is True
+            assert daily_routine_state["step"] == next_step, "重复结算不能跳过下一个任务"
             loops += 1
             continue
 
@@ -448,9 +453,7 @@ def test_combination_1():
         "FREE_GIFT",
         "REINDEER_FISH",
         "GOLD_SHELL_COUPON",
-        "GREEN_WILD_DAILY",
         "SECRET_REALM_GATE",
-        "PRINCESS_TASK",
         "GOLDEN_DOLPHIN",
         "SHAKE_GAME",
         "FISHING",
@@ -458,8 +461,8 @@ def test_combination_1():
         "GEM_ORDER",
         "ROMANTIC_HOUSE",
         "BAND_FISH_PASS2",
-        "GREEN_WILD_CLAIM",
-        "PRINCESS_CLAIM",
+        "GREEN_WILD_DAILY",
+        "PRINCESS_TASK",
         "ALL_DONE",
     ]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
@@ -469,7 +472,7 @@ def test_combination_1():
 def test_gold_shell_coupon_only():
     print("--- [Check 3E: 仅兑换金贝壳券] ---")
     steps = simulate_flow({"gold_shell_coupon": True})
-    expected = ["GOLD_SHELL_COUPON", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["GOLD_SHELL_COUPON", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 兑换金贝壳券可独立启用并正常推进: {' -> '.join(steps)}")
 
@@ -477,15 +480,26 @@ def test_gold_shell_coupon_only():
 def test_green_wild_daily_only():
     print("--- [Check 3G: 仅绿野寻仙踪日常] ---")
     steps = simulate_flow({"green_wild_daily": True})
-    expected = ["GREEN_WILD_DAILY", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["GREEN_WILD_DAILY", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 绿野寻仙踪日常可独立启用并正常推进: {' -> '.join(steps)}")
+
+
+def test_princess_task_only():
+    steps = simulate_flow({"princess_task": True})
+    assert steps == ["PRINCESS_TASK", "ALL_DONE"]
+    assert "GreenWildClaim" not in daily_routine_state["tasks"]
+    assert "PrincessClaim" not in daily_routine_state["tasks"]
+    daily_routine_state["active"] = True
+    assert PrincessTaskDoneAction().run(MockContext(), MockArg({})) is True
+    assert daily_routine_state["step"] == "ALL_DONE"
+    daily_routine_state["active"] = False
 
 
 def test_gem_gift_box_only():
     print("--- [Check 3D: 仅宝石礼盒兑换] ---")
     steps = simulate_flow({"gem_gift_box": True})
-    expected = ["GEM_GIFT_BOX", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["GEM_GIFT_BOX", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 宝石礼盒兑换可独立启用并正常推进: {' -> '.join(steps)}")
 
@@ -493,7 +507,7 @@ def test_gem_gift_box_only():
 def test_gem_order_only():
     print("--- [Check 3F: 仅宝石订单] ---")
     steps = simulate_flow({"gem_order": True})
-    expected = ["GEM_ORDER", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["GEM_ORDER", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 宝石订单可独立启用并正常推进: {' -> '.join(steps)}")
 
@@ -501,7 +515,7 @@ def test_gem_order_only():
 def test_shake_game_only():
     print("--- [Check 3C: 仅摇一摇小游戏] ---")
     steps = simulate_flow({"shake_game": True})
-    expected = ["SHAKE_GAME", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["SHAKE_GAME", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 摇一摇小游戏可独立启用并正常推进: {' -> '.join(steps)}")
 
@@ -510,7 +524,7 @@ def test_combination_2():
     print("--- [Check 3: 组合 2 - 仅浪漫满屋] ---")
     config = {"romantic_house": True}
     steps = simulate_flow(config)
-    expected = ["ROMANTIC_HOUSE", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["ROMANTIC_HOUSE", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 组合 2 仅浪漫满屋验证通过: {' -> '.join(steps)}")
 
@@ -518,7 +532,7 @@ def test_combination_2():
 def test_free_gift_only():
     print("--- [Check 3A: 仅每日免费礼包] ---")
     steps = simulate_flow({"free_gift": True})
-    expected = ["FREE_GIFT", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["FREE_GIFT", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 每日免费礼包可独立启用并正常结束: {' -> '.join(steps)}")
 
@@ -526,7 +540,7 @@ def test_free_gift_only():
 def test_reindeer_fish_only():
     print("--- [Check 3B: 仅驯鹿鱼送收礼物] ---")
     steps = simulate_flow({"reindeer_fish": True})
-    expected = ["REINDEER_FISH", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["REINDEER_FISH", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 驯鹿鱼送收礼物可独立启用并正常推进: {' -> '.join(steps)}")
 
@@ -535,7 +549,7 @@ def test_combination_3():
     print("--- [Check 4: 组合 3 - 仅金海豚] ---")
     config = {"golden_dolphin": True}
     steps = simulate_flow(config)
-    expected = ["GOLDEN_DOLPHIN", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["GOLDEN_DOLPHIN", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 组合 3 仅金海豚验证通过: {' -> '.join(steps)}")
 
@@ -544,7 +558,7 @@ def test_combination_4():
     print("--- [Check 5: 组合 4 - 钓鱼达人 + 浪漫满屋] ---")
     config = {"fishing": True, "romantic_house": True}
     steps = simulate_flow(config)
-    expected = ["FISHING", "ROMANTIC_HOUSE", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["FISHING", "ROMANTIC_HOUSE", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 组合 4 组合跳跃验证通过: {' -> '.join(steps)}")
 
@@ -553,7 +567,7 @@ def test_combination_5_empty():
     print("--- [Check 6: 组合 5 - 未勾选任何任务] ---")
     config = {}
     steps = simulate_flow(config)
-    expected = ["GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 组合 5 空勾选安全跳过验证通过: {' -> '.join(steps)}")
 
@@ -562,7 +576,7 @@ def test_combination_band_fish_only():
     print("--- [Check 7: 组合 6 - 仅乐队鱼 (Pass 1 -> Pass 2)] ---")
     config = {"band_fish": True}
     steps = simulate_flow(config)
-    expected = ["BAND_FISH_PASS1", "BAND_FISH_PASS2", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"]
+    expected = ["BAND_FISH_PASS1", "BAND_FISH_PASS2", "ALL_DONE"]
     assert steps == expected, f"Visited steps mismatch: {steps} vs {expected}"
     print(f"[PASS] 组合 6 仅乐队鱼两阶段验证通过: {' -> '.join(steps)}")
 
@@ -583,7 +597,7 @@ def test_node_override_mode():
     init_action.run(ctx, arg)
 
     assert daily_routine_state["step"] == "FREE_GIFT"
-    assert daily_routine_state["queue"] == ["REINDEER_FISH", "GOLDEN_DOLPHIN", "ROMANTIC_HOUSE", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM"]
+    assert daily_routine_state["queue"] == ["REINDEER_FISH", "GOLDEN_DOLPHIN", "ROMANTIC_HOUSE"]
 
     advance_daily_routine_step("FreeGift", "DONE")
     assert daily_routine_state["step"] == "REINDEER_FISH"
@@ -595,12 +609,6 @@ def test_node_override_mode():
     assert daily_routine_state["step"] == "ROMANTIC_HOUSE"
 
     advance_daily_routine_step("RomanticHouse", "DONE")
-    assert daily_routine_state["step"] == "GREEN_WILD_CLAIM"
-
-    advance_daily_routine_step("GreenWildClaim", "DONE")
-    assert daily_routine_state["step"] == "PRINCESS_CLAIM"
-
-    advance_daily_routine_step("PrincessClaim", "DONE")
     assert daily_routine_state["step"] == "ALL_DONE"
 
     DailyRoutineFinishAction().run(ctx, arg)
@@ -715,7 +723,7 @@ def test_architecture_contract_no_hardcoded_dispatcher():
         "gem_gift_box.json": "GemGiftBoxVerifyTank",
         "gem_order.json": "GemOrderVerifyTank",
         "romantic_house.json": "RomanticHouseDone",
-        "green_wild.json": "GreenWildDailyVerifyTank",
+        "green_wild.json": "GreenWildVerifyTank",
     }
     for fname, exit_node in subtask_files.items():
         fpath = os.path.join("assets", "resource", "pipeline", "features", fname)
@@ -749,7 +757,7 @@ def test_gem_gift_box_contract_cases():
 
     # Case 2: 单独启用宝石礼盒
     steps_single = simulate_flow({"gem_gift_box": True})
-    assert steps_single == ["GEM_GIFT_BOX", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM", "ALL_DONE"], f"Case 2 失败: 单独启用流程异常: {steps_single}"
+    assert steps_single == ["GEM_GIFT_BOX", "ALL_DONE"], f"Case 2 失败: 单独启用流程异常: {steps_single}"
     pdata = {}
     with open(os.path.join("assets", "resource", "pipeline", "routine", "daily_routine.json"), "r", encoding="utf-8") as f:
         pdata.update(json.load(f))
@@ -936,6 +944,7 @@ def main():
     test_reindeer_fish_only()
     test_gold_shell_coupon_only()
     test_green_wild_daily_only()
+    test_princess_task_only()
     test_shake_game_only()
     test_gem_gift_box_only()
     test_gem_order_only()

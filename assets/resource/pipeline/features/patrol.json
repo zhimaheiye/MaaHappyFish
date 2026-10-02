@@ -363,8 +363,11 @@
         ]
     },
     "PatrolCollectTank1ShakeGem": {
-        "recognition": "Custom",
-        "custom_recognition": "CheckGemCollectModeReco",
+        "recognition": "And",
+        "all_of": [
+            {"recognition": "Custom", "custom_recognition": "CheckGemCollectModeReco"},
+            "PatrolTank1MainIdentity"
+        ],
         "action": "Custom",
         "custom_action": "UnifiedShakeGemCollectAction",
         "post_delay": 500,
@@ -402,16 +405,11 @@
         ]
     },
     "PatrolCollectTank1Bubble": {
-        "recognition": "TemplateMatch",
-        "template": "金币气泡.png",
-        "threshold": 0.75,
-        "roi": [
-            0,
-            100,
-            1280,
-            560
-        ],
-        "action": "Click",
+        "recognition": "And",
+        "all_of": ["PatrolTank1MainIdentity", "PatrolCoinIdentity"],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 0,
         "rate_limit": 180,
         "next": [
@@ -419,23 +417,29 @@
         ]
     },
     "PatrolSweepTank1AfterBubble": {
-        "recognition": "DirectHit",
+        "recognition": "And",
+        "all_of": ["PatrolTank1MainIdentity"],
         "action": "Swipe",
         "begin": [221, 663],
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
+        "timeout": 1000,
+        "on_error": ["PatrolCollectTank1ImageWindow"],
         "next": [
             "PatrolSweepTank1BackAfterBubble"
         ]
     },
     "PatrolSweepTank1BackAfterBubble": {
-        "recognition": "DirectHit",
+        "recognition": "And",
+        "all_of": ["PatrolTank1MainIdentity"],
         "action": "Swipe",
         "begin": [1007, 663],
         "end": [221, 663],
         "duration": 250,
         "post_delay": 120,
+        "timeout": 1000,
+        "on_error": ["PatrolCollectTank1ImageWindow"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -655,8 +659,11 @@
         ]
     },
     "PatrolCollectTank2ShakeGem": {
-        "recognition": "Custom",
-        "custom_recognition": "CheckGemCollectModeReco",
+        "recognition": "And",
+        "all_of": [
+            {"recognition": "Custom", "custom_recognition": "CheckGemCollectModeReco"},
+            "PatrolTank2MainIdentity"
+        ],
         "action": "Custom",
         "custom_action": "UnifiedShakeGemCollectAction",
         "post_delay": 500,
@@ -694,16 +701,11 @@
         ]
     },
     "PatrolCollectTank2Bubble": {
-        "recognition": "TemplateMatch",
-        "template": "金币气泡.png",
-        "threshold": 0.75,
-        "roi": [
-            0,
-            100,
-            1280,
-            560
-        ],
-        "action": "Click",
+        "recognition": "And",
+        "all_of": ["PatrolTank2MainIdentity", "PatrolCoinIdentity"],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 0,
         "rate_limit": 180,
         "next": [
@@ -711,23 +713,29 @@
         ]
     },
     "PatrolSweepTank2AfterBubble": {
-        "recognition": "DirectHit",
+        "recognition": "And",
+        "all_of": ["PatrolTank2MainIdentity"],
         "action": "Swipe",
         "begin": [221, 663],
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
+        "timeout": 1000,
+        "on_error": ["PatrolCollectTank2ImageWindow"],
         "next": [
             "PatrolSweepTank2BackAfterBubble"
         ]
     },
     "PatrolSweepTank2BackAfterBubble": {
-        "recognition": "DirectHit",
+        "recognition": "And",
+        "all_of": ["PatrolTank2MainIdentity"],
         "action": "Swipe",
         "begin": [1007, 663],
         "end": [221, 663],
         "duration": 250,
         "post_delay": 120,
+        "timeout": 1000,
+        "on_error": ["PatrolCollectTank2ImageWindow"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -947,8 +955,11 @@
         ]
     },
     "PatrolCollectTank3ShakeGem": {
-        "recognition": "Custom",
-        "custom_recognition": "CheckGemCollectModeReco",
+        "recognition": "And",
+        "all_of": [
+            {"recognition": "Custom", "custom_recognition": "CheckGemCollectModeReco"},
+            "PatrolTank3MainIdentity"
+        ],
         "action": "Custom",
         "custom_action": "UnifiedShakeGemCollectAction",
         "post_delay": 500,
@@ -986,16 +997,11 @@
         ]
     },
     "PatrolCollectTank3Bubble": {
-        "recognition": "TemplateMatch",
-        "template": "金币气泡.png",
-        "threshold": 0.75,
-        "roi": [
-            0,
-            100,
-            1280,
-            560
-        ],
-        "action": "Click",
+        "recognition": "And",
+        "all_of": ["PatrolTank3MainIdentity", "PatrolCoinIdentity"],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 0,
         "rate_limit": 180,
         "next": [
@@ -1003,23 +1009,29 @@
         ]
     },
     "PatrolSweepTank3AfterBubble": {
-        "recognition": "DirectHit",
+        "recognition": "And",
+        "all_of": ["PatrolTank3MainIdentity"],
         "action": "Swipe",
         "begin": [221, 663],
         "end": [1007, 663],
         "duration": 250,
         "post_delay": 120,
+        "timeout": 1000,
+        "on_error": ["PatrolCollectTank3ImageWindow"],
         "next": [
             "PatrolSweepTank3BackAfterBubble"
         ]
     },
     "PatrolSweepTank3BackAfterBubble": {
-        "recognition": "DirectHit",
+        "recognition": "And",
+        "all_of": ["PatrolTank3MainIdentity"],
         "action": "Swipe",
         "begin": [1007, 663],
         "end": [221, 663],
         "duration": 250,
         "post_delay": 120,
+        "timeout": 1000,
+        "on_error": ["PatrolCollectTank3ImageWindow"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -2046,16 +2058,49 @@
     },
     "PatrolAbortUnknownPage": {
         "recognition": "DirectHit",
-        "action": "StopTask",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {"message": "[巡检] ERROR: 未识别到已支持页面，已安全停止。"},
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 未识别到鱼缸、鱼缸选择器或鱼缸管理页，已安全停止。"
+            "Node.Action.Failed": "[巡检] 未识别到鱼缸、鱼缸选择器或鱼缸管理页，已安全停止。"
         }
     },
     "PatrolAbortNavigation": {
         "recognition": "DirectHit",
-        "action": "StopTask",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {"message": "[巡检] ERROR: 页面门禁未通过，已停止且未继续点击。"},
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 页面门禁未通过，已停止且未继续点击。请查看识别日志。"
+            "Node.Action.Failed": "[巡检] 页面门禁未通过，已停止且未继续点击。请查看识别日志。"
         }
+    },
+    "PatrolCoinIdentity": {
+        "recognition": "TemplateMatch",
+        "template": "金币气泡.png",
+        "threshold": 0.75,
+        "roi": [428, 126, 679, 360],
+        "order_by": "Score",
+        "action": "DoNothing"
+    },
+    "PatrolTank1MainIdentity": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "DoNothing"
+    },
+    "PatrolTank2MainIdentity": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "DoNothing"
+    },
+    "PatrolTank3MainIdentity": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "DoNothing"
     }
 }

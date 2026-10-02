@@ -5,11 +5,14 @@
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 sys.path.insert(0, '.')
 
 from agent.runtime_state import sea_otter_gem_state
 
 class MockController:
+    succeeded = True
     def __init__(self):
         self.actions = []
 
@@ -266,16 +269,59 @@ def test_scenario_f():
 
 
 def test_last_friend_gray_arrow_harvest():
-    """灰色右键下仍先摸取当前好友；不点击不可用的 Next，耗尽后再完成。"""
+    """灰色右键下摸宝后通过上一位刷新，再确认回到末位，不能原地空转。"""
     ctrl = MockController()
     ctx = MockContext(ctrl)
     init_act.run(ctx, None)
 
-    assert harvest_act.run(ctx, MockArg({"stay_on_current": True}))
+    ctx.run_recognition = lambda name, frame: SimpleNamespace(
+        hit=(frame != 1 if name == "SeaOtterGrayRightArrow" else True),
+        box=(45, 530, 80, 80),
+    )
+    with patch("agent.my_action._capture_720p", side_effect=[0, 1, 2]):
+        assert harvest_act.run(ctx, MockArg({"refresh_last_friend": True}))
     assert sea_otter_gem_state["current_side"] == "left"
     assert sea_otter_gem_state["total_harvests"] == 1
-    assert not any(a in ('CLICK_NEXT', 'CLICK_PREV') for a in ctrl.actions)
-    print("[PASS] 灰色右键末位好友可继续摸宝且不会点击不可用箭头！")
+    assert [a for a in ctrl.actions if a in ('CLICK_NEXT', 'CLICK_PREV')] == [
+        'CLICK_PREV', 'CLICK_NEXT'
+    ]
+    print("[PASS] 灰色右键末位好友经上一位刷新后返回！")
+
+
+def test_last_friend_refresh_failure():
+    """Prev 未生效时不穿透点 Next，也不累计摸宝或标记完整运行。"""
+    ctrl = MockController()
+    ctx = MockContext(ctrl)
+    init_act.run(ctx, None)
+    ctx.run_recognition = lambda name, frame: SimpleNamespace(hit=True, box=(45, 530, 80, 80))
+    with patch("agent.my_action._capture_720p", return_value=0):
+        assert not harvest_act.run(ctx, MockArg({"refresh_last_friend": True}))
+    assert [a for a in ctrl.actions if a in ('CLICK_NEXT', 'CLICK_PREV')] == ['CLICK_PREV']
+    assert sea_otter_gem_state['total_harvests'] == 0
+    assert not sea_otter_gem_state['normal_completion']
+    assert sea_otter_gem_state['completion_reason'] == 'LAST_FRIEND_REFRESH_FAILED'
+
+
+def test_last_friend_refresh_stop_and_empty_frame():
+    """空帧零点击；点 Prev 后用户停止时不得补点 Next 或累计完整次数。"""
+    for stop_after_prev in (False, True):
+        ctrl = MockController()
+        ctx = MockContext(ctrl)
+        init_act.run(ctx, None)
+        ctx.run_recognition = lambda name, frame: SimpleNamespace(hit=True, box=(45, 530, 80, 80))
+        original_click = ctrl.post_click
+        def click(x, y):
+            result = original_click(x, y)
+            ctx.tasker.stopping = True
+            return result
+        ctrl.post_click = click
+        with patch('agent.my_action._capture_720p', return_value=(0 if stop_after_prev else None)):
+            assert not harvest_act.run(ctx, MockArg({'refresh_last_friend': True}))
+        assert sea_otter_gem_state['total_harvests'] == 0
+        assert not sea_otter_gem_state['normal_completion']
+        assert ('CLICK_NEXT' not in ctrl.actions)
+        if not stop_after_prev:
+            assert not ctrl.actions
 
 
 def test_friend_gate_pipeline():
@@ -327,7 +373,9 @@ def test_friend_gate_pipeline():
     last_harvest = pipeline["SeaOtterLastFriendHarvestable"]
     assert last_harvest["roi"] == [0, 400, 560, 300]
     assert last_harvest["custom_action"] == "SeaOtterHarvestAction"
-    assert last_harvest["custom_action_param"] == {"stay_on_current": True}
+    assert last_harvest["custom_action_param"] == {"refresh_last_friend": True}
+    assert last_harvest["on_error"] == ["SeaOtterNavigationFailed"]
+    assert pipeline["SeaOtterNavigationFailed"]["action"] == "StopTask"
     assert business_next("SeaOtterLastFriendHarvestable") == ["SeaOtterFriendRouter"]
     bridge = pipeline["SeaOtterRecommendedBridge"]
     assert bridge["template"] == "好友_下一位.png"
@@ -336,12 +384,8 @@ def test_friend_gate_pipeline():
 
 
 if __name__ == "__main__":
-    test_scenario_a()
-    test_scenario_b()
-    test_scenario_c()
-    test_scenario_d()
-    test_scenario_e()
-    test_scenario_f()
-    test_last_friend_gray_arrow_harvest()
-    test_friend_gate_pipeline()
-    print("\n>>> ALL 8 SCENARIOS 100% PASSED! <<<")
+    with patch("agent.my_action.time.sleep"):
+        for name, test in sorted(list(globals().items())):
+            if name.startswith("test_"):
+                test()
+                print(f"[PASS] {name}")

@@ -68,7 +68,7 @@ class DailyFoodBabyContract(unittest.TestCase):
         ctx = Context("DailyRoutineEnableBuyFishFood", "DailyRoutineEnableFishBaby")
         self.init(ctx)
         self.assertEqual(daily_routine_state["step"], "BUY_FISH_FOOD")
-        self.assertEqual(daily_routine_state["queue"], ["FISH_BABY", "GREEN_WILD_CLAIM", "PRINCESS_CLAIM"])
+        self.assertEqual(daily_routine_state["queue"], ["FISH_BABY"])
         for task, step in (("BuyFishFood", "BUY_FISH_FOOD"), ("FishBaby", "FISH_BABY")):
             param = {"task_name": task, "expected_step": step}
             self.assertTrue(self.complete(param))
@@ -76,7 +76,7 @@ class DailyFoodBabyContract(unittest.TestCase):
             after = copy.deepcopy(daily_routine_state)
             self.assertTrue(self.complete(param))
             self.assertEqual(daily_routine_state, after)
-        self.assertEqual(daily_routine_state["step"], "GREEN_WILD_CLAIM")
+        self.assertEqual(daily_routine_state["step"], "ALL_DONE")
         message = ctx.overrides["DailyRoutineInitLog"]["focus"]["Node.Action.Succeeded"]
         self.assertIn("已选择：购买鱼食、鱼宝乐园", message)
 
@@ -117,7 +117,13 @@ class DailyFoodBabyContract(unittest.TestCase):
             self.assertEqual(node["custom_action_param"]["expected_step"], step)
             self.assertEqual(node["custom_action_param"]["task_name"], task)
             self.assertEqual(node["next"][-2:], ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"])
-            self.assertEqual(pipeline[node["on_error"][0]]["action"], "StopTask")
+            failure = pipeline[node["on_error"][0]]
+            if task == "FishBaby":
+                self.assertEqual(failure["custom_action"], "FailTaskAction")
+                self.assertNotIn("next", failure)
+                self.assertNotIn("on_error", failure)
+            else:
+                self.assertEqual(failure["action"], "StopTask")
         for node in ("BuyFishFoodStartAtDetail", "BuyFishFoodPurchaseOnDetail"):
             self.assertEqual(self.food[node]["next"][-1], "BuyFishFoodDone")
         self.assertEqual(self.baby["FishBabySkipAll"]["next"], ["FishBabySkipAllDaily", "DailyRoutineStandaloneDone"])
@@ -125,7 +131,7 @@ class DailyFoodBabyContract(unittest.TestCase):
         self.init(Context(), {"fish_baby": True})
         self.assertTrue(self.complete(self.baby["FishBabySkipAllVerifyTank"]["custom_action_param"]))
         self.assertEqual(daily_routine_state["tasks"]["FishBaby"]["status"], "SKIPPED")
-        self.assertEqual(daily_routine_state["step"], "GREEN_WILD_CLAIM")
+        self.assertEqual(daily_routine_state["step"], "ALL_DONE")
 
     def test_dispatch_and_existing_navigation(self):
         dispatcher = self.routine["DailyRoutineDispatcher"]["next"]

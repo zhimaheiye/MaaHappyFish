@@ -110,7 +110,9 @@
             220
         ],
         "threshold": 0.8,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
+        "on_error": ["BandFishNavigationFailed"],
         "post_delay": 2000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -131,7 +133,9 @@
             90
         ],
         "threshold": 0.7,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
+        "on_error": ["BandFishNavigationFailed"],
         "post_delay": 1500,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -152,7 +156,9 @@
             220
         ],
         "threshold": 0.8,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
+        "on_error": ["BandFishNavigationFailed"],
         "post_delay": 2000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -166,6 +172,8 @@
     "BandFishStatusRouter": {
         "recognition": "DirectHit",
         "action": "DoNothing",
+        "timeout": 12000,
+        "on_error": ["BandFishNavigationFailed"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -176,6 +184,11 @@
             "BandFishCheckReady",
             "BandFishCheckInvite"
         ]
+    },
+    "BandFishNavigationFailed": {
+        "recognition": "DirectHit",
+        "action": "StopTask",
+        "focus": {"Node.Action.Succeeded": "[乐队鱼] ERROR: 点击入口后未确认演出页面，安全停止。"}
     },
     "BandFishCheckDone": {
         "recognition": "OCR",

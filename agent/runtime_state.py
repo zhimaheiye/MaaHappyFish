@@ -111,11 +111,18 @@ wishing_lamp_state = {
     "target": 10,
 }
 
+try:
+    from local_state import get_hangup_schedule_dates
+except ImportError:
+    from agent.local_state import get_hangup_schedule_dates
+
+
 hangup_schedule_state = {
     "resume_stack": [],
     "noon_daily_last_date": None,
     "friend_gem_morning_date": None,
     "friend_gem_evening_date": None,
+    **get_hangup_schedule_dates(),
 }
 
 fishing_state = {

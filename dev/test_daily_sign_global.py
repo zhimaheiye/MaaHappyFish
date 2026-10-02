@@ -15,6 +15,9 @@ GLOBAL_HANDLERS = [
 ]
 HANDLER_NODES = {
     "GlobalActivityPagePopup",
+    "GlobalActivityPageReturn",
+    "GlobalLuckyMomentClose",
+    "FriendPageMessageBoxToStarFriends",
     "GlobalDailySignPopup",
     "GlobalDailySignAlreadySigned",
     "GlobalDailySignClaim",
@@ -79,10 +82,13 @@ def run_tests():
     pipeline, locations = load_pipeline()
 
     activity_page = pipeline["GlobalActivityPagePopup"]
-    assert activity_page["template"] == "活动页面_退出.png"
-    assert activity_page["roi"] == [0, 0, 136, 116]
-    assert activity_page["action"] == "Click"
-    assert "target" not in activity_page
+    assert activity_page["recognition"] == "Or"
+    assert activity_page["any_of"] == ["GlobalLuckyMomentTitle", "GlobalActivityPageReturn"]
+    activity_return = pipeline["GlobalActivityPageReturn"]
+    assert activity_return["template"] == "活动页面_退出.png"
+    assert activity_return["roi"] == [0, 0, 136, 116]
+    assert activity_return["action"] == "Click"
+    assert "target" not in activity_return
 
     popup = pipeline["GlobalDailySignPopup"]
     assert popup["template"] == "签到_识别.png"
