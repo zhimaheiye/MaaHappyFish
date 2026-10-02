@@ -50,8 +50,8 @@
 
 | 项目 | 信息 |
 | :--- | :--- |
-| **Current version** | `0.7.3` |
-| **Latest release** | [`v0.7.3`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.3) |
+| **Current version** | `0.7.4` |
+| **Latest release** | [`v0.7.4`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.4) |
 | **CI hard gate** | `verify (win, x86_64)` PASS（GitHub Windows Runner embedded Python 冒烟 + 更新契约门禁） |
 | **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新（发版流程标准详见 [release-workflow.md](../release-workflow.md)） |
 
