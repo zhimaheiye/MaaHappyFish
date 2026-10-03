@@ -118,6 +118,8 @@ python dev/test_release_agent_imports.py
 ### 3.5 涉及修改特性的业务单测
 若本版本涉及具体业务功能改动，必须运行对应单元测试确保逻辑闭环（如 `test_emulator_ads.py`, `test_daily_magic_puzzle.py`, `test_princess_task.py`, `test_secret_realm_gate.py`, `test_daily_routine_scheduler.py` 等）。
 
+**基线红测试规则**：受影响的测试失败时，“旧版本/基线也失败”只能说明失败早于本轮，不能自动视为可跳过。必须先核对当前实现与功能契约，判断是过期断言还是实际缺陷；前者同步修正测试，后者先修代码，再重新执行完整测试。除非用户明确给出本次发布豁免，否则不得只登记为历史债务后继续打 Tag。
+
 ---
 
 ## 4. Step 2 — 升级版本号与可选本地副本同步

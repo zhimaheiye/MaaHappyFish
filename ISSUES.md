@@ -9,8 +9,10 @@
 - 2026-10-02 台式机巡检底层长时间静默仍待取证：02:56:05.843→08:00:26 无业务日志而持续内存心跳，最后 `EmulatorExtras` 返回空帧。缺少同时段 MaaFramework 调用/返回日志及 MuMu 系统事件，无法确认采集通道/原生线程阻塞的根因；仅保留此子项，幸运时刻的专属关闭分支已完成，不再列作待修复。证据保留于 `台式机报错调查报告（待修复）/幸运时刻弹窗挂死_20261002`，说明见 `docs/features/patrol.md`。
 - 2026-10-02 外部值守器 `mfa_night_watch.py` 的停滞判据待核对/修复：内存心跳曾导致误报 HEALTHY；新增报告称规则优先级已于 11:40 在外部脚本修复，但仓库没有该源码，无法复核。待拿到实际脚本后核对业务进展判据及去重，不把所有通用失败标记已知；摘要见 `docs/features/patrol.md`，不假造外部实现。
 
-- 静态门禁 `dev/test_daily_sign_global.py` 全量规则与现有架构脱节（2026-10-02 发版前登记，v0.7.2 起即红）：测试要求所有带 `next` 的节点以 5 个全局弹窗处理器开头，实际架构只在任务入口/路由节点接入全局处理；v0.7.2 为 86 处标记，当前为 107 处，本轮改动未新增违规类别。需重新定义检查范围（如仅任务入口与路由节点）或补齐可维护的豁免机制，属整仓约定对齐事项，不在 v0.7.4 内擅自改动。
+- MFAAvalonia v2.16.2 原生资源更新容错仍待上游或自有客户端修复（2026-10-02 台式机现场，2026-10-03 复核）：历史现场曾出现下载响应体 TLS EOF，留下 131072000 字节且无 ZIP 中央目录/EOCD 的临时半包；另一次先成功校验并安装 v0.7.4，重启后才发生新的 GitHub Release 元数据 TLS 握手失败，后续巡检正常。网络/代理/服务端哪一环导致 EOF 仍无证据。MFAAvalonia v2.16.2 与 2026-10-03 上游当前 `VersionChecker.cs` 均仍存在“内部下载异常返回 false 使外层 WebException 重试难以生效、下载前停止任务、失败 return 后队列仍记录任务完成”等语义；MaaHappyFish 当前发行流程使用官方预编译 MFAAvalonia，不编译这段 C#，因此 Python Agent/Pipeline 不能直接修复。详见 `docs/features/client-update.md`。
 
-- 静态门禁 `dev/test_unified_gem_collect.py::test_friend_gem_pipeline_structure` 断言过期（2026-10-02 发版前登记，v0.7.2 起即红）：断言 `FriendGemQuickCollectAvailable.next` 尾部为 `FriendGemQuickCollectVerifyExhausted`，该节点名自 v0.6.1 起已不存在，现为 `FriendGemQuickCollectPostRouter` 分流至 Exhausted/PartialDone（仍保留全局处理器门禁）。需按现架构刷新断言，不在 v0.7.4 内擅自改动。
+- 静态门禁 `dev/test_daily_sign_global.py` 全量规则与现有架构脱节（2026-10-02 发版前登记，v0.7.2 起即红）：测试要求所有带 `next` 的节点以 5 个全局弹窗处理器开头，实际架构只在任务入口/路由节点接入全局处理；v0.7.2 为 86 处标记，当前为 107 处，本轮改动未新增违规类别。需重新定义检查范围（如仅任务入口与路由节点）或补齐可维护的豁免机制，属整仓约定对齐事项，不在 v0.7.4 内擅自改动。 历史对话现场曾在未提交工作树采用“按具体节点及所属文件登记页面内链例外、其它节点继续强制五处理器顺序，并加入移除前缀/新增未登记节点两类反例”的候选修正，无参数全量测试当时通过；该实现从未提交或推送，当前 HEAD 仍保留旧检查器，因此这里只作为可复用修正线索，不视为已修复。
+
+- 静态门禁 `dev/test_unified_gem_collect.py::test_friend_gem_pipeline_structure` 断言过期（2026-10-02 发版前登记，v0.7.2 起即红）：断言 `FriendGemQuickCollectAvailable.next` 尾部为 `FriendGemQuickCollectVerifyExhausted`，该节点名自 v0.6.1 起已不存在，现为 `FriendGemQuickCollectPostRouter` 分流至 Exhausted/PartialDone（仍保留全局处理器门禁）。需按现架构刷新断言，不在 v0.7.4 内擅自改动。 历史对话现场曾在未提交工作树把断言改为同时核对两个快捷收宝入口均进入 `FriendGemQuickCollectPostRouter`，再由该 Router 分流 Exhausted/PartialDone；当时好友专项 14 项通过。该修改未进入 Git，当前 HEAD 的旧断言仍在，故继续列为待修。
 
 - 深海鱼缸补充鱼食第一格缺失分支未录入（2026-09-30 登记）：巡检对鱼缸 3 深海专用鱼食的选择喂食弹窗以加号门禁 `[450,151,199,191]` 和第一格点击区 `[649,204,57,91]` 识别，当弹窗中第一种深海鱼食缺失（数量耗尽导致布局变化）时未做兼容，会导致识别失败并安全停止。用户已购入足量鱼食，短时间内不会复现；等下次实际出现时由用户在主力机采集现场日志后再定位修复。当前无需代码改动，属待现场取证事项。

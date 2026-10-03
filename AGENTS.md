@@ -52,6 +52,7 @@
 | 当且仅当项目版本号达到 1.0.0 正式完结发版时触发小红书抽奖活动 | `docs/v1.0-rednote-lottery.md`（维护者本机私有/本地里程碑文档；仅在版本号达到 1.0.0 且文件存在时触发，文件不存在时不得猜测，其余所有版本绝对不触发） |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 | 维护客户端项目图标 | `docs/features/client-appearance.md` |
+| 排查客户端更新下载、TLS、半包与安装状态 | `docs/features/client-update.md` |
 
 ## 新 Agent 对话接手顺序（必须执行）
 
