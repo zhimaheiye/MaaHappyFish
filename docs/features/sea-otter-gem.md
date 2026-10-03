@@ -31,6 +31,18 @@
 - **仅记账不拦截**：达到 3/3 后日志提示"已达到游戏每日上限记录"，但不阻止任务启动；同一次任务由 `daily_count_recorded` 幂等保护，重复进入 Finalize 只计一次。
 - 专项测试：`dev/test_sea_otter_daily_count.py`（游戏日边界、持久化 Case A~E、正常/Safety/中断分类、幂等）。
 
+### MFA 任务说明中的动态次数展示
+
+当前 `assets/interface.json` 中 `SeaOtterGemTask.description` 指向：
+
+`resource/runtime/sea_otter_status.md`
+
+该 Markdown 不是第二份状态源，而是由 `agent/local_state.py` 根据 `%LOCALAPPDATA%\MaaHappyFish\state.json` 动态生成的展示层。内容包括当前游戏日、今日完整运行次数、上次完整运行时间，以及“Safety / 手动停止 / 异常中断不计数”的说明。
+
+2026-09-19 历史 Z Code 会话曾用 A→B→C 内容切换做能力验证：MFA 在切换任务后会重新读取 description 指向的 Markdown，而不是只在程序启动时缓存一次。因此运行中刷新 `sea_otter_status.md` 可以在下一次切回任务时展示新计数，不需要为了更新次数重启 MFA。
+
+长期约束：`state.json` 才是运行状态真源；runtime Markdown 只是面向用户的派生视图。动态文件不应作为 Git 状态或业务判断依据。
+
 ---
 
 ## 核心业务模型：LEFT / RIGHT 双端窗口语义
