@@ -176,6 +176,8 @@
 
 **背景**：v0.4.2 因发行包 embedded Python 缺少 `opencv-python-headless`，导致 `agent/my_action.py` 顶层 `import cv2` 失败，Agent 进程退出，IPC socket 未建立，MFA 报 `Failed to LinkStart agentClient`。v0.4.3 通过上述机制修复并永久防范。
 
+**Agent 启动日志判读**：当前 `agent/main.py` 在 `AgentServer.start_up(socket_id)` 返回后会直接打印“连接成功”再进入 `join()`；这行输出本身不足以证明客户端握手已经完成。排查启动/连接问题时必须结合客户端与 MaaFramework 日志、Agent 进程存活和实际自定义动作/识别器可用性判断，不能把单侧成功文案当作握手证据。
+
 ### Execution Environment Boundary（执行环境边界规则）
 
 Agent 运行在用户当前活跃开发机上，以下约束必须严格遵守：
