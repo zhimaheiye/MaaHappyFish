@@ -92,7 +92,7 @@
 7. **廉价鱼食例外**：视觉门禁确认廉价鱼食后，可充分重复购买和投放测试；不得扩展到贝币、钻石、现实付费、其他商品或限次体力。
 8. **稀缺机会优先保全**：乐队鱼体力、钓鱼次数、魔力召唤等先验证到不可逆动作前一状态，再决定是否消耗。
 9. **停止必须真实停止**：长按、高频循环、滑动和轮询必须频繁检查 `tasker.stopping/running`；不能在 MFA 已停止后继续操作屏幕。
-10. **不假设跨机器能力**：远程/台式机问题只能分析用户带回的日志、代码或正式产物；Agent 不能假装能操作另一台电脑。在另一台电脑 git pull 后，如果使用已有 client_avalonia 开发目录，运行 `.\tools\sync_dev_client.ps1` 同步 interface.json 和项目图标；resource 与 agent 应保持指向仓库源码目录的 Junction。
+10. **不假设跨机器能力**：远程/台式机问题只能分析用户带回的日志、代码或正式产物；Agent 不能假装能操作另一台电脑。在另一台电脑 git pull 后，如果使用已有 client_avalonia 开发目录，运行 `.\tools\sync_dev_client.ps1` 同步 interface.json 和项目图标；resource 与 agent 应保持指向仓库源码目录的 Junction。跨机长跑日志默认在运行机器生成测试报告 ZIP，由用户私下带回开发机，在真正修 Bug 时再集中分析；不要为了日志中转新建 GitHub Issue 或专门的私有仓库，也不要把大量运行日志持续推入项目 Git。
 11. **Bug 直接修复**：不把“先写并运行一个失败回归”作为固定前置步骤；先读现有代码和证据，根因明确就直接最小修改，测试放在修改后用于验证和锁定契约。
 12. **反馈默认局部校准**：用户否定某个具体任务、方案或表达时，只修改被否定的那一层，不自动反转此前对整个方向的工程判断；“这个任务先不做”不等于“其它可做方向也消失”。继续保留独立判断并给出仍成立的可行项。
 13. **Agent 经验下沉要过确定性门槛**：`happyfishagent` 中的活动规则、坐标、截图和 Agent 手工流程可以作为探索证据与素材源，但不能机械翻译成固定坐标 Pipeline。只有目标、分支和资源边界足够稳定，且可以用当前 UI 门禁时才下沉进 Maa；临时主观目标或价值判断继续留在 Agent 层。
@@ -170,6 +170,8 @@ git diff --check
 | `expected: "0("` 使整份 Pipeline 加载失败 | Maa 把 `expected` 当 `std::regex`，括号未转义 | 优先用“刷新体力”等稳定语义；需要特殊字符时 JSON 双反斜杠转义；每次跑正则门禁 |
 | Python Agent 无故退出 | `print()` 中 Emoji 在 Windows GBK 下触发编码异常 | Python 日志禁用 Emoji；UI 文案用 Pipeline `focus` 注入 |
 | 发布包 Agent LinkStart 失败，而开发机正常 | 开发机有 `cv2`，发布 embedded Python 缺依赖 | 同步 `requirements-release.txt`，CI/本地用发布 Python 真实 import |
+| 早期发布包存在 Agent “正在启动”但无法建立连接 | embedded Python 的 `python*._pth` 会隔离 `sys.path`；历史打包现场还遇到含中文的辅助 `.cmd` 在该链路解析不稳定 | 发布包必须显式启用 `import site` 并加入 `Lib/site-packages`、`../agent`，脚本保持 ASCII 兼容；当前 `install.yml` 已写入这些路径并以 ASCII 保存，最终必须由 `verify (win, x86_64)` 下载真实 artifact 后用内置 Python 冒烟闭环 |
+| 安装指定 `maafw` 时国内镜像报 `from versions: none` | 镜像尚未同步目标版本，不能据此判断仓库或包不存在 | 对同一版本单次改用官方 PyPI 验证；若官方源可安装，则按“镜像滞后”处理，不改仓库代码。排查 MFA 长时间停在“正在启动 Agent”时，同时核对 Python `maafw` 与客户端打包的 MaaFramework 版本是否匹配，不再优先猜测 ADB 5554 端口冲突 |
 | `custom_action_param` 为字符串 `"null"` 时崩溃 | 直接 `json.loads()` 或假定字典 | 统一使用 `agent/param_utils.py::parse_dict_param()`，Action/Reco 显式返回 |
 | 购买鱼食长按或乐队鱼扫描在停止后仍继续点击 | 长循环只在入口检查停止，控制器队列仍继续 | 在每次轮询、滑动、长按分段、点击前后检查停止；停止时不写入成功状态 |
 | 每日免费礼包被描述成“可领取 -> 已售罄”的线性流程 | 混淆互斥 UI 分支和领取后的无关页面 | 建模为“可领取成功线”与“已售罄重复执行线”，各自正常返回 |
