@@ -15,6 +15,7 @@
 | 需了解整体架构或边界约束 | `PRODUCT.md` |
 | 查看当前正式版与机器运行状态 | `PROJECT_STATUS.md` |
 | 查看或登记待修复问题 | `ISSUES.md` |
+| 查看用户尚未正式立项的长期想法/粗略备忘 | `待办.md`；它不是 Bug 跟踪器。条目一旦进入正式开发或形成可执行问题，应迁移到对应功能文档 / `ISSUES.md`，并从 `待办.md` 删除，避免双份事实源 |
 | 接手当前工作或查看进度 | `docs/handoff/CURRENT.md` |
 | 新 Agent 接手、查询开发流程/用户偏好/历史事故 | `docs/handoff/DEVELOPMENT_PLAYBOOK.md` |
 | 查询游戏资源、消耗与实机测试授权 | `docs/game-knowledge.md` |
@@ -53,6 +54,10 @@
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 | 维护客户端项目图标 | `docs/features/client-appearance.md` |
 | 排查客户端更新下载、TLS、半包与安装状态 | `docs/features/client-update.md` |
+
+> **路由表职责**：上面的表是仓库入口级总路由；`docs/handoff/DEVELOPMENT_PLAYBOOK.md` 维护“信息类型 → 权威来源”的接手视角，`CURRENT.md`/功能文档只维护各自主题内的局部链接。三处可以同时存在，但不要把它们当成三份需要逐行同步的同一张表；新增长期文档时至少更新本入口表，并按实际职责更新相关局部入口。
+>
+> **Git ahead/behind 口径**：`ahead N` 只表示当前本地分支相对其配置 upstream 在那个时点多出的 commit 数，不是“本批产生了 N 个提交”的稳定事实。push 后应重新读取远端/跟踪引用再判断；历史对话中的 `ahead N` 不进入长期项目状态。
 
 ## 新 Agent 对话接手顺序（必须执行）
 
