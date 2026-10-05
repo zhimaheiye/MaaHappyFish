@@ -593,11 +593,20 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(
             router_next,
             [
+                "PatrolMagicRejectAddFriend",
                 "PatrolMagicConfirmPopup",
                 "PatrolMagicRevealResult",
                 "PatrolMagicClickAdvanced",
                 "PatrolMagicAlreadyRunning",
             ],
+        )
+        reject = self.pipeline["PatrolMagicRejectAddFriend"]
+        self.assertEqual(reject["action"], "DoNothing")
+        self.assertIn("加他为好友", reject["expected"])
+        self.assertEqual(business_next(reject), ["PatrolMagicReturn"])
+        self.assertEqual(
+            business_next(self.pipeline["PatrolMagicClickAdvanced"])[:2],
+            ["PatrolMagicRejectAddFriend", "PatrolMagicConfirmPopup"],
         )
         reveal = self.pipeline["PatrolMagicRevealResult"]
         self.assertEqual(reveal["recognition"], "OCR")
@@ -714,6 +723,7 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(
             business_next(magic_router),
             [
+                "PatrolMagicRejectAddFriend",
                 "PatrolMagicConfirmPopup",
                 "PatrolMagicRevealResult",
                 "PatrolMagicClickAdvanced",

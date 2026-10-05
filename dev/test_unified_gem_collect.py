@@ -176,12 +176,23 @@ class TestUnifiedGemCollectPipeline(unittest.TestCase):
         self.assertEqual(available["roi"], [231, 592, 123, 120])
         self.assertEqual(available["action"], "Click")
         self.assertNotIn("target", available)
-        self.assertEqual(available["next"][-1], "FriendGemQuickCollectVerifyExhausted")
+        self.assertEqual(available["next"][-1], "FriendGemQuickCollectPostRouter")
+        alt = self.friend_pipeline["FriendGemQuickCollectAvailableAlt"]
+        self.assertEqual(alt["next"][-1], "FriendGemQuickCollectPostRouter")
 
-        verify = self.friend_pipeline["FriendGemQuickCollectVerifyExhausted"]
-        self.assertEqual(verify["expected"], "刷新体力")
-        self.assertEqual(verify["next"][-1], "FriendGemNextFriend")
-        self.assertEqual(verify["on_error"], ["FriendGemQuickCollectVerifyFallback"])
+        post = self.friend_pipeline["FriendGemQuickCollectPostRouter"]
+        post_next = [name for name in post["next"] if not name.startswith("[JumpBack]")]
+        self.assertEqual(
+            post_next,
+            ["FriendGemQuickCollectExhausted", "FriendGemQuickCollectPartialDone"],
+        )
+        exhausted = self.friend_pipeline["FriendGemQuickCollectExhausted"]
+        self.assertEqual(exhausted["expected"], "刷新体力")
+        self.assertEqual(exhausted["next"][-1], "FriendGemNextFriend")
+        self.assertEqual(
+            self.friend_pipeline["FriendGemQuickCollectPartialDone"]["next"][-1],
+            "FriendGemNextFriend",
+        )
 
         unavailable = self.friend_pipeline["FriendGemQuickCollectUnavailable"]
         self.assertEqual(unavailable["template"], "好友摸宝快捷键_不可用.png")

@@ -37,9 +37,10 @@ FriendGemStartRouter (启动环境自适应路由器)
     └─ 已在普通好友缸 ─> FriendGemStartInFriendTank ─> FriendGemFriendRouter
 
 FriendGemFriendRouter (直通路由器)
-    ├─ 到达末尾 ──> FriendGemAddFriendPage (OCR「全部添加」/ 无状态栏) ──> FriendGemDone (结束)
+    ├─ 序号超过 300 ──> FriendGemRosterLimit ──> 点击返回 ──> FriendGemDone
+    ├─ 非好友文案 ──> FriendGemAddFriendPage ──> 点击返回 ──> FriendGemDone
     ├─ 欢迎弹窗 ──> FriendGemWelcomePopup (OCR「欢迎来到」点击关闭) ────┐
-    ├─ 系统弹窗 ──> FriendGemSpecialPopup (匹配「绿色勾选按钮.png」) ───┤
+    ├─ 允许关闭的弹窗 ──> FriendGemSpecialPopup (绿勾且文案允许才点) ──┤
     ├─ 鱼宝乐园 ──> FriendGemFishBabyPark (OCR「鱼宝|乐园」点击右上X) ──┤
     │                                                                   │
     ├─ 遭遇海牛 ──> FriendGemCheckManatee ─> 共享海牛喂食 ─> 下一位 ───┼──┐
@@ -90,9 +91,12 @@ FriendGemResetAttempts (attempts 清零，miss_count 清零)
       "current_friend_index": 1,
       "bubble_miss_count": 0,
       "max_bubble_misses": 12,  # 允许连续未见气泡次数（约 7.2 秒），留足鱼群慢游缓冲
+      "max_friend_index": 300,  # 好友序号全局上限；超过后结束任务，不再切下一位
+      "roster_limit_logged": False,
   }
   ```
-- 保证 `CheckFriendGemLimitReco` 仅作为防死锁安全看门狗（达到 30 次才触发），日常完成判断 100% 由 UI 状态 `FriendGemExhausted` 驱动。
+- `CheckFriendGemLimitReco` 仍只是单个好友的防死锁看门狗：达到 30 次尝试就切下一位，不会结束整趟好友摸宝。正常完成判断仍由 `刷新体力` 驱动。
+- `CheckFriendGemRosterLimitReco` 在序号大于 300 时结束本轮。30 次上限不能挡住 2026-10-05 那种一直切陌生人的情况。初始化日志会同时写出「单个好友气泡尝试上限为 30」和「好友序号全局上限为 300」。
 
 ### 2. 状态驱动完成准则（State-Confirmed Completion）
 - **核心原则**：绝不依赖点击次数判断好友是否摸完，彻底废除“点击满 12 次早退切人”的缺陷逻辑。
@@ -120,12 +124,15 @@ FriendGemResetAttempts (attempts 清零，miss_count 清零)
 - 在右上角 `ROI: [1140, 50, 130, 80]` 内，无论 NPC、真人群体还是各种花哨背景，匹配置信度均稳定在 $0.76 \sim 0.98$。
 
 ### 6. 好友末尾与陌生人保护
-- 遍历至最后一位星级好友后，再次点击 `>` 将进入加好友推荐页或陌生人水族箱。
-- 此时页面出现「全部添加」按钮或左侧好友状态栏消失，直接命中 `FriendGemAddFriendPage` 平滑退出，杜绝无限翻页。
+- 遍历至最后一位星级好友后，再次点击 `>` 会进入加好友提示或陌生人水族箱。
+- 2026-10-05 22:00 挂机「好友摸宝兜底」把序号从 1 加到 236。现场文案是「他还不是你的好友，无法进行操作哦~」「加他为好友么?」，绿色勾选约在 `[793,449,64,64]`。旧节点只在 `[750,330,160,70]` 找「全部添加」，全天没有命中；`FriendGemSpecialPopup` 只要看到绿色勾选就点击，于是发出了一次好友申请。申请发出后的「加好友邀请已经发出」也没有节点接管，装饰被当成气泡点了约 8.5 分钟。单个好友 30 次上限只会切到下一位，所以序号可以一直涨。上午 11:10 同路径曾到 112。
+- `FriendGemAddFriendPage` 现在用宽 ROI `[250,140,820,400]` 识别「不是你的好友」「加他为好友」「加好友邀请已经发出」「去其他好友家看看吧」「全部添加」。命中后不点绿色勾选，只点左上角「返回」，再进入 `FriendGemDone`。`FriendGemFriendRouter` 与 `FriendGemImageFallbackRouter` 都把这条边界放在绿色勾选和气泡之前。
+- 绿色勾选仍使用 `绿色勾选按钮.png`、ROI `[760,420,120,120]`、阈值 0.8，但必须同帧还有「谢谢您拜访」「些礼物」「进化鱼特效」或「已被关闭」。`FriendGemConfirmSafePopupAction` 在点击前再看一帧：出现加好友文案，或允许文案消失，就拒绝点击。拒绝后进入 `FriendGemSpecialPopupRefuse`，最多等 3 秒点左上角「返回」，再进 `FriendGemDone`；找不到返回时同样结束本轮。`FriendGemDone` 不和「返回」放在同一候选列表里，避免直接命中跳过返回。拜访礼物和「进化鱼特效已被关闭」仍可关闭。
+- 序号大于 300 时 `FriendGemRosterLimit` 同样返回并结束。这个上限高于约 200 位好友的历史全表，用来挡住识别漏掉边界后的无限翻页。
 
 ### 7. 弹窗分层与长尾样本捕获
-- **系统提示弹窗（`FriendGemSpecialPopup`，已实机验证）**：在 44 分钟长链路 E2E 测试至第 200 位水族箱时捕获真实弹窗现场（“进化鱼特效已被关闭”提示），通过匹配特征模版 `assets/resource/image/绿色勾选按钮.png` 并在 `ROI: [760, 420, 120, 120]` 内点击确定，自动消除弹窗。
-- **欢迎弹窗（`FriendGemWelcomePopup`，骨架待覆盖）**：针对首访好友可能弹出的“欢迎来到”提示，保留为未覆盖样本节点，避免混淆。
+- **允许关闭的系统提示（`FriendGemSpecialPopup`）**：历史 E2E 在第 200 位见到「进化鱼特效已被关闭」。现在必须同时命中绿色勾选和允许文案，再由自定义动作点击勾选中心。加好友确认框不再被当成这类提示。
+- **欢迎弹窗（`FriendGemWelcomePopup`）**：仍只认「欢迎来到」并点击该文字，不点击绿色勾选。
 
 ### 8. 误入鱼宝乐园自愈（`FriendGemFishBabyPark`）
 - **误入场景**：在好友鱼缸采集气泡过程中，偶尔可能点击到底部右侧珊瑚/生物装饰，误进入好友的“鱼宝乐园”。

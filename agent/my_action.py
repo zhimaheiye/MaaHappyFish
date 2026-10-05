@@ -209,6 +209,18 @@ def _fish_baby_cost(context, frame):
     return None
 
 
+FISH_BABY_PROMPT_ROI = (930, 540, 330, 170)
+
+
+def _fish_baby_fail(context, message: str) -> bool:
+    """用户或框架停止时只记停止，不把取消写成门禁失败。"""
+    if _task_cancelled(context):
+        print("[鱼宝乐园] 已收到停止请求", flush=True)
+        return False
+    print(message, flush=True)
+    return False
+
+
 def _fish_baby_wait_ocr(context, expected, roi, seconds=8.0):
     deadline = time.monotonic() + seconds
     while time.monotonic() < deadline:
@@ -229,7 +241,7 @@ def _fish_baby_click(context, point):
 
 def _fish_baby_normalize_category(context):
     """只在已确认的孵化工具栏层级中点击金色返回箭头。"""
-    prompt_roi = (920, 590, 250, 100)
+    prompt_roi = FISH_BABY_PROMPT_ROI
     known_prompts = ("请选择鱼宝宝", "请选择鱼粮", "请选择玩耍方式", "请选择牛奶")
     for _ in range(3):
         frame = _capture_720p(context.tasker.controller)
@@ -238,8 +250,7 @@ def _fish_baby_normalize_category(context):
         if _fish_baby_ocr_box(context, frame, "请选择孵化方式", prompt_roi):
             return True
         if not any(_fish_baby_ocr_box(context, frame, text, prompt_roi) for text in known_prompts):
-            print("[鱼宝乐园] ERROR: 工具栏层级未知，拒绝点击返回箭头。", flush=True)
-            return False
+            return _fish_baby_fail(context, "[鱼宝乐园] ERROR: 工具栏层级未知，拒绝点击返回箭头。")
         _fish_baby_click(context, (851, 635))
         time.sleep(0.6)
     return False
@@ -347,7 +358,7 @@ def _fish_baby_wait_batch_result(context, kind, targets, located, seconds=18.0):
         frame = _capture_720p(context.tasker.controller)
         if frame is None:
             return False
-        if _fish_baby_ocr_box(context, frame, "请选择孵化方式", (920, 590, 250, 100)):
+        if _fish_baby_ocr_box(context, frame, "请选择孵化方式", FISH_BABY_PROMPT_ROI):
             return True
         if kind in MILK_PREFERENCES and _fish_baby_at_home(context, frame):
             if _fish_baby_sleeping(context, frame, targets, located, at_home=True) == set(targets):
@@ -360,21 +371,18 @@ def _fish_baby_run_batch(context, kind, targets, located):
     if not targets:
         return True
     config = FISH_BABY_BATCHES[kind]
-    prompt_roi = (920, 590, 250, 100)
+    prompt_roi = FISH_BABY_PROMPT_ROI
     button_roi = (965, 590, 210, 120)
     frame = _capture_720p(context.tasker.controller)
     if frame is None or _fish_baby_ocr_box(context, frame, "请选择孵化方式", prompt_roi) is None:
-        print(f"[鱼宝乐园] ERROR: {kind} 前不在孵化大类层。", flush=True)
-        return False
+        return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: {kind} 前不在孵化大类层。")
 
     _fish_baby_click(context, config["category"])
     if _fish_baby_wait_ocr(context, config["items_prompt"], prompt_roi, 5.0) is None:
-        print(f"[鱼宝乐园] ERROR: {kind} 大类点击后未进入子项层。", flush=True)
-        return False
+        return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: {kind} 大类点击后未进入子项层。")
     _fish_baby_click(context, config["item"])
     if _fish_baby_wait_ocr(context, "请选择鱼宝宝", prompt_roi, 5.0) is None:
-        print(f"[鱼宝乐园] ERROR: {kind} 子项点击后未进入宝宝选择层。", flush=True)
-        return False
+        return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: {kind} 子项点击后未进入宝宝选择层。")
 
     for number in targets:
         center = located[number]["baby"]
@@ -382,26 +390,22 @@ def _fish_baby_run_batch(context, kind, targets, located):
         time.sleep(0.4)
         frame = _capture_720p(context.tasker.controller)
         if frame is None or not has_green_check(frame, center):
-            print(f"[鱼宝乐园] ERROR: {kind} 未确认 {number} 号宝宝绿勾，未点击执行按钮。", flush=True)
-            return False
+            return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: {kind} 未确认 {number} 号宝宝绿勾，未点击执行按钮。")
 
     frame = _capture_720p(context.tasker.controller)
     if frame is None or _fish_baby_ocr_box(context, frame, config["button"], button_roi) is None:
-        print(f"[鱼宝乐园] ERROR: 执行按钮未确认是“{config['button']}”，拒绝点击。", flush=True)
-        return False
+        return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: 执行按钮未确认是“{config['button']}”，拒绝点击。")
     if config["unit_cost"]:
         cost = _fish_baby_cost(context, frame)
         expected_cost = config["unit_cost"] * len(targets)
         if cost is None or cost[0] != expected_cost or cost[1] < cost[0]:
-            print(
+            return _fish_baby_fail(
+                context,
                 f"[鱼宝乐园] ERROR: {kind} 资源计数异常，页面={cost!r}，预期消耗={expected_cost}；拒绝点击执行按钮。",
-                flush=True,
             )
-            return False
     _fish_baby_click(context, (1066, 672))
     if not _fish_baby_wait_batch_result(context, kind, targets, located):
-        print(f"[鱼宝乐园] ERROR: {kind} 执行后未确认大类层或牛奶完成后的睡眠主页。", flush=True)
-        return False
+        return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: {kind} 执行后未确认大类层或牛奶完成后的睡眠主页。")
     print(f"[鱼宝乐园] {config['label']} 已执行：{targets}", flush=True)
     return True
 
@@ -482,15 +486,12 @@ class FishBabyRunRoundAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         frame = _capture_720p(context.tasker.controller)
         if frame is None:
-            print("[鱼宝乐园] ERROR: 无法取得孵化模式当前帧，未开始养成。", flush=True)
-            return False
-        if _fish_baby_ocr_box(context, frame, "请选择孵化方式", (920, 590, 250, 100)) is None:
-            print("[鱼宝乐园] ERROR: 当前不是孵化大类层，未开始养成。", flush=True)
-            return False
+            return _fish_baby_fail(context, "[鱼宝乐园] ERROR: 无法取得孵化模式当前帧，未开始养成。")
+        if _fish_baby_ocr_box(context, frame, "请选择孵化方式", FISH_BABY_PROMPT_ROI) is None:
+            return _fish_baby_fail(context, "[鱼宝乐园] ERROR: 当前不是孵化大类层，未开始养成。")
         templates = _load_fish_baby_number_templates()
         if templates is None:
-            print("[鱼宝乐园] ERROR: 缺少 1~8 号红旗数字模板。", flush=True)
-            return False
+            return _fish_baby_fail(context, "[鱼宝乐园] ERROR: 缺少 1~8 号红旗数字模板。")
         located = locate_numbered_babies(frame, templates)
         fish_baby_state["babies"] = located
         uniform = fish_baby_state["uniform_preferences"]
@@ -507,8 +508,7 @@ class FishBabyRunRoundAction(CustomAction):
         required = set(groups["PET"] + groups["BASKETBALL"] + groups["SING"])
         missing = sorted(required - located.keys())
         if missing:
-            print(f"[鱼宝乐园] ERROR: 未能可靠定位 {missing} 号宝宝，本轮未开始养成。", flush=True)
-            return False
+            return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: 未能可靠定位 {missing} 号宝宝，本轮未开始养成。")
 
         stages = {}
         for number in sorted(required):
@@ -519,8 +519,7 @@ class FishBabyRunRoundAction(CustomAction):
             hearts = count_completed_hearts(frame, item["baby"])
             stage = {0: "FEED", 2: "PLAY", 4: "MILK"}.get(hearts)
             if stage is None:
-                print(f"[鱼宝乐园] ERROR: {number} 号宝宝红心数={hearts}，阶段不明确。", flush=True)
-                return False
+                return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: {number} 号宝宝红心数={hearts}，阶段不明确。")
             stages[number] = stage
         fish_baby_state["stages"] = stages
         active = sorted(number for number, stage in stages.items() if stage != "SLEEPING")
@@ -553,13 +552,13 @@ class FishBabyRunRoundAction(CustomAction):
         sleeping = set()
         while time.monotonic() < deadline:
             if _task_cancelled(context):
-                return False
+                return _fish_baby_fail(context, "[鱼宝乐园] ERROR: 等待睡眠确认时任务已停止。")
             frame = _capture_720p(context.tasker.controller)
             if frame is None:
                 return False
             at_home = _fish_baby_at_home(context, frame)
             if not at_home and not _fish_baby_ocr_box(
-                context, frame, "请选择孵化方式", (920, 590, 250, 100)
+                context, frame, "请选择孵化方式", FISH_BABY_PROMPT_ROI
             ):
                 time.sleep(0.8)
                 continue
@@ -569,8 +568,10 @@ class FishBabyRunRoundAction(CustomAction):
                 print(f"[鱼宝乐园] 已确认目标进入睡眠冷却：{active}", flush=True)
                 return True
             time.sleep(0.8)
-        print(f"[鱼宝乐园] ERROR: 未确认全部目标睡眠；已确认={sorted(sleeping)}，目标={active}", flush=True)
-        return False
+        return _fish_baby_fail(
+            context,
+            f"[鱼宝乐园] ERROR: 未确认全部目标睡眠；已确认={sorted(sleeping)}，目标={active}",
+        )
 
 
 _golden_dolphin_ocr = None
@@ -1299,9 +1300,14 @@ class InitFriendGemStateAction(CustomAction):
             friend_gem_state["max_attempts"] = 30
             friend_gem_state["bubble_miss_count"] = 0
             friend_gem_state["max_bubble_misses"] = 12
+            friend_gem_state["max_friend_index"] = 300
+            friend_gem_state["roster_limit_logged"] = False
             manatee_state["return_mode"] = "friend_gem"
             manatee_state["last_feed_count"] = 0
-            print("[好友摸宝] 任务初始化完成：当前好友序号设为 1（从启动位置起算），安全保护上限为 30，连续未见气泡容忍上限为 12", flush=True)
+            print(
+                "[好友摸宝] 任务初始化完成：当前好友序号设为 1，单个好友气泡尝试上限为 30，连续未见气泡容忍上限为 12，好友序号全局上限为 300",
+                flush=True,
+            )
             return True
         except Exception as e:
             traceback.print_exc()
@@ -1368,6 +1374,40 @@ class RecordFriendGemBubbleMissAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[好友摸宝] 记录气泡漏检异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("FriendGemConfirmSafePopupAction")
+class FriendGemConfirmSafePopupAction(CustomAction):
+    """只在拜访礼物或已知系统提示上点击绿色勾选；加好友文案一律不点。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            controller = context.tasker.controller
+            frame = _capture_720p(controller)
+            if frame is None:
+                print("[好友摸宝] 无法取得当前画面，拒绝点击绿色勾选。", flush=True)
+                return False
+            if _recognition_box(context, "FriendGemForbiddenPopupText", frame) is not None:
+                print("[好友摸宝] 画面含加好友提示，拒绝点击绿色勾选，按非好友边界返回。", flush=True)
+                return False
+            if _recognition_box(context, "FriendGemAllowedPopupText", frame) is None:
+                print("[好友摸宝] 未确认拜访礼物或已知提示文案，拒绝点击绿色勾选。", flush=True)
+                return False
+            try:
+                box = tuple(int(value) for value in argv.box)
+                if len(box) != 4 or box[2] <= 0 or box[3] <= 0:
+                    raise ValueError("invalid box")
+            except (AttributeError, TypeError, ValueError):
+                print("[好友摸宝] 绿色勾选没有有效识别框，拒绝盲点。", flush=True)
+                return False
+            x, y = _box_center(box)
+            print(f"[好友摸宝] 已确认允许关闭的弹窗，点击绿色勾选 ({x}, {y})", flush=True)
+            controller.post_click(x, y).wait()
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[好友摸宝] 弹窗确认异常: {e}", flush=True)
             return False
 
 
@@ -1783,7 +1823,7 @@ class InitSeaOtterStateAction(CustomAction):
                         "SeaOtterStartRouter": {
                             "focus": {
                                 "Node.Action.Succeeded": (
-                                    f"[海獭摸宝] 今日完整运行：{count}/{limit}（04:00刷新）"
+                                    f"[海獭摸宝] 今日完整运行：{count} / {limit}（04:00刷新）"
                                 )
                             },
                         }
@@ -2051,7 +2091,7 @@ class SeaOtterFinalizeAction(CustomAction):
                     "SeaOtterDoneDisplay": {
                         "focus": {
                             "Node.Action.Succeeded": (
-                                f"[海獭摸宝] 本次完整运行完成，今日：{count}/{limit}"
+                                f"[海獭摸宝] 本次完整运行完成，今日：{count} / {limit}"
                             )
                         },
                     }
@@ -4931,6 +4971,27 @@ class GemGiftBoxDoneAction(CustomAction):
             traceback.print_exc()
             print(f"[宝石礼盒] 完成状态写入异常: {e}", flush=True)
             return False
+
+
+@AgentServer.custom_action("GemGiftBoxSkipAction")
+class GemGiftBoxSkipAction(CustomAction):
+    """入口或中途页面超时后跳过礼盒，只在仍处于 GEM_GIFT_BOX 时推进一次。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            print(
+                "[宝石礼盒] 页面未按预期识别或等待超时，已跳过本次兑换并继续后续任务，不因此失败多鱼缸巡检。",
+                flush=True,
+            )
+            if daily_routine_state.get("active") and daily_routine_state.get("step") == "GEM_GIFT_BOX":
+                advance_daily_routine_step("GemGiftBox", "SKIPPED")
+            elif daily_routine_state.get("active"):
+                print("[宝石礼盒] 当前日常步骤已离开宝石礼盒，不再重复推进。", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[宝石礼盒] 跳过状态写入异常: {e}", flush=True)
+            return True
 
 
 @AgentServer.custom_action("GemOrderDoneAction")

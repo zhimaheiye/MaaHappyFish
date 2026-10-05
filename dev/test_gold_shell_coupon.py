@@ -155,6 +155,7 @@ def test_case_3_exchange_success_verification():
     
     post_router = pdata["GoldShellCouponPostExchangeRouter"]
     assert business_next(post_router) == [
+        "GoldShellCouponRejectAddFriend",
         "GoldShellCouponConfirmPopup",
         "GoldShellCouponGreatButton",
         "GoldShellCouponRewardPopup",
@@ -219,7 +220,12 @@ def test_case_4_exchange_unresponsive_verify_failed():
     # 2. 确认对号必须排在按钮消失和失败熔断之前
     post_router = pdata["GoldShellCouponPostExchangeRouter"]
     candidates = business_next(post_router)
-    assert candidates[0] == "GoldShellCouponConfirmPopup", "确认对号必须优先于按钮消失判定"
+    assert candidates[0] == "GoldShellCouponRejectAddFriend", "加好友文案必须先于绿色勾选"
+    reject = pdata["GoldShellCouponRejectAddFriend"]
+    assert reject["action"] == "DoNothing"
+    assert "加他为好友" in reject["expected"]
+    assert business_next(reject) == ["GoldShellCouponReturnCategory"]
+    assert candidates[1] == "GoldShellCouponConfirmPopup", "拒绝加好友之后，确认对号必须优先于按钮消失判定"
     assert candidates[-1] == "GoldShellCouponExchangeVerifyFailed", "PostExchangeRouter 兜底必须是 ExchangeVerifyFailed"
     assert candidates.index("GoldShellCouponConfirmPopup") < candidates.index(
         "GoldShellCouponExchangeDisappeared"

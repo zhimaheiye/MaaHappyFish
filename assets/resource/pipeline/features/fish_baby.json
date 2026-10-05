@@ -452,7 +452,7 @@
         "custom_recognition": "FishBabyHasTargetsReco",
         "action": "DoNothing",
         "focus": {
-            "Node.Action.Succeeded": "[鱼宝乐园] 已读取逐只/统一配置，按鱼食、玩耍、牛奶偏好分组执行。"
+            "Node.Action.Succeeded": "[鱼宝乐园] 已读取逐只 / 统一配置，按鱼食、玩耍、牛奶偏好分组执行。"
         },
         "next": [
             "FishBabyStartRouter"

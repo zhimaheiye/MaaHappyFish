@@ -810,6 +810,27 @@ class CheckManateeStateReco(CustomRecognition):
         return (0, 0, 10, 10) if matched else None
 
 
+@AgentServer.custom_recognition("CheckFriendGemRosterLimitReco")
+class CheckFriendGemRosterLimitReco(CustomRecognition):
+    """好友序号全局上限。单个好友 30 次尝试仍会切下一位，不能代替这个上限。"""
+
+    def analyze(
+        self,
+        context: Context,
+        argv: CustomRecognition.AnalyzeArg,
+    ) -> Optional[RectType]:
+        max_index = int(friend_gem_state.get("max_friend_index", 300))
+        index = int(friend_gem_state.get("current_friend_index", 1))
+        if index <= max_index:
+            return None
+        if not friend_gem_state.get("roster_limit_logged"):
+            friend_gem_state["roster_limit_logged"] = True
+            print(
+                f"[好友摸宝] 好友序号 {index} 已超过全局上限 {max_index}，停止继续翻好友并返回主鱼缸。",
+                flush=True,
+            )
+        return (0, 0, 10, 10)
+
 
 @AgentServer.custom_recognition("CheckFishingCastLimitReco")
 class CheckFishingCastLimitReco(CustomRecognition):

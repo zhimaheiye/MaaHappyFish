@@ -201,6 +201,8 @@ flowchart TD
   - 主鱼缸验证成功后调用 `advance_daily_routine_step("GoldShellCoupon", "DONE")`，推进流水线经双出口路由返回 `DailyRoutineDispatcher`。
 - **`GemGiftBoxDoneAction`**:
   - 主鱼缸验证成功后调用 `advance_daily_routine_step("GemGiftBox", "DONE")`，推进流水线经双出口路由返回 `DailyRoutineDispatcher`。
+- **`GemGiftBoxSkipAction`**:
+  - 宝石礼盒入口或中途页面等待超时、或启动时停在无法归属的兑换弹窗时调用。只在日常收尾激活且当前步骤仍是 `GEM_GIFT_BOX` 时写入 `SKIPPED` 并推进一次。随后尽量确认主鱼缸或点击「返回」，再回到调度器；不使用 `StopTask`，因此不会把外层多鱼缸巡检判失败。独立运行仍由 `FailTaskAction` 报告失败。
 - **`GemOrderDoneAction`**:
   - 主鱼缸验证成功后调用 `advance_daily_routine_step("GemOrder", "DONE")`；日常模式继续队列，独立模式正常结束。
 - **`DailyRoutineSubtaskDoneAction`**：购买鱼食、鱼宝、魔力召唤、宝石融合与活动体力共用的完成提交。只在主鱼缸模板门禁激活后执行；仅当日常 active 且当前步骤等于参数中的 `expected_step` 时写入 `DONE` / `SKIPPED` 并推进，重复提交和独立运行均不推进。失败 StopTask。

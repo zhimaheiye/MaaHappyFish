@@ -317,11 +317,34 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponRejectAddFriend",
             "GoldShellCouponConfirmPopup",
             "GoldShellCouponGreatButton",
             "GoldShellCouponRewardPopup",
             "GoldShellCouponExchangeDisappeared",
             "GoldShellCouponExchangeVerifyFailed"
+        ]
+    },
+    "GoldShellCouponRejectAddFriend": {
+        "recognition": "OCR",
+        "expected": "不是你的好友|加他为好友|加好友邀请已经发出",
+        "roi": [
+            250,
+            140,
+            820,
+            400
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Recognition.Succeeded": "[兑换金贝壳券] 画面是加好友提示，拒绝点击绿色勾选，改为返回。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GoldShellCouponReturnCategory"
         ]
     },
     "GoldShellCouponConfirmPopup": {

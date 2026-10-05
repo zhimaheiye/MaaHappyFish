@@ -17,6 +17,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -41,8 +42,13 @@ from agent.my_action import (
     ResetFriendGemAttemptsAction,
     RecordFriendGemBubbleMissAction,
     InitFriendGemStateAction,
+    FriendGemConfirmSafePopupAction,
 )
-from agent.my_reco import CheckFriendGemBubbleMissLimitReco, CheckFriendGemLimitReco
+from agent.my_reco import (
+    CheckFriendGemBubbleMissLimitReco,
+    CheckFriendGemLimitReco,
+    CheckFriendGemRosterLimitReco,
+)
 
 
 class MockArg:
@@ -95,11 +101,18 @@ class FriendGemSimulator:
             return self.bubble_reco.analyze(MockContext(), MockArg()) is not None
         if name == "FriendGemAttemptLimitReached":
             return self.limit_reco.analyze(MockContext(), MockArg()) is not None
+        if name == "FriendGemRosterLimit":
+            return CheckFriendGemRosterLimitReco().analyze(MockContext(), MockArg()) is not None
+        if name == "FriendGemAddFriendPage":
+            return self.page.get("kind") == "non_friend"
+        if name == "FriendGemNonFriendBack":
+            return self.page.get("kind") == "non_friend" or self.page.get("back_visible", False)
         if name == "FriendGemNextFriend":
             return True  # 好友_下一位 按钮恒可见
-        if name in ("FriendGemAddFriendPage", "FriendGemWelcomePopup", "FriendGemSpecialPopup",
-                    "FriendGemFishBabyPark", "FriendGemCheckManatee", "HangupNoonDailyFriendGem",
-                    "FriendGemDone"):
+        if name == "FriendGemDone":
+            return True
+        if name in ("FriendGemWelcomePopup", "FriendGemSpecialPopup",
+                    "FriendGemFishBabyPark", "FriendGemCheckManatee", "HangupNoonDailyFriendGem"):
             return False  # 本轮场景不涉及
         raise AssertionError(f"意外到达节点: {name}")
 
@@ -177,11 +190,49 @@ def run_tests():
     # 不可用仍走气泡模式；气泡 miss 上限链保持
     assert business_next(pipeline["FriendGemQuickCollectUnavailable"]) == ["FriendGemImageFallbackRouter"]
     assert pipeline["FriendGemCollectBubble"]["template"] == "金币气泡.png"
+    boundary = "不是你的好友|加他为好友|加好友邀请已经发出|去其他好友家看看吧|全部添加"
+    add_page = pipeline["FriendGemAddFriendPage"]
+    assert add_page["expected"] == boundary
+    assert add_page["roi"] == [250, 140, 820, 400]
+    assert add_page["action"] == "DoNothing"
+    assert business_next(add_page) == ["FriendGemNonFriendBack"]
+    assert pipeline["FriendGemNonFriendBack"]["expected"] == "^返回$"
+    assert pipeline["FriendGemNonFriendBack"]["action"] == "Click"
+    assert business_next(pipeline["FriendGemNonFriendBack"]) == ["FriendGemDone"]
+    assert business_next(pipeline["FriendGemDone"]) == ["HangupResumeCollectFish", "HangupResumePatrol"]
+    special = pipeline["FriendGemSpecialPopup"]
+    assert special["recognition"] == "And"
+    assert special["all_of"] == ["FriendGemGreenCheck", "FriendGemAllowedPopupText"]
+    assert special["box_index"] == 0
+    assert special["action"] == "Custom"
+    assert special["custom_action"] == "FriendGemConfirmSafePopupAction"
+    assert business_next(special) == ["FriendGemFriendRouter"]
+    assert special["on_error"] == ["FriendGemSpecialPopupRefuse"]
+    refuse = pipeline["FriendGemSpecialPopupRefuse"]
+    assert refuse["recognition"] == "DirectHit"
+    assert refuse["timeout"] == 3000
+    assert business_next(refuse) == ["FriendGemNonFriendBack"]
+    assert "FriendGemDone" not in business_next(refuse)
+    assert refuse["on_error"] == ["FriendGemDone"]
+    green = pipeline["FriendGemGreenCheck"]
+    assert green["template"] == "绿色勾选按钮.png"
+    assert green["roi"] == [760, 420, 120, 120]
+    assert green["threshold"] == 0.8
+    assert green["action"] == "DoNothing"
+    assert "加他为好友" in pipeline["FriendGemForbiddenPopupText"]["expected"]
+    assert "确定" not in pipeline["FriendGemAllowedPopupText"]["expected"]
+    for router_name in ("FriendGemFriendRouter", "FriendGemImageFallbackRouter"):
+        order = business_next(pipeline[router_name])
+        assert order.index("FriendGemRosterLimit") < order.index("FriendGemAddFriendPage")
+        assert order.index("FriendGemAddFriendPage") < order.index("FriendGemSpecialPopup")
+        assert order.index("FriendGemSpecialPopup") < order.index("FriendGemCollectBubble")
+    assert pipeline["FriendGemRosterLimit"]["custom_recognition"] == "CheckFriendGemRosterLimitReco"
+    assert business_next(pipeline["FriendGemRosterLimit"]) == ["FriendGemNonFriendBack"]
     print("[PASS] 静态契约：PostRouter 分流、旧 Fallback 删除、快捷优先级与气泡模式保持")
 
     from agent.runtime_state import friend_gem_state
-    from agent.my_action import StepFriendGemIndexAction, ResetFriendGemAttemptsAction, RecordFriendGemBubbleMissAction, InitFriendGemStateAction
-    from agent.my_reco import CheckFriendGemBubbleMissLimitReco, CheckFriendGemLimitReco
+    from agent.my_action import StepFriendGemIndexAction, ResetFriendGemAttemptsAction, RecordFriendGemBubbleMissAction, InitFriendGemStateAction, FriendGemConfirmSafePopupAction
+    from agent.my_reco import CheckFriendGemBubbleMissLimitReco, CheckFriendGemLimitReco, CheckFriendGemRosterLimitReco
 
     bubble_reco = CheckFriendGemBubbleMissLimitReco()
     limit_reco = CheckFriendGemLimitReco()
@@ -314,7 +365,87 @@ def run_tests():
     assert "FriendGemNextFriend" in reach
     print("[PASS] 静态可达性：快捷摸宝成功后当前好友内绝不进入气泡模式/旧 Fallback，统一汇入 NextFriend")
 
-    print("[PASS] 好友摸宝快捷摸宝分支 5 项语义场景 + 静态契约全部通过")
+    # ---- Case 6：非好友文案先于绿勾，只点返回 ----
+    init_state()
+    sim = FriendGemSimulator(
+        pipeline,
+        {"kind": "non_friend", "quick_available": False, "bubble_visible": True},
+        bubble_reco, limit_reco,
+    )
+    sim._follow("FriendGemFriendRouter")
+    assert "FriendGemAddFriendPage" in sim.visited
+    assert "FriendGemNonFriendBack" in sim.clicks
+    assert "FriendGemSpecialPopup" not in sim.visited
+    assert "FriendGemCollectBubble" not in sim.visited
+    assert sim.outcome == "done"
+    print("[PASS] Case 6 非好友边界：不点绿色勾选，点击返回后结束")
+
+    # ---- Case 7：序号超过全局上限时结束，不再切下一位 ----
+    init_state()
+    friend_gem_state["current_friend_index"] = 301
+    sim = FriendGemSimulator(
+        pipeline,
+        {"kind": "tank", "quick_available": True, "bubble_visible": True, "back_visible": True},
+        bubble_reco, limit_reco,
+    )
+    sim._follow("FriendGemFriendRouter")
+    assert "FriendGemRosterLimit" in sim.visited
+    assert "FriendGemNonFriendBack" in sim.clicks
+    assert "FriendGemNextFriend" not in sim.visited
+    assert "FriendGemCollectBubble" not in sim.visited
+    assert "FriendGemSpecialPopup" not in sim.clicks
+    assert sim.outcome == "done"
+    print("[PASS] Case 7 好友序号全局上限：超过 300 后返回并结束")
+
+    # ---- 绿勾动作：禁止文案不点，允许文案才点中心 ----
+    class PopupResult:
+        def __init__(self, hit, box=(10, 10, 10, 10)):
+            self.hit = hit
+            self.box = box
+
+    class PopupController:
+        def __init__(self):
+            self.clicks = []
+
+        def post_click(self, x, y):
+            self.clicks.append((x, y))
+            return type("Job", (), {"wait": lambda self: None})()
+
+    def run_popup(hits):
+        controller = PopupController()
+
+        def run_recognition(name, frame):
+            return PopupResult(name in hits)
+
+        context = type("Ctx", (), {
+            "tasker": type("Tasker", (), {"controller": controller})(),
+            "run_recognition": staticmethod(run_recognition),
+        })()
+        arg = type("Arg", (), {"box": (760, 420, 40, 40)})()
+        with patch("agent.my_action._capture_720p", return_value=object()):
+            ok = FriendGemConfirmSafePopupAction().run(context, arg)
+        return ok, controller.clicks
+
+    refused, clicks = run_popup({"FriendGemForbiddenPopupText", "FriendGemAllowedPopupText"})
+    assert refused is False and clicks == []
+    missing, clicks = run_popup(set())
+    assert missing is False and clicks == []
+    allowed, clicks = run_popup({"FriendGemAllowedPopupText"})
+    assert allowed is True and clicks == [(780, 440)]
+    print("[PASS] 绿色勾选二次确认：加好友文案不点，允许文案才点识别框中心")
+
+    InitFriendGemStateAction().run(MockContext(), MockArg())
+    assert friend_gem_state["max_attempts"] == 30
+    assert friend_gem_state["max_friend_index"] == 300
+    assert friend_gem_state["current_friend_index"] == 1
+    assert CheckFriendGemRosterLimitReco().analyze(MockContext(), MockArg()) is None
+    friend_gem_state["current_friend_index"] = 301
+    friend_gem_state["roster_limit_logged"] = False
+    assert CheckFriendGemRosterLimitReco().analyze(MockContext(), MockArg()) == (0, 0, 10, 10)
+    assert CheckFriendGemRosterLimitReco().analyze(MockContext(), MockArg()) == (0, 0, 10, 10)
+    print("[PASS] 初始化同时写入单个好友上限 30 与全局序号上限 300")
+
+    print("[PASS] 好友摸宝快捷摸宝分支 5 项语义场景 + 非好友边界全部通过")
 
 
 if __name__ == "__main__":

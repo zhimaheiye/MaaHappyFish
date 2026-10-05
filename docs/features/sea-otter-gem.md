@@ -143,7 +143,7 @@ side == "right" → HARVEST_THEN_PREV
 
 ### SeaOtterDone 的触发条件
 
-1. **启动时已位于完整推荐好友列表页**：OCR 识别到“全部添加”或“推荐好友”；
+1. **启动或巡访时位于推荐好友、加好友提示**：OCR 识别到“全部添加”“推荐好友”，或 2026-10-05 好友摸宝现场的“不是你的好友”“加他为好友”“加好友邀请已经发出”“去其他好友家看看吧”。这条识别放在推荐玩家桥接之前，命中后标记 `FRIEND_LIST_EXHAUSTED`，再点击左上角“返回”进入 `SeaOtterDone`。海獭流程本身不点击绿色勾选。
 2. **末位好友耗尽后进入推荐玩家页**：`completion_reason == LAST_FRIEND_EXHAUSTED`；
 3. **末位好友右键变灰且体力耗尽**：好友身份门禁通过后，命中灰色右键模板与“刷新体力”；
 4. **Safety Limit 触发**：`total_harvests >= max_harvests (1000)` 或 `consecutive_exhausted >= 30`；安全停止不得显示为完整运行。

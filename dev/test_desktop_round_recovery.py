@@ -134,6 +134,35 @@ class RoundRecovery(unittest.TestCase):
         self.assertFalse(run("MILK_YELLOW", sleeping=(1,)))
         self.assertFalse(run("MILK_YELLOW", cancelled=True))
 
+    def test_stop_during_milk_is_not_reported_as_gate_error(self):
+        import io
+        from contextlib import redirect_stdout
+
+        located = {1: {"baby": (10, 20), "timer_roi": (0, 0, 10, 10)}}
+        ctx = SimpleNamespace(tasker=SimpleNamespace(controller=object(), stopping=True, running=False))
+
+        def ocr(context, frame, expected, roi):
+            if expected == "请选择孵化方式":
+                assert roi == my_action.FISH_BABY_PROMPT_ROI
+                return (930, 540, 20, 20)
+            if expected in {"请选择牛奶", "请选择鱼宝宝", ".*牛奶.*"}:
+                return (1, 1, 1, 1)
+            return None
+
+        stdout = io.StringIO()
+        with patch.object(my_action, "_capture_720p", return_value=object()), \
+             patch.object(my_action, "_fish_baby_ocr_box", side_effect=ocr), \
+             patch.object(my_action, "_fish_baby_click"), \
+             patch.object(my_action, "has_green_check", return_value=True), \
+             patch.object(my_action.time, "sleep"), \
+             redirect_stdout(stdout):
+            result = my_action._fish_baby_run_batch(ctx, "MILK_YELLOW", [1], located)
+        text = stdout.getvalue()
+        self.assertFalse(result)
+        self.assertIn("已收到停止请求", text)
+        self.assertNotIn("ERROR", text)
+        self.assertEqual(my_action.FISH_BABY_PROMPT_ROI, (930, 540, 330, 170))
+
     def test_round_accepts_sleeping_home_and_records_all_targets(self):
         located = {number: {"baby": (10, 20), "timer_roi": (number * 10, 200, 10, 20)}
                    for number in range(1, 9)}

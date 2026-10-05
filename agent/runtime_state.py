@@ -9,6 +9,8 @@ friend_gem_state = {
     "current_friend_index": 1,
     "bubble_miss_count": 0,
     "max_bubble_misses": 12,
+    "max_friend_index": 300,
+    "roster_limit_logged": False,
 }
 
 fish_baby_state = {

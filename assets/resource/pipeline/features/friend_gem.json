@@ -102,6 +102,7 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "HangupNoonDailyFriendGem",
+            "FriendGemRosterLimit",
             "FriendGemAddFriendPage",
             "FriendGemWelcomePopup",
             "FriendGemSpecialPopup",
@@ -117,22 +118,75 @@
             "FriendGemWaitForBubble"
         ]
     },
-    "FriendGemAddFriendPage": {
-        "recognition": "OCR",
-        "expected": "全部添加",
-        "roi": [
-            750,
-            330,
-            160,
-            70
-        ],
+    "FriendGemRosterLimit": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckFriendGemRosterLimitReco",
         "action": "DoNothing",
+        "focus": {
+            "Node.Recognition.Succeeded": "[好友摸宝] 好友序号达到全局上限，停止继续翻页并返回。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "FriendGemNonFriendBack"
+        ],
+        "on_error": [
+            "FriendGemDone"
+        ]
+    },
+    "FriendGemAddFriendPage": {
+        "recognition": "OCR",
+        "expected": "不是你的好友|加他为好友|加好友邀请已经发出|去其他好友家看看吧|全部添加",
+        "roi": [
+            250,
+            140,
+            820,
+            400
+        ],
+        "action": "DoNothing",
+        "timeout": 3000,
+        "focus": {
+            "Node.Recognition.Succeeded": "[好友摸宝] 识别到非好友或加好友提示，不点击绿色勾选，返回并结束本轮。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FriendGemNonFriendBack"
+        ],
+        "on_error": [
+            "FriendGemDone"
+        ]
+    },
+    "FriendGemNonFriendBack": {
+        "recognition": "OCR",
+        "expected": "^返回$",
+        "roi": [
+            0,
+            0,
+            189,
+            146
+        ],
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[好友摸宝] 已点击返回，结束本轮好友摸宝。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FriendGemDone"
+        ],
+        "on_error": [
             "FriendGemDone"
         ]
     },
@@ -150,7 +204,7 @@
             "FriendGemFriendRouter"
         ]
     },
-    "FriendGemSpecialPopup": {
+    "FriendGemGreenCheck": {
         "recognition": "TemplateMatch",
         "template": "绿色勾选按钮.png",
         "roi": [
@@ -160,8 +214,44 @@
             120
         ],
         "threshold": 0.8,
-        "action": "Click",
+        "action": "DoNothing"
+    },
+    "FriendGemAllowedPopupText": {
+        "recognition": "OCR",
+        "expected": "谢谢您拜访|些礼物|进化鱼特效|已被关闭",
+        "roi": [
+            250,
+            140,
+            820,
+            400
+        ],
+        "action": "DoNothing"
+    },
+    "FriendGemForbiddenPopupText": {
+        "recognition": "OCR",
+        "expected": "不是你的好友|加他为好友|加好友邀请已经发出",
+        "roi": [
+            250,
+            140,
+            820,
+            400
+        ],
+        "action": "DoNothing"
+    },
+    "FriendGemSpecialPopup": {
+        "recognition": "And",
+        "all_of": [
+            "FriendGemGreenCheck",
+            "FriendGemAllowedPopupText"
+        ],
+        "box_index": 0,
+        "action": "Custom",
+        "custom_action": "FriendGemConfirmSafePopupAction",
         "post_delay": 500,
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[好友摸宝] 已确认拜访礼物或已知提示，点击绿色勾选关闭。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -169,6 +259,28 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemFriendRouter"
+        ],
+        "on_error": [
+            "FriendGemSpecialPopupRefuse"
+        ]
+    },
+    "FriendGemSpecialPopupRefuse": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 3000,
+        "focus": {
+            "Node.Action.Succeeded": "[好友摸宝] 绿色勾选未通过确认，先尝试返回再结束本轮。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FriendGemNonFriendBack"
+        ],
+        "on_error": [
+            "FriendGemDone"
         ]
     },
     "FriendGemFishBabyPark": {
@@ -343,6 +455,7 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "HangupNoonDailyFriendGem",
+            "FriendGemRosterLimit",
             "FriendGemAddFriendPage",
             "FriendGemWelcomePopup",
             "FriendGemSpecialPopup",

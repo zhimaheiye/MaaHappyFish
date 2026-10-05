@@ -63,12 +63,67 @@ def test_pipeline_contract():
         "DailyRoutineReturnIfActive",
         "DailyRoutineStandaloneDone",
     ]
+    assert pipeline["GemGiftBoxTask"]["timeout"] == 10000
+    assert pipeline["GemGiftBoxTask"]["on_error"] == ["GemGiftBoxAbort"]
+    abort = pipeline["GemGiftBoxAbort"]
+    assert abort["action"] == "Custom"
+    assert abort["custom_action"] == "GemGiftBoxSkipAction"
+    assert abort["action"] != "StopTask"
+    assert business_next(abort) == ["GemGiftBoxRecoverTank", "GemGiftBoxRecoverClickReturn"]
+    assert pipeline["GemGiftBoxUnexpectedDialog"]["action"] == "DoNothing"
+    assert business_next(pipeline["GemGiftBoxUnexpectedDialog"]) == ["GemGiftBoxAbort"]
+    for name in (
+        "GemGiftBoxOpenTreasure",
+        "GemGiftBoxOpenEntry",
+        "GemGiftBoxRun",
+        "GemGiftBoxReturn",
+        "GemGiftBoxVerifyTank",
+    ):
+        assert pipeline[name]["on_error"] == ["GemGiftBoxAbort"]
+    assert pipeline["GemGiftBoxRecoverTank"]["template"] == "主界面特征.png"
+    assert pipeline["GemGiftBoxRecoverClickReturn"]["expected"] == "^返回$"
+    assert pipeline["GemGiftBoxRecoverClickReturn"]["action"] == "Click"
+    assert business_next(pipeline["GemGiftBoxRecoverTank"]) == [
+        "DailyRoutineReturnIfActive",
+        "GemGiftBoxStandaloneFail",
+    ]
+    assert business_next(pipeline["GemGiftBoxRecoverGiveUp"]) == [
+        "DailyRoutineReturnIfActive",
+        "GemGiftBoxStandaloneFail",
+    ]
+    standalone = pipeline["GemGiftBoxStandaloneFail"]
+    assert standalone["custom_action"] == "FailTaskAction"
+    assert "next" not in standalone
+    assert "on_error" not in standalone
+    assert all(node.get("action") != "StopTask" for node in pipeline.values())
 
 
 def test_card_click_uses_recipe_and_ok_midpoint():
     recipe_box = (55, 196, 108, 41)
     marker_box = (587, 195, 47, 35)
     assert my_action._gem_gift_box_card_click_point(recipe_box, marker_box) == (360, 215)
+
+
+def test_skip_advances_daily_routine_once():
+    from agent.runtime_state import daily_routine_state
+
+    daily_routine_state["active"] = True
+    daily_routine_state["step"] = "GEM_GIFT_BOX"
+    daily_routine_state["queue"] = ["GEM_ORDER"]
+    daily_routine_state["tasks"]["GemGiftBox"] = {"status": "IDLE"}
+    action = my_action.GemGiftBoxSkipAction()
+    assert action.run(SimpleNamespace(), SimpleNamespace()) is True
+    assert daily_routine_state["tasks"]["GemGiftBox"]["status"] == "SKIPPED"
+    assert daily_routine_state["step"] == "GEM_ORDER"
+    assert daily_routine_state["queue"] == []
+    assert action.run(SimpleNamespace(), SimpleNamespace()) is True
+    assert daily_routine_state["step"] == "GEM_ORDER"
+    daily_routine_state["active"] = False
+    daily_routine_state["step"] = "GEM_GIFT_BOX"
+    daily_routine_state["queue"] = ["GEM_ORDER"]
+    assert action.run(SimpleNamespace(), SimpleNamespace()) is True
+    assert daily_routine_state["step"] == "GEM_GIFT_BOX"
+    assert daily_routine_state["queue"] == ["GEM_ORDER"]
 
 
 def test_interface_is_synchronized():
@@ -408,6 +463,7 @@ def test_transaction_failure_aborts_stuck_in_confirm():
 
 if __name__ == "__main__":
     test_pipeline_contract()
+    test_skip_advances_daily_routine_once()
     test_card_click_uses_recipe_and_ok_midpoint()
     test_interface_is_synchronized()
     test_all_seven_recipes_are_identity_driven_and_not_repeated()

@@ -100,6 +100,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "PatrolMagicRejectAddFriend",
             "PatrolMagicConfirmPopup",
             "PatrolMagicRevealResult",
             "PatrolMagicClickAdvanced",
@@ -185,10 +186,33 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "PatrolMagicRejectAddFriend",
             "PatrolMagicConfirmPopup"
         ],
         "on_error": [
             "PatrolMagicAbort"
+        ]
+    },
+    "PatrolMagicRejectAddFriend": {
+        "recognition": "OCR",
+        "expected": "不是你的好友|加他为好友|加好友邀请已经发出",
+        "roi": [
+            250,
+            140,
+            820,
+            400
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Recognition.Succeeded": "[巡检-魔力召唤] 画面是加好友提示，拒绝点击绿色勾选，改为返回。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolMagicReturn"
         ]
     },
     "PatrolMagicConfirmPopup": {

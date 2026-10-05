@@ -70,7 +70,8 @@ flowchart TD
     CheckExchange -- 命中兑换 --> DoExchange[GoldShellCouponCheckExchange: 点击兑换]
     DoExchange --> PostRouter{GoldShellCouponPostExchangeRouter 状态验证}
     
-    PostRouter -- 优先: 消耗确认对号弹窗 --> ConfirmPopup[GoldShellCouponConfirmPopup: 点击绿色勾选]
+    PostRouter -- 先看加好友文案 --> RejectAddFriend[GoldShellCouponRejectAddFriend: 不点绿勾，改为返回]
+    PostRouter -- 其次: 消耗确认对号弹窗 --> ConfirmPopup[GoldShellCouponConfirmPopup: 点击绿色勾选]
     ConfirmPopup --> PostConfirm[GoldShellCouponPostConfirmRouter]
 
     PostRouter -- 结算: 太好了 --> GreatBtn[GoldShellCouponGreatButton: [568,512,153,51] OCR 点击太好了]
@@ -121,7 +122,8 @@ flowchart TD
 | `GoldShellCouponGreatButton` | `OCR` | `^太好了$` | `[568, 512, 153, 51]` | `Click` | 点完对号后的结算按钮，点击命中文字后再两次返回 |
 | `GoldShellCouponCheckExchange` | `OCR` | `^[兑兌][换換]$` | `[1136, 41, 91, 35]` | `Click` | 右上角兑换按钮（兼容繁简体） |
 | `GoldShellCouponExchangeRetry` | `OCR` | `^[兑兌][换換]$` | `[1136, 41, 91, 35]` | `Click` | 兑换按钮重试节点 |
-| `GoldShellCouponPostExchangeRouter` | `DirectHit` | - | - | `DoNothing` | 兑换后状态验证路由器；优先识别确认对号 |
+| `GoldShellCouponPostExchangeRouter` | `DirectHit` | - | - | `DoNothing` | 兑换后先排除加好友文案，再识别确认对号 |
+| `GoldShellCouponRejectAddFriend` | `OCR` | `不是你的好友\|加他为好友\|加好友邀请已经发出` | `[250, 140, 820, 400]` | `DoNothing` | 画面是加好友提示时不点绿色勾选，改为返回分类页 |
 | `GoldShellCouponConfirmPopup` | `TemplateMatch` (0.8) | `绿色勾选按钮.png` | `[751, 404, 153, 150]` | `Click` | 消耗确认弹窗对号。此弹窗出现时右上角兑换按钮仍在是正常的 |
 | `GoldShellCouponPostConfirmRouter` | `DirectHit` | - | - | `DoNothing` | 点完对号后再核实结算弹窗或兑换按钮消失 |
 | `GoldShellCouponRewardPopup` | `OCR` | `^(确定\|確定\|恭喜\|获得\|獲得\|奖励\|獎勵)$` | 全屏 | `Click` | 方案 B: 结算获得弹窗关闭 |

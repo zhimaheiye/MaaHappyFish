@@ -339,10 +339,18 @@ def test_friend_gate_pipeline():
         "SeaOtterHasStaminaPanel",
         "SeaOtterFriendLiked",
         "SeaOtterFriendUnliked",
-        "SeaOtterRecommendedBridge",
         "SeaOtterAddFriendPage",
+        "SeaOtterRecommendedBridge",
         "SeaOtterWaitScreen",
     ]
+    add_friend = pipeline["SeaOtterAddFriendPage"]
+    assert "不是你的好友" in add_friend["expected"]
+    assert "加他为好友" in add_friend["expected"]
+    assert "加好友邀请已经发出" in add_friend["expected"]
+    assert add_friend["custom_action"] == "SeaOtterMarkNormalCompletionAction"
+    assert business_next("SeaOtterAddFriendPage") == ["SeaOtterNonFriendBack"]
+    assert pipeline["SeaOtterNonFriendBack"]["expected"] == "^返回$"
+    assert pipeline["SeaOtterNonFriendBack"]["action"] == "Click"
     stamina_panel = pipeline["SeaOtterHasStaminaPanel"]
     assert stamina_panel["expected"] == ["剩余", "刷新体力"]
     assert stamina_panel["roi"] == [60, 210, 350, 170]

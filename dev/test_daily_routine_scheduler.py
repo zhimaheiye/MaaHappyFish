@@ -877,6 +877,7 @@ def test_gold_shell_coupon_contract_cases():
 
     post_router = gsc_pipeline["GoldShellCouponPostExchangeRouter"]
     assert business_next(post_router) == [
+        "GoldShellCouponRejectAddFriend",
         "GoldShellCouponConfirmPopup",
         "GoldShellCouponGreatButton",
         "GoldShellCouponRewardPopup",
