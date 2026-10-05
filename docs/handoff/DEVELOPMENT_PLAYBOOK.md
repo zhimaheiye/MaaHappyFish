@@ -98,6 +98,7 @@
 13. **Agent 经验下沉要过确定性门槛**：`happyfishagent` 中的活动规则、坐标、截图和 Agent 手工流程可以作为探索证据与素材源，但不能机械翻译成固定坐标 Pipeline。只有目标、分支和资源边界足够稳定，且可以用当前 UI 门禁时才下沉进 Maa；临时主观目标或价值判断继续留在 Agent 层。
 14. **通用能力必须留下长期文档入口**：步骤可恢复导航、全局弹窗、通用返回、统一配置和调度等跨功能能力，不能只在本轮提示词或单个功能文档中说明。实现时同步更新全局规则、受影响功能文档、`CURRENT.md`、`PROJECT_STATUS.md` 及相应审查矩阵；以后新增功能沿同一清单接入。
 15. **独立任务接入日常要闭合三处接线**：case 挂载已有参数组、初始化读取 Enable 并入队、主鱼缸确认后提交完成并走日常/独立双出口。参数放在实际输入组中统一覆盖，不能在 checkbox 中引用未绑定的占位符。购买鱼食与鱼宝通过 `DailyRoutineSubtaskDoneAction` 校验 active/当前步骤，防止重复推进；纯配置全跳过也须在日常模式确认安全页面后再继续。详见 `docs/features/daily-routine.md`。
+16. **改功能前先查上游现成实现**：遇到 MaaFramework / MAA 已有成熟能力的领域，先主动搜索上游资源、任务与实现，确认哪些可以复用、哪些边界确实缺失，再写本仓方案；不要等用户逐项指出可参考模块。此条是实现顺序约束，与 personal-hub 中“上游调研由主 Agent 负责、不外包给搬运 Agent”的工具分工互补。
 
 ## 四点五、happyfishagent 作为外部探索证据源
 
@@ -108,6 +109,10 @@
 3. **素材分级使用**：小而稳定的无标注 UI 元素可裁为运行模板；整屏截图、红圈说明图和活动档案优先作为理解/离线测试 fixture，不直接作为 TemplateMatch 资产。
 4. **缺安全门禁就显式阻断**：关键截图不足时记录到对应功能文档，允许状态停在 Implementation Ready / Live Blocked；不得用“没识别到付费态，所以默认免费”之类负向推断补洞。
 5. **高层主观决策暂留 Agent**：如果“这次选哪个目标”“这个资源值不值得花”等仍依赖用户当次意图，不应为了自动化而强行塞进固定 Maa 任务。等规则经过多轮使用后真正泛化，再评估下沉。
+
+### 外部私有同源仓库的证据边界
+
+历史上曾把 MaaHappyFish 工作副本整目录复制到另一工作区，删除 `.git` 后重新 `git init`，形成无远程的私有衍生仓库。此类衍生仓库中的 commit SHA 只证明该私有工作副本的历史，**不能反向当作 MaaHappyFish 的提交证据**；若功能在 MaaHappyFish 全历史中没有痕迹，应记为 `historical_commit=NONE`，再到承载该私有项目历史的长期档案中记录其来源与设计。私有衍生线的代码、坐标和现场参数也不得倒灌成 MaaHappyFish 当前事实。
 
 ## 五、AGY 的使用边界
 
@@ -171,6 +176,8 @@ git diff --check
 | Python Agent 无故退出 | `print()` 中 Emoji 在 Windows GBK 下触发编码异常 | Python 日志禁用 Emoji；UI 文案用 Pipeline `focus` 注入 |
 | 发布包 Agent LinkStart 失败，而开发机正常 | 开发机有 `cv2`，发布 embedded Python 缺依赖 | 同步 `requirements-release.txt`，CI/本地用发布 Python 真实 import |
 | 早期发布包存在 Agent “正在启动”但无法建立连接 | embedded Python 的 `python*._pth` 会隔离 `sys.path`；历史打包现场还遇到含中文的辅助 `.cmd` 在该链路解析不稳定 | 发布包必须显式启用 `import site` 并加入 `Lib/site-packages`、`../agent`，脚本保持 ASCII 兼容；当前 `install.yml` 已写入这些路径并以 ASCII 保存，最终必须由 `verify (win, x86_64)` 下载真实 artifact 后用内置 Python 冒烟闭环 |
+| 客户端表面像“设备没连上”或一直停在 Agent 启动，但没有明确 Agent 报错 | UI/日志层可能掩盖 Agent 进程启动即退出；截图截断还可能把完整路径显示得像缺盘符 | 先用 adb 自证设备，再读 MaaFramework 日志确认连接、截图初始化和 Android ID；随后检查 Python Agent 进程是否存活，并用客户端同一启动命令本地复现退出。修改 Agent/资源后必须彻底退出 MFAAvalonia（含托盘）再验证，避免旧进程/旧资源造成假象 |
+| 移植上游节点时出现错误点击或 `SPEED_UP_FAILED` 假失败 | 把同一上游库中**不同状态节点**的坐标/动作语义混用，或把“仅战斗中恢复二倍速”改成无条件复查 | 按节点语义核对坐标与动作前置状态，不按画面相似度搬坐标；同画面同时出现“跳过”和“确认”时先处理确认；上游的条件动作必须保留条件，不得机械改成无条件动作 |
 | 安装指定 `maafw` 时国内镜像报 `from versions: none` | 镜像尚未同步目标版本，不能据此判断仓库或包不存在 | 对同一版本单次改用官方 PyPI 验证；若官方源可安装，则按“镜像滞后”处理，不改仓库代码。排查 MFA 长时间停在“正在启动 Agent”时，同时核对 Python `maafw` 与客户端打包的 MaaFramework 版本是否匹配，不再优先猜测 ADB 5554 端口冲突 |
 | `custom_action_param` 为字符串 `"null"` 时崩溃 | 直接 `json.loads()` 或假定字典 | 统一使用 `agent/param_utils.py::parse_dict_param()`，Action/Reco 显式返回 |
 | 购买鱼食长按或乐队鱼扫描在停止后仍继续点击 | 长循环只在入口检查停止，控制器队列仍继续 | 在每次轮询、滑动、长按分段、点击前后检查停止；停止时不写入成功状态 |
