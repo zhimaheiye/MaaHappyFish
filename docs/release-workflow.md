@@ -265,6 +265,23 @@ gh release view vX.Y.Z -R zhimaheiye/MaaHappyFish --json assets,name,tagName,isP
    - `MaaHappyFish-android-aarch64-vX.Y.Z.zip`
 3. 所有资产状态均为 `uploaded`。
 
+### 10.1 发布包内容级核验（不能只看 ZIP 名称）
+
+资产名齐全只证明“八个平台包被上传”，不能证明 Windows x64 包内部的 Agent 运行时完整。对 Windows x64 至少继续核对当前 CI 已固化的八组内容/契约：
+
+1. 内置 `python.exe` 存在且可执行；
+2. embedded Python 的 `python*._pth` 已启用 `import site`；
+3. `._pth` 包含 `Lib/site-packages`；
+4. `._pth` 包含 `../agent`；
+5. 内置 Python 能真实 `import maa`；
+6. 内置 Python 能真实 `import numpy` 与 `cv2`；
+7. Agent 入口及拼图相关模块实际进入 artifact，并由 `dev/test_release_agent_imports.py --agent-dir bundle/agent` 冒烟；
+8. artifact 内的更新契约继续通过 `dev/test_update_contract.py`。
+
+这些断言以当前 `.github/workflows/install.yml` 的 `verify (win, x86_64)` 为执行事实源；文档列出它们是为了防止只看“CI 绿色 / ZIP 存在”就跳过包内容核验。若 workflow 后续改变，先以当前 workflow 为准再同步本文。
+
+> **预发布门禁**：workflow 能识别包含 `alpha/beta/rc/dev` 的标签并标记 prerelease，但本项目当前发布规范仍只维护正式 `vX.Y.Z` 流程。没有单独补齐并审核预发布约定前，不要把“CI 能生成 prerelease”解释成项目已经支持 beta/rc 正式发布流程。
+
 ---
 
 ## 11. Step 9 — 发布第二阶段：Post-Release 文档状态确认 (Post-Release)
@@ -305,6 +322,8 @@ maafw opencv-python-headless
 ```
 并没有直接通过 `-r agent/requirements-release.txt` 自动读取依赖。
 因此：**绝不能声称“只要在 requirements-release.txt 加一行，发行包就会自动包含该依赖”**。
+
+历史现场还证明，Python 侧 `maafw` 与客户端实际加载的 MaaFramework 版本不一致时，可能表现为 socket/Agent 启动链异常并长期停在“正在启动 Agent”；当时“ADB 5554 端口被占”假设已被证伪。排查这类问题时先核对版本配对。若 `MAAFW_VERSION` 被固定到具体版本，Python `maafw` 也必须按同一兼容版本验证；国内 pip 镜像若对目标版本返回 `from versions: none`，先单次切到官方 PyPI 核验是否只是镜像滞后，不要直接归因于仓库损坏。当前 workflow 默认下载 latest MaaFramework 且 pip 安装未显式锁版本，因此任何后续“锁框架版本”的改动都必须同时审查这两条来源。
 
 新增运行时第三方依赖时必须四步核查闭环：
 1. 更新 `agent/requirements-release.txt` 声明版本；
