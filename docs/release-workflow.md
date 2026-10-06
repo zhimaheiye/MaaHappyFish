@@ -41,7 +41,7 @@ Step 6: 双阶段 Git Push（先推 main 分支提交，后推 vX.Y.Z 标签触�
     ↓
 Step 7: GitHub Actions CI 精准监控（过滤 Tag 对应 Run ID，防止选错 main push 的竞态 Run）
     ↓
-Step 8: GitHub Release 产物核验（确认 4 个 OS × 2 个架构共 8 个构建目标产物完整上传）
+Step 8: GitHub Release 产物核验（确认 Windows x86_64 与 Windows aarch64 两个构建目标产物完整上传）
     ↓
 Step 9: 第二阶段：Post-Release 文档状态确认（提交 PROJECT_STATUS.md 与 CURRENT.md 正式状态）
     ↓
@@ -245,7 +245,15 @@ gh run watch <RUN_ID> -R zhimaheiye/MaaHappyFish
 ```
 
 ### 9.3 CI 构建矩阵与硬门禁核查清单
-- **`install`（4 个 OS × 2 个架构，共 8 个构建目标）**：全部绿色通过（`win/macos/linux/android` × `x86_64/aarch64`）；
+
+从 2026-10-06 起只构建 Windows。维护者实际维护和使用的是 Windows 版本，macOS、Linux、Android 的打包不再运行。矩阵是 `os: [win]`、`arch: [aarch64, x86_64]`，每次发布只有两个包：
+
+- `MaaHappyFish-win-x86_64-vX.Y.Z.zip`：程序内更新认的包。
+- `MaaHappyFish-win-aarch64-vX.Y.Z.zip`：Windows ARM64。
+
+以后如果确有 macOS 用户，把 `macos` 加回 `.github/workflows/install.yml` 的 `os` 列表，并同步本节和 Step 8 的产物清单。Linux、Android 同样处理。不要为了凑齐旧的 8 个平台包而恢复它们。v0.7.5 和 v0.7.6 的标签已经存在，但没有生成 GitHub Release，不能覆盖或删除。
+
+- **`install`（Windows x86_64 与 Windows aarch64）**：两个目标都要绿色通过；
 - **`verify (win, x86_64)`**：GitHub Windows Runner 上的发行包硬门禁 / embedded Python smoke gate 必须绿色通过。该步骤要先设置 `PYTHONUTF8=1` 和 `PYTHONIOENCODING=utf-8`。`windows-latest` 默认控制台是 cp1252，中文日志会抛 `UnicodeEncodeError`。v0.7.5 因此没有生成 Release；
 - **`changelog` 与 `release`**：全部成功执行。
 
@@ -261,20 +269,14 @@ gh release view vX.Y.Z -R zhimaheiye/MaaHappyFish --json assets,name,tagName,isP
 
 ### 资产核验项：
 1. `isPrerelease` 必须为 `false`；
-2. `assets` 完整包含全部 **4 个 OS × 2 个架构共 8 个构建目标的 `.zip` 压缩包**：
+2. `assets` 只包含 Windows 的两个 `.zip`，并且都存在：
    - `MaaHappyFish-win-x86_64-vX.Y.Z.zip`（当前参考值：约 227MB，内嵌 Python 运行环境；参考值非长期固定契约）
    - `MaaHappyFish-win-aarch64-vX.Y.Z.zip`
-   - `MaaHappyFish-macos-x86_64-vX.Y.Z.zip`
-   - `MaaHappyFish-macos-aarch64-vX.Y.Z.zip`
-   - `MaaHappyFish-linux-x86_64-vX.Y.Z.zip`
-   - `MaaHappyFish-linux-aarch64-vX.Y.Z.zip`
-   - `MaaHappyFish-android-x86_64-vX.Y.Z.zip`
-   - `MaaHappyFish-android-aarch64-vX.Y.Z.zip`
-3. 所有资产状态均为 `uploaded`。
+3. 所有资产状态均为 `uploaded`。没有 macOS、Linux、Android 包是预期结果。
 
 ### 10.1 发布包内容级核验（不能只看 ZIP 名称）
 
-资产名齐全只证明“八个平台包被上传”，不能证明 Windows x64 包内部的 Agent 运行时完整。对 Windows x64 至少继续核对当前 CI 已固化的八组内容/契约：
+资产名齐全只证明 Windows 包被上传，不能证明 Windows x64 包内部的 Agent 运行时完整。对 Windows x64 至少继续核对当前 CI 已固化的八组内容/契约：
 
 1. 内置 `python.exe` 存在且可执行；
 2. embedded Python 的 `python*._pth` 已启用 `import site`；

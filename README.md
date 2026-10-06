@@ -137,7 +137,7 @@ python tools/daily_magic_puzzle.py
 
 ## 发布与打包
 
-MaaHappyFish 遵循严格的发版规范与静态硬门禁流程。发布新版本时，必须完整执行唯一权威文档 [发布工作流手册 (docs/release-workflow.md)](./docs/release-workflow.md)，依次通过正则双层校验、引用一致性校验、自动更新契约与嵌入式 Python 依赖冒烟测试，更新 `assets/interface.json` 并在存在本地客户端目录时完成同步，经 Git 安全核验后推送 `main` 分支及对应 `v*` Tag，由 GitHub Actions 自动完成 4 个 OS × 2 个架构共 8 个构建目标的自动化打包与发布。
+MaaHappyFish 遵循严格的发版规范与静态硬门禁流程。发布新版本时，必须完整执行唯一权威文档 [发布工作流手册 (docs/release-workflow.md)](./docs/release-workflow.md)，依次通过正则双层校验、引用一致性校验、自动更新契约与嵌入式 Python 依赖冒烟测试，更新 `assets/interface.json` 并在存在本地客户端目录时完成同步，经 Git 安全核验后推送 `main` 分支及对应 `v*` Tag，由 GitHub Actions 只打包 Windows x86_64 与 Windows aarch64。macOS、Linux、Android 从 2026-10-06 起不再构建；确有对应用户时再把平台加回矩阵。
 
 完整流程与技能调度详见：
 - [发布工作流唯一权威文档 (docs/release-workflow.md)](./docs/release-workflow.md)

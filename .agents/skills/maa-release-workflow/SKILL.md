@@ -35,6 +35,6 @@ description: >-
 4. **禁止盲目暂存**：
    严禁将 `git add -A` 作为无脑操作。暂存后必须通过 `git status`、`git diff --cached --stat` 与 `git diff --cached` 仔细核查暂存区，确保仅包含本次发版所需变更。
 5. **发布状态两阶段沉淀**：
-   在 Tag 推送前，严禁提前将尚未构建发布的版本写入 `PROJECT_STATUS.md` 或 `docs/handoff/CURRENT.md`。只有当 GitHub Actions CI 全绿通过且 8 个构建目标资产核验完成后，才作为 post-release 确认提交记录。
+   在 Tag 推送前，严禁提前将尚未构建发布的版本写入 `PROJECT_STATUS.md` 或 `docs/handoff/CURRENT.md`。只有当 GitHub Actions CI 全绿通过，且 `docs/release-workflow.md` 当前规定的 Windows 构建目标全部核验完成后，才作为 post-release 确认提交记录。
 6. **防范 CI Run 选错竞态**：
    推送 main 与推送 Tag 会触发两个相近的 CI Run，**严禁盲目抓取最新 Run**，必须通过过滤确认其对应的是目标 `vX.Y.Z` Tag ref，再执行 `gh run watch`。

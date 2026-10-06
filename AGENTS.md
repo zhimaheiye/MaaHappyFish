@@ -49,7 +49,7 @@
 | 维护"秘境之门"独立与日常送鱼任务 | `docs/features/secret-realm-gate.md` |
 | 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |
 | 查询全任务步骤可恢复导航审查与新增任务接入要求 | `docs/features/start-navigation-audit.md` |
-| 打包发布新版本、推送 Tag、发布 CI 门禁核验与版本号升级 | `docs/release-workflow.md`（唯一权威文档；调度技能：`.agents/skills/maa-release-workflow/SKILL.md`） |
+| 打包发布新版本、推送 Tag、发布 CI 门禁核验与版本号升级 | `docs/release-workflow.md`（唯一权威文档；调度技能：`.agents/skills/maa-release-workflow/SKILL.md`）。从 2026-10-06 起只构建并发布 Windows x86_64 与 Windows aarch64；macOS、Linux、Android 暂停，确有对应用户时再按该文档加回 |
 | 当且仅当项目版本号达到 1.0.0 正式完结发版时触发小红书抽奖活动 | `docs/v1.0-rednote-lottery.md`（维护者本机私有/本地里程碑文档；仅在版本号达到 1.0.0 且文件存在时触发，文件不存在时不得猜测，其余所有版本绝对不触发） |
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 | 维护客户端项目图标 | `docs/features/client-appearance.md` |

@@ -85,8 +85,10 @@ jobs:
     needs: meta
     runs-on: ubuntu-latest
     strategy:
+      # Windows only since 2026-10-06. macOS, Linux, and Android stay out
+      # until a real user needs them. See docs/release-workflow.md.
       matrix:
-        os: [win, macos, linux, android]
+        os: [win]
         arch: [aarch64, x86_64]
       fail-fast: false
 

@@ -17,7 +17,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from agent.runtime_state import gem_collect_state
 from agent.my_action import (
     GEM_SHAKE_CYCLES,
     GEM_SHAKE_SETTLE_DELAY_SECONDS,
@@ -32,8 +31,9 @@ from agent.my_action import (
     execute_shake_gem_collect_cycle,
     SetGemCollectModeAction,
     UnifiedShakeGemCollectAction,
+    gem_collect_state as action_gem_state,
 )
-from agent.my_reco import CheckGemCollectModeReco
+from agent.my_reco import CheckGemCollectModeReco, gem_collect_state as reco_gem_state
 
 
 class TestUnifiedGemCollectPipeline(unittest.TestCase):
@@ -246,7 +246,11 @@ class TestUnifiedGemCollectInterface(unittest.TestCase):
 
 class TestUnifiedGemCollectAgentLogic(unittest.TestCase):
     def setUp(self):
-        gem_collect_state["mode"] = "IMAGE"
+        # Embedded Python puts agent/ on sys.path, so the actions bind the
+        # top-level runtime_state module. Writing agent.runtime_state instead
+        # leaves the code under test on a different dict.
+        action_gem_state["mode"] = "IMAGE"
+        reco_gem_state["mode"] = "IMAGE"
 
     def test_set_gem_collect_mode_action(self):
         action = SetGemCollectModeAction()
@@ -256,39 +260,39 @@ class TestUnifiedGemCollectAgentLogic(unittest.TestCase):
         arg_shake = MagicMock()
         arg_shake.custom_action_param = json.dumps({"mode": "SHAKE"})
         self.assertTrue(action.run(mock_context, arg_shake))
-        self.assertEqual(gem_collect_state["mode"], "SHAKE")
+        self.assertEqual(action_gem_state["mode"], "SHAKE")
 
         # Set to IMAGE
         arg_image = MagicMock()
         arg_image.custom_action_param = json.dumps({"mode": "IMAGE"})
         self.assertTrue(action.run(mock_context, arg_image))
-        self.assertEqual(gem_collect_state["mode"], "IMAGE")
+        self.assertEqual(action_gem_state["mode"], "IMAGE")
 
         # Invalid fallback to IMAGE
         arg_invalid = MagicMock()
         arg_invalid.custom_action_param = json.dumps({"mode": "UNKNOWN"})
         self.assertTrue(action.run(mock_context, arg_invalid))
-        self.assertEqual(gem_collect_state["mode"], "IMAGE")
+        self.assertEqual(action_gem_state["mode"], "IMAGE")
 
     def test_check_gem_collect_mode_reco(self):
         reco = CheckGemCollectModeReco()
         mock_context = MagicMock()
 
         # When mode is IMAGE: reco returns None (falls through to bubble click)
-        gem_collect_state["mode"] = "IMAGE"
+        reco_gem_state["mode"] = "IMAGE"
         arg = MagicMock()
         arg.custom_recognition_param = ""
         self.assertIsNone(reco.analyze(mock_context, arg))
 
         # When mode is SHAKE: reco returns (0, 0, 10, 10)
-        gem_collect_state["mode"] = "SHAKE"
+        reco_gem_state["mode"] = "SHAKE"
         hit = reco.analyze(mock_context, arg)
         self.assertEqual(hit, (0, 0, 10, 10))
 
         # Direct param override
         arg_param = MagicMock()
         arg_param.custom_recognition_param = json.dumps({"mode": "SHAKE"})
-        gem_collect_state["mode"] = "IMAGE"
+        reco_gem_state["mode"] = "IMAGE"
         self.assertEqual(reco.analyze(mock_context, arg_param), (0, 0, 10, 10))
 
 
