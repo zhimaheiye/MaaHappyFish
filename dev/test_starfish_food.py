@@ -45,6 +45,22 @@ class StarfishFoodTest(unittest.TestCase):
         image[270:360, 490:620] = 0
         self.assertIsNone(pick_starfish_food(image))
 
+    def test_deep_sea_popup_picks_rose_label_in_the_first_slot(self):
+        path = os.path.join(os.path.dirname(FIXTURE), "deep_sea_feed_popup.png")
+        image = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+        name, box = pick_starfish_food(image)
+        self.assertEqual(name, "深海鱼食")
+        x, y, _width, _height = box
+        self.assertLess(x, 760)
+        self.assertGreater(x, 620)
+        self.assertLess(y, 260)
+
+    def test_deep_sea_second_slot_is_not_used_when_first_label_is_gone(self):
+        path = os.path.join(os.path.dirname(FIXTURE), "deep_sea_feed_popup.png")
+        image = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_COLOR)
+        image[210:245, 640:720] = 255
+        self.assertIsNone(pick_starfish_food(image))
+
 
 if __name__ == "__main__":
     unittest.main()

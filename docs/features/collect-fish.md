@@ -133,7 +133,7 @@ graph TD
 
 ### 2026-10-06 · 三种金币鱼食
 
-喂食改为只投放廉价、普通、高级。模板从选择喂食弹窗裁鱼食袋上半部分，文件是 `喂食_廉价鱼食.png`、`喂食_普通鱼食.png`、`喂食_高级鱼食.png`。红色库存数字不进入模板。`PickStarfishShellFoodReco` 按这个顺序找，`ClickRecognizedCenterAction` 点识别框中心。三种都没有时，`CollectFishFoodNotRecognized` 和独立入口的 `StarfishFoodNotRecognized_Standalone` 都是无 `next` 的 `FailTaskAction`。
+喂食先投放廉价、普通、高级。模板从选择喂食弹窗裁鱼食袋上半部分，文件是 `喂食_廉价鱼食.png`、`喂食_普通鱼食.png`、`喂食_高级鱼食.png`。三种都没有时，再认深海第一格的玫红字块 `喂食_深海鱼食.png`。红色库存数字不进入模板。`PickStarfishShellFoodReco` 按这个顺序找，`ClickRecognizedCenterAction` 点识别框中心。都没有时，`CollectFishFoodNotRecognized` 和独立入口的 `StarfishFoodNotRecognized_Standalone` 都是无 `next` 的 `FailTaskAction`。
 
 默认位置：加号右边第一格是廉价，右边第二格是普通，加号正下方是高级。12:56 的实机弹窗上三张模板分数都是 1.0，并落在这三格。12:58 只点击了右边第一格的上半部分，萌海星直接补到 100/100，预计可喂食 2 小时。没有种类弹窗。纸袋图标是通用的。另外两格没有点击。购买侧同日各买 1 袋，金币减少 2000、8500、400，开心宝仍是 346。
 

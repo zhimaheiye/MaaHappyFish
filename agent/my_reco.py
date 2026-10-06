@@ -70,7 +70,7 @@ _starfish_food_log = {"key": None, "at": 0.0}
 
 @AgentServer.custom_recognition("PickStarfishShellFoodReco")
 class PickStarfishShellFoodReco(CustomRecognition):
-    """只返回廉价、普通、高级鱼食袋的上半部分。三种都未确认时不返回坐标。"""
+    """返回廉价、普通、高级上半袋，或深海缸第一格的玫红字块。都没有时不返回坐标。"""
 
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
         picked = pick_starfish_food(argv.image)

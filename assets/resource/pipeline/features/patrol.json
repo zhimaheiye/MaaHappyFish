@@ -1436,7 +1436,7 @@
         "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-萌海星] 已投放廉价、普通或高级鱼食中排在最前的一种。"
+            "Node.Action.Succeeded": "[巡检-萌海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -1601,7 +1601,7 @@
         "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-乖海星] 已投放廉价、普通或高级鱼食中排在最前的一种。"
+            "Node.Action.Succeeded": "[巡检-乖海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -1766,7 +1766,7 @@
         "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-亮海星] 已投放廉价、普通或高级鱼食中排在最前的一种。"
+            "Node.Action.Succeeded": "[巡检-亮海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -2068,10 +2068,10 @@
         "action": "Custom",
         "custom_action": "FailTaskAction",
         "custom_action_param": {
-            "message": "[巡检-萌海星] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+            "message": "[巡检-萌海星] ERROR: 廉价、普通、高级和深海鱼食都未识别，已停止，未点击其它鱼食。"
         },
         "focus": {
-            "Node.Action.Failed": "[巡检-萌海星] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+            "Node.Action.Failed": "[巡检-萌海星] ERROR: 廉价、普通、高级和深海鱼食都未识别，已停止，未点击其它鱼食。"
         }
     },
     "PatrolGoodFoodMissed": {
@@ -2079,10 +2079,10 @@
         "action": "Custom",
         "custom_action": "FailTaskAction",
         "custom_action_param": {
-            "message": "[巡检-乖海星] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+            "message": "[巡检-乖海星] ERROR: 廉价、普通、高级和深海鱼食都未识别，已停止，未点击其它鱼食。"
         },
         "focus": {
-            "Node.Action.Failed": "[巡检-乖海星] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+            "Node.Action.Failed": "[巡检-乖海星] ERROR: 廉价、普通、高级和深海鱼食都未识别，已停止，未点击其它鱼食。"
         }
     },
     "PatrolBrightFoodMissed": {
@@ -2090,10 +2090,10 @@
         "action": "Custom",
         "custom_action": "FailTaskAction",
         "custom_action_param": {
-            "message": "[巡检-亮海星] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+            "message": "[巡检-亮海星] ERROR: 廉价、普通、高级和深海鱼食都未识别，已停止，未点击其它鱼食。"
         },
         "focus": {
-            "Node.Action.Failed": "[巡检-亮海星] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+            "Node.Action.Failed": "[巡检-亮海星] ERROR: 廉价、普通、高级和深海鱼食都未识别，已停止，未点击其它鱼食。"
         }
     },
     "PatrolAbortUnknownPage": {

@@ -398,7 +398,7 @@ class PatrolPipelineTest(unittest.TestCase):
                 f"PatrolSelect{key}StarfishTab": (label, "切换"),
                 f"PatrolVerify{key}Starfish": (label, "确认"),
                 f"Patrol{key}Replenish": (label, "选择鱼食"),
-                f"Patrol{key}PickFood": (label, "廉价、普通或高级鱼食", "投放"),
+                f"Patrol{key}PickFood": (label, "廉价、普通、高级或深海鱼食", "投放"),
                 f"Patrol{key}FeedReturnedToPanel": (label, "投放成功"),
             }
             for node_name, fragments in expected.items():
