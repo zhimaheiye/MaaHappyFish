@@ -1,0 +1,64 @@
+# 以下全部是 logs\log-20261002.log 第 4679~4739 行原文逐行摘录（未改写、未翻译）
+# 时间窗 2026-10-02 15:29:49 → 2026-10-02 15:48:25（含 15:48:16.265 那条 [ERR] 的完整异常堆栈，堆栈行本身不带时间戳，一并保留）
+# 中间 15:30:03→15:48:16 只有 [内存管理] 心跳，原样保留以证明那段无业务日志
+[2026-10-02 15:29:49.486][INF] [cfg=Default] >>> 任务 更新资源开始（异步）。
+[2026-10-02 15:29:57.340][INF] [cfg=Default] 已保存更新日志文件：文件=D:\MaaHappyFish-win-x86_64-v0.4.4\resource\Changelog.md，长度=19713
+[2026-10-02 15:29:57.355][INF] [cfg=Default] 目标系统：平台=win，系统家族=windows，架构=x64
+[2026-10-02 15:30:03.290][INF] [cfg=Default] 候选资产优先级：名称=maahappyfish-win-x86_64-v0.7.4.zip，优先级=100
+[2026-10-02 15:30:03.290][INF] [cfg=Default] 候选资产优先级：名称=maahappyfish-win-aarch64-v0.7.4.zip，优先级=80
+[2026-10-02 15:30:03.290][INF] [cfg=Default] 候选资产优先级：名称=maahappyfish-android-x86_64-v0.7.4.zip，优先级=60
+[2026-10-02 15:30:03.290][INF] [cfg=Default] 候选资产优先级：名称=maahappyfish-linux-x86_64-v0.7.4.zip，优先级=60
+[2026-10-02 15:30:03.290][INF] [cfg=Default] 候选资产优先级：名称=maahappyfish-macos-x86_64-v0.7.4.zip，优先级=60
+[2026-10-02 15:30:03.290][INF] [cfg=Default] 候选资产优先级：名称=maahappyfish-android-aarch64-v0.7.4.zip，优先级=0
+[2026-10-02 15:30:03.290][INF] [cfg=Default] 候选资产优先级：名称=maahappyfish-linux-aarch64-v0.7.4.zip，优先级=0
+[2026-10-02 15:30:03.290][INF] [cfg=Default] 候选资产优先级：名称=maahappyfish-macos-aarch64-v0.7.4.zip，优先级=0
+[2026-10-02 15:30:03.300][INF] [cfg=Default] 正在停止 AgentClient 连接。
+[2026-10-02 15:30:03.326][INF] [cfg=Default] AgentClient LinkStop 成功。
+[2026-10-02 15:30:03.326][INF] [cfg=Default] 正在终止 Agent 进程。
+[2026-10-02 15:30:03.329][INF] [cfg=Default] 正在结束 Agent 进程：python
+[2026-10-02 15:30:03.357][INF] [cfg=Default] Agent 进程已退出。
+[2026-10-02 15:30:03.357][INF] [cfg=Default] Agent 进程已成功结束。
+[2026-10-02 15:30:03.357][INF] [cfg=Default] 正在释放 MaaTasker。
+[2026-10-02 15:30:03.358][INF] [cfg=Default] Agent 进程已退出。
+[2026-10-02 15:30:03.939][WRN] [cfg=Default] 释放 MaaTasker 失败：No process is associated with this object.
+[2026-10-02 15:30:03.939][INF] [cfg=Default] 连接状态变更：未连接。
+[2026-10-02 15:30:03.940][WRN] [cfg=Default] 主连接上下文已变化，旧截图任务执行器已脱钩，等待按新连接重建。
+[2026-10-02 15:30:04.654][INF] [cfg=Default] [内存管理]释放了5.72 MB（3.0%)
+[2026-10-02 15:30:19.132][INF] [cfg=Default] 延迟回收旧截图任务执行器成功。
+[2026-10-02 15:36:04.865][INF] [cfg=Default] [内存管理]释放了5.20 MB（2.7%)
+[2026-10-02 15:36:24.880][INF] [cfg=Default] [内存管理]释放了1.22 MB（0.7%)
+[2026-10-02 15:37:04.924][INF] [cfg=Default] [内存管理]释放了2.87 MB（1.8%)
+[2026-10-02 15:37:24.935][INF] [cfg=Default] [内存管理]释放了1.65 MB（1.0%)
+[2026-10-02 15:37:44.948][INF] [cfg=Default] [内存管理]释放了1.08 MB（0.7%)
+[2026-10-02 15:38:04.962][INF] [cfg=Default] [内存管理]释放了1.56 MB（1.0%)
+[2026-10-02 15:38:24.977][INF] [cfg=Default] [内存管理]释放了1.71 MB（1.1%)
+[2026-10-02 15:38:44.990][INF] [cfg=Default] [内存管理]释放了1.83 MB（1.1%)
+[2026-10-02 15:39:05.002][INF] [cfg=Default] [内存管理]释放了1.21 MB（0.8%)
+[2026-10-02 15:40:05.029][INF] [cfg=Default] [内存管理]释放了1.66 MB（1.0%)
+[2026-10-02 15:41:05.060][INF] [cfg=Default] [内存管理]释放了1.61 MB（1.0%)
+[2026-10-02 15:41:45.088][INF] [cfg=Default] [内存管理]释放了1.03 MB（0.6%)
+[2026-10-02 15:42:25.114][INF] [cfg=Default] [内存管理]释放了1.22 MB（0.8%)
+[2026-10-02 15:42:45.127][INF] [cfg=Default] [内存管理]释放了1.83 MB（1.1%)
+[2026-10-02 15:43:05.145][INF] [cfg=Default] [内存管理]释放了2.71 MB（1.7%)
+[2026-10-02 15:43:25.158][INF] [cfg=Default] [内存管理]释放了1.58 MB（1.0%)
+[2026-10-02 15:43:45.173][INF] [cfg=Default] [内存管理]释放了1.63 MB（1.0%)
+[2026-10-02 15:44:25.206][INF] [cfg=Default] [内存管理]释放了1.55 MB（1.0%)
+[2026-10-02 15:44:45.221][INF] [cfg=Default] [内存管理]释放了1.77 MB（1.1%)
+[2026-10-02 15:45:05.235][INF] [cfg=Default] [内存管理]释放了1.66 MB（1.0%)
+[2026-10-02 15:46:25.286][INF] [cfg=Default] [内存管理]释放了5.27 MB（3.2%)
+[2026-10-02 15:46:45.302][INF] [cfg=Default] [内存管理]释放了1.35 MB（0.8%)
+[2026-10-02 15:47:05.324][INF] [cfg=Default] [内存管理]释放了8.28 MB（4.8%)
+[2026-10-02 15:47:25.370][INF] [cfg=Default] [内存管理]释放了4.52 MB（2.6%)
+[2026-10-02 15:48:16.265][ERR] [cfg=Default] 文件操作失败：原因=Received an unexpected EOF or 0 bytes from the transport stream.
+System.IO.IOException: Received an unexpected EOF or 0 bytes from the transport stream.
+   at System.Net.Security.SslStream.EnsureFullTlsFrameAsync[TIOAdapter](CancellationToken cancellationToken, Int32 estimatedSize)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.ReadAsyncInternal[TIOAdapter](Memory`1 buffer, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Http.HttpConnection.ContentLengthReadStream.ReadAsync(Memory`1 buffer, CancellationToken cancellationToken)
+   at MFAAvalonia.Helper.VersionChecker.DownloadFileAsync(String url, String filePath, ProgressBar progressBar, TextBlock downloadSizeTextBlock, TextBlock downloadSpeedTextBlock)
+   at MFAAvalonia.Helper.VersionChecker.DownloadFileAsync(String url, String filePath, ProgressBar progressBar, TextBlock downloadSizeTextBlock, TextBlock downloadSpeedTextBlock)
+   at MFAAvalonia.Helper.VersionChecker.DownloadFileAsync(String url, String filePath, ProgressBar progressBar, TextBlock downloadSizeTextBlock, TextBlock downloadSpeedTextBlock)
+[2026-10-02 15:48:16.644][INF] [cfg=Default] 已下载更新包到临时文件：文件=D:\MaaHappyFish-win-x86_64-v0.4.4\temp\temp_res\resource_v0.7.4.zip
+[2026-10-02 15:48:16.667][INF] [cfg=Default] >>> 任务 更新资源完成（异步）。
+[2026-10-02 15:48:25.408][INF] [cfg=Default] [内存管理]释放了2.87 MB（1.7%)

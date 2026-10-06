@@ -1,0 +1,27 @@
+resource\ 目录 mtime 最新 15 个文件（只读探测 时间=16:00:05）
+  10-02 15:58:18  resource\Changelog.md
+  10-02 00:20:39  resource\runtime\sea_otter_status.md
+  09-29 00:30:51  resource\runtime\sea_otter_status.default.md
+  09-29 00:30:51  resource\mfa_layout.json
+  09-29 00:30:51  resource\model\ocr\README.md
+  09-29 00:30:51  resource\model\ocr\rec.onnx
+  09-29 00:30:50  resource\model\ocr\keys.txt
+  09-29 00:30:50  resource\model\ocr\det.onnx
+  09-29 00:30:50  resource\image\许愿绸.png
+  09-29 00:30:50  resource\image\关闭公告.png
+  09-29 00:30:50  resource\image\魔力召唤入口.png
+  09-29 00:30:50  resource\image\好友判断_未点赞.png
+  09-29 00:30:50  resource\image\活动页面_退出.png
+  09-29 00:30:50  resource\image\右下角_宝箱.png
+  09-29 00:30:50  resource\image\绿野寻仙踪_入口.png
+patrol.json: mtime=09-29 00:30:49 size=66735 节点数=91
+结论：除 resource\Changelog.md（15:29:57 由更新流程写入）外，resource\ 全部保持 09-29 00:30 的安装时间戳 → 半包没有被解压覆盖，0.7.3 资源完好。
+安装根目录 mtime 最新 8 项：
+  10-02 15:58:18  appsettings.json
+  10-02 15:30:03  temp
+  10-02 14:17:48  debug
+  10-02 00:00:48  logs
+  10-01 15:20:45  config
+  09-29 00:31:30  interface.json
+  09-29 00:31:14  python
+  09-29 00:31:14  licenses

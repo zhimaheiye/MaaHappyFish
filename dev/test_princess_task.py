@@ -53,7 +53,13 @@ def run_tests():
             self.cleared.append(name)
             return name != self.failed_name
 
-    claim_names = ["PrincessClaimTop", "PrincessClaimMiddle", "PrincessClaimBottom"]
+    claim_names = [
+        "PrincessClaimTop",
+        "PrincessClaimMiddle",
+        "PrincessClaimBottom",
+        "PrincessBountyDeliver",
+        "PrincessBountyOpenBag",
+    ]
     context = HitContext()
     action = ResetPrincessClaimHitsAction()
     argv = SimpleNamespace(custom_action_param="null")
@@ -66,6 +72,7 @@ def run_tests():
         "PrincessTreasureClaimSuccess",
         "PrincessClaimSuccess",
         "PrincessClaimFailure",
+        "PrincessBountyReward",
         "PrincessTreasureTaskPage",
         "PrincessPageReady",
         "PrincessBountyTab",
@@ -80,6 +87,7 @@ def run_tests():
         "action": "Click",
     })
     assert business_next(pipeline["PrincessOpenEntry"]) == [
+        "PrincessBountyReward",
         "PrincessTreasureTaskPage",
         "PrincessPageReady",
         "PrincessBountyTab",
@@ -100,17 +108,80 @@ def run_tests():
         "roi": [786, 112, 100, 44],
         "action": "DoNothing",
     })
-    assert business_next(bounty_tab) == ["PrincessBountyDeliver"]
+    assert bounty_tab["timeout"] == 4000
+    assert bounty_tab["on_error"] == ["PrincessAbort"]
+    assert business_next(bounty_tab) == [
+        "PrincessBountyDeliver",
+        "PrincessBountyOpenBag",
+        "PrincessOpenDiaryTab",
+    ]
     deliver = pipeline["PrincessBountyDeliver"]
     assert_fields(deliver, {
         "recognition": "OCR",
         "expected": "^交付任务$",
-        "roi": [772, 566, 112, 42],
+        "roi": [400, 360, 730, 270],
         "action": "Click",
+        "max_hit": 8,
     })
     assert "target" not in deliver
-    assert deliver.get("max_hit") == 1
-    assert business_next(deliver) == ["PrincessExit"]
+    assert business_next(deliver) == ["PrincessBountyAfterDeliver"]
+    assert deliver["on_error"] == ["PrincessOpenDiaryTab"]
+    after_deliver = pipeline["PrincessBountyAfterDeliver"]
+    assert after_deliver["recognition"] == "DirectHit"
+    assert business_next(after_deliver) == [
+        "PrincessBountyReward",
+        "PrincessBountyDeliver",
+        "PrincessBountyOpenBag",
+        "PrincessOpenDiaryTab",
+    ]
+    reward = pipeline["PrincessBountyReward"]
+    assert reward["recognition"] == "OCR"
+    assert reward["expected"] == ["^开心收下$", "^你真棒$"]
+    assert reward["action"] == "Click"
+    assert "target" not in reward
+    assert business_next(reward) == ["PrincessBountyAfterDeliver"]
+    open_bag = pipeline["PrincessBountyOpenBag"]
+    assert_fields(open_bag, {
+        "recognition": "OCR",
+        "expected": "^开启福袋$",
+        "roi": [170, 310, 190, 100],
+        "action": "Click",
+        "max_hit": 1,
+    })
+    assert "target" not in open_bag
+    assert business_next(open_bag) == ["PrincessBountyAfterDeliver"]
+
+    def contains(outer, inner):
+        ox, oy, ow, oh = outer
+        ix, iy, iw, ih = inner
+        return ox <= ix and oy <= iy and ix + iw <= ox + ow and iy + ih <= oy + oh
+
+    # 2026-10-06 live boxes: four checks, one deliver, two track buttons.
+    card_slots = [
+        (479, 388, 99, 32),
+        (720, 385, 59, 43),
+        (920, 387, 90, 29),
+        (443, 567, 59, 43),
+        (621, 567, 59, 43),
+        (800, 567, 59, 43),
+        (957, 570, 99, 32),
+    ]
+    for slot in card_slots:
+        assert contains(deliver["roi"], slot), slot
+    assert not contains(deliver["roi"], (204, 342, 110, 39))
+    assert not contains(deliver["roi"], (209, 575, 103, 33))
+    assert contains(open_bag["roi"], (204, 342, 110, 39))
+    assert contains(reward["roi"], (602, 559, 76, 29))
+    open_diary = pipeline["PrincessOpenDiaryTab"]
+    assert_fields(open_diary, {
+        "recognition": "OCR",
+        "expected": "日记",
+        "roi": [600, 112, 112, 44],
+        "action": "Click",
+    })
+    assert "target" not in open_diary
+    assert business_next(open_diary) == ["PrincessPageReady"]
+    assert open_diary["on_error"] == ["PrincessAbort"]
     assert_fields(pipeline["PrincessPageReady"], {
         "recognition": "TemplateMatch",
         "template": "公主任务_识别.png",

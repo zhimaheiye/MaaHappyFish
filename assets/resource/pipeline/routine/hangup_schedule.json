@@ -146,7 +146,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "FriendGemStartRouter"
+            "FriendGemMessagePolicySystem"
         ]
     },
     "HangupFriendGemPatrol": {
@@ -170,7 +170,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "FriendGemStartRouter"
+            "FriendGemMessagePolicySystem"
         ]
     },
     "HangupResumeCollectFish": {

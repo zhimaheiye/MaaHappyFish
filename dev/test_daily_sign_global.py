@@ -47,7 +47,6 @@ INTERNAL_CHAIN_NODES = {
     "CollectFishSingleStartTank1",
     "CollectFishSingleStartTank2",
     "CollectFishSingleStartTank3",
-    "CollectFishSingleStartFallback",
     "CollectFishStarfishEntryUnknown",
     "CollectFishStarfishEntryRetry",
     "CollectFishStarfishEntryRetryRouter",
@@ -55,6 +54,7 @@ INTERNAL_CHAIN_NODES = {
     "CollectFishStarfishEntryFailed",
     "CollectFishStarfishEntryFailedNeedsInitialization",
     "CollectFishExitManagementFail",
+    "CollectFishFoodNotRecognized",
     "CollectFishStarfishFlowFailed",
     "CollectFishSwitchToTank2Target",
     "CollectFishVerifyTank2Main",
@@ -63,6 +63,119 @@ INTERNAL_CHAIN_NODES = {
     "CollectFishSwitchRetry",
     "DailyRoutineInitLog",
 }
+
+# Explicit page-local contracts, not whole-file exemptions. These chains use
+# their own visual gates/failure exits; inserting JumpBack at every intermediate
+# node can leave the business page and resume an invalid stage. New nodes still
+# require review. See docs/features/daily-sign.md.
+PAGE_LOCAL_CHAINS = {
+    # Message policy is a one-shot parameter chain. The inbox action owns the
+    # page gate and only then returns through JumpBack to the start router.
+    "friend_gem.json": {
+        "FriendGemMessagePolicySystem", "FriendGemMessagePolicyFriendRequest",
+        "FriendGemMessagePolicyBabyVisit", "FriendGemMessagePolicyCoupon",
+        "FriendGemMessagePolicyOther", "FriendGemMessageInbox",
+    },
+    # Home return must keep the blue back button; a global activity JumpBack
+    # can steal it before the tank template is checked.
+    "sea_otter_gem.json": {
+        "SeaOtterHomeReturnRouter", "SeaOtterUnusedStaminaDialog",
+        "SeaOtterHomeAtTank", "SeaOtterHomeAtPet", "SeaOtterHomeAtFriendList",
+        "SeaOtterHomeAtFriendTank", "SeaOtterHomeClickBack", "SeaOtterHomeReturnWait",
+    },
+    # Custom actions finish/resume a visually verified performance or settlement.
+    "band_fish.json": {
+        "BandFishStartAtSettlement", "BandFishStartAtPlaying", "BandFishStartAtScoreDialog",
+    },
+    # Manual-grid solver owns its gated swipe sequence; it is not a tank router.
+    "daily_magic_puzzle.json": {"DailyMagicPuzzleTask", "DailyMagicPuzzleSolve"},
+    # Fish-baby configuration must finish before routing; the round action owns
+    # toolbar state and resources, and exit nodes verify the actual page layers.
+    "fish_baby.json": {
+        "FishBabyTask", "FishBabyInit", "FishBabyUniformFood", "FishBabyUniformPlay",
+        "FishBabyUniformMilk", "FishBabyHasTargets", "FishBabySkipAll",
+        "FishBabySkipAllVerifyTank", "FishBabyStartRouter", "FishBabyIncubationCategory",
+        "FishBabyIncubationSelected", "FishBabyIncubationFoodItems",
+        "FishBabyIncubationPlayItems", "FishBabyIncubationMilkItems", "FishBabyRunRound",
+        "FishBabyAtHome", "FishBabyHomeStart", "FishBabyVerifyIncubation",
+        "FishBabyAtMainTank", "FishBabyEntryCoral", "FishBabyEntryBubble",
+        "FishBabyEntryRouter", "FishBabyMainTankSky", "FishBabyRetryTank",
+        "FishBabyExitIncubation", "FishBabyExitHome",
+    } | {
+        f"FishBaby{kind}{i}" for i in range(1, 9)
+        for kind in ("FoodPreference", "Preference", "MilkPreference")
+    },
+    # Numbered-tank picker/retry gates lead back to the globally guarded router.
+    "gold_shell_coupon.json": {
+        "GoldShellCouponRetryEntryFromMainTank", "GoldShellCouponTank2ToPicker",
+        "GoldShellCouponTank3ToPicker", "GoldShellCouponPickerTank1",
+        "GoldShellCouponVerifyTank1BeforeEntry",
+    },
+    "golden_dolphin.json": {"GoldenDolphinResumeSettlement"},
+    "shake_game.json": {"ShakeGameResumeSettlement"},
+    # Daily completion/abort bridges do not navigate forward into another page.
+    "green_wild.json": {"GreenWildVerifyTank", "GreenWildAbort"},
+    # Deep-sea paid/free and return states have distinct local gates. Never apply
+    # the generic activity-return control to a paid/free selection or result.
+    "sea_dive.json": {
+        "SeaDiveTask", "SeaDiveStartRouter", "SeaDiveStartAtHome", "SeaDiveStartAtPicker",
+        "SeaDiveStartAtTank3", "SeaDiveStartAtTank1", "SeaDiveStartAtTank2",
+        "SeaDiveVerifyTank3", "SeaDiveSubmarineEntry", "SeaDiveVerifyHome",
+        "SeaDiveFreeStateRouter", "SeaDivePaidState", "SeaDiveFreeAvailable",
+        "SeaDiveClickFreeButton", "SeaDiveDepthSelectPage", "SeaDiveChoose100m",
+        "SeaDiveInGame", "SeaDiveClickInGameReturn", "SeaDiveResultPage",
+        "SeaDiveClickResultReturn", "SeaDiveRetentionWait", "SeaDiveConfirmReturn",
+        "SeaDiveVerifyHomeAfterCycle", "SeaDiveHomeClose", "SeaDiveVerifyExitTank3",
+        "SeaDiveSelectTank1",
+    },
+    "secret_realm_gate.json": {"SecretRealmGateProcessOrder"},
+    # Summon/fusion bridges reuse patrol gates; the intentional activity owns
+    # its list/card/claim/exit stages instead of the accidental-popup handler.
+    "daily_routine.json": {
+        "DailyRoutineMagicSummonTank", "DailyRoutineGemFusionTank",
+        "DailyRoutineMagicSummonDone", "DailyRoutineGemFusionDone",
+        "DailyActivityEnergyAtTank", "DailyActivityEnergyEntry", "DailyActivityEnergyListPage",
+        "DailyActivityEnergyCard1", "DailyActivityEnergyPage", "DailyActivityEnergyClaim",
+        "DailyActivityEnergyClose", "DailyActivityEnergyListBack", "DailyActivityEnergyVerifyTank",
+    },
+}
+
+
+def assert_global_popup_coverage(pipeline, locations):
+    for filename, names in PAGE_LOCAL_CHAINS.items():
+        for name in names:
+            assert name in pipeline, f"stale popup exception: {name}"
+            assert locations[name].name == filename, f"moved popup exception: {name}"
+            assert pipeline[name].get("next"), f"obsolete popup exception: {name}"
+
+    # The activity step must precede accidental activity handling, while the
+    # other four popup types retain priority. Pin these exceptions, don't skip.
+    ordered = {
+        "DailyRoutineTask": GLOBAL_HANDLERS[1:] + ["DailyRoutineInitLog"],
+        "DailyRoutineStepActivityEnergy": GLOBAL_HANDLERS[1:] + [
+            "DailyActivityEnergyPage", "DailyActivityEnergyListPage", "DailyActivityEnergyAtTank",
+        ],
+    }
+    for name, expected in ordered.items():
+        assert pipeline[name]["next"] == expected, f"activity popup contract changed: {name}"
+    assert pipeline["DailyRoutineDispatcher"]["next"][:6] == (
+        GLOBAL_HANDLERS[1:] + ["DailyRoutineStepActivityEnergy", GLOBAL_HANDLERS[0]]
+    ), "intentional activity must precede accidental activity handling"
+
+    missing = []
+    for name, node in pipeline.items():
+        if locations[name].name in ISOLATED_PIPELINES:
+            continue
+        successors = node.get("next")
+        if not successors or name in HANDLER_NODES | ATOMIC_NEXT_NODES | INTERNAL_CHAIN_NODES:
+            continue
+        if name in ordered or name == "DailyRoutineDispatcher":
+            continue
+        if name in PAGE_LOCAL_CHAINS.get(locations[name].name, set()):
+            continue
+        if successors[:len(GLOBAL_HANDLERS)] != GLOBAL_HANDLERS:
+            missing.append(f"{locations[name]}::{name}")
+    assert not missing, "global popup handlers are not first:\n" + "\n".join(missing)
 
 
 def load_pipeline():
@@ -175,17 +288,25 @@ def run_tests():
     assert level_up_confirm["action"] == "Click"
     assert "target" not in level_up_confirm
 
-    missing = []
-    for name, node in pipeline.items():
-        if locations[name].name in ISOLATED_PIPELINES:
-            continue
-        successors = node.get("next")
-        if name in HANDLER_NODES or name in ATOMIC_NEXT_NODES or name in INTERNAL_CHAIN_NODES or not successors:
-            continue
-        if successors[:len(GLOBAL_HANDLERS)] != GLOBAL_HANDLERS:
-            missing.append(f"{locations[name]}::{name}")
     if "--focused" not in sys.argv:
-        assert not missing, "global popup handlers are not first:\n" + "\n".join(missing)
+        assert_global_popup_coverage(pipeline, locations)
+        # A lost prefix or an unreviewed node must still fail the full audit.
+        broken = dict(pipeline)
+        broken["FriendGemStartRouter"] = dict(pipeline["FriendGemStartRouter"], next=["FriendGemDone"])
+        try:
+            assert_global_popup_coverage(broken, locations)
+        except AssertionError as error:
+            assert "FriendGemStartRouter" in str(error)
+        else:
+            raise AssertionError("missing popup prefix was not detected")
+        unknown = "UnreviewedPopupTransition"
+        broken = dict(pipeline, **{unknown: {"next": ["FriendGemDone"]}})
+        try:
+            assert_global_popup_coverage(broken, dict(locations, **{unknown: locations["FishBabyTask"]}))
+        except AssertionError as error:
+            assert unknown in str(error)
+        else:
+            raise AssertionError("unreviewed local transition was not detected")
 
     image_dir = Path("assets/resource/image")
     for template in (

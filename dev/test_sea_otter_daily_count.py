@@ -4,7 +4,7 @@
 语义契约：
 - 游戏日以凌晨 04:00 为界（game_day = now - 4h 的日期），无需定时器；
 - 计数持久化在本机 %LOCALAPPDATA%/MaaHappyFish/state.json（测试用临时目录注入）；
-- 只有正常业务终点（LAST_FRIEND_EXHAUSTED / FRIEND_LIST_EXHAUSTED）才 +1；
+- 好友边界未确认寻宝体力耗尽时不得 +1；已验证正常完成的计数 helper 保留；
 - Safety Limit（max_harvests / consecutive_exhausted）、手动停止、异常、Abort 均不计数；
 - 同一次任务幂等：Finalize 重复进入只计一次；
 - 计数仅作记录，不拦截任务启动；
@@ -44,7 +44,7 @@ def run_tests():
     from agent.runtime_state import sea_otter_gem_state
     from agent.my_action import (
         InitSeaOtterStateAction,
-        SeaOtterMarkNormalCompletionAction,
+        SeaOtterBoundaryIncompleteAction,
         SeaOtterFinalizeAction,
     )
     from agent.my_reco import CheckSeaOtterLimitReco
@@ -119,16 +119,18 @@ def run_tests():
 
         # ---- 分类计数（Finalize / Mark / LimitReco 全部走真实 Agent 类）----
         finalize = SeaOtterFinalizeAction()
-        mark = SeaOtterMarkNormalCompletionAction()
+        boundary = SeaOtterBoundaryIncompleteAction()
         limit_reco = CheckSeaOtterLimitReco()
 
         # Normal completion：+1
         InitSeaOtterStateAction().run(MockContext(), MockArg())
-        assert mark.run(MockContext(), MockArg({"reason": "LAST_FRIEND_EXHAUSTED"})) is True
+        # 单独验证已确认完成的持久化契约；当前生产 Pipeline 不会设置此标志。
+        sea_otter_gem_state["normal_completion"] = True
+        sea_otter_gem_state["completion_reason"] = "VERIFIED_COMPLETION"
         assert sea_otter_gem_state["normal_completion"] is True
         assert finalize.run(MockContext(), MockArg()) is True
         assert ls.get_sea_otter_daily_count() == 2  # 上一次记录 1 + 本次
-        print("[PASS] 正常完整结束 +1（LAST_FRIEND_EXHAUSTED）")
+        print("[PASS] 已确认完整结束的计数契约 +1（测试注入，不代表已有 UI 门禁）")
 
         # 同一次任务 Finalize 重复进入：只 +1
         assert finalize.run(MockContext(), MockArg()) is True
@@ -138,7 +140,7 @@ def run_tests():
 
         # Manual stop / Abort / 未标记：不 +1
         InitSeaOtterStateAction().run(MockContext(), MockArg())
-        assert finalize.run(MockContext(), MockArg()) is True
+        assert finalize.run(MockContext(), MockArg()) is False
         assert ls.get_sea_otter_daily_count() == 2
         print("[PASS] 手动停止/异常/Abort（未到正常终点）：不计数")
 
@@ -149,7 +151,7 @@ def run_tests():
         assert limit_reco.analyze(MockContext(), MockArg()) == (0, 0, 10, 10)
         assert sea_otter_gem_state["completion_reason"] == "SAFETY_MAX_HARVESTS"
         assert sea_otter_gem_state["normal_completion"] is False
-        assert finalize.run(MockContext(), MockArg()) is True
+        assert finalize.run(MockContext(), MockArg()) is False
         assert ls.get_sea_otter_daily_count() == 2
         print("[PASS] Safety max_harvests：任务终止但不计入每日次数")
 
@@ -159,23 +161,29 @@ def run_tests():
         sea_otter_gem_state["max_consecutive_exhausted"] = 30
         assert limit_reco.analyze(MockContext(), MockArg()) == (0, 0, 10, 10)
         assert sea_otter_gem_state["completion_reason"] == "SAFETY_CONSECUTIVE_EXHAUSTED"
-        assert finalize.run(MockContext(), MockArg()) is True
+        assert finalize.run(MockContext(), MockArg()) is False
         assert ls.get_sea_otter_daily_count() == 2
         print("[PASS] Safety consecutive_exhausted：不计入每日次数")
 
-        # 正常结束但本轮摸宝数量为 0：仍然 +1（计数依据是完整运行）
+        # 好友边界 / 空参数：真实 False，重复调用不写完整次数。
         InitSeaOtterStateAction().run(MockContext(), MockArg())
-        assert mark.run(MockContext(), MockArg({"reason": "FRIEND_LIST_EXHAUSTED"})) is True
+        for param in ({"reason": "LAST_FRIEND_STAMINA_UNVERIFIED"},
+                      {"reason": "FRIEND_LIST_STAMINA_UNVERIFIED"}, None, "null"):
+            argv = MockArg()
+            argv.custom_action_param = param
+            assert boundary.run(MockContext(), argv) is False
+            assert not sea_otter_gem_state["normal_completion"]
+            assert finalize.run(MockContext(), MockArg()) is False
         assert sea_otter_gem_state["total_harvests"] == 0
-        assert finalize.run(MockContext(), MockArg()) is True
-        assert ls.get_sea_otter_daily_count() == 3
-        print("[PASS] 正常结束但摸宝 0 次：仍 +1（计数与 total_harvests 无关）")
+        assert ls.get_sea_otter_daily_count() == 2
+        print("[PASS] 末位/列表边界及空参数不计数，不伪装成功")
 
         # 新任务 Init 后 daily_count_recorded 复位，可再次正常计数
         InitSeaOtterStateAction().run(MockContext(), MockArg(task_id=770000002))
-        assert mark.run(MockContext(), MockArg({"reason": "LAST_FRIEND_EXHAUSTED"})) is True
+        sea_otter_gem_state["normal_completion"] = True
+        sea_otter_gem_state["completion_reason"] = "VERIFIED_COMPLETION"
         assert finalize.run(MockContext(), MockArg()) is True
-        assert ls.get_sea_otter_daily_count() == 4
+        assert ls.get_sea_otter_daily_count() == 3
         assert sea_otter_gem_state["daily_count_recorded"] is True
         print("[PASS] 新一次任务 Init 后幂等标志复位，可再次正常计数")
 
@@ -183,23 +191,35 @@ def run_tests():
         assert InitSeaOtterStateAction().run(MockContext(), MockArg(task_id=770000003)) is True
         print("[PASS] 达到 3/3 记录后不阻止任务启动（仅记账）")
 
-        # ---- Pipeline 静态契约：只有 Done 挂 Finalize，两个 NORMAL 终点挂 Mark ----
+        # ---- Pipeline 静态契约：边界不得通向成功出口，失败没有 StopTask 兜底 ----
         pipeline = json.loads(SEA_OTTER_PATH.read_text(encoding="utf-8"))
         done = pipeline["SeaOtterDone"]
         assert done["action"] == "Custom"
         assert done["custom_action"] == "SeaOtterFinalizeAction"
-        assert pipeline["SeaOtterLastFriendExhausted"]["custom_action"] == "SeaOtterMarkNormalCompletionAction"
-        assert pipeline["SeaOtterLastFriendExhausted"]["custom_action_param"]["reason"] == "LAST_FRIEND_EXHAUSTED"
-        assert pipeline["SeaOtterAddFriendPage"]["custom_action"] == "SeaOtterMarkNormalCompletionAction"
-        assert pipeline["SeaOtterAddFriendPage"]["custom_action_param"]["reason"] == "FRIEND_LIST_EXHAUSTED"
-        mark_users = [
-            name for name, node in pipeline.items()
-            if node.get("custom_action") == "SeaOtterMarkNormalCompletionAction"
-        ]
-        assert sorted(mark_users) == ["SeaOtterAddFriendPage", "SeaOtterLastFriendExhausted"], mark_users
-        # Safety 唯一入口 LimitReached 不得挂 Mark（保证 Safety 不计数）
+        last_friend = pipeline["SeaOtterLastFriendExhausted"]
+        assert last_friend["custom_action"] == "SeaOtterBoundaryIncompleteAction"
+        assert "SeaOtterDone" not in last_friend.get("next", [])
+        assert last_friend["on_error"] == ["SeaOtterHomeReturnRouter"]
+        home = pipeline["SeaOtterHomeReturnRouter"]["next"]
+        assert home[0] == "SeaOtterUnusedStaminaDialog"
+        assert "SeaOtterDone" not in home
+        assert pipeline["SeaOtterUnusedStaminaDialog"]["action"] == "DoNothing"
+        assert pipeline["SeaOtterUnusedStaminaDialog"]["next"] == ["SeaOtterNavigationFailed"]
+        assert pipeline["SeaOtterReturnedHome"]["action"] == "DoNothing"
+        assert "next" not in pipeline["SeaOtterReturnedHome"]
+        add_friend = pipeline["SeaOtterAddFriendPage"]
+        assert add_friend["custom_action"] == "SeaOtterMarkNormalCompletionAction"
+        assert add_friend["custom_action_param"]["reason"] == "FRIEND_LIST_EXHAUSTED"
+        add_next = [name for name in add_friend["next"] if not name.startswith("[JumpBack]")]
+        assert add_next == ["SeaOtterNonFriendBack"]
+        assert pipeline["SeaOtterNonFriendBack"]["action"] == "Click"
+        assert "SeaOtterDone" in pipeline["SeaOtterNonFriendBack"]["next"]
+        assert done["on_error"] == ["SeaOtterNavigationFailed"]
+        failure = pipeline["SeaOtterNavigationFailed"]
+        assert failure["custom_action"] == "FailTaskAction"
+        assert not failure.get("next") and not failure.get("on_error")
         assert pipeline["SeaOtterLimitReached"]["action"] == "DoNothing"
-        print("[PASS] Pipeline 静态契约：Mark 只挂在两个 NORMAL 终点，Done 统一 Finalize")
+        print("[PASS] 末位 LEFT 与安全上限返回真实失败；非好友页按列表终点返回")
 
         # 清理环境变量，避免影响同进程其它测试
         os.environ.pop("MAAHAPPYFISH_STATE_DIR", None)
@@ -252,7 +272,7 @@ def run_tests():
         sea_otter_gem_state["daily_count_recorded"] = False
         sea_otter_gem_state["normal_completion"] = False
         sea_otter_gem_state["completion_reason"] = "SAFETY_MAX_HARVESTS"
-        assert _Fin().run(MockContext(), MockArg()) is True
+        assert _Fin().run(MockContext(), MockArg()) is False
         assert "2 / 3" in md_path.read_text(encoding="utf-8"), "Safety 结束不得改变计数"
         sea_otter_gem_state["completion_reason"] = None
         print("[PASS] Finalize → markdown 同步：正常完成 +1 跟随，Safety 不变化")

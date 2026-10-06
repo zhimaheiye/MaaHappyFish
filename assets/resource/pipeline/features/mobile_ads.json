@@ -13,8 +13,11 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "MobileAdDeviceTimeLimit",
             "MobileAdVerifyRewardPopup",
             "MobileAdWheelStop",
+            "MobileAdRewardedCapsule",
+            "MobileAdDownloadEndcard",
             "MobileAdEndcard",
             "MobileAdPlaying",
             "MobileAdPlayingByOCR",
@@ -35,7 +38,11 @@
         "action": "Click",
         "post_delay": 2500,
         "timeout": 15000,
+        "on_error": ["MobileAdRetryEntryFromCenter"],
         "next": [
+            "MobileAdDeviceTimeLimit",
+            "MobileAdRewardedCapsule",
+            "MobileAdDownloadEndcard",
             "MobileAdPlaying",
             "MobileAdPlayingByOCR",
             "MobileAdEndcard"
@@ -56,7 +63,11 @@
         "action": "Click",
         "post_delay": 2500,
         "timeout": 15000,
+        "on_error": ["MobileAdRetryEntryFromCenter"],
         "next": [
+            "MobileAdDeviceTimeLimit",
+            "MobileAdRewardedCapsule",
+            "MobileAdDownloadEndcard",
             "MobileAdPlaying",
             "MobileAdPlayingByOCR",
             "MobileAdEndcard"
@@ -76,6 +87,9 @@
         "custom_action": "MobileAdOnAdStartAction",
         "timeout": 80000,
         "next": [
+            "MobileAdDeviceTimeLimit",
+            "MobileAdRewardedCapsule",
+            "MobileAdDownloadEndcard",
             "MobileAdEndcard"
         ]
     },
@@ -97,6 +111,9 @@
         "custom_action": "MobileAdOnAdStartAction",
         "timeout": 80000,
         "next": [
+            "MobileAdDeviceTimeLimit",
+            "MobileAdRewardedCapsule",
+            "MobileAdDownloadEndcard",
             "MobileAdEndcard"
         ]
     },
@@ -117,11 +134,93 @@
             "MobileAdPostReturnRouter"
         ]
     },
+    "MobileAdRewardedText": {
+        "recognition": "OCR",
+        "expected": "^恭喜已获得奖励$",
+        "roi": [25, 25, 440, 70],
+        "action": "DoNothing"
+    },
+    "MobileAdCapsuleCloseIdentity": {
+        "recognition": "TemplateMatch",
+        "template": "mobile_ads/奖励已获得_胶囊关闭.png",
+        "roi": [1480, 30, 60, 60],
+        "threshold": 0.8,
+        "action": "DoNothing"
+    },
+    "MobileAdRewardedCapsule": {
+        "recognition": "And",
+        "all_of": ["MobileAdRewardedText", "MobileAdCapsuleCloseIdentity"],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "MobileAdOnAdStartAction",
+        "timeout": 3000,
+        "next": ["MobileAdDeviceTimeLimit", "MobileAdDownloadEndcard", "MobileAdEndcard", "MobileAdCloseRewardedCapsule"]
+    },
+    "MobileAdCloseRewardedCapsule": {
+        "recognition": "And",
+        "all_of": ["MobileAdRewardedText", "MobileAdCapsuleCloseIdentity"],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
+        "post_delay": 1500,
+        "timeout": 20000,
+        "next": ["MobileAdPostReturnRouter"]
+    },
+    "MobileAdDeviceTimeLimit": {
+        "recognition": "OCR",
+        "expected": "今日可用时长已达上限",
+        "roi": [480, 300, 650, 150],
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "focus": {"start": "手机看广告：系统今日可用时长已达上限，请检查手机使用时长设置"}
+    },
+    "MobileAdDownloadText": {
+        "recognition": "OCR",
+        "expected": "^立即下载$",
+        "roi": [650, 470, 300, 90],
+        "action": "DoNothing"
+    },
+    "MobileAdDownloadCloseIdentity": {
+        "recognition": "TemplateMatch",
+        "template": "mobile_ads/下载浮层_关闭.png",
+        "roi": [1515, 20, 75, 70],
+        "threshold": 0.8,
+        "action": "DoNothing"
+    },
+    "MobileAdDownloadEndcard": {
+        "recognition": "And",
+        "all_of": ["MobileAdDownloadText", "MobileAdDownloadCloseIdentity"],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "MobileAdOnAdStartAction",
+        "timeout": 3000,
+        "next": ["MobileAdCloseDownloadEndcard"]
+    },
+    "MobileAdCloseDownloadEndcard": {
+        "recognition": "And",
+        "all_of": ["MobileAdDownloadText", "MobileAdDownloadCloseIdentity"],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
+        "post_delay": 1500,
+        "timeout": 20000,
+        "next": ["MobileAdPostReturnRouter"]
+    },
+    "MobileAdRetryEntryFromCenter": {
+        "recognition": "And",
+        "all_of": ["MobileAdCenter"],
+        "action": "Custom",
+        "custom_action": "MobileAdRetryEntryAction",
+        "post_delay": 1000,
+        "timeout": 3000,
+        "next": ["MobileAdCenter", "MobileAdCenterByOCR"]
+    },
     "MobileAdPostReturnRouter": {
         "recognition": "DirectHit",
         "action": "DoNothing",
         "timeout": 20000,
         "next": [
+            "MobileAdDeviceTimeLimit",
             "MobileAdWheelStop",
             "MobileAdVerifyRewardPopup"
         ]
@@ -230,6 +329,9 @@
             "MobileAdCenterByOCR"
         ],
         "next": [
+            "MobileAdDeviceTimeLimit",
+            "MobileAdRewardedCapsule",
+            "MobileAdDownloadEndcard",
             "MobileAdPlaying",
             "MobileAdPlayingByOCR",
             "MobileAdEndcard"

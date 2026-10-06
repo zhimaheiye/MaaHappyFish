@@ -37,12 +37,15 @@
         ],
         "action": "Click",
         "target": [
-            165,
-            370,
-            50,
-            50
+            194,
+            262,
+            40,
+            40
         ],
         "post_delay": 2000,
+        "focus": {
+            "Node.Action.Succeeded": "[海獭摸宝] 已在星级好友列表点击第一位好友头像。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -206,9 +209,9 @@
             170
         ],
         "action": "Custom",
-        "custom_action": "SeaOtterMarkNormalCompletionAction",
+        "custom_action": "SeaOtterBoundaryIncompleteAction",
         "custom_action_param": {
-            "reason": "LAST_FRIEND_EXHAUSTED"
+            "reason": "LAST_FRIEND_STAMINA_UNVERIFIED"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -216,8 +219,10 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "SeaOtterDone"
-        ]
+            "SeaOtterFriendRouter"
+        ],
+        "on_error": ["SeaOtterHomeReturnRouter"],
+        "focus": {"Node.Action.Failed": "[海獭摸宝] 末位好友耗尽，今日次数未增加，开始返回主鱼缸。"}
     },
     "SeaOtterLastFriendHarvestable": {
         "recognition": "TemplateMatch",
@@ -256,6 +261,7 @@
         "threshold": 0.7,
         "action": "Custom",
         "custom_action": "SeaOtterReturnFromRecommendedAction",
+        "on_error": ["SeaOtterNavigationFailed"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -265,10 +271,133 @@
             "SeaOtterFriendRouter"
         ]
     },
+    "SeaOtterHomeReturnRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 20000,
+        "next": [
+            "SeaOtterUnusedStaminaDialog",
+            "SeaOtterHomeAtTank",
+            "SeaOtterHomeAtPet",
+            "SeaOtterHomeAtFriendList",
+            "SeaOtterHomeAtFriendTank",
+            "SeaOtterHomeReturnWait"
+        ],
+        "on_error": ["SeaOtterNavigationFailed"]
+    },
+    "SeaOtterUnusedStaminaDialog": {
+        "recognition": "OCR",
+        "expected": [
+            "未使用的体力",
+            "是否要退出",
+            "一次搜索次数"
+        ],
+        "roi": [
+            240,
+            220,
+            800,
+            300
+        ],
+        "action": "DoNothing",
+        "next": ["SeaOtterNavigationFailed"],
+        "focus": {
+            "Node.Recognition.Succeeded": "[海獭摸宝] 出现未使用体力提示，不点击确认，避免消耗一次搜索次数。"
+        }
+    },
+    "SeaOtterHomeAtTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [
+            0,
+            200,
+            150,
+            400
+        ],
+        "threshold": 0.7,
+        "action": "DoNothing",
+        "next": ["SeaOtterReturnedHome"]
+    },
+    "SeaOtterHomeAtPet": {
+        "recognition": "OCR",
+        "expected": "选宝石",
+        "roi": [
+            430,
+            500,
+            420,
+            180
+        ],
+        "action": "DoNothing",
+        "timeout": 1000,
+        "next": ["SeaOtterHomeClickBack"],
+        "on_error": ["SeaOtterHomeReturnWait"]
+    },
+    "SeaOtterHomeAtFriendList": {
+        "recognition": "OCR",
+        "expected": "星级好友",
+        "roi": [
+            100,
+            90,
+            200,
+            60
+        ],
+        "action": "DoNothing",
+        "timeout": 1000,
+        "next": ["SeaOtterHomeClickBack"],
+        "on_error": ["SeaOtterHomeReturnWait"]
+    },
+    "SeaOtterHomeAtFriendTank": {
+        "recognition": "OCR",
+        "expected": "刷新体力",
+        "roi": [
+            60,
+            210,
+            350,
+            170
+        ],
+        "action": "DoNothing",
+        "timeout": 1000,
+        "next": ["SeaOtterHomeClickBack"],
+        "on_error": ["SeaOtterHomeReturnWait"]
+    },
+    "SeaOtterHomeClickBack": {
+        "recognition": "OCR",
+        "expected": "^返回$",
+        "roi": [
+            0,
+            0,
+            189,
+            146
+        ],
+        "action": "Custom",
+        "custom_action": "SeaOtterHomeReturnClickAction",
+        "post_delay": 1200,
+        "timeout": 1000,
+        "next": ["SeaOtterHomeReturnRouter"],
+        "on_error": ["SeaOtterNavigationFailed"],
+        "focus": {
+            "Node.Action.Succeeded": "[海獭摸宝] 已点击左上角返回。"
+        }
+    },
+    "SeaOtterHomeReturnWait": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "SeaOtterHomeReturnWaitAction",
+        "post_delay": 400,
+        "next": ["SeaOtterHomeReturnRouter"],
+        "on_error": ["SeaOtterNavigationFailed"]
+    },
+    "SeaOtterReturnedHome": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[海獭摸宝] 已返回主鱼缸。本次未计入完整运行，今日次数未增加。"
+        }
+    },
     "SeaOtterNavigationFailed": {
         "recognition": "DirectHit",
-        "action": "StopTask",
-        "focus": {"Node.Action.Succeeded": "[海獭摸宝] ERROR: 末位好友刷新失败，停止；本轮不计完整运行。"}
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "focus": {"Node.Action.Failed": "[海獭摸宝] ERROR: 本轮未完成，已停止；不增加今日次数，具体原因见日志。"}
     },
     "SeaOtterAddFriendPage": {
         "recognition": "OCR",
@@ -401,6 +530,7 @@
         "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "SeaOtterFinalizeAction",
+        "on_error": ["SeaOtterNavigationFailed"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",

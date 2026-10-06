@@ -68,6 +68,21 @@ except ImportError:
     from agent.param_utils import parse_dict_param, safe_float, safe_int
 
 try:
+    from friend_gem_messages import (
+        STAR_TAB_CENTER,
+        choose_message_click,
+        default_message_policy,
+        normalize_policy,
+    )
+except ImportError:
+    from agent.friend_gem_messages import (
+        STAR_TAB_CENTER,
+        choose_message_click,
+        default_message_policy,
+        normalize_policy,
+    )
+
+try:
     import local_state
 except ImportError:
     from agent import local_state
@@ -956,6 +971,35 @@ class CalcFishingFoodAction(CustomAction):
             return False
 
 
+class _ShellFoodBuySpec:
+    def __init__(self, label: str, target: str, detail: str, price: str):
+        self.label = label
+        self.target = target
+        self.detail = detail
+        self.price = price
+
+
+CHEAP_FOOD = _ShellFoodBuySpec(
+    "廉价鱼食",
+    "BuyFishFoodTargetCard",
+    "BuyFishFoodDetailIdentity",
+    "BuyFishFoodUnitPrice",
+)
+NORMAL_FOOD = _ShellFoodBuySpec(
+    "普通鱼食",
+    "BuyFishFoodTargetNormal",
+    "BuyFishFoodDetailNormal",
+    "BuyFishFoodPriceNormal",
+)
+HIGH_FOOD = _ShellFoodBuySpec(
+    "高级鱼食",
+    "BuyFishFoodTargetHigh",
+    "BuyFishFoodDetailHigh",
+    "BuyFishFoodPriceHigh",
+)
+SHELL_FOODS = (CHEAP_FOOD, NORMAL_FOOD, HIGH_FOOD)
+
+
 @AgentServer.custom_action("FindCheapFishFoodAction")
 class FindCheapFishFoodAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -975,14 +1019,31 @@ class FindCheapFishFoodAction(CustomAction):
             return False
 
 
-def _find_and_enter_cheap_fish_food(context: Context, controller, max_scrolls: int) -> bool:
-    """Shared helper: find cheap fish food in store list and click to enter detail page."""
+def _detail_matches(context: Context, frame, spec: _ShellFoodBuySpec) -> bool:
+    return (
+        frame is not None
+        and _recognition_box(context, spec.detail, frame) is not None
+        and _recognition_box(context, spec.price, frame) is not None
+    )
+
+
+def _open_detail_spec(context: Context, frame):
+    for spec in SHELL_FOODS:
+        if _detail_matches(context, frame, spec):
+            return spec
+    return None
+
+
+def _find_and_enter_cheap_fish_food(
+    context: Context,
+    controller,
+    max_scrolls: int,
+    spec: _ShellFoodBuySpec = CHEAP_FOOD,
+) -> bool:
+    """在商品列表找到指定金币鱼食并点击进入详情。只接受该鱼食自己的名称和单价。"""
     first_frame = _capture_720p(controller)
-    if (
-        _recognition_box(context, "BuyFishFoodDetailIdentity", first_frame) is not None
-        and _recognition_box(context, "BuyFishFoodUnitPrice", first_frame) is not None
-    ):
-        print("[购买鱼食] 已在廉价鱼食详情页，跳过商品列表查找", flush=True)
+    if _detail_matches(context, first_frame, spec):
+        print(f"[购买鱼食] 已在{spec.label}详情页，跳过商品列表查找", flush=True)
         return True
 
     for scroll_index in range(max_scrolls + 1):
@@ -995,22 +1056,19 @@ def _find_and_enter_cheap_fish_food(context: Context, controller, max_scrolls: i
             print("[购买鱼食] 当前页面不是已确认的商品列表，停止查找", flush=True)
             return False
 
-        target_box = _recognition_box(context, "BuyFishFoodTargetCard", frame)
+        target_box = _recognition_box(context, spec.target, frame)
         if target_box is not None:
             if _task_cancelled(context):
                 print("[购买鱼食] 已收到停止请求，未点击商品", flush=True)
                 return False
             target_x, target_y = _box_center(target_box)
-            print(f"[购买鱼食] OCR 命中廉价鱼食，点击识别框中心 ({target_x}, {target_y})", flush=True)
+            print(f"[购买鱼食] OCR 命中{spec.label}，点击识别框中心 ({target_x}, {target_y})", flush=True)
             controller.post_click(target_x, target_y).wait()
             time.sleep(1.0)
             detail_frame = _capture_720p(controller)
-            if (
-                _recognition_box(context, "BuyFishFoodDetailIdentity", detail_frame) is not None
-                and _recognition_box(context, "BuyFishFoodUnitPrice", detail_frame) is not None
-            ):
+            if _detail_matches(context, detail_frame, spec):
                 return True
-            print("[购买鱼食] 点击后未进入廉价鱼食详情页，停止操作", flush=True)
+            print(f"[购买鱼食] 点击后未进入{spec.label}详情页，停止操作", flush=True)
             return False
 
         if _recognition_box(context, "BuyFishFoodStoreItemIdentity", frame) is None:
@@ -1020,32 +1078,36 @@ def _find_and_enter_cheap_fish_food(context: Context, controller, max_scrolls: i
         if scroll_index == max_scrolls:
             break
 
-        print(f"[购买鱼食] 当前屏未找到廉价鱼食，向下查找 ({scroll_index + 1}/{max_scrolls})", flush=True)
+        print(f"[购买鱼食] 当前屏未找到{spec.label}，向下查找 ({scroll_index + 1}/{max_scrolls})", flush=True)
         if _task_cancelled(context):
             print("[购买鱼食] 已收到停止请求，未继续滑动", flush=True)
             return False
         controller.post_swipe(640, 580, 640, 480, 500).wait()
         time.sleep(0.8)
 
-    print("[购买鱼食] 有限次滑动后仍未找到廉价鱼食，安全停止", flush=True)
+    print(f"[购买鱼食] 有限次滑动后仍未找到{spec.label}，安全停止", flush=True)
     return False
 
 
-def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
-    """Buy one batch of cheap fish food. batch_bags <= 999.
-    If batch_bags == 999, use fast mode: long press to max, single final OCR check.
-    Otherwise use precise mode: existing fine-tuned logic.
-    """
+def _buy_one_batch(
+    context: Context,
+    controller,
+    batch_bags: int,
+    spec: _ShellFoodBuySpec = CHEAP_FOOD,
+) -> bool:
+    """Buy one batch of one shell-coin fish food. batch_bags <= 999."""
+    detail_node = spec.detail
+    price_node = spec.price
     required_nodes = (
-        "BuyFishFoodDetailIdentity",
-        "BuyFishFoodUnitPrice",
+        detail_node,
+        price_node,
         "BuyFishFoodPlusButton",
         "BuyFishFoodPurchaseButton",
     )
     frame = _capture_720p(controller)
     missing = [node for node in required_nodes if _recognition_box(context, node, frame) is None]
     if missing:
-        print(f"[购买鱼食] 廉价鱼食详情页门禁不完整，缺: {', '.join(missing)}", flush=True)
+        print(f"[购买鱼食] {spec.label}详情页门禁不完整，缺: {', '.join(missing)}", flush=True)
         return False
 
     current_quantity = _recognition_number(context, "BuyFishFoodQuantity", frame)
@@ -1060,7 +1122,7 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
     if is_max_batch:
         print(f"[购买鱼食] 本轮目标 999 袋（上限批次），快速触顶模式", flush=True)
     else:
-        print(f"[购买鱼食] 已确认廉价鱼食单价 400 金币，计划购买 {batch_bags} 袋", flush=True)
+        print(f"[购买鱼食] 已确认{spec.label}详情和单价，计划购买 {batch_bags} 袋", flush=True)
 
     if is_max_batch:
         # Fast mode: long press to max, single final check
@@ -1104,7 +1166,7 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
                 print("[购买鱼食] 已收到停止请求，终止长按", flush=True)
                 return False
             current_frame = _capture_720p(controller)
-            detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", current_frame)
+            detail_box = _recognition_box(context, detail_node, current_frame)
             plus_box = _recognition_box(context, "BuyFishFoodPlusButton", current_frame)
             if detail_box is None or plus_box is None:
                 print("[购买鱼食] 长按前页面或加号识别失败，停止操作", flush=True)
@@ -1145,7 +1207,7 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
                 print("[购买鱼食] 已收到停止请求，终止增加数量", flush=True)
                 return False
             current_frame = _capture_720p(controller)
-            detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", current_frame)
+            detail_box = _recognition_box(context, detail_node, current_frame)
             plus_box = _recognition_box(context, "BuyFishFoodPlusButton", current_frame)
             if detail_box is None or plus_box is None:
                 print(f"[购买鱼食] 第 {index + 2} 袋前页面或加号识别失败，停止操作", flush=True)
@@ -1162,8 +1224,8 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
         print("[购买鱼食] 已收到停止请求，未提交购买", flush=True)
         return False
     final_frame = _capture_720p(controller)
-    detail_box = _recognition_box(context, "BuyFishFoodDetailIdentity", final_frame)
-    price_box = _recognition_box(context, "BuyFishFoodUnitPrice", final_frame)
+    detail_box = _recognition_box(context, detail_node, final_frame)
+    price_box = _recognition_box(context, price_node, final_frame)
     purchase_box = _recognition_box(context, "BuyFishFoodPurchaseButton", final_frame)
     if detail_box is None or price_box is None or purchase_box is None:
         print("[购买鱼食] 点击购买前最终门禁失败，未提交购买", flush=True)
@@ -1180,24 +1242,19 @@ def _buy_one_batch(context: Context, controller, batch_bags: int) -> bool:
 
 
 def _on_confirmed_store_list(context: Context, frame) -> bool:
-    """列表页有左上角“返回”，且不能仍是廉价鱼食详情（标题 + 400 金币）。
-
-    其它商品名门禁故意不含“廉价鱼食”。买完回到只剩这张卡片的末屏时，
-    仍要用这张卡片确认已经离开详情，否则购买会被误判失败。
-    """
+    """列表页有左上角“返回”，且不能仍停在任一金币鱼食详情（标题 + 对应单价）。"""
     if frame is None:
         return False
     if _recognition_box(context, "BuyFishFoodStoreIdentity", frame) is None:
         return False
-    on_detail = (
-        _recognition_box(context, "BuyFishFoodDetailIdentity", frame) is not None
-        and _recognition_box(context, "BuyFishFoodUnitPrice", frame) is not None
-    )
-    if on_detail:
+    if _open_detail_spec(context, frame) is not None:
         return False
     if _recognition_box(context, "BuyFishFoodStoreItemIdentity", frame) is not None:
         return True
-    return _recognition_box(context, "BuyFishFoodTargetCard", frame) is not None
+    return any(
+        _recognition_box(context, spec.target, frame) is not None
+        for spec in SHELL_FOODS
+    )
 
 
 def _wait_back_to_store_list(context: Context, controller) -> bool:
@@ -1211,6 +1268,32 @@ def _wait_back_to_store_list(context: Context, controller) -> bool:
     return False
 
 
+def _buy_planned_food(context: Context, controller, spec: _ShellFoodBuySpec, bags: int, already_on_detail: bool) -> bool:
+    remaining = bags
+    batch_num = 0
+    while remaining > 0:
+        batch_num += 1
+        batch = min(remaining, 999)
+        print(
+            f"[购买鱼食] {spec.label}第 {batch_num} 轮：本轮买 {batch} 袋，剩余 {remaining - batch} 袋",
+            flush=True,
+        )
+        if not already_on_detail:
+            if not _find_and_enter_cheap_fish_food(context, controller, 12, spec):
+                print(f"[购买鱼食] 查找{spec.label}失败，终止购买", flush=True)
+                return False
+        already_on_detail = False
+        if not _buy_one_batch(context, controller, batch, spec):
+            print(f"[购买鱼食] {spec.label}第 {batch_num} 轮购买失败", flush=True)
+            return False
+        if not _wait_back_to_store_list(context, controller):
+            print("[购买鱼食] 购买后未确认返回商品列表，停止操作", flush=True)
+            return False
+        remaining -= batch
+        print(f"[购买鱼食] {spec.label}第 {batch_num} 轮完成，已累计购买 {bags - remaining} 袋", flush=True)
+    return True
+
+
 @AgentServer.custom_action("BuyCheapFishFoodAction")
 class BuyCheapFishFoodAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
@@ -1222,45 +1305,41 @@ class BuyCheapFishFoodAction(CustomAction):
 
             param = parse_dict_param(argv.custom_action_param)
             bags = safe_int(param.get("bags"), 1, min_val=1, max_val=9999)
+            normal_bags = safe_int(param.get("normal_bags"), 0, min_val=0, max_val=9999)
+            high_bags = safe_int(param.get("high_bags"), 0, min_val=0, max_val=9999)
+            counts = {
+                CHEAP_FOOD: bags,
+                NORMAL_FOOD: normal_bags,
+                HIGH_FOOD: high_bags,
+            }
 
             if _task_cancelled(context):
                 print("[购买鱼食] 已收到停止请求，未开始购买", flush=True)
                 return False
 
-            # If we're already on detail page, skip find step
             first_frame = _capture_720p(controller)
-            already_on_detail = (
-                _recognition_box(context, "BuyFishFoodDetailIdentity", first_frame) is not None
-                and _recognition_box(context, "BuyFishFoodUnitPrice", first_frame) is not None
-            )
-
-            remaining = bags
-            batch_num = 0
-
-            while remaining > 0:
-                batch_num += 1
-                batch = min(remaining, 999)
-                print(f"[购买鱼食] 第 {batch_num} 轮：本轮买 {batch} 袋，剩余 {remaining - batch} 袋", flush=True)
-
-                # If not on detail page, find and enter
-                if not already_on_detail:
-                    if not _find_and_enter_cheap_fish_food(context, controller, 12):
-                        print("[购买鱼食] 查找廉价鱼食失败，终止购买", flush=True)
-                        return False
-                already_on_detail = False  # after each purchase we go back to store list
-
-                # Buy this batch
-                if not _buy_one_batch(context, controller, batch):
-                    print(f"[购买鱼食] 第 {batch_num} 轮购买失败", flush=True)
+            open_spec = _open_detail_spec(context, first_frame)
+            ordered = []
+            if open_spec is not None and counts[open_spec] > 0:
+                ordered.append(open_spec)
+            for spec in SHELL_FOODS:
+                if counts[spec] > 0 and spec not in ordered:
+                    ordered.append(spec)
+            if open_spec is not None and counts[open_spec] == 0:
+                back_box = _recognition_box(context, "BuyFishFoodStoreIdentity", first_frame)
+                if back_box is None:
+                    print("[购买鱼食] 当前详情不是本次要买的鱼食，且没有返回按钮，停止操作", flush=True)
                     return False
-
-                # Wait back to store list
+                back_x, back_y = _box_center(back_box)
+                print(f"[购买鱼食] 离开不在购买计划中的详情页 ({back_x}, {back_y})", flush=True)
+                controller.post_click(back_x, back_y).wait()
                 if not _wait_back_to_store_list(context, controller):
-                    print("[购买鱼食] 购买后未确认返回商品列表，停止操作", flush=True)
+                    print("[购买鱼食] 离开详情后未确认回到商品列表，停止操作", flush=True)
                     return False
 
-                remaining -= batch
-                print(f"[购买鱼食] 第 {batch_num} 轮完成，已累计购买 {bags - remaining} 袋", flush=True)
+            for spec in ordered:
+                if not _buy_planned_food(context, controller, spec, counts[spec], spec is open_spec):
+                    return False
 
             # All batches done: click back to tank
             store_back_box = _recognition_box(context, "BuyFishFoodStoreIdentity", _capture_720p(controller))
@@ -1280,7 +1359,10 @@ class BuyCheapFishFoodAction(CustomAction):
                 time.sleep(0.3)
                 tank_frame = _capture_720p(controller)
                 if _recognition_box(context, "BuyFishFoodTankIdentity", tank_frame) is not None:
-                    print(f"[购买鱼食] 全部完成，共购买 {bags} 袋，已确认返回鱼缸", flush=True)
+                    print(
+                        f"[购买鱼食] 全部完成，廉价 {bags} 袋、普通 {normal_bags} 袋、高级 {high_bags} 袋，已确认返回鱼缸",
+                        flush=True,
+                    )
                     return True
 
             print("[购买鱼食] 返回后未识别到鱼缸，停止操作", flush=True)
@@ -1302,6 +1384,7 @@ class InitFriendGemStateAction(CustomAction):
             friend_gem_state["max_bubble_misses"] = 12
             friend_gem_state["max_friend_index"] = 300
             friend_gem_state["roster_limit_logged"] = False
+            friend_gem_state["message_policy"] = default_message_policy()
             manatee_state["return_mode"] = "friend_gem"
             manatee_state["last_feed_count"] = 0
             print(
@@ -1408,6 +1491,140 @@ class FriendGemConfirmSafePopupAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[好友摸宝] 弹窗确认异常: {e}", flush=True)
+            return False
+
+
+def _message_ocr_items(context: Context, frame):
+    result = context.run_recognition("FriendGemMessageListOcr", frame)
+    items = []
+    for item in getattr(result, "all_results", None) or []:
+        text = str(getattr(item, "text", "")).strip()
+        box = getattr(item, "box", None)
+        if not text or not box or len(box) != 4:
+            continue
+        items.append({"text": text, "box": [int(value) for value in box]})
+    return items
+
+
+def _click_succeeded(controller, x, y):
+    job = controller.post_click(int(x), int(y))
+    if not job:
+        return False
+    waited = job.wait()
+    return bool(getattr(waited, "succeeded", False))
+
+
+@AgentServer.custom_action("FriendGemSetMessagePolicyAction")
+class FriendGemSetMessagePolicyAction(CustomAction):
+    """把界面选项写入本轮留言策略。无法识别的值按不处理。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(getattr(argv, "custom_action_param", None))
+            category = param.get("category")
+            policy = normalize_policy(category, param.get("policy"))
+            current = friend_gem_state.setdefault("message_policy", default_message_policy())
+            if policy is None:
+                print(
+                    f"[好友摸宝] 留言选项无法识别（{category}={param.get('policy')}），该类别不处理。",
+                    flush=True,
+                )
+                return True
+            current[category] = policy
+            print(f"[好友摸宝] 留言类别 {category} = {policy}", flush=True)
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[好友摸宝] 留言选项异常: {e}", flush=True)
+            return False
+
+
+def _open_star_friends(context: Context, controller) -> bool:
+    for _ in range(2):
+        if _task_cancelled(context):
+            return False
+        frame = _capture_720p(controller)
+        if frame is None:
+            print("[好友摸宝] ERROR: 进入星级好友前截图失败。", flush=True)
+            return False
+        if _recognition_box(context, "FriendPageStarFriendsIdentity", frame) is not None:
+            print("[好友摸宝] 已确认星级好友列表。", flush=True)
+            return True
+        if _recognition_box(context, "FriendGemMessageInbox", frame) is None:
+            print("[好友摸宝] ERROR: 点星级好友页签前已离开留言箱，停止。", flush=True)
+            return False
+        x, y = STAR_TAB_CENTER
+        print(f"[好友摸宝] 留言处理结束，点击星级好友页签 ({x}, {y})。", flush=True)
+        if not _click_succeeded(controller, x, y):
+            print("[好友摸宝] ERROR: 星级好友页签点击未下发。", flush=True)
+            return False
+        time.sleep(1.0)
+    frame = _capture_720p(controller)
+    if frame is not None and _recognition_box(context, "FriendPageStarFriendsIdentity", frame) is not None:
+        print("[好友摸宝] 已确认星级好友列表。", flush=True)
+        return True
+    print("[好友摸宝] ERROR: 未确认星级好友列表。", flush=True)
+    return False
+
+
+@AgentServer.custom_action("FriendGemHandleMessagesAction")
+class FriendGemHandleMessagesAction(CustomAction):
+    """留言箱内按类别点按钮，然后进入星级好友。默认策略不点任何留言。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            controller = context.tasker.controller
+            if not controller:
+                print("[好友摸宝] ERROR: 未获取到控制器，留言箱未处理。", flush=True)
+                return False
+            policy = friend_gem_state.setdefault("message_policy", default_message_policy())
+            print(f"[好友摸宝] 当前留言策略: {policy}", flush=True)
+            opened_tabs = set()
+            acted_rows = set()
+            clicks = 0
+            for _ in range(16):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(controller)
+                if frame is None:
+                    print("[好友摸宝] ERROR: 留言箱截图失败，未继续点击。", flush=True)
+                    return False
+                if _recognition_box(context, "FriendGemMessageInbox", frame) is None:
+                    if _recognition_box(context, "FriendPageStarFriendsIdentity", frame) is not None:
+                        print("[好友摸宝] 已在星级好友列表。", flush=True)
+                        return True
+                    print("[好友摸宝] ERROR: 离开留言箱后不是星级好友列表，停止，避免误点。", flush=True)
+                    return False
+                items = _message_ocr_items(context, frame)
+                decision = choose_message_click(items, policy, opened_tabs, acted_rows)
+                if decision is None:
+                    break
+                x, y = _box_center(tuple(decision["box"]))
+                if decision["kind"] == "tab":
+                    if not (0 <= x < 230 and 170 <= y <= 640):
+                        opened_tabs.add(decision["key"])
+                        continue
+                    opened_tabs.add(decision["key"])
+                else:
+                    if clicks >= 6:
+                        break
+                    if not (800 <= x <= 1240 and 180 <= y <= 680):
+                        acted_rows.add(decision["key"])
+                        continue
+                    acted_rows.add(decision["key"])
+                    clicks += 1
+                print(
+                    f"[好友摸宝] 留言 {decision['category']} 点击「{decision['label']}」({x}, {y})",
+                    flush=True,
+                )
+                if not _click_succeeded(controller, x, y):
+                    print("[好友摸宝] ERROR: 留言点击未下发。", flush=True)
+                    return False
+                time.sleep(0.9)
+            return _open_star_friends(context, controller)
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[好友摸宝] 留言处理异常: {e}", flush=True)
             return False
 
 
@@ -1814,6 +2031,8 @@ class InitSeaOtterStateAction(CustomAction):
             sea_otter_gem_state["completion_reason"] = None
             sea_otter_gem_state["normal_completion"] = False
             sea_otter_gem_state["daily_count_recorded"] = False
+            sea_otter_gem_state["home_return_ticks"] = 0
+            sea_otter_gem_state["home_return_waits"] = 0
             try:
                 count = local_state.get_sea_otter_daily_count()
                 limit = local_state.SEA_OTTER_DAILY_LIMIT
@@ -1854,9 +2073,10 @@ class InitSeaOtterStateAction(CustomAction):
             return False
 
 
-def _sea_otter_refresh_last_friend(context, ctrl):
+def _sea_otter_refresh_last_friend(context, ctrl, *, return_to_last=True):
     """末位好友的刷新跳板：每次跨层点击后必须确认真实好友与箭头状态。"""
-    for x, expect_last in ((1085, False), (1205, True)):
+    steps = ((1085, False), (1205, True)) if return_to_last else ((1085, False),)
+    for x, expect_last in steps:
         if _task_cancelled(context) or not ctrl.post_click(x, 68).wait().succeeded:
             return False
         verified = False
@@ -1931,11 +2151,13 @@ class SeaOtterHarvestAction(CustomAction):
 
             # 2. 依据当前 side 决定下一步导航
             if refresh_last_friend:
-                if not _sea_otter_refresh_last_friend(context, ctrl):
+                # 末位也可能是窗口 RIGHT，必须返回原 LEFT，不能强制改成末位 LEFT。
+                if not _sea_otter_refresh_last_friend(context, ctrl, return_to_last=(side == "left")):
                     sea_otter_gem_state["completion_reason"] = "LAST_FRIEND_REFRESH_FAILED"
                     return False
+                movement = "HARVEST_PREV_NEXT_LAST_FRIEND" if side == "left" else "HARVEST_THEN_PREV"
                 print(
-                    f"[SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND "
+                    f"[SeaOtter] side={side.upper()} ui=HARVESTABLE action={movement} "
                     f"(累计摸宝: {cur}/{limit})",
                     flush=True,
                 )
@@ -1993,7 +2215,7 @@ class SeaOtterAdvancePairAction(CustomAction):
 
 @AgentServer.custom_action("SeaOtterReturnFromRecommendedAction")
 class SeaOtterReturnFromRecommendedAction(CustomAction):
-    """RIGHT 时返回末位好友；LEFT 时说明末位好友已耗尽，正常结束。"""
+    """RIGHT 时返回末位好友；LEFT 到边界不能证明寻宝体力耗尽。"""
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             ctrl = context.tasker.controller
@@ -2004,13 +2226,13 @@ class SeaOtterReturnFromRecommendedAction(CustomAction):
                 print("[海獭摸宝] 收到停止请求，未从推荐玩家页面继续操作", flush=True)
                 return False
             if sea_otter_gem_state.get("current_side", "left") == "left":
-                sea_otter_gem_state["completion_reason"] = "LAST_FRIEND_EXHAUSTED"
-                sea_otter_gem_state["normal_completion"] = True
+                sea_otter_gem_state["completion_reason"] = "BOUNDARY_STAMINA_UNVERIFIED"
+                sea_otter_gem_state["normal_completion"] = False
                 print(
-                    "[SeaOtter] side=LEFT ui=RECOMMENDED action=DONE_LAST_FRIEND_EXHAUSTED",
+                    "[海獭摸宝] ERROR: 已到推荐玩家边界，但未确认寻宝体力耗尽；本轮未完成，不增加今日次数。",
                     flush=True,
                 )
-                return True
+                return False
 
             print("[SeaOtter] side=RIGHT ui=RECOMMENDED action=PREV_AS_LAST_FRIEND_BRIDGE", flush=True)
             ctrl.post_click(1085, 68).wait()
@@ -2030,26 +2252,114 @@ class SeaOtterSwitchPairAction(CustomAction):
         return True
 
 
-@AgentServer.custom_action("SeaOtterMarkNormalCompletionAction")
-class SeaOtterMarkNormalCompletionAction(CustomAction):
-    """在 Pipeline 的正常业务终点节点上显式标记"本次运行为正常完整结束"。
-
-    仅 NORMAL 终点允许挂载本 Action；Safety Limit / 异常 / 手动停止路径
-    绝不会执行到它，从根源上保证每日计数只来自正常完整运行。
-    """
+@AgentServer.custom_action("SeaOtterBoundaryIncompleteAction")
+class SeaOtterBoundaryIncompleteAction(CustomAction):
+    """末位 RIGHT 耗尽仍回 LEFT；真正扫描边界不能计为体力耗尽。"""
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             param = parse_dict_param(getattr(argv, "custom_action_param", None))
-            reason = str(param.get("reason") or "NORMAL_COMPLETION")
-            sea_otter_gem_state["normal_completion"] = True
+            reason = str(param.get("reason") or "BOUNDARY_STAMINA_UNVERIFIED")
+            if (reason == "LAST_FRIEND_STAMINA_UNVERIFIED"
+                    and sea_otter_gem_state.get("current_side") == "right"):
+                ctrl = context.tasker.controller
+                frame = _capture_720p(ctrl) if ctrl else None
+                if (frame is None
+                        or not _recognition_box(context, "SeaOtterGrayRightArrow", frame)
+                        or not _recognition_box(context, "SeaOtterLastFriendExhausted", frame)
+                        or not _sea_otter_refresh_last_friend(context, ctrl, return_to_last=False)):
+                    sea_otter_gem_state["completion_reason"] = "LAST_FRIEND_REFRESH_FAILED"
+                    print("[海獭摸宝] ERROR: 末位 RIGHT 耗尽后的返回未确认，停止", flush=True)
+                    return False
+                sea_otter_gem_state["current_side"] = "left"
+                print("[SeaOtter] side=RIGHT ui=EXHAUSTED action=PREV_AS_REFRESH_BRIDGE", flush=True)
+                return True
+            sea_otter_gem_state["normal_completion"] = False
             sea_otter_gem_state["completion_reason"] = reason
-            print(f"[海獭摸宝] 到达正常业务终点 ({reason})", flush=True)
+            print(
+                f"[海獭摸宝] ERROR: 到达好友边界 ({reason})，未确认寻宝体力耗尽；本轮未完成，不增加今日次数。",
+                flush=True,
+            )
+            # 返回 False 只表示不计入完整运行。Pipeline on_error 接着返回主鱼缸。
+            # 未使用体力提示由后续节点识别后失败，这里不点击确认。
+            return False
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海獭摸宝] 边界处理异常: {e}", flush=True)
+            return False
+
+
+_HOME_RETURN_CLICK_LIMIT = 6
+_HOME_RETURN_WAIT_LIMIT = 30
+
+
+@AgentServer.custom_action("SeaOtterHomeReturnClickAction")
+class SeaOtterHomeReturnClickAction(CustomAction):
+    """点击左上角已经识别到的「返回」。超过次数或落点不在左上角则停止。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            ticks = int(sea_otter_gem_state.get("home_return_ticks") or 0) + 1
+            sea_otter_gem_state["home_return_ticks"] = ticks
+            if ticks > _HOME_RETURN_CLICK_LIMIT:
+                print("[海獭摸宝] ERROR: 返回主鱼缸已点击 6 次仍未到主鱼缸，停止。", flush=True)
+                return False
+            raw_box = getattr(argv, "box", None)
+            if raw_box is None:
+                print("[海獭摸宝] ERROR: 返回按钮没有识别框，停止。", flush=True)
+                return False
+            box = tuple(int(value) for value in raw_box)
+            if len(box) != 4 or box[2] <= 0 or box[3] <= 0:
+                print("[海獭摸宝] ERROR: 返回按钮识别框无效，停止。", flush=True)
+                return False
+            cx, cy = _box_center(box)
+            if not (0 <= cx < 189 and 0 <= cy < 146):
+                print(f"[海獭摸宝] ERROR: 返回落点 ({cx}, {cy}) 不在左上角，停止。", flush=True)
+                return False
+            ctrl = context.tasker.controller
+            if not ctrl:
+                print("[海獭摸宝] ERROR: 未获取到 Controller", flush=True)
+                return False
+            if not ctrl.post_click(cx, cy).wait().succeeded:
+                print("[海獭摸宝] ERROR: 返回点击未成功，停止。", flush=True)
+                return False
+            print(f"[海獭摸宝] 返回主鱼缸：第 {ticks} 次点击返回 ({cx}, {cy})。", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
-            print(f"[海獭摸宝] 标记正常完成异常: {e}", flush=True)
+            print(f"[海獭摸宝] 返回主鱼缸异常: {e}", flush=True)
             return False
+
+
+@AgentServer.custom_action("SeaOtterHomeReturnWaitAction")
+class SeaOtterHomeReturnWaitAction(CustomAction):
+    """返回途中页面未稳定时等待。连续多次仍无法识别则停止。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            waits = int(sea_otter_gem_state.get("home_return_waits") or 0) + 1
+            sea_otter_gem_state["home_return_waits"] = waits
+            if waits > _HOME_RETURN_WAIT_LIMIT:
+                print("[海獭摸宝] ERROR: 返回主鱼缸时页面长时间无法识别，停止。", flush=True)
+                return False
+            return True
+        except Exception as e:
+            traceback.print_exc()
+            print(f"[海獭摸宝] 返回等待异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SeaOtterMarkNormalCompletionAction")
+class SeaOtterMarkNormalCompletionAction(CustomAction):
+    """好友列表自然终点：计入完整运行，再由 next 点击返回。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        param = parse_dict_param(getattr(argv, "custom_action_param", None))
+        reason = str(param.get("reason") or "NORMAL_COMPLETION")
+        sea_otter_gem_state["normal_completion"] = True
+        sea_otter_gem_state["completion_reason"] = reason
+        print(f"[海獭摸宝] 到达正常业务终点 ({reason})", flush=True)
+        return True
 
 
 @AgentServer.custom_action("SeaOtterFinalizeAction")
@@ -2065,19 +2375,19 @@ class SeaOtterFinalizeAction(CustomAction):
             if not sea_otter_gem_state.get("normal_completion"):
                 reason = sea_otter_gem_state.get("completion_reason")
                 if reason and str(reason).startswith("SAFETY_"):
-                    message = f"[海獭摸宝] 安全上限停止 ({reason})，本轮未完成；今日次数未增加。"
+                    message = f"[海獭摸宝] ERROR: 安全上限停止 ({reason})，本轮未完成；今日次数未增加。"
                 else:
-                    message = "[海獭摸宝] 本次未到正常业务终点（手动停止/异常/中断），今日次数未增加。"
+                    message = f"[海獭摸宝] ERROR: 本轮未确认完整结束 ({reason or 'INTERRUPTED'})，今日次数未增加。"
                 print(message, flush=True)
                 try:
                     context.override_pipeline({
-                        "SeaOtterDoneDisplay": {
-                            "focus": {"Node.Action.Succeeded": message}
+                        "SeaOtterDone": {
+                            "focus": {"Node.Action.Failed": message}
                         }
                     })
                 except Exception:
                     pass
-                return True
+                return False
 
             if sea_otter_gem_state.get("daily_count_recorded"):
                 print("[海獭摸宝] 本次任务的完整运行计数已记录过，跳过重复计数。", flush=True)
@@ -5395,12 +5705,18 @@ class SecretRealmGateDoneAction(CustomAction):
 
 @AgentServer.custom_action("ResetPrincessClaimHitsAction")
 class ResetPrincessClaimHitsAction(CustomAction):
-    """每次进入公主任务时重置三格的本次扫描点击上限。"""
+    """每次进入公主任务时重置三格和交付任务的本次点击上限。"""
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             parse_dict_param(getattr(argv, "custom_action_param", None))
-            for name in ("PrincessClaimTop", "PrincessClaimMiddle", "PrincessClaimBottom"):
+            for name in (
+                "PrincessClaimTop",
+                "PrincessClaimMiddle",
+                "PrincessClaimBottom",
+                "PrincessBountyDeliver",
+                "PrincessBountyOpenBag",
+            ):
                 if not context.clear_hit_count(name):
                     print(f"[公主任务] ERROR: 无法重置 {name} 的命中次数，安全停止。", flush=True)
                     return False
@@ -6399,6 +6715,7 @@ class MobileAdResetStateAction(CustomAction):
         mobile_ad_state["reward_recorded"] = False
         mobile_ad_state["consecutive_close_count"] = 0
         mobile_ad_state["max_cycles"] = max_cycles
+        mobile_ad_state["entry_retry_count"] = 0
         mobile_ad_state["log_tag"] = log_tag
         if max_cycles <= 0:
             print(f"[{log_tag}] 任务初始化：一直运行，直到用户手动停止", flush=True)
@@ -6482,8 +6799,23 @@ class MobileAdOnAdStartAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         mobile_ad_state["reward_recorded"] = False
         mobile_ad_state["consecutive_close_count"] = 0
+        mobile_ad_state["entry_retry_count"] = 0
         log_tag = mobile_ad_state.get("log_tag", "手机看广告")
         print(f"[{log_tag}] 新广告已确认启动播放，重置奖励弹窗记录标记", flush=True)
+        return True
+
+
+@AgentServer.custom_action("MobileAdRetryEntryAction")
+class MobileAdRetryEntryAction(CustomAction):
+    """Only activated by a visually verified lobby; cap failed ad launches."""
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        parse_dict_param(argv.custom_action_param)
+        retries = mobile_ad_state.get("entry_retry_count", 0)
+        if retries >= 3:
+            print("[手机看广告] ERROR: 大厅入口连续重试 3 次仍未启动广告", flush=True)
+            return False
+        mobile_ad_state["entry_retry_count"] = retries + 1
+        print(f"[手机看广告] 入口未启动广告，已确认仍在大厅，重试 {retries + 1} 次", flush=True)
         return True
 
 
@@ -6505,6 +6837,8 @@ class SetCollectFishTankModeAction(CustomAction):
         collect_fish_state["pending_target_tank"] = None
         collect_fish_state["switch_retry_count"] = 0
         collect_fish_state["starfish_entry_retry_count"] = 0
+        collect_fish_state["unwind_return_count"] = 0
+        collect_fish_state["single_start_return_count"] = 0
         starfish_timer_state["task_id"] = None
         starfish_timer_state["last_feed_time"] = 0.0
         starfish_timer_state["attempt_in_progress"] = False
@@ -6520,6 +6854,7 @@ class CollectFishResetStarfishEntryAction(CustomAction):
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         collect_fish_state["starfish_entry_retry_count"] = 0
+        collect_fish_state["unwind_return_count"] = 0
         return True
 
 
@@ -6546,6 +6881,7 @@ class CollectFishStarfishEntryFailedAction(CustomAction):
         )
         starfish_timer_state["attempt_in_progress"] = False
         starfish_timer_state["retry_not_before"] = time.time() + 60.0
+        collect_fish_state["unwind_return_count"] = 0
         print(message, flush=True)
         return True
 
@@ -6597,7 +6933,32 @@ class CollectFishSingleStartAction(CustomAction):
         collect_fish_state["current_tank"] = tank
         collect_fish_state["is_inited"] = True
         collect_fish_state["switch_retry_count"] = 0
+        collect_fish_state["single_start_return_count"] = 0
         print(f"[收鱼-单缸] 单鱼缸模式就绪，当前位于鱼缸 {tank}，开始收宝", flush=True)
+        return True
+
+
+@AgentServer.custom_action("CollectFishUnwindReturnAction")
+class CollectFishUnwindReturnAction(CustomAction):
+    """喂食失败后的返回计数。只在节点真正激活时加一。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        parse_dict_param(getattr(argv, "custom_action_param", None))
+        count = collect_fish_state.get("unwind_return_count", 0) + 1
+        collect_fish_state["unwind_return_count"] = count
+        print(f"[收鱼-海星] 尚未确认鱼缸主页面，返回 {count}/3", flush=True)
+        return True
+
+
+@AgentServer.custom_action("CollectFishSingleStartReturnAction")
+class CollectFishSingleStartReturnAction(CustomAction):
+    """单缸启动停在管理页时的返回计数。未看到鱼缸编号不得开始收宝。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        parse_dict_param(getattr(argv, "custom_action_param", None))
+        count = collect_fish_state.get("single_start_return_count", 0) + 1
+        collect_fish_state["single_start_return_count"] = count
+        print(f"[收鱼-单缸] 当前在鱼缸管理页，返回 {count}/3", flush=True)
         return True
 
 

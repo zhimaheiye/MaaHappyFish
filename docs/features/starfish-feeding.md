@@ -4,7 +4,7 @@
 
 自动打开设置面板，找到海星并补充鱼食。为解决 MFA 原生节点超时在循环任务中被重置的问题，触发器改用 Python 侧计时。
 
-当前投放类别限定为廉价鱼食；其资源属性及充分实机测试授权见 `docs/game-knowledge.md`。
+当前只自动投放廉价、普通、高级三种金币鱼食。识别从默认排序的最前面开始，也就是加号右边第一格的廉价，接着是右边第二格的普通，然后是加号正下方的高级。三种都没有才报错。模板只取鱼食袋上半部分，不含下面会变化的红色库存数字。点中袋子会直接补进海星。资源边界见 `docs/game-knowledge.md`。海牛先生不走这三袋。
 
 - **触发器**: `CheckStarfishTimerReco` (自定义识别器，基于 `time.time()`)
 - **周期**: 由 UI 选项提供（如 30秒测试/1分/30分/不喂食）。
@@ -14,6 +14,7 @@
 - 独立 `FeedStarfishStandalone` 按海星面板 → 鱼缸管理页 → 鱼缸 1/2/3 主页面的顺序恢复。
 - 已在海星面板时直接从“补充”继续；已在鱼缸管理页时从 OCR“海星”入口继续；只有命中当前鱼缸编号模板后才允许点击管理入口 `[176,54,4,4]`。
 - “选择喂食”弹窗仅凭普通鱼食袋或通用文字无法证明来自海星流程，也缺少当前海星身份上下文，登记为 `Intentional Unsupported / Missing Context`。从该弹窗启动时安全停止，不点击鱼食。
+- **2026-10-06**：收鱼产物和多鱼缸巡检里，都不能把「返回」或 DirectHit 失败节点和鱼食模板放在同一个 `next`。鱼食没中的第一帧会立刻走开。等待放在当前节点上，失败走 `on_error`。详见 [collect-fish.md](collect-fish.md) 和 [patrol.md](patrol.md)。
 - 该补强只调整独立单次入口；CollectFish/Patrol 的既有三海星补充业务顺序不变。
 
 ## 执行流程 (Workflow)
@@ -39,11 +40,11 @@ CollectFishOpenUniversalStarfish (OCR 识别并点击 "海星" [700, 30, 150, 70
 CollectFishVerifyStarfishPage (OCR 校验 "海星" 标题页)
   ↓
 CollectFishFeedCuteStarfish (OCR 识别并点击 "萌海星" [100, 80, 1080, 560])
-  ↓ 点击 "补充" → 点击第一格普通鱼食袋 → 校验装满 → 返回海星列表
+  ↓ 点击 "补充" → 按廉价、普通、高级识别鱼食袋上半部分并点击 → 校验装满 → 返回海星列表
 CollectFishFeedWellBehavedStarfish (OCR 识别并点击 "乖海星" [100, 80, 1080, 560])
-  ↓ 点击 "补充" → 点击第一格普通鱼食袋 → 校验装满 → 返回海星列表
+  ↓ 点击 "补充" → 按廉价、普通、高级识别鱼食袋上半部分并点击 → 校验装满 → 返回海星列表
 CollectFishFeedBrightStarfish (OCR 识别并点击 "亮海星" [100, 80, 1080, 560])
-  ↓ 点击 "补充" → 点击第一格普通鱼食袋 → 校验装满 → 返回海星列表
+  ↓ 点击 "补充" → 按廉价、普通、高级识别鱼食袋上半部分并点击 → 校验装满 → 返回海星列表
 CollectFishStarfishReturnToManagement (点击返回至鱼缸管理)
   ↓
 CollectFishStarfishReturnToTank (点击返回确认回到鱼缸主界面)

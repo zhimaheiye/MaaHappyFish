@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.7.4",
+    "version": "0.7.5",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -73,9 +73,10 @@
             "name": "好友摸宝",
             "entry": "FriendGemTask",
             "default_check": false,
-            "description": "从主鱼缸、好友列表或好友水族箱启动；优先使用可用的快捷摸宝按钮，不可用时通过图像识别收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。挂机跨过中午时可选插入十二点日常收尾。",
+            "description": "从主鱼缸、好友列表或好友水族箱启动；优先使用可用的快捷摸宝按钮，不可用时通过图像识别收取金币产物；周末遇到海牛先生时先完成连续喂食，再恢复下一位好友。挂机跨过中午时可选插入十二点日常收尾。若先打开留言箱，按「留言箱」选项处理后再进入星级好友，默认全部不处理。",
             "option": [
-                "挂机十二点日常"
+                "挂机十二点日常",
+                "好友留言处理"
             ]
         },
         {
@@ -105,7 +106,7 @@
             "name": "公主任务",
             "entry": "PrincessTask",
             "default_check": false,
-            "description": "从主鱼缸或公主任务页面启动，在右侧奖励列从上到下依次点击三个礼盒；领取成功、失败或积分不足后继续下一格，三格都尝试完再返回鱼缸。"
+            "description": "从主鱼缸或公主任务页面启动。赏金奖励页点击交付任务，满五次后开启福袋，再进入公主日记按上中下三格领取礼盒并返回鱼缸。"
         },
         {
             "name": "收鱼产物",
@@ -118,7 +119,8 @@
                 "收宝石方式",
                 "挂机鱼食计算",
                 "挂机十二点日常",
-                "挂机十点好友摸宝"
+                "挂机十点好友摸宝",
+                "好友留言处理"
             ]
         },
         {
@@ -131,7 +133,8 @@
                 "多鱼缸巡检子任务",
                 "收宝石方式",
                 "挂机十二点日常",
-                "挂机十点好友摸宝"
+                "挂机十点好友摸宝",
+                "好友留言处理"
             ]
         },
         {
@@ -144,7 +147,7 @@
             "name": "购买鱼食",
             "entry": "BuyFishFoodTask",
             "default_check": false,
-            "description": "使用金币购买指定袋数的廉价鱼食；支持从鱼缸、选择喂食弹窗、商品列表或廉价鱼食详情页安全启动。",
+            "description": "使用金币购买廉价、普通、高级鱼食；支持从鱼缸、选择喂食弹窗、商品列表或这三种详情页安全启动。不购买开心宝商品。",
             "option": [
                 "购买廉价鱼食袋数"
             ]
@@ -195,13 +198,14 @@
             "name": "日常收尾",
             "entry": "DailyRoutineTask",
             "default_check": false,
-            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（含魔力召唤、宝石融合和酿月食香活动体力检查），明确记录每项开始、完成和未勾选跳过原因；每个子任务结束后均安全返回主鱼缸。",
+            "description": "每日收尾总控任务：按序自动执行勾选的日常子任务（含魔力召唤、宝石融合和酿月食香活动体力检查），明确记录每项开始、完成和未勾选跳过原因；每个子任务结束后均安全返回主鱼缸。好友摸宝不在这个清单里；留言箱选项要在正在运行的好友摸宝、收鱼产物或巡检任务上设置。",
             "option": [
                 "日常收尾任务",
                 "乐队鱼乐章",
                 "金海豚奖励优先级",
                 "钓鱼地点",
-                "钓鱼饵食适配模式"
+                "钓鱼饵食适配模式",
+                "好友留言处理"
             ]
         },
         {
@@ -1746,26 +1750,44 @@
         },
         "购买廉价鱼食袋数": {
             "type": "input",
-            "label": "购买廉价鱼食",
-            "description": "每袋含 30 粒鱼食、消耗 400 金币；流程只会购买廉价鱼食",
+            "label": "购买金币鱼食",
+            "description": "廉价鱼食每袋 400 金币，普通鱼食每袋 2000 金币，高级鱼食每袋 8500 金币。只买这三种，不花开心宝。",
             "inputs": [
                 {
                     "name": "袋数",
-                    "label": "购买袋数",
+                    "label": "廉价鱼食袋数",
                     "default": "1",
                     "pipeline_type": "int",
                     "verify": "^[1-9]\\d{0,3}$"
+                },
+                {
+                    "name": "普通袋数",
+                    "label": "普通鱼食袋数",
+                    "default": "0",
+                    "pipeline_type": "int",
+                    "verify": "^(?:0|[1-9]\\d{0,3})$"
+                },
+                {
+                    "name": "高级袋数",
+                    "label": "高级鱼食袋数",
+                    "default": "0",
+                    "pipeline_type": "int",
+                    "verify": "^(?:0|[1-9]\\d{0,3})$"
                 }
             ],
             "pipeline_override": {
                 "BuyFishFoodStartAtDetail": {
                     "custom_action_param": {
-                        "bags": "{袋数}"
+                        "bags": "{袋数}",
+                        "normal_bags": "{普通袋数}",
+                        "high_bags": "{高级袋数}"
                     }
                 },
                 "BuyFishFoodPurchaseOnDetail": {
                     "custom_action_param": {
-                        "bags": "{袋数}"
+                        "bags": "{袋数}",
+                        "normal_bags": "{普通袋数}",
+                        "high_bags": "{高级袋数}"
                     }
                 }
             }
@@ -2150,6 +2172,264 @@
                         "HangupFriendGemPatrol": {
                             "custom_recognition_param": {
                                 "enabled": false
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "好友留言处理": {
+            "type": "select",
+            "label": "留言箱",
+            "description": "好友摸宝先打开留言箱时按类别处理，再进入星级好友。默认全部不处理。好友申请、鱼宝宝拜访和折扣券只点「同意」或「拒绝」；系统通知的同意点「查看」、拒绝点「删除」。同一行出现开心宝、购买或 VIP 不点。海牛先生不处理留言。请在实际运行好友摸宝的任务上设置。",
+            "default_case": "全部不处理",
+            "cases": [
+                {
+                    "name": "全部不处理",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicySystem": {
+                            "custom_action_param": {
+                                "category": "system",
+                                "policy": "skip"
+                            }
+                        },
+                        "FriendGemMessagePolicyFriendRequest": {
+                            "custom_action_param": {
+                                "category": "friend_request",
+                                "policy": "skip"
+                            }
+                        },
+                        "FriendGemMessagePolicyBabyVisit": {
+                            "custom_action_param": {
+                                "category": "baby_visit",
+                                "policy": "skip"
+                            }
+                        },
+                        "FriendGemMessagePolicyCoupon": {
+                            "custom_action_param": {
+                                "category": "coupon",
+                                "policy": "skip"
+                            }
+                        },
+                        "FriendGemMessagePolicyOther": {
+                            "custom_action_param": {
+                                "category": "other",
+                                "policy": "skip"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "按类别设置",
+                    "option": [
+                        "留言系统通知",
+                        "留言好友申请",
+                        "留言鱼宝宝拜访",
+                        "留言折扣券",
+                        "留言其它消息"
+                    ]
+                }
+            ]
+        },
+        "留言系统通知": {
+            "type": "select",
+            "label": "系统通知",
+            "description": "实机这条右侧是「查看」和「删除」。同意点查看，拒绝点删除。",
+            "default_case": "不处理",
+            "cases": [
+                {
+                    "name": "不处理",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicySystem": {
+                            "custom_action_param": {
+                                "category": "system",
+                                "policy": "skip"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "同意",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicySystem": {
+                            "custom_action_param": {
+                                "category": "system",
+                                "policy": "accept"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "拒绝",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicySystem": {
+                            "custom_action_param": {
+                                "category": "system",
+                                "policy": "reject"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "留言好友申请": {
+            "type": "select",
+            "label": "好友申请",
+            "description": "只点按钮上的「同意」或「拒绝」。没有这两个字就不点。",
+            "default_case": "不处理",
+            "cases": [
+                {
+                    "name": "不处理",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyFriendRequest": {
+                            "custom_action_param": {
+                                "category": "friend_request",
+                                "policy": "skip"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "同意",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyFriendRequest": {
+                            "custom_action_param": {
+                                "category": "friend_request",
+                                "policy": "accept"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "拒绝",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyFriendRequest": {
+                            "custom_action_param": {
+                                "category": "friend_request",
+                                "policy": "reject"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "留言鱼宝宝拜访": {
+            "type": "select",
+            "label": "鱼宝宝拜访邀请",
+            "description": "只点按钮上的「同意」或「拒绝」。没有这两个字就不点。",
+            "default_case": "不处理",
+            "cases": [
+                {
+                    "name": "不处理",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyBabyVisit": {
+                            "custom_action_param": {
+                                "category": "baby_visit",
+                                "policy": "skip"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "同意",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyBabyVisit": {
+                            "custom_action_param": {
+                                "category": "baby_visit",
+                                "policy": "accept"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "拒绝",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyBabyVisit": {
+                            "custom_action_param": {
+                                "category": "baby_visit",
+                                "policy": "reject"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "留言折扣券": {
+            "type": "select",
+            "label": "折扣券过期",
+            "description": "只点按钮上的「同意」或「拒绝」。同一行出现开心宝、购买或 VIP 时不点。",
+            "default_case": "不处理",
+            "cases": [
+                {
+                    "name": "不处理",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyCoupon": {
+                            "custom_action_param": {
+                                "category": "coupon",
+                                "policy": "skip"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "同意",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyCoupon": {
+                            "custom_action_param": {
+                                "category": "coupon",
+                                "policy": "accept"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "拒绝",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyCoupon": {
+                            "custom_action_param": {
+                                "category": "coupon",
+                                "policy": "reject"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "留言其它消息": {
+            "type": "select",
+            "label": "其它留言",
+            "description": "优先点「同意」或「拒绝」。没有这两个字时，同意点「查看」，拒绝点「删除」。付费词不点。",
+            "default_case": "不处理",
+            "cases": [
+                {
+                    "name": "不处理",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyOther": {
+                            "custom_action_param": {
+                                "category": "other",
+                                "policy": "skip"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "同意",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyOther": {
+                            "custom_action_param": {
+                                "category": "other",
+                                "policy": "accept"
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "拒绝",
+                    "pipeline_override": {
+                        "FriendGemMessagePolicyOther": {
+                            "custom_action_param": {
+                                "category": "other",
+                                "policy": "reject"
                             }
                         }
                     }

@@ -1,0 +1,92 @@
+[
+  {
+    "source": "台式机报错调查报告（待修复）/海獭摸宝体力未耗尽即收工_20261003/海獭摸宝体力未耗尽即收工_20261003/11_现场_判停时的末位好友鱼缸.png",
+    "fixture": "sea_otter/last_friend_exhausted.png",
+    "sha256": "80a2e8ec77928ff6da30fe87dea686160fcb97c9670e85ccfe17176de4a8d4c4",
+    "bytes": 702426
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/海獭摸宝体力未耗尽即收工_20261003/海獭摸宝体力未耗尽即收工_20261003/12_现场_点返回后弹出未使用体力提示.png",
+    "fixture": "sea_otter/unused_stamina_popup.png",
+    "sha256": "3233299d2e5621ec36be4f246fd6c5913b866df9c9c0d298e47eb8c49daafa16",
+    "bytes": 595116
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/海獭摸宝-体力未耗尽即收工-20261003/海獭摸宝-体力未耗尽即收工-20261003/01-日志-GUI/A_第1次运行_GUI原始日志_00h11-00h25.txt",
+    "fixture": "sea_otter/gui_first_run.txt",
+    "sha256": "c3f79766a1058a0e245970ec049cd2a631412c857e9e5fdc7d49d789585ba4ad",
+    "bytes": 62368
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/海獭摸宝-体力未耗尽即收工-20261003/海獭摸宝-体力未耗尽即收工-20261003/01-日志-GUI/B_第2次运行_GUI原始日志_08h00-08h19.txt",
+    "fixture": "sea_otter/gui_second_run.txt",
+    "sha256": "55d2854fa9f83290df0c24dafb68d48209fc3289b7f5553e5de872002a07ef22",
+    "bytes": 16873
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/海獭摸宝-体力未耗尽即收工-20261003/海獭摸宝-体力未耗尽即收工-20261003/02-日志-框架/B_第1次_终点判定逐帧全量日志_00h24m50-00h25m16.txt",
+    "fixture": "sea_otter/framework_first_endpoint.txt",
+    "sha256": "c12e240de6c883f1da73152459ab098c60473f333618b6cd43eb453b967aca60",
+    "bytes": 899041
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/海獭摸宝-体力未耗尽即收工-20261003/海獭摸宝-体力未耗尽即收工-20261003/02-日志-框架/C_第2次_maafw识别与动作_08h11-08h14.txt",
+    "fixture": "sea_otter/framework_second_run.txt",
+    "sha256": "807e6e71af9e44fbb2bbf1ed846b916a441099762900b0eff1465111ea6e18ed",
+    "bytes": 233304
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/幸运时刻弹窗挂死_20261002/原始日志_0254挂起到0800失败.log",
+    "fixture": "patrol/hang_and_empty_frame.log",
+    "sha256": "12f85ee5ac8feae660fba2b945ecd87f12de00d755cff6249238d8e857b84c79",
+    "bytes": 43846
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/幸运时刻弹窗挂死_20261002/原始日志_0833拉起.log",
+    "fixture": "patrol/restart.log",
+    "sha256": "7473810d73c27efd1c7934fa338eac24d50e15873f0b6529ff32ed4c08b99faf",
+    "bytes": 6215
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/更新资源半包假成功_20261002/日志原文_更新全过程逐行.txt",
+    "fixture": "client_update/download_eof.txt",
+    "sha256": "4e7f2e6dab30ba9b511ab41e3c9eb64081fe5d97c9a458c3b3ff1bc9b44bc775",
+    "bytes": 6741
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/更新资源半包假成功_20261002/附件_ZIP结构探测.txt",
+    "fixture": "client_update/partial_zip.txt",
+    "sha256": "372e1d08c56412fe4996000f91e7e892736cc533f51add86c2c2e6d765c69d1b",
+    "bytes": 402
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/更新资源半包假成功_20261002/附件_资源目录未被覆盖.txt",
+    "fixture": "client_update/resource_unchanged.txt",
+    "sha256": "6c807799809c2ebc4a1445a91ee203936a47ed526dd6b37c2924e2a98d5eb69e",
+    "bytes": 1371
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/自动检测更新TLS握手失败_20261002/切片A_失败原文_170945-171001.log",
+    "fixture": "client_update/query_tls_failure.log",
+    "sha256": "a9b47375b704f5411c0c29bc02f49dd6e206a7fb252a3e2163841df0ed82a579",
+    "bytes": 20233
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/自动检测更新TLS握手失败_20261002/切片B_成功安装原文_170854-170916.log",
+    "fixture": "client_update/successful_install.log",
+    "sha256": "f991df17ac6b7ed531b9813ea750c88e1a3652e5700178022f853701d6b8402a",
+    "bytes": 35635
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/自动检测更新TLS握手失败_20261002/切片C_巡检正常跑完整轮_171451-172246.log",
+    "fixture": "client_update/patrol_after_update.log",
+    "sha256": "d03f76c8c5cdf57d041fa462aa60698b5cc2c9c5da7afc59ab654edbcec2b8db",
+    "bytes": 16417
+  },
+  {
+    "source": "台式机报错调查报告（待修复）/自动检测更新TLS握手失败_20261002/已安装版本实证.txt",
+    "fixture": "client_update/installed_version.txt",
+    "sha256": "0b6c4b4ecbce00d624d6c86a88dcf0850049a9baec5bb663e2d82d7ab80f1eee",
+    "bytes": 216
+  }
+]

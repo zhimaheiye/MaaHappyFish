@@ -73,16 +73,10 @@ class PatrolPipelineTest(unittest.TestCase):
             cls.collect_fish_pipeline = json.load(file)
 
     def test_clicks_are_guarded_by_visual_recognition(self):
-        explicit_user_targets = {
-            "PatrolCuteSpecialFood",
-            "PatrolGoodSpecialFood",
-            "PatrolBrightSpecialFood",
-        }
         for name, node in self.pipeline.items():
             if node.get("action") == "Click":
                 self.assertIn(node.get("recognition"), {"OCR", "TemplateMatch"}, name)
-                if name not in explicit_user_targets:
-                    self.assertNotIn("target", node, name)
+                self.assertNotIn("target", node, name)
 
     def test_open_shell_page_is_verified_before_clicking_return(self):
         mis_touch_template_path = os.path.join(
@@ -308,6 +302,17 @@ class PatrolPipelineTest(unittest.TestCase):
             "PatrolStartAtTank3",
         ):
             self.assertIn(node, next_nodes)
+        for tank in (2, 3):
+            start = self.pipeline[f"PatrolStartAtTank{tank}"]
+            self.assertEqual(start["timeout"], 5000)
+            self.assertEqual(start["on_error"], [f"PatrolStartTank{tank}PickerRetry"])
+            retry = self.pipeline[f"PatrolStartTank{tank}PickerRetry"]
+            self.assertEqual(retry["recognition"], "DirectHit")
+            self.assertEqual(retry["on_error"], ["PatrolAbortNavigation"])
+            click = self.pipeline[f"PatrolStartTank{tank}PickerClick"]
+            self.assertEqual(click["template"], f"patrol/鱼缸{tank}_主页面编号.png")
+            self.assertIn("PatrolSelectTank1FromPicker", click["next"])
+            self.assertEqual(click["on_error"], ["PatrolAbortNavigation"])
 
     def test_each_tank_uses_a_30_second_inactivity_window(self):
         for tank in (1, 2, 3):
@@ -393,8 +398,7 @@ class PatrolPipelineTest(unittest.TestCase):
                 f"PatrolSelect{key}StarfishTab": (label, "切换"),
                 f"PatrolVerify{key}Starfish": (label, "确认"),
                 f"Patrol{key}Replenish": (label, "选择鱼食"),
-                f"Patrol{key}NormalFood": (label, "普通鱼食", "投放"),
-                f"Patrol{key}SpecialFood": (label, "专用鱼食", "投放"),
+                f"Patrol{key}PickFood": (label, "廉价、普通或高级鱼食", "投放"),
                 f"Patrol{key}FeedReturnedToPanel": (label, "投放成功"),
             }
             for node_name, fragments in expected.items():
@@ -434,29 +438,32 @@ class PatrolPipelineTest(unittest.TestCase):
     def test_each_starfish_chooses_food_from_the_actual_popup(self):
         for key in ("Cute", "Good", "Bright"):
             router = self.pipeline[f"Patrol{key}FoodRouter"]
-            self.assertEqual(router["recognition"], "DirectHit")
-            self.assertEqual(
-                business_next(router)[:2],
-                [f"Patrol{key}NormalFood", f"Patrol{key}SpecialFood"],
-            )
+            self.assertEqual(router["recognition"], "OCR")
+            self.assertEqual(router["expected"], "选择喂食")
+            self.assertEqual(router["roi"], [560, 70, 420, 160])
+            self.assertEqual(router["timeout"], 4000)
+            self.assertNotIn("PatrolAbortNavigation", router["next"])
+            self.assertEqual(router["on_error"], [f"Patrol{key}FoodMissed"])
+            self.assertEqual(business_next(router)[:1], [f"Patrol{key}PickFood"])
 
-            normal = self.pipeline[f"Patrol{key}NormalFood"]
-            self.assertEqual(normal["template"], "普通鱼食袋.png")
-            self.assertNotIn("target", normal)
-
-            special = self.pipeline[f"Patrol{key}SpecialFood"]
-            self.assertEqual(special["template"], "海星_加号.png")
-            self.assertEqual(special["roi"], [450, 151, 199, 191])
-            self.assertEqual(special["target"], [649, 204, 57, 91])
-            self.assertLessEqual(
-                special["roi"][0] + special["roi"][2],
-                special["target"][0],
-                f"{key} 的鱼食点击区不得与加号门禁重叠",
-            )
+            pick = self.pipeline[f"Patrol{key}PickFood"]
+            self.assertEqual(pick["custom_recognition"], "PickStarfishShellFoodReco")
+            self.assertEqual(pick["custom_action"], "ClickRecognizedCenterAction")
+            self.assertNotIn("target", pick)
+            self.assertNotIn(f"Patrol{key}SpecialFood", self.pipeline)
+            self.assertNotIn(f"Patrol{key}CloseFoodDialog", self.pipeline)
 
             after = self.pipeline[f"Patrol{key}AfterFeedRouter"]
             self.assertEqual(after["recognition"], "DirectHit")
             self.assertEqual(business_next(after)[0], "PatrolFoodPopupStillOpen")
+            self.assertNotIn("PatrolAbortNavigation", after["next"])
+            self.assertEqual(after["on_error"], ["PatrolAbortNavigation"])
+            self.assertEqual(after["timeout"], 4000)
+
+            missed = self.pipeline[f"Patrol{key}FoodMissed"]
+            self.assertEqual(missed["custom_action"], "FailTaskAction")
+            self.assertNotIn("next", missed)
+            self.assertNotIn("on_error", missed)
 
         popup = self.pipeline["PatrolFoodPopupStillOpen"]
         self.assertEqual(popup["recognition"], "OCR")
@@ -752,7 +759,7 @@ class PatrolPipelineTest(unittest.TestCase):
         task = next(item for item in payloads[0]["task"] if item["entry"] == "PatrolTask")
         self.assertEqual(
             task["option"],
-            ["多鱼缸巡检间隔", "多鱼缸巡检子任务", "收宝石方式", "挂机十二点日常", "挂机十点好友摸宝"],
+            ["多鱼缸巡检间隔", "多鱼缸巡检子任务", "收宝石方式", "挂机十二点日常", "挂机十点好友摸宝", "好友留言处理"],
         )
         option = payloads[0]["option"]["多鱼缸巡检间隔"]
         self.assertEqual(option["default_case"], "30分钟")

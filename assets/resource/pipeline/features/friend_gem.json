@@ -9,8 +9,78 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "FriendGemStartRouter"
+            "FriendGemMessagePolicySystem"
         ]
+    },
+    "FriendGemMessagePolicySystem": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FriendGemSetMessagePolicyAction",
+        "custom_action_param": {
+            "category": "system",
+            "policy": "skip"
+        },
+        "next": ["FriendGemMessagePolicyFriendRequest"]
+    },
+    "FriendGemMessagePolicyFriendRequest": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FriendGemSetMessagePolicyAction",
+        "custom_action_param": {
+            "category": "friend_request",
+            "policy": "skip"
+        },
+        "next": ["FriendGemMessagePolicyBabyVisit"]
+    },
+    "FriendGemMessagePolicyBabyVisit": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FriendGemSetMessagePolicyAction",
+        "custom_action_param": {
+            "category": "baby_visit",
+            "policy": "skip"
+        },
+        "next": ["FriendGemMessagePolicyCoupon"]
+    },
+    "FriendGemMessagePolicyCoupon": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FriendGemSetMessagePolicyAction",
+        "custom_action_param": {
+            "category": "coupon",
+            "policy": "skip"
+        },
+        "next": ["FriendGemMessagePolicyOther"]
+    },
+    "FriendGemMessagePolicyOther": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FriendGemSetMessagePolicyAction",
+        "custom_action_param": {
+            "category": "other",
+            "policy": "skip"
+        },
+        "next": ["FriendGemStartRouter"]
+    },
+    "FriendGemMessageListOcr": {
+        "recognition": "OCR",
+        "expected": ".+",
+        "roi": [40, 150, 1200, 540],
+        "action": "DoNothing"
+    },
+    "FriendGemMessageInbox": {
+        "recognition": "OCR",
+        "expected": "未读留言最多保留",
+        "roi": [40, 90, 660, 80],
+        "action": "Custom",
+        "custom_action": "FriendGemHandleMessagesAction",
+        "post_delay": 400,
+        "timeout": 1000,
+        "next": ["FriendPageStarFriendsIdentity"],
+        "on_error": ["FriendPageNavigationFailed"],
+        "focus": {
+            "Node.Action.Succeeded": "[好友摸宝] 留言箱已按选项处理，等待星级好友列表。"
+        }
     },
     "FriendGemStartRouter": {
         "recognition": "DirectHit",
@@ -21,7 +91,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "[JumpBack]FriendPageMessageBoxToStarFriends",
+            "[JumpBack]FriendGemMessageInbox",
             "FriendGemStartFromFriendList",
             "FriendGemStartManateeTank",
             "FriendGemStartInFriendTank",

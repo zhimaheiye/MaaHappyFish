@@ -1,0 +1,1075 @@
+[
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000001,
+        "box": [
+          0,
+          0,
+          1600,
+          720
+        ],
+        "detail": {},
+        "name": "MobileAdTask",
+        "success": true
+      },
+      "action_id": 500000001,
+      "focus": null,
+      "name": "MobileAdTask",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "DoNothing",
+        "action_id": 500000002,
+        "box": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "detail": {},
+        "name": "MobileAdRouter",
+        "success": true
+      },
+      "action_id": 500000002,
+      "focus": null,
+      "name": "MobileAdRouter",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000003,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000003,
+      "focus": null,
+      "name": "MobileAdDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000004,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdCloseDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000004,
+      "focus": null,
+      "name": "MobileAdCloseDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "DoNothing",
+        "action_id": 500000005,
+        "box": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "detail": {},
+        "name": "MobileAdPostReturnRouter",
+        "success": true
+      },
+      "action_id": 500000005,
+      "focus": null,
+      "name": "MobileAdPostReturnRouter",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000006,
+        "box": [
+          1032,
+          531,
+          57,
+          36
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1065,
+            566
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStop",
+        "success": true
+      },
+      "action_id": 500000006,
+      "focus": null,
+      "name": "MobileAdWheelStop",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000007,
+        "box": [
+          1031,
+          528,
+          62,
+          40
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1033,
+            547
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStopAgain",
+        "success": true
+      },
+      "action_id": 500000007,
+      "focus": null,
+      "name": "MobileAdWheelStopAgain",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000008,
+        "box": [
+          665,
+          431,
+          286,
+          30
+        ],
+        "detail": {},
+        "name": "MobileAdVerifyRewardPopup",
+        "success": true
+      },
+      "action_id": 500000008,
+      "focus": null,
+      "name": "MobileAdVerifyRewardPopup",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000009,
+        "box": [
+          960,
+          486,
+          52,
+          60
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            979,
+            503
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdClickContinueCheck",
+        "success": true
+      },
+      "action_id": 500000009,
+      "focus": null,
+      "name": "MobileAdClickContinueCheck",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000010,
+        "box": [
+          1395,
+          34,
+          147,
+          50
+        ],
+        "detail": {},
+        "name": "MobileAdPlaying",
+        "success": true
+      },
+      "action_id": 500000010,
+      "focus": null,
+      "name": "MobileAdPlaying",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000011,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000011,
+      "focus": null,
+      "name": "MobileAdDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000012,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdCloseDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000012,
+      "focus": null,
+      "name": "MobileAdCloseDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "DoNothing",
+        "action_id": 500000013,
+        "box": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "detail": {},
+        "name": "MobileAdPostReturnRouter",
+        "success": true
+      },
+      "action_id": 500000013,
+      "focus": null,
+      "name": "MobileAdPostReturnRouter",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000014,
+        "box": [
+          1031,
+          528,
+          61,
+          40
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1050,
+            557
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStop",
+        "success": true
+      },
+      "action_id": 500000014,
+      "focus": null,
+      "name": "MobileAdWheelStop",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000015,
+        "box": [
+          1032,
+          530,
+          59,
+          37
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1076,
+            565
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStopAgain",
+        "success": true
+      },
+      "action_id": 500000015,
+      "focus": null,
+      "name": "MobileAdWheelStopAgain",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000016,
+        "box": [
+          665,
+          431,
+          286,
+          30
+        ],
+        "detail": {},
+        "name": "MobileAdVerifyRewardPopup",
+        "success": true
+      },
+      "action_id": 500000016,
+      "focus": null,
+      "name": "MobileAdVerifyRewardPopup",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000017,
+        "box": [
+          960,
+          486,
+          52,
+          60
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1005,
+            509
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdClickContinueCheck",
+        "success": true
+      },
+      "action_id": 500000017,
+      "focus": null,
+      "name": "MobileAdClickContinueCheck",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000018,
+        "box": [
+          1395,
+          34,
+          147,
+          50
+        ],
+        "detail": {},
+        "name": "MobileAdPlaying",
+        "success": true
+      },
+      "action_id": 500000018,
+      "focus": null,
+      "name": "MobileAdPlaying",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000019,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000019,
+      "focus": null,
+      "name": "MobileAdDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000020,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdCloseDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000020,
+      "focus": null,
+      "name": "MobileAdCloseDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "DoNothing",
+        "action_id": 500000021,
+        "box": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "detail": {},
+        "name": "MobileAdPostReturnRouter",
+        "success": true
+      },
+      "action_id": 500000021,
+      "focus": null,
+      "name": "MobileAdPostReturnRouter",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000022,
+        "box": [
+          1030,
+          527,
+          63,
+          42
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1058,
+            548
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStop",
+        "success": true
+      },
+      "action_id": 500000022,
+      "focus": null,
+      "name": "MobileAdWheelStop",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000023,
+        "box": [
+          1032,
+          530,
+          59,
+          37
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1087,
+            550
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStopAgain",
+        "success": true
+      },
+      "action_id": 500000023,
+      "focus": null,
+      "name": "MobileAdWheelStopAgain",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000024,
+        "box": [
+          666,
+          433,
+          284,
+          27
+        ],
+        "detail": {},
+        "name": "MobileAdVerifyRewardPopup",
+        "success": true
+      },
+      "action_id": 500000024,
+      "focus": null,
+      "name": "MobileAdVerifyRewardPopup",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000025,
+        "box": [
+          960,
+          486,
+          52,
+          60
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            969,
+            535
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdClickContinueCheck",
+        "success": true
+      },
+      "action_id": 500000025,
+      "focus": null,
+      "name": "MobileAdClickContinueCheck",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000026,
+        "box": [
+          1395,
+          34,
+          147,
+          50
+        ],
+        "detail": {},
+        "name": "MobileAdPlaying",
+        "success": true
+      },
+      "action_id": 500000026,
+      "focus": null,
+      "name": "MobileAdPlaying",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000027,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000027,
+      "focus": null,
+      "name": "MobileAdDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000028,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdCloseDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000028,
+      "focus": null,
+      "name": "MobileAdCloseDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "DoNothing",
+        "action_id": 500000029,
+        "box": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "detail": {},
+        "name": "MobileAdPostReturnRouter",
+        "success": true
+      },
+      "action_id": 500000029,
+      "focus": null,
+      "name": "MobileAdPostReturnRouter",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000030,
+        "box": [
+          1035,
+          534,
+          53,
+          32
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1061,
+            561
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStop",
+        "success": true
+      },
+      "action_id": 500000030,
+      "focus": null,
+      "name": "MobileAdWheelStop",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000031,
+        "box": [
+          1032,
+          530,
+          59,
+          37
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1079,
+            566
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStopAgain",
+        "success": true
+      },
+      "action_id": 500000031,
+      "focus": null,
+      "name": "MobileAdWheelStopAgain",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000032,
+        "box": [
+          666,
+          433,
+          284,
+          27
+        ],
+        "detail": {},
+        "name": "MobileAdVerifyRewardPopup",
+        "success": true
+      },
+      "action_id": 500000032,
+      "focus": null,
+      "name": "MobileAdVerifyRewardPopup",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000033,
+        "box": [
+          960,
+          486,
+          52,
+          60
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            982,
+            502
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdClickContinueCheck",
+        "success": true
+      },
+      "action_id": 500000033,
+      "focus": null,
+      "name": "MobileAdClickContinueCheck",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000034,
+        "box": [
+          1395,
+          34,
+          147,
+          50
+        ],
+        "detail": {},
+        "name": "MobileAdPlaying",
+        "success": true
+      },
+      "action_id": 500000034,
+      "focus": null,
+      "name": "MobileAdPlaying",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000035,
+        "box": [
+          1492,
+          44,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdRewardedCapsule",
+        "success": true
+      },
+      "action_id": 500000035,
+      "focus": null,
+      "name": "MobileAdRewardedCapsule",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000036,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000036,
+      "focus": null,
+      "name": "MobileAdDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000037,
+        "box": [
+          1532,
+          36,
+          32,
+          32
+        ],
+        "detail": {},
+        "name": "MobileAdCloseDownloadEndcard",
+        "success": true
+      },
+      "action_id": 500000037,
+      "focus": null,
+      "name": "MobileAdCloseDownloadEndcard",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "DoNothing",
+        "action_id": 500000038,
+        "box": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "detail": {},
+        "name": "MobileAdPostReturnRouter",
+        "success": true
+      },
+      "action_id": 500000038,
+      "focus": null,
+      "name": "MobileAdPostReturnRouter",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000039,
+        "box": [
+          1032,
+          530,
+          59,
+          37
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1087,
+            550
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStop",
+        "success": true
+      },
+      "action_id": 500000039,
+      "focus": null,
+      "name": "MobileAdWheelStop",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000040,
+        "box": [
+          1032,
+          530,
+          59,
+          37
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            1062,
+            547
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdWheelStopAgain",
+        "success": true
+      },
+      "action_id": 500000040,
+      "focus": null,
+      "name": "MobileAdWheelStopAgain",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Custom",
+        "action_id": 500000041,
+        "box": [
+          666,
+          433,
+          284,
+          27
+        ],
+        "detail": {},
+        "name": "MobileAdVerifyRewardPopup",
+        "success": true
+      },
+      "action_id": 500000041,
+      "focus": null,
+      "name": "MobileAdVerifyRewardPopup",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "DoNothing",
+        "action_id": 500000042,
+        "box": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "detail": {},
+        "name": "MobileAdCheckContinueCondition",
+        "success": true
+      },
+      "action_id": 500000042,
+      "focus": null,
+      "name": "MobileAdCheckContinueCondition",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "Click",
+        "action_id": 500000043,
+        "box": [
+          853,
+          486,
+          52,
+          60
+        ],
+        "detail": {
+          "contact": 0,
+          "point": [
+            876,
+            509
+          ],
+          "pressure": 1
+        },
+        "name": "MobileAdCloseRewardPopupAndDone",
+        "success": true
+      },
+      "action_id": 500000043,
+      "focus": null,
+      "name": "MobileAdCloseRewardPopupAndDone",
+      "task_id": 200000001
+    }
+  },
+  {
+    "msg": "Node.Action.Succeeded",
+    "details": {
+      "action_details": {
+        "action": "DoNothing",
+        "action_id": 500000044,
+        "box": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "detail": {},
+        "name": "MobileAdDone",
+        "success": true
+      },
+      "action_id": 500000044,
+      "focus": null,
+      "name": "MobileAdDone",
+      "task_id": 200000001
+    }
+  }
+]

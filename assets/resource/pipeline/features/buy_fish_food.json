@@ -32,7 +32,7 @@
     },
     "BuyFishFoodStartAtDetail": {
         "recognition": "OCR",
-        "expected": "廉价.*鱼食",
+        "expected": "廉价鱼食|普通鱼食|高级鱼食",
         "roi": [
             200,
             180,
@@ -42,7 +42,9 @@
         "action": "Custom",
         "custom_action": "BuyCheapFishFoodAction",
         "custom_action_param": {
-            "bags": 1
+            "bags": 1,
+            "normal_bags": 0,
+            "high_bags": 0
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -221,7 +223,7 @@
     },
     "BuyFishFoodPurchaseOnDetail": {
         "recognition": "OCR",
-        "expected": "廉价.*鱼食",
+        "expected": "廉价鱼食|普通鱼食|高级鱼食",
         "roi": [
             200,
             180,
@@ -231,11 +233,13 @@
         "action": "Custom",
         "custom_action": "BuyCheapFishFoodAction",
         "custom_action_param": {
-            "bags": 1
+            "bags": 1,
+            "normal_bags": 0,
+            "high_bags": 0
         },
         "timeout": 5000,
         "focus": {
-            "Node.Action.Succeeded": "[购买鱼食] 廉价鱼食购买完成，已返回鱼缸"
+            "Node.Action.Succeeded": "[购买鱼食] 金币鱼食购买完成，已返回鱼缸"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -262,7 +266,7 @@
     },
     "BuyFishFoodStoreItemIdentity": {
         "recognition": "OCR",
-        "expected": "成长豆|糖|雪花鱼食|粉光鱼食|珀光鱼食|宝光鱼食|紫光鱼食|霞光鱼食",
+        "expected": "成长豆|糖|雪花鱼食|粉光鱼食|珀光鱼食|宝光鱼食|紫光鱼食|霞光鱼食|冰心鱼食|超级鱼食|玫瑰鱼食",
         "roi": [
             0,
             120,
@@ -273,12 +277,78 @@
     },
     "BuyFishFoodTargetCard": {
         "recognition": "OCR",
-        "expected": "廉价鱼食",
+        "expected": "^廉价鱼食$",
         "roi": [
             0,
             120,
             1280,
             600
+        ],
+        "action": "DoNothing"
+    },
+    "BuyFishFoodTargetNormal": {
+        "recognition": "OCR",
+        "expected": "^普通鱼食$",
+        "roi": [
+            0,
+            120,
+            1280,
+            600
+        ],
+        "action": "DoNothing"
+    },
+    "BuyFishFoodTargetHigh": {
+        "recognition": "OCR",
+        "expected": "^高级鱼食$",
+        "roi": [
+            0,
+            120,
+            1280,
+            600
+        ],
+        "action": "DoNothing"
+    },
+    "BuyFishFoodDetailNormal": {
+        "recognition": "OCR",
+        "expected": "^普通鱼食$",
+        "roi": [
+            200,
+            180,
+            450,
+            180
+        ],
+        "action": "DoNothing"
+    },
+    "BuyFishFoodDetailHigh": {
+        "recognition": "OCR",
+        "expected": "^高级鱼食$",
+        "roi": [
+            200,
+            180,
+            450,
+            180
+        ],
+        "action": "DoNothing"
+    },
+    "BuyFishFoodPriceNormal": {
+        "recognition": "OCR",
+        "expected": "^2000$",
+        "roi": [
+            760,
+            200,
+            250,
+            150
+        ],
+        "action": "DoNothing"
+    },
+    "BuyFishFoodPriceHigh": {
+        "recognition": "OCR",
+        "expected": "^8500$",
+        "roi": [
+            760,
+            200,
+            250,
+            150
         ],
         "action": "DoNothing"
     },
@@ -295,7 +365,7 @@
     },
     "BuyFishFoodUnitPrice": {
         "recognition": "OCR",
-        "expected": "400",
+        "expected": "^400$",
         "roi": [
             760,
             200,

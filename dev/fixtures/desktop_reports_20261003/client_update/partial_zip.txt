@@ -1,0 +1,8 @@
+探测时间=2026-10-02 16:00:05
+文件=D:\MaaHappyFish-win-x86_64-v0.4.4\temp\temp_res\resource_v0.7.4.zip
+size=25655564 B = 24.4671 MiB (整 MiB 边界=False)
+mtime=10-02 16:00:04
+head magic=b'PK\x03\x04'
+尾部 64KB 内 EOCD(PK\x05\x06) 位置=-1（-1 表示没有）
+尾部 64KB 内 中央目录头(PK\x01\x02) 位置=-1
+判定=**截断/半包：无中央目录、无 EOCD，不可解压**

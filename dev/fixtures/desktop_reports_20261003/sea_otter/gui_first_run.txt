@@ -1,0 +1,380 @@
+[2026-10-03 00:11:32.340][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] 准备执行任务队列：任务数量=1
+[2026-10-03 00:11:32.341][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] [任务管线合并] 任务#1 名称=[海獭摸宝] 入口=[SeaOtterGemTask] 参数=[
+[2026-10-03 00:11:32.382][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动任务开始（异步）。
+[2026-10-03 00:11:32.384][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动附加开始脚本开始（异步）。
+[2026-10-03 00:11:32.384][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动附加开始脚本完成（异步）。
+[2026-10-03 00:11:32.385][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 截图测试开始（异步）。
+[2026-10-03 00:11:32.402][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 截图测试完成（异步）。
+[2026-10-03 00:11:32.404][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorLog] 截图耗时：7ms(EmulatorExtras)
+[2026-10-03 00:11:32.411][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorLog] 开始任务：海獭摸宝
+[2026-10-03 00:11:32.416][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 队列任务开始（异步）。
+[2026-10-03 00:11:33.401][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [海獭摸宝] 今日完整运行次数：0/3（04:00 刷新）
+[2026-10-03 00:11:33.401][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [海獭摸宝] 计数仅作记录，不阻止任务启动。
+[2026-10-03 00:11:33.401][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [海獭摸宝] 状态已重置：side=LEFT, harvests=0（task_id：200000233)
+[2026-10-03 00:11:34.148][WRN] [cfg=Default] Focus 内容文件解析失败：input=[海獭摸宝] 今日完整运行：0/3（04:00刷新）, baseDir=D:\MaaHappyFish-win-x86_64-v0.4.4, candidate=[海獭摸宝] 今日完整运行：0\3（04:00刷新）, exists=False
+[2026-10-03 00:11:34.149][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 今日完整运行：0/3（04:00刷新）
+[2026-10-03 00:11:36.708][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:11:39.449][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：1/1000)
+[2026-10-03 00:11:42.938][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:11:45.547][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：2/1000)
+[2026-10-03 00:11:49.024][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:11:51.706][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：3/1000)
+[2026-10-03 00:11:54.988][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:11:57.563][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：4/1000)
+[2026-10-03 00:12:01.029][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:03.683][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：5/1000)
+[2026-10-03 00:12:07.039][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:08.725][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=EXHAUSTED action=PREV_AS_REFRESH_BRIDGE
+[2026-10-03 00:12:12.328][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:14.977][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：6/1000)
+[2026-10-03 00:12:18.280][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:18.313][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [字体服务]已清除字体缓存，移除了 0 个未使用的FontFamily对象
+[2026-10-03 00:12:18.313][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [内存优化] 已清理字体缓存
+[2026-10-03 00:12:19.900][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=EXHAUSTED action=PREV_AS_REFRESH_BRIDGE
+[2026-10-03 00:12:23.503][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:26.089][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：7/1000)
+[2026-10-03 00:12:29.434][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:31.058][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=EXHAUSTED action=PREV_AS_REFRESH_BRIDGE
+[2026-10-03 00:12:34.536][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:35.095][INF] [cfg=Default] [内存管理]释放了33.22 MB（10.6%)
+[2026-10-03 00:12:37.331][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：8/1000)
+[2026-10-03 00:12:40.643][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:42.253][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=EXHAUSTED action=PREV_AS_REFRESH_BRIDGE
+[2026-10-03 00:12:45.787][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:47.477][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：1)
+[2026-10-03 00:12:50.763][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:52.402][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：2)
+[2026-10-03 00:12:55.526][INF] [cfg=Default] [内存管理]释放了29.89 MB（10.5%)
+[2026-10-03 00:12:56.115][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:12:58.755][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：9/1000)
+[2026-10-03 00:13:02.925][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:05.566][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：10/1000)
+[2026-10-03 00:13:09.056][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:11.769][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：11/1000)
+[2026-10-03 00:13:15.225][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:16.017][INF] [cfg=Default] [内存管理]释放了4.75 MB（1.8%)
+[2026-10-03 00:13:18.159][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：12/1000)
+[2026-10-03 00:13:21.590][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:24.309][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：13/1000)
+[2026-10-03 00:13:28.202][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:30.907][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：14/1000)
+[2026-10-03 00:13:34.330][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:36.416][INF] [cfg=Default] [内存管理]释放了3.59 MB（1.4%)
+[2026-10-03 00:13:37.236][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：15/1000)
+[2026-10-03 00:13:40.750][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:43.337][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：16/1000)
+[2026-10-03 00:13:46.731][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:49.319][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：17/1000)
+[2026-10-03 00:13:52.817][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:13:55.396][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：18/1000)
+[2026-10-03 00:13:56.711][INF] [cfg=Default] [内存管理]释放了2.88 MB（1.1%)
+[2026-10-03 00:13:58.852][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:01.485][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：19/1000)
+[2026-10-03 00:14:04.925][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:07.537][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：20/1000)
+[2026-10-03 00:14:11.076][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:13.751][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：21/1000)
+[2026-10-03 00:14:17.054][INF] [cfg=Default] [内存管理]释放了3.09 MB（1.2%)
+[2026-10-03 00:14:17.295][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:19.998][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：22/1000)
+[2026-10-03 00:14:23.449][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:26.110][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：23/1000)
+[2026-10-03 00:14:29.511][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:32.094][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：24/1000)
+[2026-10-03 00:14:35.512][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:38.162][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：25/1000)
+[2026-10-03 00:14:41.707][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:44.299][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：26/1000)
+[2026-10-03 00:14:47.695][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:50.296][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：27/1000)
+[2026-10-03 00:14:53.706][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:14:56.219][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：28/1000)
+[2026-10-03 00:14:57.362][INF] [cfg=Default] [内存管理]释放了1.71 MB（0.7%)
+[2026-10-03 00:14:59.717][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:01.455][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：1)
+[2026-10-03 00:15:04.984][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:06.666][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：2)
+[2026-10-03 00:15:10.327][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:12.935][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：29/1000)
+[2026-10-03 00:15:16.416][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:16.447][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [字体服务]已清除字体缓存，移除了 0 个未使用的FontFamily对象
+[2026-10-03 00:15:16.447][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [内存优化] 已清理字体缓存
+[2026-10-03 00:15:17.660][INF] [cfg=Default] [内存管理]释放了21.08 MB（7.0%)
+[2026-10-03 00:15:19.072][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：30/1000)
+[2026-10-03 00:15:22.510][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:25.025][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：31/1000)
+[2026-10-03 00:15:28.447][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:30.963][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：32/1000)
+[2026-10-03 00:15:34.358][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:36.879][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：33/1000)
+[2026-10-03 00:15:37.950][INF] [cfg=Default] [内存管理]释放了29.77 MB（10.5%)
+[2026-10-03 00:15:40.266][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:42.712][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：34/1000)
+[2026-10-03 00:15:46.159][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:48.616][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：35/1000)
+[2026-10-03 00:15:52.080][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:15:54.610][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：36/1000)
+[2026-10-03 00:15:58.241][INF] [cfg=Default] [内存管理]释放了3.11 MB（1.2%)
+[2026-10-03 00:15:58.253][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:00.798][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：37/1000)
+[2026-10-03 00:16:04.248][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:06.759][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：38/1000)
+[2026-10-03 00:16:10.267][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:12.886][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：39/1000)
+[2026-10-03 00:16:16.367][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:18.517][INF] [cfg=Default] [内存管理]释放了5.23 MB（2.0%)
+[2026-10-03 00:16:18.848][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：40/1000)
+[2026-10-03 00:16:22.402][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:24.959][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：41/1000)
+[2026-10-03 00:16:28.518][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:31.078][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：42/1000)
+[2026-10-03 00:16:34.628][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:37.142][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：43/1000)
+[2026-10-03 00:16:38.777][INF] [cfg=Default] [内存管理]释放了2.91 MB（1.1%)
+[2026-10-03 00:16:40.573][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:43.100][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：44/1000)
+[2026-10-03 00:16:46.427][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:48.956][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：45/1000)
+[2026-10-03 00:16:52.404][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:54.919][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：46/1000)
+[2026-10-03 00:16:58.441][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:16:59.050][INF] [cfg=Default] [内存管理]释放了4.85 MB（1.8%)
+[2026-10-03 00:17:01.181][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：47/1000)
+[2026-10-03 00:17:04.630][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:07.202][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：48/1000)
+[2026-10-03 00:17:10.624][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:13.240][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：49/1000)
+[2026-10-03 00:17:16.678][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:19.276][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：50/1000)
+[2026-10-03 00:17:19.328][INF] [cfg=Default] [内存管理]释放了3.37 MB（1.3%)
+[2026-10-03 00:17:22.696][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:25.194][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：51/1000)
+[2026-10-03 00:17:28.712][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:31.261][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：52/1000)
+[2026-10-03 00:17:34.609][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:36.279][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：1)
+[2026-10-03 00:17:39.619][INF] [cfg=Default] [内存管理]释放了3.25 MB（1.2%)
+[2026-10-03 00:17:39.837][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:41.580][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：2)
+[2026-10-03 00:17:45.059][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:47.567][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：53/1000)
+[2026-10-03 00:17:50.967][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:53.498][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：54/1000)
+[2026-10-03 00:17:57.091][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:17:59.831][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：55/1000)
+[2026-10-03 00:17:59.906][INF] [cfg=Default] [内存管理]释放了5.47 MB（2.1%)
+[2026-10-03 00:18:03.409][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:05.913][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：56/1000)
+[2026-10-03 00:18:09.773][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:12.366][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：57/1000)
+[2026-10-03 00:18:15.792][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:15.824][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [字体服务]已清除字体缓存，移除了 0 个未使用的FontFamily对象
+[2026-10-03 00:18:15.824][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [内存优化] 已清理字体缓存
+[2026-10-03 00:18:18.323][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：58/1000)
+[2026-10-03 00:18:20.209][INF] [cfg=Default] [内存管理]释放了25.05 MB（8.2%)
+[2026-10-03 00:18:21.896][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:24.441][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：59/1000)
+[2026-10-03 00:18:27.916][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:30.421][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：60/1000)
+[2026-10-03 00:18:34.044][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:36.596][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：61/1000)
+[2026-10-03 00:18:40.156][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:40.626][INF] [cfg=Default] [内存管理]释放了31.93 MB（11.2%)
+[2026-10-03 00:18:42.966][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：62/1000)
+[2026-10-03 00:18:46.461][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:49.061][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：63/1000)
+[2026-10-03 00:18:52.509][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:18:55.045][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：64/1000)
+[2026-10-03 00:18:58.488][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:00.900][INF] [cfg=Default] [内存管理]释放了3.44 MB（1.3%)
+[2026-10-03 00:19:00.973][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：65/1000)
+[2026-10-03 00:19:04.442][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:06.960][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：66/1000)
+[2026-10-03 00:19:10.730][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:13.423][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：67/1000)
+[2026-10-03 00:19:16.947][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:19.583][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：68/1000)
+[2026-10-03 00:19:21.213][INF] [cfg=Default] [内存管理]释放了3.09 MB（1.2%)
+[2026-10-03 00:19:23.181][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:25.757][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：69/1000)
+[2026-10-03 00:19:29.281][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:31.889][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：70/1000)
+[2026-10-03 00:19:35.395][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:37.879][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：71/1000)
+[2026-10-03 00:19:41.626][INF] [cfg=Default] [内存管理]释放了3.27 MB（1.3%)
+[2026-10-03 00:19:41.801][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:44.331][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：72/1000)
+[2026-10-03 00:19:47.952][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:50.466][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：73/1000)
+[2026-10-03 00:19:53.874][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:19:56.408][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：74/1000)
+[2026-10-03 00:19:59.912][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:01.961][INF] [cfg=Default] [内存管理]释放了5.29 MB（2.0%)
+[2026-10-03 00:20:02.377][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：75/1000)
+[2026-10-03 00:20:05.911][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:08.434][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：76/1000)
+[2026-10-03 00:20:12.044][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:13.674][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：1)
+[2026-10-03 00:20:17.060][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:18.659][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：2)
+[2026-10-03 00:20:22.274][INF] [cfg=Default] [内存管理]释放了3.19 MB（1.2%)
+[2026-10-03 00:20:22.520][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:25.295][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：77/1000)
+[2026-10-03 00:20:28.881][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:31.515][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：78/1000)
+[2026-10-03 00:20:35.170][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:37.850][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：79/1000)
+[2026-10-03 00:20:41.466][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:42.639][INF] [cfg=Default] [内存管理]释放了4.97 MB（1.9%)
+[2026-10-03 00:20:44.321][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：80/1000)
+[2026-10-03 00:20:48.164][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:50.836][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：81/1000)
+[2026-10-03 00:20:54.371][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:20:57.002][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：82/1000)
+[2026-10-03 00:21:00.762][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:03.036][INF] [cfg=Default] [内存管理]释放了3.60 MB（1.4%)
+[2026-10-03 00:21:03.398][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：83/1000)
+[2026-10-03 00:21:07.035][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:09.814][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：84/1000)
+[2026-10-03 00:21:13.694][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:15.498][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：1)
+[2026-10-03 00:21:19.053][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:19.125][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [字体服务]已清除字体缓存，移除了 0 个未使用的FontFamily对象
+[2026-10-03 00:21:19.125][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [内存优化] 已清理字体缓存
+[2026-10-03 00:21:21.785][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：85/1000)
+[2026-10-03 00:21:23.588][INF] [cfg=Default] [内存管理]释放了24.82 MB（8.1%)
+[2026-10-03 00:21:25.347][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:28.029][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：86/1000)
+[2026-10-03 00:21:31.598][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:34.258][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：87/1000)
+[2026-10-03 00:21:37.737][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:40.351][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：88/1000)
+[2026-10-03 00:21:44.115][INF] [cfg=Default] [内存管理]释放了30.21 MB（10.6%)
+[2026-10-03 00:21:44.415][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:47.063][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：89/1000)
+[2026-10-03 00:21:50.524][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:53.161][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：90/1000)
+[2026-10-03 00:21:56.742][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:21:59.365][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：91/1000)
+[2026-10-03 00:22:02.776][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:04.465][INF] [cfg=Default] [内存管理]释放了5.09 MB（2.0%)
+[2026-10-03 00:22:05.685][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：92/1000)
+[2026-10-03 00:22:09.476][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:12.271][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：93/1000)
+[2026-10-03 00:22:15.630][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:18.245][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：94/1000)
+[2026-10-03 00:22:21.905][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:24.843][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：95/1000)
+[2026-10-03 00:22:24.917][INF] [cfg=Default] [内存管理]释放了3.01 MB（1.2%)
+[2026-10-03 00:22:28.397][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:31.053][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：96/1000)
+[2026-10-03 00:22:34.644][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:36.376][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：1)
+[2026-10-03 00:22:39.914][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:42.556][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：97/1000)
+[2026-10-03 00:22:45.311][INF] [cfg=Default] [内存管理]释放了3.23 MB（1.2%)
+[2026-10-03 00:22:46.374][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:48.985][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：98/1000)
+[2026-10-03 00:22:52.561][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:22:55.288][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：99/1000)
+[2026-10-03 00:22:58.910][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:01.586][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：100/1000)
+[2026-10-03 00:23:05.041][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:05.746][INF] [cfg=Default] [内存管理]释放了4.92 MB（1.9%)
+[2026-10-03 00:23:07.954][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：101/1000)
+[2026-10-03 00:23:11.664][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:14.460][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：102/1000)
+[2026-10-03 00:23:17.898][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:20.588][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：103/1000)
+[2026-10-03 00:23:24.094][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:26.120][INF] [cfg=Default] [内存管理]释放了3.27 MB（1.3%)
+[2026-10-03 00:23:26.948][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=RIGHT ui=HARVESTABLE action=HARVEST_THEN_PREV（累计摸宝：104/1000)
+[2026-10-03 00:23:30.397][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:32.115][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=EXHAUSTED action=ADVANCE_WINDOW_NEXT（连续耗尽：1)
+[2026-10-03 00:23:35.558][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:38.161][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_THEN_NEXT（累计摸宝：105/1000)
+[2026-10-03 00:23:41.596][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:44.186][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:45.754][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:46.417][INF] [cfg=Default] [内存管理]释放了1.28 MB（0.5%)
+[2026-10-03 00:23:46.438][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:47.124][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:47.133][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：106/1000)
+[2026-10-03 00:23:50.439][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:52.973][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:54.543][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:54.590][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [字体服务]已清除字体缓存，移除了 0 个未使用的FontFamily对象
+[2026-10-03 00:23:54.590][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [内存优化] 已清理字体缓存
+[2026-10-03 00:23:55.394][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:55.834][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:23:55.843][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：107/1000)
+[2026-10-03 00:23:59.229][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:01.851][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:03.420][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:04.040][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:04.700][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:04.711][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：108/1000)
+[2026-10-03 00:24:06.705][INF] [cfg=Default] [内存管理]释放了23.27 MB（7.6%)
+[2026-10-03 00:24:08.099][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:10.923][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:12.494][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:13.102][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:13.766][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:13.777][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：109/1000)
+[2026-10-03 00:24:17.210][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:19.822][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:21.397][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:21.974][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:22.719][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:22.733][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：110/1000)
+[2026-10-03 00:24:26.104][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:27.228][INF] [cfg=Default] [内存管理]释放了28.64 MB（10.0%)
+[2026-10-03 00:24:29.264][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:30.826][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:31.405][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:32.070][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:32.080][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：111/1000)
+[2026-10-03 00:24:35.421][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:37.995][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:39.556][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:40.166][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:40.842][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:40.854][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：112/1000)
+[2026-10-03 00:24:44.257][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:46.843][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:47.492][INF] [cfg=Default] [内存管理]释放了2.36 MB（0.9%)
+[2026-10-03 00:24:48.447][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:48.508][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [字体服务]已清除字体缓存，移除了 0 个未使用的FontFamily对象
+[2026-10-03 00:24:48.508][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [内存优化] 已清理字体缓存
+[2026-10-03 00:24:49.291][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:49.738][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:49.754][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：113/1000)
+[2026-10-03 00:24:53.097][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:55.737][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:57.295][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:57.908][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:58.581][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:24:58.594][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：114/1000)
+[2026-10-03 00:25:01.825][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:25:04.451][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:25:06.025][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:25:06.635][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:25:07.261][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:25:07.276][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [SeaOtter] side=LEFT ui=HARVESTABLE action=HARVEST_PREV_NEXT_LAST_FRIEND（累计摸宝：115/1000)
+[2026-10-03 00:25:07.774][INF] [cfg=Default] [内存管理]释放了19.97 MB（6.6%)
+[2026-10-03 00:25:10.775][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 已确认好友体力栏，按真实好友继续摸宝。
+[2026-10-03 00:25:13.388][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [海獭摸宝] 到达正常业务终点（LAST_FRIEND_EXHAUSTED)
+[2026-10-03 00:25:14.137][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [海獭摸宝] 本次完整运行成功，今日计数已更新：1/3
+[2026-10-03 00:25:14.848][WRN] [cfg=Default] Focus 内容文件解析失败：input=[海獭摸宝] 本次完整运行完成，今日：1/3, baseDir=D:\MaaHappyFish-win-x86_64-v0.4.4, candidate=[海獭摸宝] 本次完整运行完成，今日：1\3, exists=False
+[2026-10-03 00:25:14.849][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [海獭摸宝] 本次完整运行完成，今日：1/3
+[2026-10-03 00:25:15.084][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 队列任务完成（异步）。
+[2026-10-03 00:25:15.113][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动附加结束脚本开始（异步）。
+[2026-10-03 00:25:15.115][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动附加结束脚本完成（异步）。
+[2026-10-03 00:25:15.118][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动任务完成（异步）。
+[2026-10-03 00:25:15.121][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=StopTask] 停止前状态：SUCCEEDED
+[2026-10-03 00:25:15.123][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=StopTask] >>> 任务 停止maafw任务开始（异步）。
+[2026-10-03 00:25:15.128][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=StopTask] >>> 任务 播放音频开始。
+[2026-10-03 00:25:15.295][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=StopTask] >>> 任务 播放音频完成。
+[2026-10-03 00:25:15.461][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorLog] 任务已全部完成！
+[2026-10-03 00:25:28.177][INF] [cfg=Default] [内存管理]释放了29.54 MB（10.3%)
+[2026-10-03 00:25:48.433][INF] [cfg=Default] [内存管理]释放了6.26 MB（2.4%)

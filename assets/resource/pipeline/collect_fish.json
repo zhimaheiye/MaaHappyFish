@@ -71,9 +71,13 @@
             "difference_threshold": 0.5,
             "sample_step": 8
         },
-        "action": "StopTask",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[运行保护] 画面长时间无变化，任务已停止。请检查游戏是否退出、卡死或截图是否冻结。"
+        },
         "focus": {
-            "Node.Recognition.Succeeded": "[运行保护] 画面长时间无变化，任务已停止。请检查游戏是否退出、卡死或截图是否冻结。"
+            "Node.Action.Failed": "[运行保护] 画面长时间无变化，任务已停止。请检查游戏是否退出、卡死或截图是否冻结。"
         }
     },
     "HandleCloseAnnouncement": {
@@ -591,18 +595,15 @@
         ]
     },
     "ClickFishFoodBag_Standalone": {
-        "recognition": "TemplateMatch",
-        "template": "普通鱼食袋.png",
-        "threshold": 0.85,
-        "action": "Click",
-        "target": [
-            648,
-            195,
-            62,
-            40
-        ],
+        "recognition": "Custom",
+        "custom_recognition": "PickStarfishShellFoodReco",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 2800,
         "timeout": 6000,
+        "focus": {
+            "Node.Action.Succeeded": "[海星喂食] 已投放廉价、普通或高级鱼食中排在最前的一种。"
+        },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -612,8 +613,19 @@
             "CheckFoodFull_Standalone"
         ],
         "on_error": [
-            "NotifyFoodNotFull_Standalone"
+            "StarfishFoodNotRecognized_Standalone"
         ]
+    },
+    "StarfishFoodNotRecognized_Standalone": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[海星喂食] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+        },
+        "focus": {
+            "Node.Action.Failed": "[海星喂食] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+        }
     },
     "CheckFoodFull_Standalone": {
         "recognition": "TemplateMatch",
@@ -898,6 +910,7 @@
     "CollectFishSingleStartInit": {
         "recognition": "DirectHit",
         "action": "DoNothing",
+        "timeout": 800,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -907,7 +920,10 @@
             "CollectFishSingleStartTank1",
             "CollectFishSingleStartTank2",
             "CollectFishSingleStartTank3",
-            "CollectFishSingleStartFallback"
+            "CollectFishSingleStartOnManagement"
+        ],
+        "on_error": [
+            "CollectFishSingleStartGiveUp"
         ]
     },
     "CollectFishSingleStartTank1": {
@@ -976,19 +992,87 @@
             "ResumeHarvest"
         ]
     },
-    "CollectFishSingleStartFallback": {
-        "recognition": "DirectHit",
-        "action": "Custom",
-        "custom_action": "CollectFishSingleStartAction",
-        "custom_action_param": {
-            "tank": 1
-        },
+    "CollectFishSingleStartOnManagement": {
+        "recognition": "OCR",
+        "expected": "鱼缸",
+        "roi": [
+            180,
+            0,
+            230,
+            90
+        ],
+        "action": "DoNothing",
+        "timeout": 1000,
         "focus": {
-            "Node.Action.Succeeded": "[收鱼-单缸] 单鱼缸模式启动就绪，开始收宝。"
+            "Node.Action.Succeeded": "[收鱼-单缸] 当前在鱼缸管理页，先返回鱼缸。"
         },
         "next": [
-            "ResumeHarvest"
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishSingleStartReturnGate"
+        ],
+        "on_error": [
+            "CollectFishSingleStartGiveUp"
         ]
+    },
+    "CollectFishSingleStartReturnGate": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckCollectFishSingleStartReturnReco",
+        "action": "Custom",
+        "custom_action": "CollectFishSingleStartReturnAction",
+        "timeout": 2500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishSingleStartClickReturn"
+        ],
+        "on_error": [
+            "CollectFishSingleStartGiveUp"
+        ]
+    },
+    "CollectFishSingleStartClickReturn": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 2500,
+        "focus": {
+            "Node.Action.Succeeded": "[收鱼-单缸] 正在从鱼缸管理页返回。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishSingleStartInit"
+        ],
+        "on_error": [
+            "CollectFishSingleStartGiveUp"
+        ]
+    },
+    "CollectFishSingleStartGiveUp": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[收鱼-单缸] ERROR: 未确认鱼缸主页面，已停止，未开始收宝。"
+        },
+        "focus": {
+            "Node.Action.Failed": "[收鱼-单缸] ERROR: 未确认鱼缸主页面，已停止，未开始收宝。"
+        }
     },
     "CollectFishOpenManagement": {
         "recognition": "DirectHit",
@@ -1292,57 +1376,36 @@
         ]
     },
     "CollectFishCuteFoodRouter": {
-        "recognition": "DirectHit",
-        "action": "DoNothing",
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "CollectFishCuteNormalFood",
-            "CollectFishCuteSpecialFood",
-            "CollectFishExitManagementFail"
-        ]
-    },
-    "CollectFishCuteNormalFood": {
-        "recognition": "TemplateMatch",
-        "template": "普通鱼食袋.png",
-        "threshold": 0.85,
-        "action": "Click",
-        "post_delay": 2200,
-        "focus": {
-            "Node.Action.Succeeded": "[收鱼-海星] 萌海星: 检测到普通鱼食，已投放。"
-        },
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "CollectFishCuteAfterFeedRouter"
-        ]
-    },
-    "CollectFishCuteSpecialFood": {
-        "recognition": "TemplateMatch",
-        "template": "海星_加号.png",
-        "threshold": 0.85,
+        "recognition": "OCR",
+        "expected": "选择喂食",
         "roi": [
-            450,
-            151,
-            199,
-            191
+            560,
+            70,
+            420,
+            160
         ],
-        "action": "Click",
-        "target": [
-            649,
-            204,
-            57,
-            91
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishCutePickFood"
         ],
+        "on_error": [
+            "CollectFishFoodNotRecognized"
+        ]
+    },
+    "CollectFishCutePickFood": {
+        "recognition": "Custom",
+        "custom_recognition": "PickStarfishShellFoodReco",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[收鱼-海星] 萌海星: 检测到专用鱼食，已投放。"
+            "Node.Action.Succeeded": "[收鱼-海星] 萌海星: 已投放廉价、普通或高级鱼食中排在最前的一种。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -1463,57 +1526,36 @@
         ]
     },
     "CollectFishGoodFoodRouter": {
-        "recognition": "DirectHit",
-        "action": "DoNothing",
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "CollectFishGoodNormalFood",
-            "CollectFishGoodSpecialFood",
-            "CollectFishExitManagementFail"
-        ]
-    },
-    "CollectFishGoodNormalFood": {
-        "recognition": "TemplateMatch",
-        "template": "普通鱼食袋.png",
-        "threshold": 0.85,
-        "action": "Click",
-        "post_delay": 2200,
-        "focus": {
-            "Node.Action.Succeeded": "[收鱼-海星] 乖海星: 检测到普通鱼食，已投放。"
-        },
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "CollectFishGoodAfterFeedRouter"
-        ]
-    },
-    "CollectFishGoodSpecialFood": {
-        "recognition": "TemplateMatch",
-        "template": "海星_加号.png",
-        "threshold": 0.85,
+        "recognition": "OCR",
+        "expected": "选择喂食",
         "roi": [
-            450,
-            151,
-            199,
-            191
+            560,
+            70,
+            420,
+            160
         ],
-        "action": "Click",
-        "target": [
-            649,
-            204,
-            57,
-            91
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishGoodPickFood"
         ],
+        "on_error": [
+            "CollectFishFoodNotRecognized"
+        ]
+    },
+    "CollectFishGoodPickFood": {
+        "recognition": "Custom",
+        "custom_recognition": "PickStarfishShellFoodReco",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[收鱼-海星] 乖海星: 检测到专用鱼食，已投放。"
+            "Node.Action.Succeeded": "[收鱼-海星] 乖海星: 已投放廉价、普通或高级鱼食中排在最前的一种。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -1634,57 +1676,36 @@
         ]
     },
     "CollectFishBrightFoodRouter": {
-        "recognition": "DirectHit",
-        "action": "DoNothing",
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "CollectFishBrightNormalFood",
-            "CollectFishBrightSpecialFood",
-            "CollectFishExitManagementFail"
-        ]
-    },
-    "CollectFishBrightNormalFood": {
-        "recognition": "TemplateMatch",
-        "template": "普通鱼食袋.png",
-        "threshold": 0.85,
-        "action": "Click",
-        "post_delay": 2200,
-        "focus": {
-            "Node.Action.Succeeded": "[收鱼-海星] 亮海星: 检测到普通鱼食，已投放。"
-        },
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "CollectFishBrightAfterFeedRouter"
-        ]
-    },
-    "CollectFishBrightSpecialFood": {
-        "recognition": "TemplateMatch",
-        "template": "海星_加号.png",
-        "threshold": 0.85,
+        "recognition": "OCR",
+        "expected": "选择喂食",
         "roi": [
-            450,
-            151,
-            199,
-            191
+            560,
+            70,
+            420,
+            160
         ],
-        "action": "Click",
-        "target": [
-            649,
-            204,
-            57,
-            91
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishBrightPickFood"
         ],
+        "on_error": [
+            "CollectFishFoodNotRecognized"
+        ]
+    },
+    "CollectFishBrightPickFood": {
+        "recognition": "Custom",
+        "custom_recognition": "PickStarfishShellFoodReco",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 2200,
         "focus": {
-            "Node.Action.Succeeded": "[收鱼-海星] 亮海星: 检测到专用鱼食，已投放。"
+            "Node.Action.Succeeded": "[收鱼-海星] 亮海星: 已投放廉价、普通或高级鱼食中排在最前的一种。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -1826,16 +1847,171 @@
             "CollectFishStarfishFlowFailed"
         ]
     },
+    "CollectFishFoodNotRecognized": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[收鱼-海星] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+        },
+        "focus": {
+            "Node.Action.Failed": "[收鱼-海星] ERROR: 廉价、普通、高级鱼食都未识别，已停止，未点击其它鱼食。"
+        }
+    },
     "CollectFishStarfishFlowFailed": {
         "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "CollectFishStarfishEntryFailedAction",
         "custom_action_param": {
-            "message": "[收鱼-海星] 海星喂食流程未完整通过验证，本轮不记录成功，继续收宝。"
+            "message": "[收鱼-海星] 海星喂食流程未完整通过验证，本轮不记录成功，先返回鱼缸再继续。"
         },
         "next": [
+            "CollectFishUnwindToTank"
+        ]
+    },
+    "CollectFishUnwindToTank": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 1500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishUnwindSeeTank1",
+            "CollectFishUnwindSeeTank2",
+            "CollectFishUnwindSeeTank3",
+            "CollectFishUnwindRetryGate"
+        ],
+        "on_error": [
+            "CollectFishUnwindGiveUp"
+        ]
+    },
+    "CollectFishUnwindSeeTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[收鱼-海星] 已确认回到鱼缸 1，继续收宝。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
             "CollectFishAfterStarfishPostRouter"
         ]
+    },
+    "CollectFishUnwindSeeTank2": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[收鱼-海星] 已确认回到鱼缸 2，继续收宝。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishAfterStarfishPostRouter"
+        ]
+    },
+    "CollectFishUnwindSeeTank3": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[收鱼-海星] 已确认回到鱼缸 3，继续收宝。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishAfterStarfishPostRouter"
+        ]
+    },
+    "CollectFishUnwindRetryGate": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckCollectFishUnwindRetryReco",
+        "action": "Custom",
+        "custom_action": "CollectFishUnwindReturnAction",
+        "timeout": 2500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishUnwindClickReturn"
+        ],
+        "on_error": [
+            "CollectFishUnwindGiveUp"
+        ]
+    },
+    "CollectFishUnwindClickReturn": {
+        "recognition": "OCR",
+        "expected": "返回",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 2500,
+        "focus": {
+            "Node.Action.Succeeded": "[收鱼-海星] 尚未回到鱼缸，点击返回。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "CollectFishUnwindToTank"
+        ],
+        "on_error": [
+            "CollectFishUnwindGiveUp"
+        ]
+    },
+    "CollectFishUnwindGiveUp": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[收鱼-海星] ERROR: 多次返回后仍未确认鱼缸主页面，已停止。"
+        },
+        "focus": {
+            "Node.Action.Failed": "[收鱼-海星] ERROR: 多次返回后仍未确认鱼缸主页面，已停止。"
+        }
     },
     "CollectFishAfterStarfishRouter": {
         "recognition": "DirectHit",

@@ -246,6 +246,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Agent smoke test failed on embedded Python." }
           & $pythonExe dev/test_update_contract.py
           if ($LASTEXITCODE -ne 0) { throw "Update contract verification failed." }
+          & $pythonExe dev/test_daily_sign_global.py
+          if ($LASTEXITCODE -ne 0) { throw "Global popup contract verification failed." }
+          & $pythonExe dev/test_unified_gem_collect.py
+          if ($LASTEXITCODE -ne 0) { throw "Unified gem collection contract verification failed." }
 
   changelog:
     name: Generate changelog

@@ -48,7 +48,8 @@ def test_message_box_bridge():
     assert common['FriendPageNavigationFailed']['action'] == 'StopTask'
     handler = '[JumpBack]FriendPageMessageBoxToStarFriends'
     friend = load('features/friend_gem.json')
-    assert handler in friend['FriendGemStartRouter']['next']
+    assert handler not in friend['FriendGemStartRouter']['next']
+    assert '[JumpBack]FriendGemMessageInbox' in friend['FriendGemStartRouter']['next']
     assert 'FriendGemStartRouter' in friend['FriendGemOpenFriendPage']['next']
     manatee = load('features/manatee.json')
     assert handler in manatee['ManateeWeekendGate']['next']

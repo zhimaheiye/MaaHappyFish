@@ -145,8 +145,16 @@ def run_tests():
     assert "廉价鱼食" not in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
     assert pipeline["BuyFishFoodStartAtStore"]["custom_action_param"]["max_scrolls"] == 12
     assert pipeline["BuyFishFoodVerifyStore"]["custom_action_param"]["max_scrolls"] == 12
-    assert pipeline["BuyFishFoodStartAtDetail"]["expected"] == "廉价.*鱼食"
+    assert pipeline["BuyFishFoodStartAtDetail"]["expected"] == "廉价鱼食|普通鱼食|高级鱼食"
     assert pipeline["BuyFishFoodDetailIdentity"]["expected"] == "廉价.*鱼食"
+    assert pipeline["BuyFishFoodTargetNormal"]["expected"] == "^普通鱼食$"
+    assert pipeline["BuyFishFoodTargetHigh"]["expected"] == "^高级鱼食$"
+    assert pipeline["BuyFishFoodPriceNormal"]["expected"] == "^2000$"
+    assert pipeline["BuyFishFoodPriceHigh"]["expected"] == "^8500$"
+    assert pipeline["BuyFishFoodUnitPrice"]["expected"] == "^400$"
+    assert "冰心鱼食" in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
+    assert "普通鱼食" not in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
+    assert "高级鱼食" not in pipeline["BuyFishFoodStoreItemIdentity"]["expected"]
 
     original_sleep = actions.time.sleep
     actions.time.sleep = lambda _seconds: None

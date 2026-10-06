@@ -11,6 +11,13 @@ friend_gem_state = {
     "max_bubble_misses": 12,
     "max_friend_index": 300,
     "roster_limit_logged": False,
+    "message_policy": {
+        "system": "skip",
+        "friend_request": "skip",
+        "baby_visit": "skip",
+        "coupon": "skip",
+        "other": "skip",
+    },
 }
 
 fish_baby_state = {
@@ -44,6 +51,9 @@ sea_otter_gem_state = {
     "normal_completion": False,
     # 同一次任务的完成计数是否已落盘（幂等保护，Init 时重置）
     "daily_count_recorded": False,
+    # 末位耗尽后返回主鱼缸的点击与空等次数，Init 时重置
+    "home_return_ticks": 0,
+    "home_return_waits": 0,
 }
 
 BAND_FISH_TARGETS = {
@@ -175,6 +185,8 @@ collect_fish_state = {
     "task_id": None,                  # 当前任务 ID
     "switch_retry_count": 0,          # 切缸重试次数
     "starfish_entry_retry_count": 0,  # 海星入口连续失败次数
+    "unwind_return_count": 0,         # 喂食失败后有界返回次数
+    "single_start_return_count": 0,   # 单缸启动时从管理页返回次数
     "pending_target_tank": None,      # 切缸过程中目标鱼缸
     "initial_feed_done": False,       # 启动首轮喂食是否已完成
 }

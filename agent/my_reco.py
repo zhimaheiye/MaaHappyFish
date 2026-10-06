@@ -60,6 +60,30 @@ try:
 except ImportError:
     from agent.fish_baby import PREFERENCES, classify_sky, group_preferences, resolve_preferences
 
+try:
+    from starfish_food import pick_starfish_food
+except ImportError:
+    from agent.starfish_food import pick_starfish_food
+
+_starfish_food_log = {"key": None, "at": 0.0}
+
+
+@AgentServer.custom_recognition("PickStarfishShellFoodReco")
+class PickStarfishShellFoodReco(CustomRecognition):
+    """只返回廉价、普通、高级鱼食袋的上半部分。三种都未确认时不返回坐标。"""
+
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        picked = pick_starfish_food(argv.image)
+        if picked is None:
+            return None
+        name, box = picked
+        now = time.monotonic()
+        if _starfish_food_log["key"] != (name, box) or now - _starfish_food_log["at"] > 2:
+            print(f"[海星喂食] 识别到{name}，点击鱼食袋上半部分 {box}", flush=True)
+            _starfish_food_log["key"] = (name, box)
+            _starfish_food_log["at"] = now
+        return box
+
 
 @AgentServer.custom_recognition("FishBabyHomePageReco")
 class FishBabyHomePageReco(CustomRecognition):
@@ -349,6 +373,26 @@ class CheckCollectFishStarfishEntryRetryReco(CustomRecognition):
 
     def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
         if collect_fish_state.get("starfish_entry_retry_count", 0) < 3:
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckCollectFishUnwindRetryReco")
+class CheckCollectFishUnwindRetryReco(CustomRecognition):
+    """只读取返回次数。加一发生在对应 Action，避免识别轮询重复计数。"""
+
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if collect_fish_state.get("unwind_return_count", 0) < 3:
+            return (0, 0, 10, 10)
+        return None
+
+
+@AgentServer.custom_recognition("CheckCollectFishSingleStartReturnReco")
+class CheckCollectFishSingleStartReturnReco(CustomRecognition):
+    """单缸启动时，管理页返回次数未满 3 次才允许点击返回。"""
+
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        if collect_fish_state.get("single_start_return_count", 0) < 3:
             return (0, 0, 10, 10)
         return None
 
@@ -879,7 +923,7 @@ class CheckSeaOtterLimitReco(CustomRecognition):
     ) -> Optional[RectType]:
         if sea_otter_gem_state.get("normal_completion"):
             completion_reason = sea_otter_gem_state.get("completion_reason")
-            print(f"[海獭摸宝] 已到达好友边界，任务正常完成 ({completion_reason})", flush=True)
+            print(f"[海獭摸宝] 已确认完整运行终点 ({completion_reason})", flush=True)
             return (0, 0, 10, 10)
 
         cur = sea_otter_gem_state.get("total_harvests", 0)

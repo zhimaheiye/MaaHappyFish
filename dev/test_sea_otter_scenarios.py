@@ -54,6 +54,8 @@ from agent.my_action import (
     SeaOtterHarvestAction,
     SeaOtterAdvancePairAction,
     SeaOtterReturnFromRecommendedAction,
+    SeaOtterBoundaryIncompleteAction,
+    SeaOtterHomeReturnClickAction,
 )
 from agent.my_reco import CheckSeaOtterLimitReco
 
@@ -252,20 +254,20 @@ def test_scenario_e():
 
 
 def test_scenario_f():
-    """末位好友耗尽后进入推荐玩家页，应正常完成而不是桥接状态报错。"""
+    """末位好友耗尽后进入推荐玩家页，不能当作寻宝体力全部耗尽。"""
     ctrl = MockController()
     ctx = MockContext(ctrl)
     init_act.run(ctx, None)
 
     assert step(ctrl, ctx, 'EXHAUSTED') == 'CONTINUE'
     assert sea_otter_gem_state["current_side"] == "left"
-    assert step(ctrl, ctx, 'RECOMMENDED') == 'CONTINUE'
-    assert sea_otter_gem_state["completion_reason"] == "LAST_FRIEND_EXHAUSTED"
-    assert limit_reco.analyze(ctx, None) is not None
+    assert step(ctrl, ctx, 'RECOMMENDED') == 'DONE'
+    assert sea_otter_gem_state["completion_reason"] == "BOUNDARY_STAMINA_UNVERIFIED"
+    assert not sea_otter_gem_state["normal_completion"]
 
     clicks = [a for a in ctrl.actions if a in ('CLICK_NEXT', 'CLICK_PREV')]
     assert clicks == ['CLICK_NEXT'], "进入推荐玩家后不应再执行 Prev 或其他点击"
-    print("[PASS] Scenario F: 末位好友耗尽后进入推荐玩家页正常完成！")
+    print("[PASS] Scenario F: 推荐玩家边界报告未完成，零额外点击！")
 
 
 def test_last_friend_gray_arrow_harvest():
@@ -302,6 +304,32 @@ def test_last_friend_refresh_failure():
     assert sea_otter_gem_state['completion_reason'] == 'LAST_FRIEND_REFRESH_FAILED'
 
 
+def test_last_friend_right_returns_to_original_left():
+    """现场第105次 LEFT 摸取后的末位仍是 RIGHT，不能吃掉原 LEFT 的后续摸取。"""
+    for exhausted in (False, True):
+        ctrl = MockController()
+        ctx = MockContext(ctrl)
+        init_act.run(ctx, None)
+        sea_otter_gem_state["current_side"] = "right"
+        ctx.run_recognition = lambda name, frame: SimpleNamespace(
+            hit=(frame == 0 if name == "SeaOtterGrayRightArrow" else True),
+            box=(45, 530, 80, 80),
+        )
+        with patch("agent.my_action._capture_720p", side_effect=[0, 1]):
+            if exhausted:
+                assert SeaOtterBoundaryIncompleteAction().run(
+                    ctx, MockArg({"reason": "LAST_FRIEND_STAMINA_UNVERIFIED"}))
+            else:
+                assert harvest_act.run(ctx, MockArg({"refresh_last_friend": True}))
+        assert [a for a in ctrl.actions if a in ('CLICK_NEXT', 'CLICK_PREV')] == ['CLICK_PREV']
+        assert sea_otter_gem_state["current_side"] == "left"
+        assert sea_otter_gem_state["total_harvests"] == (0 if exhausted else 1)
+        assert not sea_otter_gem_state["normal_completion"]
+        # 原 LEFT 可以继续按普通往返摸取，不会提前停止。
+        assert step(ctrl, ctx, 'HARVESTABLE') == 'CONTINUE'
+        assert sea_otter_gem_state["total_harvests"] == (1 if exhausted else 2)
+
+
 def test_last_friend_refresh_stop_and_empty_frame():
     """空帧零点击；点 Prev 后用户停止时不得补点 Next 或累计完整次数。"""
     for stop_after_prev in (False, True):
@@ -334,6 +362,12 @@ def test_friend_gate_pipeline():
             if not item.startswith("[JumpBack]")
         ]
 
+    first_friend = pipeline["SeaOtterStartFromFriendList"]
+    assert first_friend["expected"] == "星级好友"
+    assert first_friend["roi"] == [100, 90, 200, 60]
+    assert first_friend["action"] == "Click"
+    assert first_friend["target"] == [194, 262, 40, 40]
+    assert "target" not in pipeline["SeaOtterStartAtFriendTank"]
     assert business_next("SeaOtterFriendRouter") == [
         "SeaOtterLimitReached",
         "SeaOtterHasStaminaPanel",
@@ -377,18 +411,68 @@ def test_friend_gate_pipeline():
         "SeaOtterLastFriendHarvestable",
         "SeaOtterWaitScreen",
     ]
-    assert business_next("SeaOtterLastFriendExhausted") == ["SeaOtterDone"]
+    assert business_next("SeaOtterLastFriendExhausted") == ["SeaOtterFriendRouter"]
+    assert pipeline["SeaOtterLastFriendExhausted"]["on_error"] == ["SeaOtterHomeReturnRouter"]
+    home = pipeline["SeaOtterHomeReturnRouter"]
+    assert home["next"] == [
+        "SeaOtterUnusedStaminaDialog",
+        "SeaOtterHomeAtTank",
+        "SeaOtterHomeAtPet",
+        "SeaOtterHomeAtFriendList",
+        "SeaOtterHomeAtFriendTank",
+        "SeaOtterHomeReturnWait",
+    ]
+    dialog = pipeline["SeaOtterUnusedStaminaDialog"]
+    assert dialog["action"] == "DoNothing"
+    assert dialog["next"] == ["SeaOtterNavigationFailed"]
+    assert "未使用的体力" in dialog["expected"]
+    assert pipeline["SeaOtterHomeClickBack"]["custom_action"] == "SeaOtterHomeReturnClickAction"
+    assert pipeline["SeaOtterHomeClickBack"]["expected"] == "^返回$"
+    assert pipeline["SeaOtterHomeClickBack"]["roi"] == [0, 0, 189, 146]
+    assert "target" not in pipeline["SeaOtterHomeClickBack"]
+    assert pipeline["SeaOtterHomeAtTank"]["template"] == "主界面特征.png"
+    assert pipeline["SeaOtterReturnedHome"]["action"] == "DoNothing"
+    assert "SeaOtterDone" not in home["next"]
+    assert "绿色勾选按钮.png" not in json.dumps(
+        {name: pipeline[name] for name in home["next"]},
+        ensure_ascii=False,
+    )
     last_harvest = pipeline["SeaOtterLastFriendHarvestable"]
     assert last_harvest["roi"] == [0, 400, 560, 300]
     assert last_harvest["custom_action"] == "SeaOtterHarvestAction"
     assert last_harvest["custom_action_param"] == {"refresh_last_friend": True}
     assert last_harvest["on_error"] == ["SeaOtterNavigationFailed"]
-    assert pipeline["SeaOtterNavigationFailed"]["action"] == "StopTask"
+    failure = pipeline["SeaOtterNavigationFailed"]
+    assert failure["custom_action"] == "FailTaskAction"
+    assert not failure.get("next") and not failure.get("on_error")
     assert business_next("SeaOtterLastFriendHarvestable") == ["SeaOtterFriendRouter"]
     bridge = pipeline["SeaOtterRecommendedBridge"]
     assert bridge["template"] == "好友_下一位.png"
     assert bridge["custom_action"] == "SeaOtterReturnFromRecommendedAction"
+    assert bridge["on_error"] == ["SeaOtterNavigationFailed"]
     print("[PASS] 好友点赞双模板门禁与推荐玩家桥接 Pipeline 验证通过！")
+
+
+def test_home_return_click_stays_in_corner():
+    sea_otter_gem_state["home_return_ticks"] = 0
+    ctrl = MockController()
+    ctx = MockContext(ctrl)
+    action = SeaOtterHomeReturnClickAction()
+
+    def run_box(box):
+        argv = MockArg()
+        argv.box = box
+        return action.run(ctx, argv)
+
+    assert run_box((30, 23, 120, 53)) is True
+    assert ctrl.actions == ["CLICK(90, 49)"]
+    assert run_box((400, 300, 40, 40)) is False
+    assert ctrl.actions == ["CLICK(90, 49)"]
+    sea_otter_gem_state["home_return_ticks"] = 6
+    assert run_box((30, 23, 120, 53)) is False
+    assert ctrl.actions == ["CLICK(90, 49)"]
+    sea_otter_gem_state["home_return_ticks"] = 0
+    print("[PASS] 返回主鱼缸只点左上角返回，超次和偏点都停止")
 
 
 if __name__ == "__main__":

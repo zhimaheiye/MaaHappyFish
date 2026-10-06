@@ -120,6 +120,13 @@ python dev/test_release_agent_imports.py
 
 **基线红测试规则**：受影响的测试失败时，“旧版本/基线也失败”只能说明失败早于本轮，不能自动视为可跳过。必须先核对当前实现与功能契约，判断是过期断言还是实际缺陷；前者同步修正测试，后者先修代码，再重新执行完整测试。除非用户明确给出本次发布豁免，否则不得只登记为历史债务后继续打 Tag。
 
+### 3.6 全局弹窗与统一收宝契约
+```powershell
+python dev/test_daily_sign_global.py
+python dev/test_unified_gem_collect.py
+```
+两项在本地发版前必须完整通过（不得用 `--focused` 代替全量弹窗检查），也已加入 `verify (win, x86_64)` 的 embedded Python 步骤，失败会阻止 Release。全局接入例外按具体节点登记并核对所属文件，新增节点默认受检查；配置初始化、页面内恢复和主动活动的具体边界见 `docs/features/daily-sign.md`。这不表示页面内局部流程已实测支持任意全局弹窗。
+
 ---
 
 ## 4. Step 2 — 升级版本号与可选本地副本同步

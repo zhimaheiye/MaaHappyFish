@@ -20,6 +20,8 @@ try:
         CheckCollectFishTargetTankReco,
         CheckCollectFishTankModeReco,
         CheckCollectFishNeedsInitReco,
+        CheckCollectFishUnwindRetryReco,
+        CheckCollectFishSingleStartReturnReco,
         timer_state,
     )
     from my_action import (
@@ -30,6 +32,9 @@ try:
         CollectFishRecordSwitchedTankAction,
         CollectFishSwitchRetryAction,
         CollectFishAfterStarfishAction,
+        CollectFishStarfishEntryFailedAction,
+        CollectFishUnwindReturnAction,
+        CollectFishSingleStartReturnAction,
     )
 except Exception as e:
     raise ImportError(f'Failed to import agent modules: {e}')
@@ -448,10 +453,18 @@ class CollectFishDualTankTestSuite(unittest.TestCase):
             self.assertIn(tank_node, pipeline)
             self.assertIn('CollectFishAfterStarfishPostRouter', pipeline[tank_node]['next'])
 
-        # 3. 返回失败先重试退出；仍失败时释放计时状态，再进入 PostRouter 恢复主流程
+        # 3. 返回失败先重试退出；仍失败时释放计时状态，再有界返回到已确认的鱼缸
         self.assertIn('CollectFishExitManagementFail', pipeline['CollectFishExitManagement']['on_error'])
         self.assertIn('CollectFishStarfishFlowFailed', pipeline['CollectFishExitManagementFail']['next'])
-        self.assertIn('CollectFishAfterStarfishPostRouter', pipeline['CollectFishStarfishFlowFailed']['next'])
+        self.assertIn('CollectFishUnwindToTank', pipeline['CollectFishStarfishFlowFailed']['next'])
+        self.assertNotIn('CollectFishAfterStarfishPostRouter', pipeline['CollectFishStarfishFlowFailed']['next'])
+        for tank_name in ('CollectFishUnwindSeeTank1', 'CollectFishUnwindSeeTank2', 'CollectFishUnwindSeeTank3'):
+            see_tank = pipeline[tank_name]
+            self.assertEqual(see_tank['action'], 'DoNothing')
+            self.assertNotEqual(see_tank.get('custom_action'), 'CollectFishAfterStarfishAction')
+            self.assertIn('CollectFishAfterStarfishPostRouter', see_tank['next'])
+        self.assertEqual(pipeline['CollectFishUnwindGiveUp']['custom_action'], 'FailTaskAction')
+        self.assertNotIn('next', pipeline['CollectFishUnwindGiveUp'])
 
         # 4. CollectFishAfterStarfishPostRouter 节点存在，next 包含 NeedsInitialization 和 ResumeHarvest
         self.assertIn('CollectFishAfterStarfishPostRouter', pipeline)
@@ -483,6 +496,8 @@ class CollectFishDualTankTestSuite(unittest.TestCase):
         collect_fish_state['initial_feed_done'] = True
         collect_fish_state['pending_target_tank'] = 2
         collect_fish_state['switch_retry_count'] = 2
+        collect_fish_state['unwind_return_count'] = 3
+        collect_fish_state['single_start_return_count'] = 2
         collect_fish_state['task_id'] = 100
 
         context = MagicMock()
@@ -499,7 +514,80 @@ class CollectFishDualTankTestSuite(unittest.TestCase):
         self.assertFalse(collect_fish_state['initial_feed_done'])
         self.assertIsNone(collect_fish_state['pending_target_tank'])
         self.assertEqual(collect_fish_state['switch_retry_count'], 0)
+        self.assertEqual(collect_fish_state['unwind_return_count'], 0)
+        self.assertEqual(collect_fish_state['single_start_return_count'], 0)
         self.assertEqual(collect_fish_state['tank_mode'], 'dual')
+
+    def test_case_g_food_miss_cannot_pretend_harvest_started(self):
+        """鱼食未识别时不得把返回和收宝放在同一候选层，也不得伪造单缸就绪。"""
+        with open(PIPELINE_PATH, 'r', encoding='utf-8') as f:
+            pipeline = json.load(f)
+
+        for name in (
+            'CollectFishCuteFoodRouter',
+            'CollectFishGoodFoodRouter',
+            'CollectFishBrightFoodRouter',
+        ):
+            router = pipeline[name]
+            self.assertEqual(router['recognition'], 'OCR')
+            self.assertEqual(router['expected'], '选择喂食')
+            self.assertEqual(router['roi'], [560, 70, 420, 160])
+            self.assertEqual(router['timeout'], 4000)
+            self.assertNotIn('CollectFishExitManagementFail', router['next'])
+            self.assertEqual(router['on_error'], ['CollectFishFoodNotRecognized'])
+
+        missed = pipeline['CollectFishFoodNotRecognized']
+        self.assertEqual(missed['custom_action'], 'FailTaskAction')
+        self.assertNotIn('next', missed)
+        self.assertNotIn('on_error', missed)
+        for name in (
+            'CollectFishCutePickFood',
+            'CollectFishGoodPickFood',
+            'CollectFishBrightPickFood',
+        ):
+            pick = pipeline[name]
+            self.assertEqual(pick['custom_recognition'], 'PickStarfishShellFoodReco')
+            self.assertEqual(pick['custom_action'], 'ClickRecognizedCenterAction')
+            self.assertNotIn('target', pick)
+        self.assertNotIn('CollectFishSingleStartFallback', pipeline)
+        single = pipeline['CollectFishSingleStartInit']
+        self.assertIn('CollectFishSingleStartOnManagement', single['next'])
+        self.assertEqual(single['on_error'], ['CollectFishSingleStartGiveUp'])
+        management = pipeline['CollectFishSingleStartOnManagement']
+        self.assertEqual(management['expected'], '鱼缸')
+        self.assertEqual(management['roi'], [180, 0, 230, 90])
+        give_up = pipeline['CollectFishSingleStartGiveUp']
+        self.assertEqual(give_up['custom_action'], 'FailTaskAction')
+        self.assertNotIn('next', give_up)
+        stall = pipeline['CheckScreenStall']
+        self.assertEqual(stall['custom_action'], 'FailTaskAction')
+        self.assertNotEqual(stall.get('action'), 'StopTask')
+        self.assertNotIn('next', stall)
+
+        context = MagicMock()
+        argv = MagicMock()
+        argv.custom_action_param = json.dumps({'message': 'miss'})
+        collect_fish_state['unwind_return_count'] = 2
+        self.assertTrue(CollectFishStarfishEntryFailedAction().run(context, argv))
+        self.assertEqual(collect_fish_state['unwind_return_count'], 0)
+
+        unwind_reco = CheckCollectFishUnwindRetryReco()
+        self.assertIsNotNone(unwind_reco.analyze(context, argv))
+        self.assertTrue(CollectFishUnwindReturnAction().run(context, argv))
+        self.assertTrue(CollectFishUnwindReturnAction().run(context, argv))
+        self.assertTrue(CollectFishUnwindReturnAction().run(context, argv))
+        self.assertEqual(collect_fish_state['unwind_return_count'], 3)
+        self.assertIsNone(unwind_reco.analyze(context, argv))
+
+        start_reco = CheckCollectFishSingleStartReturnReco()
+        collect_fish_state['single_start_return_count'] = 0
+        self.assertIsNotNone(start_reco.analyze(context, argv))
+        argv.custom_action_param = json.dumps({'tank': 2})
+        self.assertTrue(CollectFishSingleStartAction().run(context, argv))
+        self.assertEqual(collect_fish_state['single_start_return_count'], 0)
+        self.assertTrue(collect_fish_state['is_inited'])
+        collect_fish_state['single_start_return_count'] = 3
+        self.assertIsNone(start_reco.analyze(context, argv))
 
 
 if __name__ == '__main__':
