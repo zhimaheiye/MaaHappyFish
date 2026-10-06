@@ -246,7 +246,7 @@ gh run watch <RUN_ID> -R zhimaheiye/MaaHappyFish
 
 ### 9.3 CI 构建矩阵与硬门禁核查清单
 - **`install`（4 个 OS × 2 个架构，共 8 个构建目标）**：全部绿色通过（`win/macos/linux/android` × `x86_64/aarch64`）；
-- **`verify (win, x86_64)`**：GitHub Windows Runner 上的发行包硬门禁 / embedded Python smoke gate 必须绿色通过；
+- **`verify (win, x86_64)`**：GitHub Windows Runner 上的发行包硬门禁 / embedded Python smoke gate 必须绿色通过。该步骤要先设置 `PYTHONUTF8=1` 和 `PYTHONIOENCODING=utf-8`。`windows-latest` 默认控制台是 cp1252，中文日志会抛 `UnicodeEncodeError`。v0.7.5 因此没有生成 Release；
 - **`changelog` 与 `release`**：全部成功执行。
 
 ---
