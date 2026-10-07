@@ -138,7 +138,7 @@
         },
         "timeout": 500,
         "focus": {
-            "Node.Action.Succeeded": "[挂机日程] 十点/二十二点好友摸宝兜底已启动。"
+            "Node.Action.Succeeded": "[挂机日程] 十点、二十二点好友摸宝兜底已启动。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -162,7 +162,7 @@
         },
         "timeout": 500,
         "focus": {
-            "Node.Action.Succeeded": "[挂机日程] 十点/二十二点好友摸宝兜底已启动。"
+            "Node.Action.Succeeded": "[挂机日程] 十点、二十二点好友摸宝兜底已启动。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",

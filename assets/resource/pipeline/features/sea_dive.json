@@ -443,7 +443,7 @@
         "recognition": "DirectHit",
         "action": "StopTask",
         "focus": {
-            "Node.Action.Succeeded": "[深海寻鱼] 未知状态，无法判断免费/付费，已安全停止。"
+            "Node.Action.Succeeded": "[深海寻鱼] 未知状态，无法判断免费态或付费态，已安全停止。"
         }
     },
     "SeaDiveAbortUnknownPage": {

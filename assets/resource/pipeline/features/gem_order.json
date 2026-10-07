@@ -94,7 +94,7 @@
         ],
         "action": "DoNothing",
         "focus": {
-            "Node.Recognition.Succeeded": "[宝石订单] 已识别今日免费订单 10/10，准备退出。"
+            "Node.Recognition.Succeeded": "[宝石订单] 已识别今日免费订单达到 10 张上限，准备退出。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",

@@ -36,7 +36,12 @@ class MockArg:
 
 
 class MockContext:
-    pass
+    def __init__(self):
+        self.pipeline_overrides = []
+
+    def override_pipeline(self, value):
+        self.pipeline_overrides.append(value)
+        return True
 
 
 def run_tests():
@@ -110,12 +115,15 @@ def run_tests():
         # ---- Init：重置幂等标志 + 启动日志 ----
         state_file.write_text("{}", encoding="utf-8")
         ls.record_sea_otter_completed_run()
-        assert InitSeaOtterStateAction().run(MockContext(), MockArg()) is True
+        init_context = MockContext()
+        assert InitSeaOtterStateAction().run(init_context, MockArg()) is True
         assert sea_otter_gem_state["normal_completion"] is False
         assert sea_otter_gem_state["daily_count_recorded"] is False
         assert sea_otter_gem_state["total_harvests"] == 0
         assert sea_otter_gem_state["completion_reason"] is None
-        print("[PASS] Init 重置运行状态与幂等标志，并输出今日 X/3 启动日志")
+        init_focus = init_context.pipeline_overrides[-1]["SeaOtterStartRouter"]["focus"]["Node.Action.Succeeded"]
+        assert "/" not in init_focus and "上限 3 次" in init_focus
+        print("[PASS] Init 重置运行状态与幂等标志，Focus 次数文案不含路径斜杠")
 
         # ---- 分类计数（Finalize / Mark / LimitReco 全部走真实 Agent 类）----
         finalize = SeaOtterFinalizeAction()
@@ -128,8 +136,11 @@ def run_tests():
         sea_otter_gem_state["normal_completion"] = True
         sea_otter_gem_state["completion_reason"] = "VERIFIED_COMPLETION"
         assert sea_otter_gem_state["normal_completion"] is True
-        assert finalize.run(MockContext(), MockArg()) is True
+        finalize_context = MockContext()
+        assert finalize.run(finalize_context, MockArg()) is True
         assert ls.get_sea_otter_daily_count() == 2  # 上一次记录 1 + 本次
+        done_focus = finalize_context.pipeline_overrides[-1]["SeaOtterDoneDisplay"]["focus"]["Node.Action.Succeeded"]
+        assert "/" not in done_focus and "上限 3 次" in done_focus
         print("[PASS] 已确认完整结束的计数契约 +1（测试注入，不代表已有 UI 门禁）")
 
         # 同一次任务 Finalize 重复进入：只 +1

@@ -419,7 +419,7 @@
         "post_delay": 800,
         "timeout": 2000,
         "focus": {
-            "Node.Action.Succeeded": "[兑换金贝壳券] 检测到兑换获得/结算弹窗，已确认关闭，准备返回。"
+            "Node.Action.Succeeded": "[兑换金贝壳券] 检测到兑换获得或结算弹窗，已确认关闭，准备返回。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",

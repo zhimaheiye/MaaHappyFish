@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Pipeline 正则与资源加载 Smoke Preflight 校验工具
-用于检测 assets/resource/pipeline/ 下所有节点的 expected 正则表达式合法性，
-并执行底层 MaaFramework Resource bundle 加载自检。
+Pipeline 正则、Focus 文案与资源加载 Smoke Preflight 校验工具。
+
+除 expected 正则外，也禁止 Focus 文案包含半角斜杠；MFAAvalonia 会把这类
+普通日志误当成本地文件路径并产生“Focus 内容文件解析失败”告警。
 """
 import glob
 import json
@@ -30,6 +31,14 @@ def check_pipeline_regex():
         for node_name, node in data.items():
             if not isinstance(node, dict):
                 continue
+
+            focus = node.get("focus")
+            if isinstance(focus, dict):
+                for event_name, message in focus.items():
+                    if isinstance(message, str) and "/" in message:
+                        errors.append(
+                            f"[{pf}] Node '{node_name}' focus '{event_name}' contains '/' -> {message}"
+                        )
 
             # Check expected in OCR nodes (and other recognition types)
             expected = node.get("expected")

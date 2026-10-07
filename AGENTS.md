@@ -54,6 +54,7 @@
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 | 维护客户端项目图标 | `docs/features/client-appearance.md` |
 | 排查客户端更新下载、TLS、半包与安装状态 | `docs/features/client-update.md` |
+| 拉取双仓库并分析、修复、清理自动化运行错误日志 | `.agents/skills/maa-log-repair-workflow/SKILL.md`（执行入口；证据结论仍回写对应功能文档与交接文档） |
 
 > **路由表职责**：上面的表是仓库入口级总路由；`docs/handoff/DEVELOPMENT_PLAYBOOK.md` 维护“信息类型 → 权威来源”的接手视角，`CURRENT.md`/功能文档只维护各自主题内的局部链接。三处可以同时存在，但不要把它们当成三份需要逐行同步的同一张表；新增长期文档时至少更新本入口表，并按实际职责更新相关局部入口。
 >
@@ -162,6 +163,12 @@
 - **括号与特殊字符约束**：若匹配内容含有正则特殊字符（如 `()`, `[]`, `{}`, `.`, `+`, `*`, `?`, `^`, `$`, `|`），必须在 JSON 中进行双反斜杠转义（如 `\\(`），或优先选取不含特殊字符的稳定中文语义关键词（例如优先匹配"刷新体力"而非"0(0点刷新体力)"）。
 - **静态强校验约束**：单个节点的正则语法错误会导致整份 Pipeline 加载校验（`PipelineChecker::check_all_regex`）失败，直接引发客户端"资源加载失败"。修改 pipeline 后务必运行 `python dev/test_pipeline_regex.py` 执行双层校验。
 - **真实事故案例**：曾将 `expected: "0("` 写入 Pipeline，Maa 将 `(` 当作 `std::regex` 中未配对括号，编译抛出 `Unmatched marking parenthesis`，导致**整个 Pipeline 资源加载失败**。优先使用语义短语（如"刷新体力"）可彻底规避此类风险。
+
+### MFA Focus 文案规则 (Focus Message Path Safety)
+
+- Pipeline `focus` 与 `context.override_pipeline()` 动态注入的 Focus 文案不得包含半角斜杠 `/`。MFAAvalonia 会尝试把这类普通日志解析为本地文件路径，产生 `Focus 内容文件解析失败` 告警。
+- 比例、并列状态和时段改用中文表达，例如“今日累计 1 次（上限 3 次）”“鱼饵或体力耗尽”“十点、二十二点”。OCR `expected`、正则和业务数据中的斜杠不受此限制。
+- 修改 Pipeline 后运行 `python dev/test_pipeline_regex.py`；该门禁同时检查正则、静态 Focus 文案和 MaaFramework 资源加载。动态 Focus 由对应专项测试验证。
 
 ### Release Runtime Dependency Rule（发布运行时依赖规则）
 

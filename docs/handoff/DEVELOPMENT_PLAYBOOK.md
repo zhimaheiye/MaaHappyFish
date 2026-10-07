@@ -12,6 +12,8 @@
 
 2026-10-03 海獭教训：导航边界、当前好友体力与整次寻宝体力是不同完成条件，不能以位置或单个对象耗尽推断全任务成功；恢复分支必须保留原 LEFT/RIGHT 业务窗口，物理末位不等于 LEFT。用户建议版本回溯时直接比较对应 tag 的 Pipeline/Action/Reco，区分真正新增回归与旧缺陷被新路径暴露。缺终态证据时明确未完成/FAILED、不记完整次数，继续搜寻所需证据登记到功能文档；详见 `docs/features/sea-otter-gem.md`。
 
+2026-10-07 Focus 日志教训：MFAAvalonia 会把 Focus 文案里的半角斜杠 `/` 尝试解析为本地路径，造成 `Focus 内容文件解析失败` 告警。Pipeline 静态 Focus 与 Agent 动态 Focus 均改用中文比例/并列语义；`dev/test_pipeline_regex.py` 已加入静态 Focus 斜杠门禁，动态文案由对应专项锁定。金海豚耗尽分支原本还会加载发布包未包含、且不参与最终决策的 RapidOCR；现完全按已有红色取消按钮几何门禁分流，移除无效可选依赖探测。
+
 | 信息 | 权威来源 |
 | --- | --- |
 | 项目硬规则、工具边界、文件导航 | `AGENTS.md` |
@@ -160,7 +162,7 @@ git diff --check
 
 | 变更 | 追加检查 |
 | --- | --- |
-| Pipeline `expected` / OCR | `dev/test_pipeline_regex.py`，特别检查正则特殊字符 |
+| Pipeline `expected` / OCR / Focus | `dev/test_pipeline_regex.py`，特别检查正则特殊字符与 Focus 半角斜杠 |
 | CustomAction / CustomRecognition | 注册引用门禁、显式返回值、`parse_dict_param()` 空值测试 |
 | 新第三方 import | 更新 `agent/requirements-release.txt`，用发布 embedded Python 做 import 冒烟 |
 | `interface.json` | 三份文件字节一致，运行 `dev/test_update_contract.py` |

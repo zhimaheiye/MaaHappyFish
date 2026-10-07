@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maa 日志修复工作流"
+  short_description: "拉取双仓库并分析、修复、清理、推送 MFA 日志问题"
+  default_prompt: "Use $maa-log-repair-workflow to analyze and repair the latest MaaHappyFish automation error logs."

@@ -751,7 +751,7 @@
         "threshold": 0.7,
         "action": "DoNothing",
         "focus": {
-            "Node.Recognition.Succeeded": "[钓鱼] 已识别到鱼饵/体力耗尽，按正常完成退出钓场。"
+            "Node.Recognition.Succeeded": "[钓鱼] 已识别到鱼饵或体力耗尽，按正常完成退出钓场。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",

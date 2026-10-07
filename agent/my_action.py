@@ -589,18 +589,6 @@ class FishBabyRunRoundAction(CustomAction):
         )
 
 
-_golden_dolphin_ocr = None
-
-
-def _get_golden_dolphin_ocr():
-    """RapidOCR lazy singleton：仅在疑似耗尽分支首次调用时加载模型。"""
-    global _golden_dolphin_ocr
-    if _golden_dolphin_ocr is None:
-        from rapidocr_onnxruntime import RapidOCR
-        _golden_dolphin_ocr = RapidOCR()
-    return _golden_dolphin_ocr
-
-
 def _confirm_golden_dolphin_dialog_closed(ctrl, tpl_confirm, screen_confirm, btn_cx, btn_cy):
     """普通“想玩”确认弹窗点击闭环：点击 → fresh 截图 → confirm 模板验证弹窗关闭。
 
@@ -2042,7 +2030,7 @@ class InitSeaOtterStateAction(CustomAction):
                         "SeaOtterStartRouter": {
                             "focus": {
                                 "Node.Action.Succeeded": (
-                                    f"[海獭摸宝] 今日完整运行：{count} / {limit}（04:00刷新）"
+                                    f"[海獭摸宝] 今日完整运行：{count} 次（上限 {limit} 次，04:00 刷新）"
                                 )
                             },
                         }
@@ -2401,7 +2389,7 @@ class SeaOtterFinalizeAction(CustomAction):
                     "SeaOtterDoneDisplay": {
                         "focus": {
                             "Node.Action.Succeeded": (
-                                f"[海獭摸宝] 本次完整运行完成，今日：{count} / {limit}"
+                                f"[海獭摸宝] 本次完整运行完成，今日累计 {count} 次（上限 {limit} 次）"
                             )
                         },
                     }
@@ -4467,19 +4455,10 @@ class GoldenDolphinNavigationAction(CustomAction):
                 golden_dolphin_state["status"] = "READY_TO_PLAY"
                 return True
 
-            # 无红 X：疑似耗尽弹窗（几何证据），RapidOCR 仅作辅助确认（lazy singleton）
+            # 无红 X：按已验证的弹窗几何差异判定机会耗尽。
+            # 发布环境不打包 RapidOCR；此前的可选 OCR 不参与决策，只会产生缺依赖噪声。
             is_exhausted = True
-            try:
-                ocr = _get_golden_dolphin_ocr()
-                res_ocr, _ = ocr(screen_confirm)
-                for _, txt, _ in (res_ocr or []):
-                    if any(k in txt for k in ("用完", "明天再来", "全部用完", "明天")):
-                        print("[金海豚导航] OCR 命中耗尽文案，确认机会耗尽判定。", flush=True)
-                        break
-                else:
-                    print("[金海豚导航] OCR 未命中耗尽文案，维持几何判定（疑似耗尽）。", flush=True)
-            except Exception as e:
-                print(f"[金海豚导航] OCR 辅助确认异常，维持疑似耗尽判定: {e}", flush=True)
+            print("[金海豚导航] 确认弹窗无红色取消按钮，按几何门禁判定机会耗尽。", flush=True)
 
             if is_exhausted:
                 print(f"[金海豚导航] 检测到提示「今天的机会已全部用完」，点击绿色对号按钮 ({btn_cx}, {btn_cy}) 关闭并验证...", flush=True)

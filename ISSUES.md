@@ -10,3 +10,5 @@
 - 2026-10-02 外部值守器 `mfa_night_watch.py` 的停滞判据待核对/修复：内存心跳曾导致误报 HEALTHY；新增报告称规则优先级已于 11:40 在外部脚本修复，但仓库没有该源码，无法复核。待拿到实际脚本后核对业务进展判据及去重，不把所有通用失败标记已知；摘要见 `docs/features/patrol.md`，不假造外部实现。
 
 - MFAAvalonia v2.16.2 原生资源更新容错仍待上游或自有客户端修复（2026-10-02 台式机现场，2026-10-03 复核）：历史现场曾出现下载响应体 TLS EOF，留下 131072000 字节且无 ZIP 中央目录/EOCD 的临时半包；另一次先成功校验并安装 v0.7.4，重启后才发生新的 GitHub Release 元数据 TLS 握手失败，后续巡检正常。网络/代理/服务端哪一环导致 EOF 仍无证据。MFAAvalonia v2.16.2 与 2026-10-03 上游当前 `VersionChecker.cs` 均仍存在“内部下载异常返回 false 使外层 WebException 重试难以生效、下载前停止任务、失败 return 后队列仍记录任务完成”等语义；MaaHappyFish 当前发行流程使用官方预编译 MFAAvalonia，不编译这段 C#，因此 Python Agent/Pipeline 不能直接修复。详见 `docs/features/client-update.md`。关键日志在 `dev/fixtures/desktop_reports_20261003/client_update/`。
+
+- MFAAvalonia 原生临时目录清理偶发 `AccessDenied` 待上游或自有客户端修复（2026-10-06 台式机 v0.7.8）：初始化 MaaTasker 时删除 `cache/.temp/.../00000208.bak` 失败，堆栈位于 `MFAAvalonia.Extensions.MaaFW.MaaProcessor.InitializeMaaTasker`；同批日志随后 Agent 正常启动并继续执行任务，当前证据表明它是非阻断告警，不能当作自动化业务失败。MaaHappyFish 使用官方预编译 MFAAvalonia，仓库内 Python/Pipeline 无法修复该 C# 文件占用/权限竞态。复现与边界见 `docs/features/client-update.md`。

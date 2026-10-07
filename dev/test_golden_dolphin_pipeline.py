@@ -545,22 +545,15 @@ def run_tests():
     )
     print('[PASS] Check 12E: Heart 命中 + XP 缺席 → 不触发激活、不点击，持续安全找贝币！')
 
-    print("\n--- Test 12F: 普通确认路径禁止调用 RapidOCR（结构 + 运行时双重验证） ---")
+    print("\n--- Test 12F: 金海豚确认分流不依赖 RapidOCR ---")
     import agent.my_action as gd_mod
 
-    # 结构断言：rapidocr 导入只允许出现在 _get_golden_dolphin_ocr 内
-    fn_src = inspect.getsource(gd_mod._get_golden_dolphin_ocr)
-    assert "rapidocr_onnxruntime" in fn_src
-    module_src = inspect.getsource(gd_mod)
-    ocr_fn_start = module_src.find("def _get_golden_dolphin_ocr")
-    before_ocr_fn = module_src[:ocr_fn_start]
-    assert "rapidocr_onnxruntime" not in before_ocr_fn.split("class GoldenDolphinTaskAction")[0], (
-        "rapidocr 导入必须只在 lazy singleton 内"
-    )
-    # 确认闭环抽函数源码内不得出现 RapidOCR
+    navigation_src = inspect.getsource(gd_mod.GoldenDolphinNavigationAction.run)
+    assert "rapidocr_onnxruntime" not in navigation_src.lower()
+    assert not hasattr(gd_mod, "_get_golden_dolphin_ocr")
     confirm_fn_src = inspect.getsource(gd_mod._confirm_golden_dolphin_dialog_closed)
-    assert "RapidOCR" not in confirm_fn_src and "rapidocr" not in confirm_fn_src
-    print("[PASS] 结构（12F）：rapidocr 仅存在于 lazy singleton，确认闭环函数零 OCR 依赖")
+    assert "rapidocr" not in confirm_fn_src.lower()
+    print("[PASS] 结构（12F）：普通确认和耗尽几何分流均不加载 RapidOCR")
 
     class _FC:
         def __init__(self, fs):
@@ -595,50 +588,12 @@ def run_tests():
     assert popup_frame is not None and game_frame is not None
     tpl_confirm = _get_golden_dolphin_templates()["confirm"]
 
-    # 运行时断言：普通确认闭环零 RapidOCR 调用（monkeypatch 即失败）
-    orig_get_ocr = gd_mod._get_golden_dolphin_ocr
-
-    def _forbidden_ocr():
-        raise AssertionError("normal play popup must not call RapidOCR")
-
-    gd_mod._get_golden_dolphin_ocr = _forbidden_ocr
-    try:
-        ctrl = _FC([game_frame])
-        dialog_closed, bx, by = gd_mod._confirm_golden_dolphin_dialog_closed(
-            ctrl, tpl_confirm, popup_frame, 824, 480)
-        assert dialog_closed is True
-        assert ctrl.clicks == [(824, 480)]
-    finally:
-        gd_mod._get_golden_dolphin_ocr = orig_get_ocr
-    print("[PASS] 运行时（12F）：普通确认闭环零 RapidOCR 调用（monkeypatch 未触发）")
-
-    print("\n--- Test 12G: 疑似耗尽分支才允许 RapidOCR + lazy singleton ---")
-    calls = {"construct": 0}
-
-    class _FakeRapidOCR:
-        def __init__(self):
-            calls["construct"] += 1
-
-        def __call__(self, frame):
-            return [(None, "机会已全部用完", None)], None
-
-    fake_mod = type(sys)("rapidocr_onnxruntime_fake")
-    fake_mod.RapidOCR = _FakeRapidOCR
-    saved_mod = sys.modules.get("rapidocr_onnxruntime")
-    sys.modules["rapidocr_onnxruntime"] = fake_mod
-    try:
-        gd_mod._golden_dolphin_ocr = None  # 重置 singleton
-        o1 = gd_mod._get_golden_dolphin_ocr()
-        o2 = gd_mod._get_golden_dolphin_ocr()
-        assert o1 is o2, "lazy singleton 必须复用同一实例"
-        assert calls["construct"] == 1, "RapidOCR 只构造一次"
-        print("[PASS] lazy singleton（12G）：RapidOCR 仅首次构造，后续复用实例")
-    finally:
-        gd_mod._golden_dolphin_ocr = None
-        if saved_mod is not None:
-            sys.modules["rapidocr_onnxruntime"] = saved_mod
-        else:
-            sys.modules.pop("rapidocr_onnxruntime", None)
+    ctrl = _FC([game_frame])
+    dialog_closed, bx, by = gd_mod._confirm_golden_dolphin_dialog_closed(
+        ctrl, tpl_confirm, popup_frame, 824, 480)
+    assert dialog_closed is True
+    assert ctrl.clicks == [(824, 480)]
+    print("[PASS] 运行时（12F）：普通确认闭环一次点击后由 fresh 帧确认关闭")
 
     print("\n--- Test 12H: 普通确认闭环——第一次成功 / fresh 坐标重试 / 三次失败 ---")
     from agent.my_action import _confirm_golden_dolphin_dialog_closed as _confirm_loop

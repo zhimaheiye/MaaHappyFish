@@ -2,6 +2,12 @@
 
 本文沉淀 MaaHappyFish 使用 MFAAvalonia 原生更新链时的长期故障知识；Python Agent、Pipeline 与游戏自动化问题仍归对应功能文档。
 
+## 2026-10-06 临时目录清理 AccessDenied
+
+台式机 v0.7.8 的两份值守包在初始化 MaaTasker 时记录 `清理临时目录失败：Access to the path '00000208.bak' is denied`，堆栈位于 `MFAAvalonia.Extensions.MaaFW.MaaProcessor.InitializeMaaTasker`。同批原始日志随后完成 Agent 启动并继续运行日常任务；因此现有证据只支持“原生客户端清理缓存时发生非阻断的文件占用或权限告警”，不支持把它归因于 Python Agent、Pipeline 或某一项游戏业务失败。
+
+MaaHappyFish 当前发行包直接组合官方预编译 MFAAvalonia，并不包含上述 C# 实现的源码构建链。本仓库不能通过修改 Pipeline 或 Python Agent 修复该清理竞态；在上游修复或项目明确维护自有客户端构建前，保留为原生客户端待办。排障时应继续结合告警后的 Agent 进程、IPC、自定义动作和业务日志判断实际启动结果，不能仅凭这一条 `ERR` 宣布自动化失败。
+
 ## 2026-10-02 历史对话现场
 
 以下来自删除前 Codex 会话中的本机日志/报告现场；报告与当时未提交工作树不在当前 Git 历史中，属于 **historical conversation evidence**，不能当作某个正式 commit 的实现事实。
@@ -53,3 +59,4 @@
 - 没有进行新的台式机网络故障注入、MFA 更新或模拟器交互；
 - TLS EOF 的网络根因仍未知，不能写成“代理问题”“GitHub 问题”或“本机网络问题”中的任何一种；
 - 发版静态红测试属于另一组问题，当前状态仍以 `ISSUES.md` 为准，不应与更新器故障混为一谈。
+- 2026-10-07 仅从台式机证据包核对临时目录告警后的连续日志，没有修改或重新编译 MFAAvalonia，也没有做 MFA/模拟器交互。

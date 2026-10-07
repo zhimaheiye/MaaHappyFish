@@ -1,5 +1,7 @@
 # 鱼宝乐园
 
+2026-10-07：Focus 文案“逐只 / 统一配置”改为中文并列语义，避免 MFAAvalonia 路径解析告警；配置读取与分组执行行为不变。代码级验证完成，本次未操作 MFA/模拟器。
+
 **状态：基础流程 Live Evidence Complete；偏好扩展 Code-level Verified / 待用户运行。** 玩法依据为只读的 `D:\happyfishagent\happyfish-activity-automation\activities\fish-baby-hatch\SKILL.md`；2026-09-23 使用 Maa MCP 在 1280×720 MuMu 实机补齐主页、工具栏、选择、执行、睡眠、退出与重新进入证据。2026-09-24 修复 Pipeline JSON 括号缺失造成的全局资源加载失败，并将鱼食、玩耍、牛奶整理为三个独立配置组，每组均支持逐只设置和一键统一。本轮只做离线代码验证，未操作模拟器。
 
 ## V1 Scope
