@@ -713,6 +713,44 @@ class CloseLuckyMomentAction(CustomAction):
             return False
 
 
+@AgentServer.custom_action("CloseDancingFishPopupAction")
+class CloseDancingFishPopupAction(CustomAction):
+    """只在跳舞鱼专属提示上点击红叉，确认提示消失且回到主鱼缸。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        parse_dict_param(argv.custom_action_param)
+        try:
+            ctrl = context.tasker.controller
+            if not ctrl:
+                return False
+            for attempt in range(4):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    return False
+                popup = context.run_recognition("GlobalDancingFishPopup", frame)
+                if popup is None:
+                    return False
+                if not popup.hit:
+                    # 单帧 OCR 漏字不算关闭，连续两帧均未命中并确认主鱼缸。
+                    time.sleep(0.3)
+                    confirm = _capture_720p(ctrl)
+                    second = context.run_recognition("GlobalDancingFishPopup", confirm) if confirm is not None else None
+                    return bool(second is not None and not second.hit
+                                and _recognition_box(context, "ConfirmMainScreen", confirm))
+                if attempt == 3:
+                    break
+                if not ctrl.post_click(702, 480).wait().succeeded:
+                    return False
+                time.sleep(0.8)
+            print("[跳舞鱼提示] ERROR: 三次关闭后弹窗仍在，安全停止", flush=True)
+            return False
+        except Exception as e:
+            print(f"[跳舞鱼提示] ERROR: 关闭异常: {e}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("ConfirmOpenShellFinishAction")
 class ConfirmOpenShellFinishAction(CustomAction):
     """只在结算按钮仍可见时重试点击，并确认回到大章鱼主页。"""
@@ -4902,7 +4940,7 @@ class InitHangupScheduledDailyAction(CustomAction):
                 flush=True,
             )
             class _Arg:
-                custom_action_param = json.dumps(HANGUP_DAILY_ALL)
+                custom_action_param = json.dumps({**HANGUP_DAILY_ALL, "scheduled_run": True})
             return InitDailyRoutineAction().run(context, _Arg())
         except Exception as e:
             traceback.print_exc()
@@ -4981,6 +5019,9 @@ class InitDailyRoutineAction(CustomAction):
 
             # 1. 优先从 custom_action_param 解析配置 (支持测试与外部传参)
             param = parse_dict_param(argv.custom_action_param)
+            if not param.get("scheduled_run"):
+                # 独立运行不能继承上一次失败的挂机返回栈。
+                hangup_schedule_state["resume_stack"] = []
             has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate", "princess_task", "buy_fish_food", "fish_baby", "magic_summon", "gem_fusion", "activity_energy"))
 
             if param.get("all_enabled"):
@@ -5042,6 +5083,12 @@ class InitDailyRoutineAction(CustomAction):
                 enable_ms = _is_node_enabled("DailyRoutineEnableMagicSummon")
                 enable_gf = _is_node_enabled("DailyRoutineEnableGemFusion")
                 enable_ae = _is_node_enabled("DailyRoutineEnableActivityEnergy")
+
+            daily_routine_state["covers_noon_schedule"] = all((
+                enable_fg, enable_rf, enable_gsc, enable_gwd, enable_bf,
+                enable_gd, enable_sg, enable_fi, enable_ggb, enable_go,
+                enable_rh, enable_pt,
+            ))
 
             # 3. 按固定安全顺序构建待执行队列。
             queue = []
@@ -5853,6 +5900,18 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 公主任务 (PrincessTask)     : {pt_st}", flush=True)
             print("=" * 60, flush=True)
 
+            if (daily_routine_state.get("covers_noon_schedule")
+                    and daily_routine_state.get("step") == "ALL_DONE"
+                    and not daily_routine_state.get("queue")):
+                now = datetime.now()
+                today = now.date().isoformat()
+                if hangup_schedule_state.get("noon_daily_last_date") != today:
+                    if local_state.record_hangup_schedule_attempt("noon_daily_last_date", now):
+                        hangup_schedule_state["noon_daily_last_date"] = today
+                        print("[日常收尾] 本次完整手动运行已覆盖今日十二点日程，不再自动重跑。", flush=True)
+                    else:
+                        hangup_schedule_state["noon_daily_last_date"] = today
+                        print("[日常收尾] WARNING: 今日自动去重记录无法落盘；当前 Agent 不会重跑，重启后仍有重复风险。", flush=True)
             daily_routine_state["active"] = False
             daily_routine_state["step"] = "ALL_DONE"
             daily_routine_state["queue"] = []
@@ -6537,6 +6596,7 @@ def execute_shake_gem_collect_cycle(
         return False
 
     consecutive_failures = 0
+    successful_shakes = 0
     skipped_remaining_shakes = False
     for i in range(cycles):
         if _task_cancelled(context):
@@ -6548,6 +6608,7 @@ def execute_shake_gem_collect_cycle(
         )
         if ok:
             consecutive_failures = 0
+            successful_shakes += 1
             print(f"[统一收宝石] Shake/Sweep ({i + 1}/{cycles})：shake 成功", flush=True)
         else:
             consecutive_failures += 1
@@ -6596,7 +6657,7 @@ def execute_shake_gem_collect_cycle(
     if skipped_remaining_shakes:
         print("[统一收宝石] 本轮摇晃提前结束，进入最终沉降等待...", flush=True)
     else:
-        print(f"[统一收宝石] {cycles}/{cycles} 摇晃扫底完成，进入最终沉降等待...", flush=True)
+        print(f"[统一收宝石] 已完成 {cycles} 轮摇晃扫底，实际 shake 成功 {successful_shakes}/{cycles}，进入最终沉降等待...", flush=True)
     if final_delay > 0:
         print(f"[统一收宝石] 等待最终批次宝石下落 {final_delay:.1f}s", flush=True)
         steps = int(final_delay / 0.1)
@@ -6630,7 +6691,7 @@ def execute_shake_gem_collect_cycle(
     else:
         print(
             f"[统一收宝石] 最终扫底完成，本鱼缸 SHAKE 收宝结束 "
-            f"(共 {cycles} 次摇晃 + {cycles + 1} 次扫底)",
+            f"(shake 成功 {successful_shakes}/{cycles} 次，共 {cycles + 1} 次扫底)",
             flush=True,
         )
     return True

@@ -420,6 +420,7 @@ def test_friend_gate_pipeline():
         "SeaOtterHomeAtPet",
         "SeaOtterHomeAtFriendList",
         "SeaOtterHomeAtFriendTank",
+        "SeaOtterHomeAtGemExchange",
         "SeaOtterHomeReturnWait",
     ]
     dialog = pipeline["SeaOtterUnusedStaminaDialog"]

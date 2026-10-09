@@ -8,9 +8,11 @@
 5. execute_shake_gem_collect_cycle 执行器 (S->W 交替、6次扫底、连续3次失败跳过剩余摇晃并继续挂机、取消响应)
 """
 import json
+import io
 import os
 import sys
 import unittest
+from contextlib import redirect_stdout
 from unittest.mock import MagicMock, patch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -385,6 +387,23 @@ class TestUnifiedGemCollectExecutor(unittest.TestCase):
         self.assertEqual(mock_shake.call_args.kwargs["timeout"], GEM_SHAKE_RPC_TIMEOUT_SECONDS)
         # 前两次失败仍会扫底，第三次失败后走最终补刀扫底，均不中断任务。
         self.assertGreaterEqual(mock_ctrl.post_swipe.call_count, 6)
+
+    @patch("agent.my_action.time.sleep", return_value=None)
+    @patch("agent.my_action._run_mumu_shake", side_effect=[False, True, True, True, True])
+    @patch("agent.my_action._get_mumu_manager_and_vm", return_value=("MuMuManager.exe", 0))
+    def test_single_rpc_timeout_reports_actual_successes(self, mock_get_vm, mock_shake, mock_sleep):
+        ctrl = MagicMock()
+        context = MagicMock()
+        context.tasker.stopping = False
+        context.tasker.running = True
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertTrue(execute_shake_gem_collect_cycle(
+                context, ctrl, cycles=5, delay_between=0, final_delay=0
+            ))
+        self.assertEqual(mock_shake.call_count, 5)
+        self.assertIn("实际 shake 成功 4/5", output.getvalue())
+        self.assertIn("shake 成功 4/5 次", output.getvalue())
 
     @patch("agent.my_action.time.sleep", return_value=None)
     @patch("agent.my_action._run_mumu_shake")

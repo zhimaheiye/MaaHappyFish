@@ -16,6 +16,7 @@ GLOBAL_HANDLERS = [
 HANDLER_NODES = {
     "GlobalActivityPagePopup",
     "GlobalActivityPageReturn",
+    "GlobalDancingFishPopup",
     "GlobalLuckyMomentClose",
     "FriendPageMessageBoxToStarFriends",
     "GlobalDailySignPopup",
@@ -81,7 +82,8 @@ PAGE_LOCAL_CHAINS = {
     "sea_otter_gem.json": {
         "SeaOtterHomeReturnRouter", "SeaOtterUnusedStaminaDialog",
         "SeaOtterHomeAtTank", "SeaOtterHomeAtPet", "SeaOtterHomeAtFriendList",
-        "SeaOtterHomeAtFriendTank", "SeaOtterHomeClickBack", "SeaOtterHomeReturnWait",
+        "SeaOtterHomeAtFriendTank", "SeaOtterHomeAtGemExchange",
+        "SeaOtterHomeClickBack", "SeaOtterHomeReturnWait",
     },
     # Custom actions finish/resume a visually verified performance or settlement.
     "band_fish.json": {
@@ -196,7 +198,17 @@ def run_tests():
 
     activity_page = pipeline["GlobalActivityPagePopup"]
     assert activity_page["recognition"] == "Or"
-    assert activity_page["any_of"] == ["GlobalLuckyMomentTitle", "GlobalActivityPageReturn"]
+    assert activity_page["any_of"] == [
+        "GlobalDancingFishPopup", "GlobalLuckyMomentTitle", "GlobalActivityPageReturn"
+    ]
+    dancing_fish = pipeline["GlobalDancingFishPopup"]
+    assert dancing_fish["expected"] == "跳舞鱼可以跳舞了"
+    assert dancing_fish["roi"] == [480, 290, 460, 100]
+    assert dancing_fish["action"] == "Custom"
+    assert dancing_fish["custom_action"] == "CloseDancingFishPopupAction"
+    assert "target" not in dancing_fish
+    assert dancing_fish["on_error"] == ["GlobalActivityPopupFailed"]
+    assert pipeline["GlobalActivityPopupFailed"]["custom_action"] == "FailTaskAction"
     activity_return = pipeline["GlobalActivityPageReturn"]
     assert activity_return["template"] == "活动页面_退出.png"
     assert activity_return["roi"] == [0, 0, 136, 116]
@@ -378,6 +390,47 @@ def test_close_action():
     print("[PASS] daily-sign close: center, retry, failure, auto-close and stop")
 
 
+def test_dancing_fish_close_action():
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from agent import my_action
+
+    def run_case(states, *, tank=True, click_ok=True, stopping=False):
+        clicks = []
+        frames = iter(range(len(states)))
+        controller = SimpleNamespace(
+            post_click=lambda x, y: (
+                clicks.append((x, y)) or SimpleNamespace(
+                    wait=lambda: SimpleNamespace(succeeded=click_ok)
+                )
+            )
+        )
+        tasker = SimpleNamespace(controller=controller, stopping=stopping, running=True)
+
+        def recognize(name, frame):
+            if name == "GlobalDancingFishPopup":
+                return SimpleNamespace(hit=states[frame])
+            assert name == "ConfirmMainScreen"
+            return SimpleNamespace(hit=tank, box=(20, 250, 30, 30))
+
+        context = SimpleNamespace(tasker=tasker, run_recognition=recognize)
+        with patch.object(my_action, "_capture_720p", side_effect=lambda _: next(frames)), \
+                patch.object(my_action.time, "sleep"):
+            result = my_action.CloseDancingFishPopupAction().run(
+                context, SimpleNamespace(custom_action_param="null")
+            )
+        return result, clicks
+
+    assert run_case([True, False, False]) == (True, [(702, 480)])
+    assert run_case([False, False]) == (True, [])
+    assert run_case([True, False, True]) == (False, [(702, 480)])
+    assert run_case([True, False, False], tank=False) == (False, [(702, 480)])
+    assert run_case([True] * 4) == (False, [(702, 480)] * 3)
+    assert run_case([True, False, False], click_ok=False) == (False, [(702, 480)])
+    assert run_case([True], stopping=True) == (False, [])
+    print("[PASS] dancing-fish popup: verified close, bounded retry and stop")
+
+
 if __name__ == "__main__":
     run_tests()
     test_close_action()
+    test_dancing_fish_close_action()

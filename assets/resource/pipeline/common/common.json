@@ -55,11 +55,20 @@
     },
     "GlobalActivityPagePopup": {
         "recognition": "Or",
-        "any_of": ["GlobalLuckyMomentTitle", "GlobalActivityPageReturn"],
+        "any_of": ["GlobalDancingFishPopup", "GlobalLuckyMomentTitle", "GlobalActivityPageReturn"],
         "action": "DoNothing",
         "timeout": 4000,
-        "next": ["GlobalLuckyMomentClose", "GlobalActivityPageReturn"],
+        "next": ["GlobalDancingFishPopup", "GlobalLuckyMomentClose", "GlobalActivityPageReturn"],
         "on_error": ["GlobalActivityPopupFailed"]
+    },
+    "GlobalDancingFishPopup": {
+        "recognition": "OCR",
+        "expected": "跳舞鱼可以跳舞了",
+        "roi": [480, 290, 460, 100],
+        "action": "Custom",
+        "custom_action": "CloseDancingFishPopupAction",
+        "on_error": ["GlobalActivityPopupFailed"],
+        "focus": {"Node.Action.Succeeded": "[巡检弹窗] 已确认跳舞鱼提示，点击红叉关闭。"}
     },
     "GlobalLuckyMomentTitle": {
         "recognition": "OCR",
@@ -89,8 +98,9 @@
     },
     "GlobalActivityPopupFailed": {
         "recognition": "DirectHit",
-        "action": "StopTask",
-        "focus": {"Node.Action.Succeeded": "[活动弹窗] ERROR: 页面识别或关闭验证失败，安全停止。"}
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "focus": {"Node.Action.Failed": "[活动弹窗] ERROR: 页面识别或关闭验证失败，安全停止。"}
     },
     "GlobalActivityPageReturn": {
         "recognition": "TemplateMatch",

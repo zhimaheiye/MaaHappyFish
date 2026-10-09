@@ -281,6 +281,7 @@
             "SeaOtterHomeAtPet",
             "SeaOtterHomeAtFriendList",
             "SeaOtterHomeAtFriendTank",
+            "SeaOtterHomeAtGemExchange",
             "SeaOtterHomeReturnWait"
         ],
         "on_error": ["SeaOtterNavigationFailed"]
@@ -358,6 +359,24 @@
         "timeout": 1000,
         "next": ["SeaOtterHomeClickBack"],
         "on_error": ["SeaOtterHomeReturnWait"]
+    },
+    "SeaOtterHomeAtGemExchange": {
+        "recognition": "And",
+        "all_of": ["SeaOtterGemExchangeTab", "SeaOtterGemExchangeRecipes"],
+        "action": "DoNothing",
+        "next": ["SeaOtterHomeClickBack"]
+    },
+    "SeaOtterGemExchangeTab": {
+        "recognition": "OCR",
+        "expected": "皇冠兑换",
+        "roi": [630, 0, 230, 100],
+        "action": "DoNothing"
+    },
+    "SeaOtterGemExchangeRecipes": {
+        "recognition": "OCR",
+        "expected": "全部配方",
+        "roi": [60, 95, 270, 85],
+        "action": "DoNothing"
     },
     "SeaOtterHomeClickBack": {
         "recognition": "OCR",

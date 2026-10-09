@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import tempfile
+from datetime import datetime
 from unittest.mock import patch
 from pathlib import Path
 
@@ -15,7 +16,13 @@ from agent.my_reco import (
     CheckHangupFriendGemDueReco,
     CheckHangupResumeReco,
 )
-from agent.my_action import InitHangupScheduledDailyAction, HangupPopResumeAction
+from agent.my_action import (
+    DailyRoutineFinishAction,
+    InitDailyRoutineAction,
+    InitHangupScheduledDailyAction,
+    HangupPopResumeAction,
+)
+from agent import local_state
 
 ROOT = Path(__file__).resolve().parents[1]
 GLOBAL_HANDLERS = [
@@ -89,6 +96,36 @@ def test_resume_stack():
     print("[PASS] hang-up resume stack")
 
 
+def test_manual_full_run_clears_stale_resume_and_suppresses_duplicate():
+    reset_state()
+    ctx = MockContext()
+    today = datetime.now().date().isoformat()
+    with tempfile.TemporaryDirectory() as state_dir, patch.dict(os.environ, {"MAAHAPPYFISH_STATE_DIR": state_dir}):
+        hangup_schedule_state["resume_stack"] = ["patrol"]
+        assert InitDailyRoutineAction().run(ctx, MockArg({"all_enabled": True}))
+        assert hangup_schedule_state["resume_stack"] == []
+        daily_routine_state["step"] = "ALL_DONE"
+        daily_routine_state["queue"] = []
+        assert DailyRoutineFinishAction().run(ctx, MockArg())
+        assert hangup_schedule_state["noon_daily_last_date"] == today
+        assert local_state.get_hangup_schedule_dates()["noon_daily_last_date"] == today
+        assert CheckHangupNoonDailyDueReco().analyze(
+            ctx, MockArg({"enabled": True, "now": f"{today}T14:00:00"})
+        ) is None
+    print("[PASS] manual full run suppresses noon duplicate")
+
+
+def test_manual_partial_run_does_not_cover_noon_schedule():
+    reset_state()
+    ctx = MockContext()
+    with tempfile.TemporaryDirectory() as state_dir, patch.dict(os.environ, {"MAAHAPPYFISH_STATE_DIR": state_dir}):
+        assert InitDailyRoutineAction().run(ctx, MockArg({"free_gift": True}))
+        assert DailyRoutineFinishAction().run(ctx, MockArg())
+        assert hangup_schedule_state["noon_daily_last_date"] is None
+        assert local_state.get_hangup_schedule_dates().get("noon_daily_last_date") is None
+    print("[PASS] manual partial run leaves noon schedule eligible")
+
+
 def test_pipeline_wiring():
     collect = json.loads((ROOT / "assets/resource/pipeline/collect_fish.json").read_text(encoding="utf-8"))
     patrol = json.loads((ROOT / "assets/resource/pipeline/features/patrol.json").read_text(encoding="utf-8"))
@@ -144,6 +181,8 @@ def test_interface_options():
 if __name__ == "__main__":
     test_reco_windows()
     test_resume_stack()
+    test_manual_full_run_clears_stale_resume_and_suppresses_duplicate()
+    test_manual_partial_run_does_not_cover_noon_schedule()
     test_pipeline_wiring()
     test_interface_options()
     print("[ALL PASS] hang-up schedule")

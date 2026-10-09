@@ -214,6 +214,12 @@ def run_tests():
         home = pipeline["SeaOtterHomeReturnRouter"]["next"]
         assert home[0] == "SeaOtterUnusedStaminaDialog"
         assert "SeaOtterDone" not in home
+        assert home.index("SeaOtterHomeAtGemExchange") < home.index("SeaOtterHomeReturnWait")
+        exchange = pipeline["SeaOtterHomeAtGemExchange"]
+        assert exchange["all_of"] == ["SeaOtterGemExchangeTab", "SeaOtterGemExchangeRecipes"]
+        assert exchange["next"] == ["SeaOtterHomeClickBack"]
+        assert pipeline["SeaOtterGemExchangeTab"]["expected"] == "皇冠兑换"
+        assert pipeline["SeaOtterGemExchangeRecipes"]["expected"] == "全部配方"
         assert pipeline["SeaOtterUnusedStaminaDialog"]["action"] == "DoNothing"
         assert pipeline["SeaOtterUnusedStaminaDialog"]["next"] == ["SeaOtterNavigationFailed"]
         assert pipeline["SeaOtterReturnedHome"]["action"] == "DoNothing"
@@ -225,6 +231,16 @@ def run_tests():
         assert add_next == ["SeaOtterNonFriendBack"]
         assert pipeline["SeaOtterNonFriendBack"]["action"] == "Click"
         assert "SeaOtterDone" in pipeline["SeaOtterNonFriendBack"]["next"]
+        interface = json.loads((SEA_OTTER_PATH.parents[3] / "interface.json").read_text(encoding="utf-8"))
+        sea_task = next(task for task in interface["task"] if task["entry"] == "SeaOtterGemTask")
+        assert "海獭摸宝运行模式" in sea_task["option"]
+        mode = interface["option"]["海獭摸宝运行模式"]
+        assert mode["default_case"] == "自动导航返回主鱼缸"
+        manual = next(case for case in mode["cases"] if case["name"].startswith("手动运行"))
+        manual_override = manual["pipeline_override"]
+        assert manual_override["SeaOtterLastFriendExhausted"]["on_error"] == ["SeaOtterNavigationFailed"]
+        assert manual_override["SeaOtterNonFriendBack"]["action"] == "DoNothing"
+        assert manual_override["SeaOtterNonFriendBack"]["next"] == ["SeaOtterDone"]
         assert done["on_error"] == ["SeaOtterNavigationFailed"]
         failure = pipeline["SeaOtterNavigationFailed"]
         assert failure["custom_action"] == "FailTaskAction"

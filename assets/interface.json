@@ -166,7 +166,8 @@
             "name": "海獭摸宝",
             "entry": "SeaOtterGemTask",
             "default_check": false,
-            "description": "resource/runtime/sea_otter_status.md"
+            "description": "resource/runtime/sea_otter_status.md",
+            "option": ["海獭摸宝运行模式"]
         },
         {
             "name": "乐队鱼演出",
@@ -3811,6 +3812,36 @@
                         "WishingLampShouldContinue": {
                             "custom_recognition_param": {
                                 "target_count": 50
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "海獭摸宝运行模式": {
+            "type": "select",
+            "label": "运行模式",
+            "description": "手动运行在终点就地停止并由用户接管页面；自动导航在末位好友耗尽后按已识别页面返回主鱼缸。好友边界未确认全部寻宝体力耗尽时，两种模式都不计入完整运行。",
+            "default_case": "自动导航返回主鱼缸",
+            "cases": [
+                {
+                    "name": "自动导航返回主鱼缸",
+                    "pipeline_override": {}
+                },
+                {
+                    "name": "手动运行（终点停在原地）",
+                    "pipeline_override": {
+                        "SeaOtterLastFriendExhausted": {
+                            "on_error": ["SeaOtterNavigationFailed"],
+                            "focus": {
+                                "Node.Action.Failed": "[海獭摸宝] 末位好友耗尽，今日次数未增加；手动模式就地停止，不返回。"
+                            }
+                        },
+                        "SeaOtterNonFriendBack": {
+                            "action": "DoNothing",
+                            "next": ["SeaOtterDone"],
+                            "focus": {
+                                "Node.Action.Succeeded": "[海獭摸宝] 已到达好友列表终点；手动模式停在原地。"
                             }
                         }
                     }
