@@ -151,7 +151,7 @@ def test_pipeline_topology():
     assert business_next(pdata["RomanticHouseDone"]) == dual_exit, "RomanticHouseDone 未接入双出口路由"
     print("[PASS] 摇一摇、金海豚、钓鱼达人、免费礼包、驯鹿鱼、金贝壳券、绿野寻仙踪日常、宝石礼盒、浪漫满屋 均已接入双出口路由")
 
-    # 5. 免费礼包必须是二选一分支；领取成功后不再检查“已售罄”。
+    # 5. 免费礼包必须是二选一分支；奖励按钮落稳并关闭后才允许点充值页返回。
     assert business_next(pdata["DailyFreeGiftAvailabilityRouter"]) == [
         "DailyFreeGiftAlreadySoldOut",
         "DailyFreeGiftClaimable",
@@ -159,7 +159,12 @@ def test_pipeline_topology():
     assert pdata["DailyFreeGiftAlreadySoldOut"]["expected"] == "售罄"
     assert business_next(pdata["DailyFreeGiftClaimable"]) == ["DailyFreeGiftRewardReturn"]
     assert business_next(pdata["DailyFreeGiftRewardReturn"]) == ["DailyFreeGiftExitRecharge"]
+    assert pdata["DailyFreeGiftRewardReturn"]["roi"] == [600, 590, 80, 50]
+    assert pdata["DailyFreeGiftRewardReturn"]["custom_action"] == "DailyFreeGiftCloseRewardAction"
     assert business_next(pdata["DailyFreeGiftAlreadySoldOut"]) == ["DailyFreeGiftExitRecharge"]
+    assert pdata["DailyFreeGiftAbort"]["custom_action"] == "FailTaskAction"
+    assert "next" not in pdata["DailyFreeGiftAbort"]
+    assert "on_error" not in pdata["DailyFreeGiftAbort"]
     assert pdata["DailyFreeGiftTankEntry"]["roi"] == [455, 0, 140, 115]
     assert pdata["DailyFreeGiftTankEntry"]["threshold"] == 0.8
     assert pdata["DailyFreeGiftTankEntry"]["target"] == [652, 48, 6, 6]

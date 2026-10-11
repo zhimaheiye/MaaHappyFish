@@ -2059,6 +2059,7 @@ class InitSeaOtterStateAction(CustomAction):
             sea_otter_gem_state["daily_count_recorded"] = False
             sea_otter_gem_state["home_return_ticks"] = 0
             sea_otter_gem_state["home_return_waits"] = 0
+            sea_otter_gem_state["unknown_screen_waits"] = 0
             try:
                 count = local_state.get_sea_otter_daily_count()
                 limit = local_state.SEA_OTTER_DAILY_LIMIT
@@ -2199,6 +2200,7 @@ class SeaOtterHarvestAction(CustomAction):
 
             sea_otter_gem_state["total_harvests"] = cur
             sea_otter_gem_state["consecutive_exhausted"] = 0
+            sea_otter_gem_state["unknown_screen_waits"] = 0
             time.sleep(2.0)
             return True
         except Exception as e:
@@ -2231,6 +2233,7 @@ class SeaOtterAdvancePairAction(CustomAction):
                 ctrl.post_click(1085, 68).wait()
                 sea_otter_gem_state["current_side"] = "left"
 
+            sea_otter_gem_state["unknown_screen_waits"] = 0
             time.sleep(2.0)
             return True
         except Exception as e:
@@ -2263,6 +2266,7 @@ class SeaOtterReturnFromRecommendedAction(CustomAction):
             print("[SeaOtter] side=RIGHT ui=RECOMMENDED action=PREV_AS_LAST_FRIEND_BRIDGE", flush=True)
             ctrl.post_click(1085, 68).wait()
             sea_otter_gem_state["current_side"] = "left"
+            sea_otter_gem_state["unknown_screen_waits"] = 0
             time.sleep(2.0)
             return True
         except Exception as e:
@@ -2312,6 +2316,72 @@ class SeaOtterBoundaryIncompleteAction(CustomAction):
         except Exception as e:
             traceback.print_exc()
             print(f"[海獭摸宝] 边界处理异常: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("SeaOtterUnknownScreenWaitAction")
+class SeaOtterUnknownScreenWaitAction(CustomAction):
+    """未知好友画面允许短暂过渡，连续未推进则真实失败。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        parse_dict_param(argv.custom_action_param)
+        if _task_cancelled(context):
+            return False
+        waits = int(sea_otter_gem_state.get("unknown_screen_waits") or 0) + 1
+        sea_otter_gem_state["unknown_screen_waits"] = waits
+        if waits >= 12:
+            print("[海獭摸宝] ERROR: 连续 12 次未识别出可推进的好友页面，安全停止。", flush=True)
+            return False
+        return True
+
+
+@AgentServer.custom_action("SeaOtterCloseGuestGiftAction")
+class SeaOtterCloseGuestGiftAction(CustomAction):
+    """只在好友拜访礼物文案和专属确定按钮同帧存在时关闭弹窗。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            parse_dict_param(argv.custom_action_param)
+            controller = context.tasker.controller
+            if not controller:
+                return False
+            clicks = 0
+            closed_frames = 0
+            seen_popup = False
+            for _ in range(12):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(controller)
+                if frame is None:
+                    break
+                text = _recognition_box(context, "SeaOtterGuestGiftText", frame)
+                button = _recognition_box(context, "SeaOtterGuestGiftConfirm", frame)
+                if text is not None and button is not None:
+                    seen_popup = True
+                if text is None and button is None:
+                    closed_frames += 1
+                    if seen_popup and closed_frames >= 2:
+                        sea_otter_gem_state["unknown_screen_waits"] = 0
+                        return True
+                else:
+                    closed_frames = 0
+                if text is not None and button is not None and clicks < 3:
+                    center = _box_center(button)
+                    if not (880 <= center[0] <= 1010 and 590 <= center[1] <= 680):
+                        print(f"[海獭摸宝] ERROR: 拜访礼物确定按钮落点异常 {center}，拒绝点击。", flush=True)
+                        return False
+                    if not controller.post_click(*center).wait().succeeded:
+                        print("[海獭摸宝] ERROR: 拜访礼物确定按钮点击失败。", flush=True)
+                        return False
+                    clicks += 1
+                    time.sleep(0.7)
+                else:
+                    time.sleep(0.35)
+            print("[海獭摸宝] ERROR: 拜访礼物弹窗未确认关闭，安全停止。", flush=True)
+            return False
+        except Exception as exc:
+            traceback.print_exc()
+            print(f"[海獭摸宝] ERROR: 拜访礼物弹窗处理异常: {exc}", flush=True)
             return False
 
 
@@ -5267,6 +5337,57 @@ class DailyActivityEnergyClaimAction(CustomAction):
         except Exception as exc:
             traceback.print_exc()
             print(f"[活动体力] ERROR: 领取检查异常: {exc}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("DailyFreeGiftCloseRewardAction")
+class DailyFreeGiftCloseRewardAction(CustomAction):
+    """等待奖励返回按钮落稳，只点击识别中心并确认充值页重现。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            parse_dict_param(argv.custom_action_param)
+            controller = context.tasker.controller
+            previous_box = None
+            closed_frames = 0
+            clicks = 0
+            for _ in range(16):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(controller)
+                if frame is None:
+                    break
+                button = _recognition_box(context, "DailyFreeGiftRewardReturn", frame)
+                page = _recognition_box(context, "DailyFreeGiftRechargePage", frame) if button is None else None
+                if button is None and page is not None:
+                    closed_frames += 1
+                    if closed_frames >= 2:
+                        print("[每日免费礼包] 奖励弹窗已关闭，充值页已确认。", flush=True)
+                        return True
+                else:
+                    closed_frames = 0
+                if button is not None:
+                    center = _box_center(button)
+                    stable = previous_box is not None and all(
+                        abs(current - previous) <= 5 for current, previous in zip(button, previous_box)
+                    )
+                    if stable and 600 <= center[0] <= 680 and 590 <= center[1] <= 640 and clicks < 3:
+                        if not controller.post_click(*center).wait().succeeded:
+                            print("[每日免费礼包] ERROR: 奖励弹窗返回触摸下发失败。", flush=True)
+                            return False
+                        clicks += 1
+                        previous_box = None
+                        time.sleep(0.8)
+                        continue
+                    previous_box = button
+                else:
+                    previous_box = None
+                time.sleep(0.35)
+            print("[每日免费礼包] ERROR: 奖励弹窗未确认关闭，停止点击充值页返回。", flush=True)
+            return False
+        except Exception as exc:
+            traceback.print_exc()
+            print(f"[每日免费礼包] ERROR: 奖励弹窗关闭验证异常: {exc}", flush=True)
             return False
 
 

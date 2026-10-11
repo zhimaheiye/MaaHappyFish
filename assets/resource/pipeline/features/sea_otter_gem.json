@@ -21,6 +21,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterGuestGiftPopup",
             "SeaOtterAddFriendPage",
             "SeaOtterStartAtFriendTank",
             "SeaOtterStartFromFriendList"
@@ -86,6 +87,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterGuestGiftPopup",
             "SeaOtterLimitReached",
             "SeaOtterHasStaminaPanel",
             "SeaOtterFriendLiked",
@@ -171,6 +173,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterGuestGiftPopup",
             "SeaOtterGrayRightArrow",
             "SeaOtterExhausted",
             "SeaOtterHarvestable",
@@ -374,9 +377,35 @@
     },
     "SeaOtterGemExchangeRecipes": {
         "recognition": "OCR",
-        "expected": "全部配方",
-        "roi": [60, 95, 270, 85],
+        "expected": ["全部配方", "宝石兑换鱼配方数"],
+        "roi": [40, 90, 420, 90],
         "action": "DoNothing"
+    },
+    "SeaOtterGuestGiftText": {
+        "recognition": "OCR",
+        "expected": "谢谢您拜访您的好朋友",
+        "roi": [280, 420, 870, 120],
+        "action": "DoNothing"
+    },
+    "SeaOtterGuestGiftConfirm": {
+        "recognition": "OCR",
+        "expected": "^确定$",
+        "roi": [860, 580, 160, 100],
+        "action": "DoNothing"
+    },
+    "SeaOtterGuestGiftPopup": {
+        "recognition": "And",
+        "all_of": ["SeaOtterGuestGiftText", "SeaOtterGuestGiftConfirm"],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "SeaOtterCloseGuestGiftAction",
+        "timeout": 2000,
+        "next": ["SeaOtterFriendRouter"],
+        "on_error": ["SeaOtterNavigationFailed"],
+        "focus": {
+            "Node.Action.Succeeded": "[海獭摸宝] 已确认并关闭好友拜访礼物弹窗。",
+            "Node.Action.Failed": "[海獭摸宝] ERROR: 好友拜访礼物弹窗未确认关闭，安全停止。"
+        }
     },
     "SeaOtterHomeClickBack": {
         "recognition": "OCR",
@@ -534,7 +563,8 @@
     },
     "SeaOtterWaitScreen": {
         "recognition": "DirectHit",
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "SeaOtterUnknownScreenWaitAction",
         "post_delay": 1000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -543,7 +573,8 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "SeaOtterFriendRouter"
-        ]
+        ],
+        "on_error": ["SeaOtterNavigationFailed"]
     },
     "SeaOtterDone": {
         "recognition": "DirectHit",

@@ -383,7 +383,7 @@
     "PatrolSelectTank1FromPicker": {
         "recognition": "TemplateMatch",
         "template": "patrol/鱼缸1_入口.png",
-        "threshold": 0.78,
+        "threshold": 0.72,
         "roi": [
             135,
             10,
@@ -679,7 +679,7 @@
     "PatrolSelectTank2FromPicker": {
         "recognition": "TemplateMatch",
         "template": "patrol/鱼缸2_入口.png",
-        "threshold": 0.78,
+        "threshold": 0.72,
         "roi": [
             205,
             10,

@@ -35,13 +35,13 @@
         "recognition": "OCR",
         "expected": "返回",
         "roi": [
-            500,
-            522,
-            275,
-            172
+            600,
+            590,
+            80,
+            50
         ],
-        "action": "Click",
-        "post_delay": 800,
+        "action": "Custom",
+        "custom_action": "DailyFreeGiftCloseRewardAction",
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -245,9 +245,13 @@
     },
     "DailyFreeGiftAbort": {
         "recognition": "DirectHit",
-        "action": "DoNothing",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[每日免费礼包] ERROR: 页面门禁未通过，日常收尾已安全失败。"
+        },
         "focus": {
-            "Node.Action.Succeeded": "[每日免费礼包] 页面门禁未通过，日常收尾已安全停止"
+            "Node.Action.Failed": "[每日免费礼包] ERROR: 页面门禁未通过，日常收尾已安全失败"
         }
     }
 }
