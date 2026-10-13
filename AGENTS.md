@@ -45,6 +45,7 @@
 | 维护"驯鹿鱼送收礼物"日常子任务 | `docs/features/reindeer-fish.md` |
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
 | 维护"精彩活动体力"酿月食香第一卡片 | `docs/features/activity-energy.md` |
+| 维护限时活动识别失败时的截图、轨迹与日志接管包 | `docs/features/activity-takeover.md`；当前仅注册 Action，正式任务未接线 |
 | 维护"许愿神灯"独立活动任务 | `docs/features/wishing-lamp.md` |
 | 维护"秘境之门"独立与日常送鱼任务 | `docs/features/secret-realm-gate.md` |
 | 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |
@@ -84,7 +85,7 @@
 | `agent/param_utils.py` | 参数安全解析工具 | 所有 CustomAction/CustomRecognition 统一使用 `parse_dict_param`，防御 `"null"` 字符串。 |
 | `agent/requirements-release.txt` | 发布依赖清单 | 新增第三方 import 必须同步更新此文件。 |
 | `assets/interface.json` | 任务选项配置 | 修改后需手动同步至 `client_avalonia/` 和 `client/`。 |
-| `assets/resource/pipeline/` | 模块化任务流水线目录 | 包含 `common/`、`routine/`、`features/` 业务流水线及 `collect_fish.json` 主干。原 `my_task.json` 保留为 `.bak` 回滚备份。 |
+| `assets/resource/pipeline/` | 模块化任务流水线目录 | 包含 `common/`、`routine/`、`features/` 业务流水线及 `collect_fish.json` 主干。原 `my_task.json` 保留为 `.bak` 回滚备份。资源目录内若残留活的 `my_task.json`（例如整目录拷贝自其它机器），MaaFramework 会递归加载全部 JSON，重复节点 key 直接导致 `IMaaResource failed to load resources`；删除残留文件即可恢复（2026-09 现场排查记录）。 |
 | `assets/resource/pipeline/collect_fish.json` | 任务主干流水线 | `client_avalonia/resource` 通过 junction 链接至此，修改一处即可生效。 |
 | `dev/test_pipeline_regex.py` | Pipeline 正则双层校验 | 修改 Pipeline 后**必须**运行，防止 `std::regex` 加载失败。 |
 | `dev/test_agent_registration_refs.py` | Pipeline 引用一致性校验 | 静态确保 Pipeline 引用的所有 custom_action/reco 均在 Agent 中注册。 |

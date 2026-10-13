@@ -7438,3 +7438,19 @@ class DailyMagicPuzzleSolveAction(CustomAction):
             print(f"[每日魔幻拼图] ERROR: 求解失败: {exc}", flush=True)
             traceback.print_exc()
             return False
+
+
+try:
+    from activity_takeover import DumpActivityTakeover as _DumpActivityTakeover
+except ImportError:
+    from agent.activity_takeover import DumpActivityTakeover as _DumpActivityTakeover
+
+
+@AgentServer.custom_action("DumpActivityTakeover")
+class DumpActivityTakeover(_DumpActivityTakeover):
+    """识别失败或知识边界时写接管包，复用当前控制器的 720p 截图。"""
+
+    def run(self, context, argv):
+        if self.capture is None:
+            self.capture = _capture_720p
+        return super().run(context, argv)
