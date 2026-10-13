@@ -4,6 +4,8 @@
 
 ## 当前待修复
 
+- 2026-10-13 旧 Codex 会话知识核对：**深海寻鱼的日常收尾子项仍待合入 / 核验**。用户于 2026-10-07 明确要求在保留独立 `SeaDiveTask` 的同时，给日常收尾增加**默认不勾选**的入口；两种入口共用只用每日 0～2 次免费机会、只选 100 米并立即返航、不得移动潜艇 / 探寻 / 点击 x12 付费入口的安全流程。当时 Codex 报告本地已改、代码级通过，且明确**尚未提交/推送**，因此该报告只算历史对话现场（`historical conversation evidence`）。2026-10-13 远端 `main@9b030272b0` 仍只有 `assets/interface.json` 的独立入口；`docs/features/daily-routine.md` 与当前 `agent/my_action.py` 不含 `SeaDive` 日常接线，`docs/features/sea-dive.md` 也明确记录尚未接入。未来恢复前先检查本机未提交工作树是否已有该批变更；不要因旧聊天声称“做完”而报告当前已实现。详见 `docs/features/sea-dive.md`。
+
 - 2026-10-12 11:36 好友摸宝序号 226 的“下一位”箭头持续约 22 秒未识别，宿主巡检失败。该瞬间没有游戏截图，不能断定列表终点、被其它页面遮挡还是模板瞬时失效。现有代码已改为明确 ERROR／FAILED，不把未知页当成已完成；待同次截图与 OCR、模板最高分后再决定是否存在可安全收尾路径。见 `docs/features/friend-gem.md`。
 
 - 2026-10-12 18:41 Agent 子进程意外退出，18:42 巡检 Custom 失败出口跨进程调用只有 Starting 无结束；19:39 重新点“开始任务”后截屏亦卡住。现有证据同时有 MuMu `get_display_id` 长时间自旋，但没有 Agent 退出码、崩溃转储或 MuMu 服务侧日志，不能归因到 Python Action。MFAAvalonia／MaaFramework 属预编译组件，本仓库不能修进程重建或 Custom RPC 超时；需上游/自有客户端及同次系统日志取证，不能用 `StopTask` 伪装业务失败。见 `docs/features/patrol.md`。
