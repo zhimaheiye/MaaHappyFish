@@ -1,5 +1,12 @@
 # 好友摸宝自动化 (docs/features/friend-gem.md)
 
+## 2026-10-13 值守日志：非好友弹窗、计数越界与切人失败
+
+- 台式机 10 月 11 日 23:14 与 12 日 23:31 两次同链故障：`FriendGemAddFriendPage` 正确认出“他还不是你的好友／加他为好友么”，旧 `FriendGemNonFriendBack` 却点击被模态框遮住的左上返回，立即 `FriendGemDone`。巡检接手时仍在陌生鱼缸，数次返回也被弹窗吞掉，最终 `PatrolAbortUnknownPage` 使队列失败。10 月 13 日 00:38 的原始画面可见左侧红叉与右侧绿勾；框架 OCR 和点击事件证实不是好友申请已发出。
+- 现由 `FriendGemExitToListAction` 在新帧同时复核“不是你的好友”“加他为好友”及绿勾模板，只在绿勾左侧的预期范围检测到独立红色圆形取消键后点击其中心。两张值守原图上既有绿勾模板离线得分分别为 0.881／0.831，红色连通区域中心约 `(702,482)`。须确认弹窗消失，再点当帧识别到的左上返回，并确认“星级好友”列表。红叉未找到、关闭无响应、返回后不是列表，都经 `FailTaskAction` 真实 FAILED；绝不点击绿勾或在未知页继续巡检。序号全局上限和绿色勾选拒绝分支也使用同一有验证退出路径。
+- 12 日 10:40、11:28 的原始日志出现 31/30、32/30：两个气泡路由把 `FriendGemCollectBubble` 排在 `FriendGemAttemptLimitReached` 前面，气泡可见时总会先多点。现将 30 次上限移到气泡点击前；计数仍在实际点击后由 Action 记录，达到 30 即切下一位。
+- 12 日 11:36 序号 226 的“下一位”模板持续未命中，现场没有同一瞬间截图，不能断定列表已到头或放宽 ROI。该路径现在明确记录未知页并真实 FAILED；是否可安全收尾留待同帧截图。上述改动只完成代码级验证，未在 MFA／模拟器实测。
+
 ## 功能定位
 开心水族箱好友巡访与金币产物收取自动化助手（`FriendGemTask`）。从主鱼缸、留言箱、星级好友列表或好友鱼缸自适应启动，依次进入好友水族箱；优先使用可用的快捷摸宝按钮，不可用时采集金币气泡。采用**状态确认完成（UI 状态驱动）**机制，以左侧体力栏出现「刷新体力」（灰电/0体力）作为该好友彻底清空的唯一准则。周末遇到【海牛先生】时不再跳过，而是进入共享喂食流程，识别到刷新体力后再继续下一位好友；全程避开付费刷新区域。
 
@@ -64,7 +71,7 @@ FriendGemStartRouter (启动环境自适应路由器)
 
 FriendGemFriendRouter (直通路由器)
     ├─ 序号超过 300 ──> FriendGemRosterLimit ──> 点击返回 ──> FriendGemDone
-    ├─ 非好友文案 ──> FriendGemAddFriendPage ──> 点击返回 ──> FriendGemDone
+	    ├─ 非好友文案 ──> FriendGemAddFriendPage ──> 已验证红叉／返回／列表 ──> FriendGemDone
     ├─ 欢迎弹窗 ──> FriendGemWelcomePopup (OCR「欢迎来到」点击关闭) ────┐
     ├─ 允许关闭的弹窗 ──> FriendGemSpecialPopup (绿勾且文案允许才点) ──┤
     ├─ 鱼宝乐园 ──> FriendGemFishBabyPark (OCR「鱼宝|乐园」点击右上X) ──┤
@@ -80,15 +87,14 @@ FriendGemFriendRouter (直通路由器)
     │             不再回退气泡模式；剩余体力被接受为正常情况）           │  │
     ├─ 快捷键不可用/未识别 ─> FriendGemImageFallbackRouter              │  │
     │                                                                   │  │
+    ├─ 连续无气泡 ─> FriendGemBubbleMissLimitReached (miss >= 12, ~7.2s) ┼──┤
+    ├─ 防死锁兜底 ─> FriendGemAttemptLimitReached (attempts >= 30 守护) ─┼──┤
     ├─ 发现气泡 ──> FriendGemCollectBubble (安全 ROI 模板匹配)          │  │
     │       ↓                                                           │  │
     │   FriendGemRecordAttempt (attempts + 1, miss_count 归零)          │  │
     │       │                                                           │  │
     │       └───────────────────────────────────────────────────────────┤  │
     │                                                                   │  │
-    ├─ 连续无气泡 ─> FriendGemBubbleMissLimitReached (miss >= 12, ~7.2s) ┼──┤
-    │                                                                   │  │
-    ├─ 防死锁兜底 ─> FriendGemAttemptLimitReached (attempts >= 30 守护) ─┼──┤
     │                                                                   │  │
     └─ 单帧未见气泡 ─> FriendGemWaitForBubble (miss + 1, delay 600ms) ───┘  │
             │                                                              │
@@ -152,9 +158,9 @@ FriendGemResetAttempts (attempts 清零，miss_count 清零)
 ### 6. 好友末尾与陌生人保护
 - 遍历至最后一位星级好友后，再次点击 `>` 会进入加好友提示或陌生人水族箱。
 - 2026-10-05 22:00 挂机「好友摸宝兜底」把序号从 1 加到 236。现场文案是「他还不是你的好友，无法进行操作哦~」「加他为好友么?」，绿色勾选约在 `[793,449,64,64]`。旧节点只在 `[750,330,160,70]` 找「全部添加」，全天没有命中；`FriendGemSpecialPopup` 只要看到绿色勾选就点击，于是发出了一次好友申请。申请发出后的「加好友邀请已经发出」也没有节点接管，装饰被当成气泡点了约 8.5 分钟。单个好友 30 次上限只会切到下一位，所以序号可以一直涨。上午 11:10 同路径曾到 112。
-- `FriendGemAddFriendPage` 现在用宽 ROI `[250,140,820,400]` 识别「不是你的好友」「加他为好友」「加好友邀请已经发出」「去其他好友家看看吧」「全部添加」。命中后不点绿色勾选，只点左上角「返回」，再进入 `FriendGemDone`。`FriendGemFriendRouter` 与 `FriendGemImageFallbackRouter` 都把这条边界放在绿色勾选和气泡之前。
-- 绿色勾选仍使用 `绿色勾选按钮.png`、ROI `[760,420,120,120]`、阈值 0.8，但必须同帧还有「谢谢您拜访」「些礼物」「进化鱼特效」或「已被关闭」。`FriendGemConfirmSafePopupAction` 在点击前再看一帧：出现加好友文案，或允许文案消失，就拒绝点击。拒绝后进入 `FriendGemSpecialPopupRefuse`，最多等 3 秒点左上角「返回」，再进 `FriendGemDone`；找不到返回时同样结束本轮。`FriendGemDone` 不和「返回」放在同一候选列表里，避免直接命中跳过返回。拜访礼物和「进化鱼特效已被关闭」仍可关闭。
-- 序号大于 300 时 `FriendGemRosterLimit` 同样返回并结束。这个上限高于约 200 位好友的历史全表，用来挡住识别漏掉边界后的无限翻页。
+- `FriendGemAddFriendPage` 用宽 ROI `[250,140,820,400]` 识别「不是你的好友」「加他为好友」「加好友邀请已经发出」「去其他好友家看看吧」「全部添加」。当前退出行为已改为文首 2026-10-13 的红叉／返回／列表复核，未确认退出不得进入 `FriendGemDone`。`FriendGemFriendRouter` 与 `FriendGemImageFallbackRouter` 都把这条边界放在绿色勾选和气泡之前。
+- 绿色勾选仍使用 `绿色勾选按钮.png`、ROI `[760,420,120,120]`、阈值 0.8，但必须同帧还有「谢谢您拜访」「些礼物」「进化鱼特效」或「已被关闭」。`FriendGemConfirmSafePopupAction` 在点击前再看一帧：出现加好友文案，或允许文案消失，就拒绝点击。拒绝后进入 `FriendGemSpecialPopupRefuse`，尝试有验证的退出；失败真实 FAILED。`FriendGemDone` 不和「返回」放在同一候选列表里，避免直接命中跳过返回。拜访礼物和「进化鱼特效已被关闭」仍可关闭。
+- 序号大于 300 时 `FriendGemRosterLimit` 同样经有验证的返回路径结束。这个上限高于约 200 位好友的历史全表，用来挡住识别漏掉边界后的无限翻页。
 
 ### 7. 弹窗分层与长尾样本捕获
 - **允许关闭的系统提示（`FriendGemSpecialPopup`）**：历史 E2E 在第 200 位见到「进化鱼特效已被关闭」。现在必须同时命中绿色勾选和允许文案，再由自定义动作点击勾选中心。加好友确认框不再被当成这类提示。

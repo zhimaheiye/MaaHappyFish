@@ -130,15 +130,11 @@
     "PatrolStartAtFoodPopupAbort": {
         "recognition": "OCR",
         "expected": "选择喂食",
-        "roi": [
-            700,
-            90,
-            240,
-            150
-        ],
-        "action": "StopTask",
-        "focus": {
-            "Node.Action.Succeeded": "[巡检] 从喂食弹窗启动时无法可靠判断当前海星，已安全停止。"
+        "roi": [560, 70, 420, 160],
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[巡检] ERROR：从喂食弹窗启动时无法可靠判断当前海星，已安全停止。"
         }
     },
     "PatrolStartAtUniversalStarfish": {
@@ -1823,15 +1819,11 @@
     "PatrolFoodPopupStillOpen": {
         "recognition": "OCR",
         "expected": "选择喂食",
-        "roi": [
-            700,
-            90,
-            240,
-            150
-        ],
-        "action": "StopTask",
-        "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼食弹窗仍未关闭，已停止且未继续点击。"
+        "roi": [560, 70, 420, 160],
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[巡检] ERROR：鱼食弹窗仍未关闭，已停止且未继续点击。"
         }
     },
     "PatrolExitUniversalStarfish": {

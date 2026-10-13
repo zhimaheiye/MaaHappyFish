@@ -468,7 +468,17 @@ class PatrolPipelineTest(unittest.TestCase):
         popup = self.pipeline["PatrolFoodPopupStillOpen"]
         self.assertEqual(popup["recognition"], "OCR")
         self.assertEqual(popup["expected"], "选择喂食")
-        self.assertEqual(popup["action"], "StopTask")
+        for name in ("PatrolFoodPopupStillOpen", "PatrolStartAtFoodPopupAbort"):
+            gate = self.pipeline[name]
+            self.assertEqual(gate["roi"], [560, 70, 420, 160])
+            x, y, width, height = gate["roi"]
+            self.assertLessEqual(x, 621)
+            self.assertGreaterEqual(x + width, 721)
+            self.assertLessEqual(y, 109)
+            self.assertGreaterEqual(y + height, 140)
+            self.assertEqual(gate["custom_action"], "FailTaskAction")
+            self.assertNotIn("next", gate)
+            self.assertNotIn("on_error", gate)
 
     def test_tank_switches_have_post_click_verification(self):
         self.assertEqual(

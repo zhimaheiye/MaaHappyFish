@@ -369,6 +369,7 @@ def test_friend_gate_pipeline():
     assert first_friend["target"] == [194, 262, 40, 40]
     assert "target" not in pipeline["SeaOtterStartAtFriendTank"]
     assert business_next("SeaOtterFriendRouter") == [
+        "SeaOtterGuestGiftPopup",
         "SeaOtterLimitReached",
         "SeaOtterHasStaminaPanel",
         "SeaOtterFriendLiked",
@@ -397,6 +398,7 @@ def test_friend_gate_pipeline():
     assert business_next("SeaOtterFriendLiked") == ["SeaOtterKnownFriendRouter"]
     assert business_next("SeaOtterFriendUnliked") == ["SeaOtterKnownFriendRouter"]
     assert business_next("SeaOtterKnownFriendRouter") == [
+        "SeaOtterGuestGiftPopup",
         "SeaOtterGrayRightArrow",
         "SeaOtterExhausted",
         "SeaOtterHarvestable",
@@ -417,10 +419,7 @@ def test_friend_gate_pipeline():
     assert home["next"] == [
         "SeaOtterUnusedStaminaDialog",
         "SeaOtterHomeAtTank",
-        "SeaOtterHomeAtPet",
-        "SeaOtterHomeAtFriendList",
-        "SeaOtterHomeAtFriendTank",
-        "SeaOtterHomeAtGemExchange",
+        "SeaOtterHomeClickBack",
         "SeaOtterHomeReturnWait",
     ]
     dialog = pipeline["SeaOtterUnusedStaminaDialog"]

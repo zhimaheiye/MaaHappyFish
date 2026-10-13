@@ -182,9 +182,9 @@
             "FriendGemQuickCollectAvailable",
             "FriendGemQuickCollectAvailableAlt",
             "FriendGemQuickCollectUnavailable",
-            "FriendGemCollectBubble",
             "FriendGemBubbleMissLimitReached",
             "FriendGemAttemptLimitReached",
+            "FriendGemCollectBubble",
             "FriendGemWaitForBubble"
         ]
     },
@@ -203,9 +203,7 @@
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNonFriendBack"
         ],
-        "on_error": [
-            "FriendGemDone"
-        ]
+        "on_error": ["FriendGemExitFailed"]
     },
     "FriendGemAddFriendPage": {
         "recognition": "OCR",
@@ -229,9 +227,19 @@
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNonFriendBack"
         ],
-        "on_error": [
-            "FriendGemDone"
-        ]
+        "on_error": ["FriendGemExitFailed"]
+    },
+    "FriendGemAddFriendQuestion": {
+        "recognition": "OCR",
+        "expected": "加他为好友",
+        "roi": [500, 300, 420, 110],
+        "action": "DoNothing"
+    },
+    "FriendGemNotFriendNotice": {
+        "recognition": "OCR",
+        "expected": "不是你的好友",
+        "roi": [500, 290, 460, 100],
+        "action": "DoNothing"
     },
     "FriendGemNonFriendBack": {
         "recognition": "OCR",
@@ -242,11 +250,11 @@
             189,
             146
         ],
-        "action": "Click",
-        "post_delay": 800,
-        "timeout": 3000,
+        "action": "Custom",
+        "custom_action": "FriendGemExitToListAction",
+        "timeout": 10000,
         "focus": {
-            "Node.Action.Succeeded": "[好友摸宝] 已点击返回，结束本轮好友摸宝。"
+            "Node.Action.Succeeded": "[好友摸宝] 已确认返回星级好友列表，本轮结束。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -256,9 +264,15 @@
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemDone"
         ],
-        "on_error": [
-            "FriendGemDone"
-        ]
+        "on_error": ["FriendGemExitFailed"]
+    },
+    "FriendGemExitFailed": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[好友摸宝] ERROR：非好友弹窗或返回路径未确认，已安全停止。"
+        }
     },
     "FriendGemWelcomePopup": {
         "recognition": "OCR",
@@ -349,9 +363,7 @@
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNonFriendBack"
         ],
-        "on_error": [
-            "FriendGemDone"
-        ]
+        "on_error": ["FriendGemExitFailed"]
     },
     "FriendGemFishBabyPark": {
         "recognition": "OCR",
@@ -415,7 +427,8 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
-        ]
+        ],
+        "on_error": ["FriendGemNextFriendFailed"]
     },
     "FriendGemQuickCollectAvailable": {
         "recognition": "TemplateMatch",
@@ -475,7 +488,8 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
-        ]
+        ],
+        "on_error": ["FriendGemNextFriendFailed"]
     },
     "FriendGemQuickCollectPartialDone": {
         "recognition": "DirectHit",
@@ -490,7 +504,8 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
-        ]
+        ],
+        "on_error": ["FriendGemNextFriendFailed"]
     },
     "FriendGemQuickCollectUnavailable": {
         "recognition": "TemplateMatch",
@@ -532,9 +547,9 @@
             "FriendGemFishBabyPark",
             "FriendGemCheckManatee",
             "FriendGemExhausted",
-            "FriendGemCollectBubble",
             "FriendGemBubbleMissLimitReached",
             "FriendGemAttemptLimitReached",
+            "FriendGemCollectBubble",
             "FriendGemWaitForBubble"
         ]
     },
@@ -549,7 +564,8 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
-        ]
+        ],
+        "on_error": ["FriendGemNextFriendFailed"]
     },
     "FriendGemCollectBubble": {
         "recognition": "TemplateMatch",
@@ -596,7 +612,8 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
-        ]
+        ],
+        "on_error": ["FriendGemNextFriendFailed"]
     },
     "FriendGemWaitForBubble": {
         "recognition": "DirectHit",
@@ -630,6 +647,7 @@
             25
         ],
         "post_delay": 1200,
+        "on_error": ["FriendGemNextFriendFailed"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -638,6 +656,14 @@
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemStepIndex"
         ]
+    },
+    "FriendGemNextFriendFailed": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[好友摸宝] ERROR：下一位好友箭头未识别，当前页面未知；未继续点击。"
+        }
     },
     "FriendGemStepIndex": {
         "recognition": "DirectHit",

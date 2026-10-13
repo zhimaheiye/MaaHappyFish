@@ -1520,6 +1520,92 @@ class FriendGemConfirmSafePopupAction(CustomAction):
             return False
 
 
+def _friend_gem_cancel_center(frame, green_box):
+    """只在已识别绿勾左侧的红色圆形取消键上给出点击点。"""
+    gx, gy, gw, gh = green_box
+    if not (760 <= gx <= 820 and 420 <= gy <= 480 and 45 <= gw <= 75 and 45 <= gh <= 75):
+        return None
+    x0, y0 = gx - 140, gy - 8
+    if x0 < 0 or y0 < 0 or x0 + 90 > frame.shape[1] or y0 + 80 > frame.shape[0]:
+        return None
+    hsv = cv2.cvtColor(frame[y0:y0 + 80, x0:x0 + 90], cv2.COLOR_BGR2HSV)
+    red = cv2.inRange(hsv, (0, 100, 35), (15, 255, 255)) | cv2.inRange(
+        hsv, (170, 100, 35), (179, 255, 255)
+    )
+    count, _, stats, centers = cv2.connectedComponentsWithStats(red)
+    matches = []
+    for index in range(1, count):
+        _, _, width, height, area = stats[index]
+        cx, cy = centers[index]
+        if 48 <= width <= 76 and 48 <= height <= 76 and area >= 1500:
+            x, y = round(x0 + cx), round(y0 + cy)
+            if 105 <= gx + gw // 2 - x <= 140 and abs(gy + gh // 2 - y) <= 12:
+                matches.append((x, y))
+    return matches[0] if len(matches) == 1 else None
+
+
+@AgentServer.custom_action("FriendGemExitToListAction")
+class FriendGemExitToListAction(CustomAction):
+    """关已确认的加好友模态框，再验证真正返回星级好友列表。"""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            controller = context.tasker.controller
+            frame = _capture_720p(controller)
+            if frame is None:
+                return False
+            question = _recognition_box(context, "FriendGemAddFriendQuestion", frame)
+            notice = _recognition_box(context, "FriendGemNotFriendNotice", frame)
+            green = _recognition_box(context, "FriendGemGreenCheck", frame)
+            if question or notice or green:
+                if not (question and notice and green):
+                    print("[好友摸宝] 加好友弹窗未完整确认，拒绝点击。", flush=True)
+                    return False
+                cancel = _friend_gem_cancel_center(frame, green)
+                if cancel is None:
+                    print("[好友摸宝] 红色取消键未确认，拒绝点击。", flush=True)
+                    return False
+                controller.post_click(*cancel).wait()
+                print(f"[好友摸宝] 已点击加好友弹窗的红色取消键 {cancel}。", flush=True)
+                for _ in range(8):
+                    if _task_cancelled(context):
+                        return False
+                    time.sleep(0.3)
+                    frame = _capture_720p(controller)
+                    if frame is None:
+                        return False
+                    if not any(_recognition_box(context, name, frame) for name in (
+                        "FriendGemAddFriendQuestion", "FriendGemNotFriendNotice", "FriendGemGreenCheck"
+                    )):
+                        break
+                else:
+                    print("[好友摸宝] 加好友弹窗未关闭，安全停止。", flush=True)
+                    return False
+
+            if _recognition_box(context, "FriendPageStarFriendsIdentity", frame):
+                return True
+            back = _recognition_box(context, "FriendGemNonFriendBack", frame)
+            if back is None or not (0 <= back[0] < 189 and 0 <= back[1] < 146):
+                print("[好友摸宝] 左上返回未确认，安全停止。", flush=True)
+                return False
+            controller.post_click(*_box_center(back)).wait()
+            for _ in range(10):
+                if _task_cancelled(context):
+                    return False
+                time.sleep(0.3)
+                frame = _capture_720p(controller)
+                if frame is None:
+                    return False
+                if _recognition_box(context, "FriendPageStarFriendsIdentity", frame):
+                    print("[好友摸宝] 已确认回到星级好友列表，本轮结束。", flush=True)
+                    return True
+            print("[好友摸宝] 点击返回后未到星级好友列表，安全停止。", flush=True)
+            return False
+        except Exception:
+            traceback.print_exc()
+            return False
+
+
 def _message_ocr_items(context: Context, frame):
     result = context.run_recognition("FriendGemMessageListOcr", frame)
     items = []

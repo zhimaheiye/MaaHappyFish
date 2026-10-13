@@ -269,6 +269,7 @@
             "[JumpBack]GlobalLevelUpPopup",
             "FriendGemNextFriend"
         ],
+        "on_error": ["FriendGemNextFriendFailed"],
         "focus": {
             "Node.Action.Succeeded": "[海牛先生] 好友巡访模式喂食完成，正在点击下一位并恢复摸宝流程。"
         }

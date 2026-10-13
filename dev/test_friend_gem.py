@@ -43,6 +43,7 @@ from agent.my_action import (
     RecordFriendGemBubbleMissAction,
     InitFriendGemStateAction,
     FriendGemConfirmSafePopupAction,
+    FriendGemExitToListAction,
 )
 from agent.my_reco import (
     CheckFriendGemBubbleMissLimitReco,
@@ -133,6 +134,8 @@ class FriendGemSimulator:
                 self.page = {"kind": "tank", "quick_available": True, "bubble_visible": False}
             elif name == "FriendGemQuickCollectAvailable" and self.after_quick_click:
                 self.after_quick_click()  # 点击快捷摸宝后的真实页面变化
+        if name == "FriendGemNonFriendBack":
+            self.clicks.append(name)  # 自定义动作的页面退出另由动作级测试覆盖
         if node.get("custom_action") == "StepFriendGemIndexAction":
             assert StepFriendGemIndexAction().run(MockContext(), MockArg()) is True
         if node.get("custom_action") == "ResetFriendGemAttemptsAction":
@@ -197,8 +200,18 @@ def run_tests():
     assert add_page["action"] == "DoNothing"
     assert business_next(add_page) == ["FriendGemNonFriendBack"]
     assert pipeline["FriendGemNonFriendBack"]["expected"] == "^返回$"
-    assert pipeline["FriendGemNonFriendBack"]["action"] == "Click"
+    assert pipeline["FriendGemNonFriendBack"]["action"] == "Custom"
+    assert pipeline["FriendGemNonFriendBack"]["custom_action"] == "FriendGemExitToListAction"
     assert business_next(pipeline["FriendGemNonFriendBack"]) == ["FriendGemDone"]
+    assert pipeline["FriendGemNonFriendBack"]["on_error"] == ["FriendGemExitFailed"]
+    assert pipeline["FriendGemExitFailed"]["custom_action"] == "FailTaskAction"
+    assert pipeline["FriendGemNextFriend"]["on_error"] == ["FriendGemNextFriendFailed"]
+    for parent in (
+        "FriendGemExhausted", "FriendGemQuickCollectExhausted",
+        "FriendGemQuickCollectPartialDone", "FriendGemBubbleMissLimitReached",
+        "FriendGemAttemptLimitReached",
+    ):
+        assert pipeline[parent]["on_error"] == ["FriendGemNextFriendFailed"], parent
     assert business_next(pipeline["FriendGemDone"]) == ["HangupResumeCollectFish", "HangupResumePatrol"]
     special = pipeline["FriendGemSpecialPopup"]
     assert special["recognition"] == "And"
@@ -213,7 +226,7 @@ def run_tests():
     assert refuse["timeout"] == 3000
     assert business_next(refuse) == ["FriendGemNonFriendBack"]
     assert "FriendGemDone" not in business_next(refuse)
-    assert refuse["on_error"] == ["FriendGemDone"]
+    assert refuse["on_error"] == ["FriendGemExitFailed"]
     green = pipeline["FriendGemGreenCheck"]
     assert green["template"] == "绿色勾选按钮.png"
     assert green["roi"] == [760, 420, 120, 120]
@@ -226,6 +239,7 @@ def run_tests():
         assert order.index("FriendGemRosterLimit") < order.index("FriendGemAddFriendPage")
         assert order.index("FriendGemAddFriendPage") < order.index("FriendGemSpecialPopup")
         assert order.index("FriendGemSpecialPopup") < order.index("FriendGemCollectBubble")
+        assert order.index("FriendGemAttemptLimitReached") < order.index("FriendGemCollectBubble")
     assert pipeline["FriendGemRosterLimit"]["custom_recognition"] == "CheckFriendGemRosterLimitReco"
     assert business_next(pipeline["FriendGemRosterLimit"]) == ["FriendGemNonFriendBack"]
     print("[PASS] 静态契约：PostRouter 分流、旧 Fallback 删除、快捷优先级与气泡模式保持")
@@ -306,6 +320,15 @@ def run_tests():
     assert "FriendGemNextFriend" in sim.visited
     print("[PASS] Case 4 气泡模式连续 12 次无气泡后由 MissLimit 切下一位（原规则未破坏）")
 
+    # ---- Case 4B：气泡可见也不得在 30/30 后再点第 31 次 ----
+    init_state()
+    friend_gem_state["attempts"] = 30
+    sim = FriendGemSimulator(pipeline, fresh_page(quick_available=False, bubble_visible=True), bubble_reco, limit_reco)
+    sim._follow("FriendGemImageFallbackRouter")
+    assert "FriendGemAttemptLimitReached" in sim.visited
+    assert "FriendGemCollectBubble" not in sim.visited
+    print("[PASS] Case 4B 30 次上限先于可见气泡，杜绝 31/30")
+
     # ---- Case 5：切好友状态重置链（两条路径共用） ----
     init_state()
     friend_gem_state["attempts"] = 5
@@ -365,7 +388,7 @@ def run_tests():
     assert "FriendGemNextFriend" in reach
     print("[PASS] 静态可达性：快捷摸宝成功后当前好友内绝不进入气泡模式/旧 Fallback，统一汇入 NextFriend")
 
-    # ---- Case 6：非好友文案先于绿勾，只点返回 ----
+    # ---- Case 6：非好友文案先于绿勾，退出动作另行校验 ----
     init_state()
     sim = FriendGemSimulator(
         pipeline,
@@ -378,7 +401,7 @@ def run_tests():
     assert "FriendGemSpecialPopup" not in sim.visited
     assert "FriendGemCollectBubble" not in sim.visited
     assert sim.outcome == "done"
-    print("[PASS] Case 6 非好友边界：不点绿色勾选，点击返回后结束")
+    print("[PASS] Case 6 非好友边界：不点绿色勾选，安全退出后结束")
 
     # ---- Case 7：序号超过全局上限时结束，不再切下一位 ----
     init_state()
@@ -433,6 +456,59 @@ def run_tests():
     allowed, clicks = run_popup({"FriendGemAllowedPopupText"})
     assert allowed is True and clicks == [(780, 440)]
     print("[PASS] 绿色勾选二次确认：加好友文案不点，允许文案才点识别框中心")
+
+    # ---- 非好友模态框：只点左侧红叉，确认消失并真正回到列表 ----
+    import cv2
+    import numpy as np
+
+    def run_non_friend_exit(red_present=True, dismisses=True, back_works=True):
+        frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+        if red_present:
+            cv2.circle(frame, (702, 481), 31, (0, 0, 200), -1)
+
+        class ExitController:
+            def __init__(self):
+                self.phase = 0
+                self.clicks = []
+
+            def post_click(self, x, y):
+                self.clicks.append((x, y))
+                if self.phase == 0 and dismisses:
+                    self.phase = 1
+                elif self.phase == 1 and back_works:
+                    self.phase = 2
+                return type("Job", (), {"wait": lambda self: None})()
+
+        controller = ExitController()
+
+        def run_recognition(name, _frame):
+            if controller.phase == 0 and name in ("FriendGemAddFriendQuestion", "FriendGemNotFriendNotice", "FriendGemGreenCheck"):
+                return PopupResult(True, (793, 449, 64, 64))
+            if controller.phase == 1 and name == "FriendGemNonFriendBack":
+                return PopupResult(True, (30, 23, 120, 53))
+            if controller.phase == 2 and name == "FriendPageStarFriendsIdentity":
+                return PopupResult(True, (110, 100, 100, 40))
+            return PopupResult(False)
+
+        context = type("Ctx", (), {
+            "tasker": type("Tasker", (), {"controller": controller})(),
+            "run_recognition": staticmethod(run_recognition),
+        })()
+        with patch("agent.my_action._capture_720p", return_value=frame), \
+                patch("agent.my_action._task_cancelled", return_value=False), \
+                patch("agent.my_action.time.sleep"):
+            result = FriendGemExitToListAction().run(context, MockArg())
+        return result, controller.clicks
+
+    ok, clicks = run_non_friend_exit()
+    assert ok and len(clicks) == 2
+    assert 690 <= clicks[0][0] <= 710 and 470 <= clicks[0][1] <= 490
+    assert clicks[1] == (90, 49)
+    for options in ({"red_present": False}, {"dismisses": False}, {"back_works": False}):
+        failed, clicks = run_non_friend_exit(**options)
+        assert failed is False
+        assert all(x < 760 for x, _ in clicks), "任何失败分支都不得点右侧绿勾"
+    print("[PASS] 非好友弹窗红叉、关闭复核及返回列表门禁；缺图或无响应安全失败")
 
     InitFriendGemStateAction().run(MockContext(), MockArg())
     assert friend_gem_state["max_attempts"] == 30

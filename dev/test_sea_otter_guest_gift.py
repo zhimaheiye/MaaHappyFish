@@ -79,10 +79,15 @@ class SeaOtterGuestGiftTests(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(controller.clicks, [])
 
-    def test_gem_exchange_accepts_live_recipe_count_without_loosening_tab_gate(self):
-        self.assertEqual(PIPELINE["SeaOtterHomeAtGemExchange"]["all_of"],
-                         ["SeaOtterGemExchangeTab", "SeaOtterGemExchangeRecipes"])
-        self.assertIn("宝石兑换鱼配方数", PIPELINE["SeaOtterGemExchangeRecipes"]["expected"])
+    def test_home_return_uses_only_home_and_recognized_back(self):
+        self.assertEqual(PIPELINE["SeaOtterHomeReturnRouter"]["next"], [
+            "SeaOtterUnusedStaminaDialog", "SeaOtterHomeAtTank",
+            "SeaOtterHomeClickBack", "SeaOtterHomeReturnWait",
+        ])
+        self.assertNotIn("SeaOtterHomeAtGemExchange", PIPELINE)
+        self.assertEqual(PIPELINE["SeaOtterHomeClickBack"]["expected"], "^返回$")
+        self.assertEqual(PIPELINE["SeaOtterHomeClickBack"]["next"],
+                         ["SeaOtterHomeReturnRouter"])
 
     def test_unknown_friend_screen_cannot_wait_forever(self):
         node = PIPELINE["SeaOtterWaitScreen"]

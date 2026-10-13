@@ -214,12 +214,9 @@ def run_tests():
         home = pipeline["SeaOtterHomeReturnRouter"]["next"]
         assert home[0] == "SeaOtterUnusedStaminaDialog"
         assert "SeaOtterDone" not in home
-        assert home.index("SeaOtterHomeAtGemExchange") < home.index("SeaOtterHomeReturnWait")
-        exchange = pipeline["SeaOtterHomeAtGemExchange"]
-        assert exchange["all_of"] == ["SeaOtterGemExchangeTab", "SeaOtterGemExchangeRecipes"]
-        assert exchange["next"] == ["SeaOtterHomeClickBack"]
-        assert pipeline["SeaOtterGemExchangeTab"]["expected"] == "皇冠兑换"
-        assert pipeline["SeaOtterGemExchangeRecipes"]["expected"] == "全部配方"
+        assert home == ["SeaOtterUnusedStaminaDialog", "SeaOtterHomeAtTank",
+                        "SeaOtterHomeClickBack", "SeaOtterHomeReturnWait"]
+        assert pipeline["SeaOtterHomeClickBack"]["expected"] == "^返回$"
         assert pipeline["SeaOtterUnusedStaminaDialog"]["action"] == "DoNothing"
         assert pipeline["SeaOtterUnusedStaminaDialog"]["next"] == ["SeaOtterNavigationFailed"]
         assert pipeline["SeaOtterReturnedHome"]["action"] == "DoNothing"

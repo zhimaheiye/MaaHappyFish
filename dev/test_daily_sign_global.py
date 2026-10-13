@@ -81,9 +81,8 @@ PAGE_LOCAL_CHAINS = {
     # can steal it before the tank template is checked.
     "sea_otter_gem.json": {
         "SeaOtterHomeReturnRouter", "SeaOtterUnusedStaminaDialog",
-        "SeaOtterHomeAtTank", "SeaOtterHomeAtPet", "SeaOtterHomeAtFriendList",
-        "SeaOtterHomeAtFriendTank", "SeaOtterHomeAtGemExchange",
-        "SeaOtterHomeClickBack", "SeaOtterHomeReturnWait",
+        "SeaOtterHomeAtTank", "SeaOtterHomeClickBack", "SeaOtterHomeReturnWait",
+        "SeaOtterGuestGiftPopup",
     },
     # Custom actions finish/resume a visually verified performance or settlement.
     "band_fish.json": {
