@@ -74,10 +74,14 @@ def test_free_available_positive_gate():
 
 
 def test_unknown_state_aborts():
-    """Case: FREE/PAID 都不匹配时，UnknownState 必须 StopTask。"""
+    """Case: FREE/PAID 都不匹配时，UnknownState 必须真实失败。"""
     p = load_pipeline()
-    unknown = p["SeaDiveUnknownState"]
-    assert unknown["action"] == "StopTask"
+    for name in ("SeaDiveUnknownState", "SeaDiveAbortUnknownPage"):
+        unknown = p[name]
+        assert unknown["action"] == "Custom"
+        assert unknown["custom_action"] == "FailTaskAction"
+        assert not unknown.get("next")
+        assert not unknown.get("on_error")
 
 
 def test_full_free_cycle_topology():
@@ -159,6 +163,9 @@ def test_exit_chain_preserved():
     assert p["SeaDiveHomeClose"]["next"] == ["SeaDiveVerifyExitTank3"]
     assert p["SeaDiveVerifyExitTank3"]["next"] == ["SeaDiveSelectTank1"]
     assert p["SeaDiveSelectTank1"]["next"] == ["SeaDiveVerifyMainTank1"]
+    assert p["SeaDiveVerifyMainTank1"]["next"][-2:] == [
+        "DailyRoutineSeaDiveDone", "DailyRoutineStandaloneDone"
+    ]
 
 
 def test_evidence_files_exist():

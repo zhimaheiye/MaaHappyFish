@@ -5161,6 +5161,7 @@ class InitDailyRoutineAction(CustomAction):
                 "GoldenDolphin": {"status": "IDLE"},
                 "ShakeGame": {"status": "IDLE"},
                 "Fishing": {"status": "IDLE"},
+                "SeaDive": {"status": "IDLE"},
                 "GemGiftBox": {"status": "IDLE"},
                 "GemOrder": {"status": "IDLE"},
                 "RomanticHouse": {"status": "IDLE"},
@@ -5178,7 +5179,7 @@ class InitDailyRoutineAction(CustomAction):
             if not param.get("scheduled_run"):
                 # 独立运行不能继承上一次失败的挂机返回栈。
                 hangup_schedule_state["resume_stack"] = []
-            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate", "princess_task", "buy_fish_food", "fish_baby", "magic_summon", "gem_fusion", "activity_energy"))
+            has_param = any(k in param for k in ("all_enabled", "free_gift", "reindeer_fish", "gold_shell_coupon", "green_wild_daily", "band_fish", "golden_dolphin", "shake_game", "fishing", "sea_dive", "gem_gift_box", "gem_order", "romantic_house", "secret_realm_gate", "princess_task", "buy_fish_food", "fish_baby", "magic_summon", "gem_fusion", "activity_energy"))
 
             if param.get("all_enabled"):
                 enable_fg = enable_rf = enable_gsc = enable_gwd = True
@@ -5193,6 +5194,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_ms = bool(param.get("magic_summon", False))
                 enable_gf = bool(param.get("gem_fusion", False))
                 enable_ae = bool(param.get("activity_energy", False))
+                enable_sd = bool(param.get("sea_dive", False))
             elif has_param:
                 enable_fg = bool(param.get("free_gift", False))
                 enable_rf = bool(param.get("reindeer_fish", False))
@@ -5202,6 +5204,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_gd = bool(param.get("golden_dolphin", False))
                 enable_sg = bool(param.get("shake_game", False))
                 enable_fi = bool(param.get("fishing", False))
+                enable_sd = bool(param.get("sea_dive", False))
                 enable_ggb = bool(param.get("gem_gift_box", False))
                 enable_go = bool(param.get("gem_order", False))
                 enable_rh = bool(param.get("romantic_house", False))
@@ -5229,6 +5232,7 @@ class InitDailyRoutineAction(CustomAction):
                 enable_gd = _is_node_enabled("DailyRoutineEnableGoldenDolphin")
                 enable_sg = _is_node_enabled("DailyRoutineEnableShakeGame")
                 enable_fi = _is_node_enabled("DailyRoutineEnableFishing")
+                enable_sd = _is_node_enabled("DailyRoutineEnableSeaDive")
                 enable_ggb = _is_node_enabled("DailyRoutineEnableGemGiftBox")
                 enable_go = _is_node_enabled("DailyRoutineEnableGemOrder")
                 enable_rh = _is_node_enabled("DailyRoutineEnableRomanticHouse")
@@ -5265,6 +5269,8 @@ class InitDailyRoutineAction(CustomAction):
                 queue.append("SHAKE_GAME")
             if enable_fi:
                 queue.append("FISHING")
+            if enable_sd:
+                queue.append("SEA_DIVE")
             if enable_ggb:
                 queue.append("GEM_GIFT_BOX")
             if enable_go:
@@ -5301,6 +5307,7 @@ class InitDailyRoutineAction(CustomAction):
             print(f"  - 金海豚小游戏 : {'[ON]' if enable_gd else '[OFF]'}", flush=True)
             print(f"  - 摇一摇小游戏 : {'[ON]' if enable_sg else '[OFF]'}", flush=True)
             print(f"  - 钓鱼达人     : {'[ON]' if enable_fi else '[OFF]'}", flush=True)
+            print(f"  - 深海寻鱼免费 : {'[ON]' if enable_sd else '[OFF]'}", flush=True)
             print(f"  - 宝石礼盒兑换 : {'[ON]' if enable_ggb else '[OFF]'}", flush=True)
             print(f"  - 宝石订单     : {'[ON]' if enable_go else '[OFF]'}", flush=True)
             print(f"  - 浪漫满屋     : {'[ON]' if enable_rh else '[OFF]'}", flush=True)
@@ -5325,7 +5332,7 @@ class InitDailyRoutineAction(CustomAction):
                 ("每日免费礼包", enable_fg), ("驯鹿鱼送收礼物", enable_rf),
                 ("兑换金贝壳券", enable_gsc), ("绿野寻仙踪日常", enable_gwd), ("秘境之门", enable_srg), ("公主任务", enable_pt), ("乐队鱼", enable_bf),
                 ("金海豚", enable_gd), ("摇一摇", enable_sg),
-                ("钓鱼达人", enable_fi), ("宝石礼盒兑换", enable_ggb),
+                ("钓鱼达人", enable_fi), ("深海寻鱼免费", enable_sd), ("宝石礼盒兑换", enable_ggb),
                 ("宝石订单", enable_go), ("浪漫满屋", enable_rh),
                 ("购买鱼食", enable_bff), ("鱼宝乐园", enable_fb),
                 ("魔力召唤", enable_ms), ("宝石融合", enable_gf),
@@ -5364,7 +5371,7 @@ class DailyRoutineSubtaskDoneAction(CustomAction):
         if (task_name, expected_step) not in (
             ("BuyFishFood", "BUY_FISH_FOOD"), ("FishBaby", "FISH_BABY"),
             ("MagicSummon", "MAGIC_SUMMON"), ("GemFusion", "GEM_FUSION"),
-            ("ActivityEnergy", "ACTIVITY_ENERGY")
+            ("ActivityEnergy", "ACTIVITY_ENERGY"), ("SeaDive", "SEA_DIVE")
         ) or status not in ("DONE", "SKIPPED"):
             print("[日常收尾] ERROR: 子任务完成参数无效", flush=True)
             return False
@@ -6078,6 +6085,7 @@ class DailyRoutineFinishAction(CustomAction):
             gd_st = tasks.get("GoldenDolphin", {}).get("status", "SKIPPED")
             sg_st = tasks.get("ShakeGame", {}).get("status", "SKIPPED")
             fi_st = tasks.get("Fishing", {}).get("status", "SKIPPED")
+            sd_st = tasks.get("SeaDive", {}).get("status", "SKIPPED")
             ggb_st = tasks.get("GemGiftBox", {}).get("status", "SKIPPED")
             go_st = tasks.get("GemOrder", {}).get("status", "SKIPPED")
             rh_st = tasks.get("RomanticHouse", {}).get("status", "SKIPPED")
@@ -6095,6 +6103,7 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 金海豚小游戏 (GoldenDolphin) : {gd_st}", flush=True)
             print(f"  - 摇一摇小游戏 (ShakeGame)     : {sg_st}", flush=True)
             print(f"  - 钓鱼达人 (Fishing)          : {fi_st}", flush=True)
+            print(f"  - 深海寻鱼免费 (SeaDive)      : {sd_st}", flush=True)
             print(f"  - 宝石礼盒兑换 (GemGiftBox)   : {ggb_st}", flush=True)
             print(f"  - 宝石订单 (GemOrder)         : {go_st}", flush=True)
             print(f"  - 浪漫满屋 (RomanticHouse)    : {rh_st}", flush=True)

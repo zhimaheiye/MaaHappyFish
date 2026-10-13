@@ -2,7 +2,11 @@
 
 2026-10-07：v0.7.8 首次完整单独运行成功，但日志暴露 Focus 半角斜杠会被 MFAAvalonia 误当本地路径。挂机好友时段改为“十点、二十二点”，并由 Pipeline 通用门禁禁止静态 Focus 使用 `/`；调度时点、队列和完成状态不变。代码级验证完成，本次未操作 MFA/模拟器。
 
-**最后更新**: 2026-10-11
+**最后更新**: 2026-10-13
+
+### 2026-10-13 深海寻鱼免费子任务
+
+新增默认关闭的「深海寻鱼（仅每日最多2次免费，立即返航）」选项，复用独立 `SeaDiveTask`，排在钓鱼达人之后、宝石礼盒兑换之前。只有用户明确勾选或传入 `sea_dive: true` 才入队；历史挂机 `all_enabled` 不自动扩张。每轮仅凭红色免费角标进入，只选 100 米并立即返航；`x12` 付费态只退出，未知页面真实 `FAILED`。确认返回主鱼缸后，`DailyRoutineSeaDiveDone` 才推进队列。素材来自 `D:/happyfishagent/assets/sea-dive/`，本次仅完成代码级验证，未运行 MFA／模拟器或消耗免费次数。详见 [sea-dive.md](sea-dive.md)。
 
 ### 2026-10-11 免费礼包奖励弹窗误判
 
@@ -49,6 +53,7 @@
 - **金海豚小游戏** (`GoldenDolphinTask`)
 - **摇一摇小游戏** (`ShakeGameTask`)
 - **钓鱼达人** (`FishingTask`)
+- **深海寻鱼免费次数** (`SeaDiveTask`)
 - **宝石礼盒兑换** (`GemGiftBoxTask`)
 - **宝石订单** (`GemOrderTask`)
 - **浪漫满屋** (`RomanticHouseTask`)
@@ -60,7 +65,7 @@
 
 在 Phase 2 中，【日常收尾】(`DailyRoutineTask`) 明确降级为确定性的**“串行任务容器”**：
 1. **自由多选组合**：用户可在 MFAAvalonia 界面中按需自由勾选任意子任务组合；
-2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请；随后按勾选执行每日免费礼包、驯鹿鱼送收礼物、兑换金贝壳券、秘境之门（当前 UI 隐藏）、金海豚、摇一摇、钓鱼达人、宝石礼盒兑换、宝石订单、浪漫满屋、购买鱼食、鱼宝乐园、魔力召唤、宝石融合、领取活动体力；再执行乐队鱼 Pass 2 回访演出；最后按勾选执行绿野寻仙踪日常、公主任务。未勾选的子任务不入队；
+2. **固定异步顺序**：勾选乐队鱼时，先执行乐队鱼 Pass 1 发出邀请；随后按勾选执行每日免费礼包、驯鹿鱼送收礼物、兑换金贝壳券、秘境之门（当前 UI 隐藏）、金海豚、摇一摇、钓鱼达人、深海寻鱼免费次数、宝石礼盒兑换、宝石订单、浪漫满屋、购买鱼食、鱼宝乐园、魔力召唤、宝石融合、领取活动体力；再执行乐队鱼 Pass 2 回访演出；最后按勾选执行绿野寻仙踪日常、公主任务。未勾选的子任务不入队；
 3. **安全退出保障**：每个子任务执行结束（成功、次数用尽、体力不足等）后，必须 100% 返回主鱼缸珊瑚，方可推进下一任务；
 4. **两阶段异步执行**：乐队鱼 Pass 1 / Pass 2 已接入调度；中间任务的执行时间用于等待人机好友接受邀请。
 5. **末尾各执行一次**：绿野寻仙踪日常完成“开贝壳+买鱼+领奖”完整子流程，公主任务在赏金奖励页点击「交付任务」，满五次后开启福袋，再进入公主日记检查奖励列与额外宝箱。二者都位于乐队鱼回访之后，以覆盖此前活动完成的任务条件；不再有独立的 `GREEN_WILD_CLAIM` / `PRINCESS_CLAIM` 队列步骤。每次进入 `PrincessTask` 仍重置三格、交付按钮和开福袋的 `max_hit` 计数。日记每格本次最多点击一次，交付任务本次最多 8 次，福袋最多开一次。
@@ -83,6 +88,7 @@
   - `金海豚` $\rightarrow$ `DailyRoutineEnableGoldenDolphin: { "enabled": true }`
   - `摇一摇` $\rightarrow$ `DailyRoutineEnableShakeGame: { "enabled": true }`
   - `钓鱼达人` $\rightarrow$ `DailyRoutineEnableFishing: { "enabled": true }`
+  - `深海寻鱼（仅每日最多2次免费，立即返航）` → `DailyRoutineEnableSeaDive: { "enabled": true }`；不做任何地图探寻，不点 `x12` 付费按钮。
   - `宝石礼盒兑换` $\rightarrow$ `DailyRoutineEnableGemGiftBox: { "enabled": true }`
   - `宝石订单` $\rightarrow$ `DailyRoutineEnableGemOrder: { "enabled": true }`
   - `浪漫满屋` $\rightarrow$ `DailyRoutineEnableRomanticHouse: { "enabled": true }`
@@ -92,11 +98,11 @@
   - `宝石融合` → `DailyRoutineEnableGemFusion: { "enabled": true }`；一次检查沿用巡检的融合/入库流程。
   - `领取活动体力（酿月食香）` → `DailyRoutineEnableActivityEnergy: { "enabled": true }`；只处理当前第一张卡片，默认不勾选。
 
-购买鱼食、鱼宝乐园、魔力召唤、宝石融合和活动体力默认不勾选。挂机定时插入的历史 `all_enabled` 范围保持原样，不隐式启用这五项；直接传参可显式设 `buy_fish_food`、`fish_baby`、`magic_summon`、`gem_fusion`、`activity_energy`。玩耍配置全为跳过仍表示整只宝宝不参与，日常模式确认主鱼缸后标记 `SKIPPED` 并继续；若此时处于鱼宝中间页，安全停止而不直接流转。
+购买鱼食、鱼宝乐园、魔力召唤、宝石融合、活动体力和深海寻鱼默认不勾选。挂机定时插入的历史 `all_enabled` 范围保持原样，不隐式启用这六项；直接传参可显式设 `buy_fish_food`、`fish_baby`、`magic_summon`、`gem_fusion`、`activity_energy`、`sea_dive`。玩耍配置全为跳过仍表示整只宝宝不参与，日常模式确认主鱼缸后标记 `SKIPPED` 并继续；若此时处于鱼宝中间页，安全停止而不直接流转。
 
 ### 2. 独立调试入口管理
 - **浪漫满屋 (`RomanticHouseTask`)**：因功能已全面测试完毕并达成 100% 闭环，从三份 `interface.json` 的任务列表中移除独立入口，统一通过日常收尾入口运行；
-- **保留独立入口**：`BandFishTask`、`GoldenDolphinTask`、`ShakeGameTask`、`FishingTask`、`GemGiftBoxTask`、`GemOrderTask`、`GoldShellCouponTask` 保留在 `interface.json` 中，供后续专项调试使用。
+- **保留独立入口**：`BandFishTask`、`GoldenDolphinTask`、`ShakeGameTask`、`FishingTask`、`SeaDiveTask`、`GemGiftBoxTask`、`GemOrderTask`、`GoldShellCouponTask` 保留在 `interface.json` 中，供后续专项调试使用。
 - **共享子任务参数**：`DailyRoutineTask` 同时显示“乐队鱼乐章”“金海豚奖励优先级”“钓鱼地点”和“钓鱼饵食适配模式”；金海豚可选择四类最高优先级，钓鱼普通模式固定 5 杆，美味模式不限杆数并由用户手动停止。
 
 ---

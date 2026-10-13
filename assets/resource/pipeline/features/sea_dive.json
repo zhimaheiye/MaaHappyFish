@@ -437,20 +437,31 @@
         "action": "DoNothing",
         "focus": {
             "Node.Action.Succeeded": "[深海寻鱼] 已确认免费次数耗尽并返回主鱼缸；未点击付费按钮。"
-        }
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineSeaDiveDone",
+            "DailyRoutineStandaloneDone"
+        ]
     },
     "SeaDiveUnknownState": {
         "recognition": "DirectHit",
-        "action": "StopTask",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
         "focus": {
-            "Node.Action.Succeeded": "[深海寻鱼] 未知状态，无法判断免费态或付费态，已安全停止。"
+            "Node.Action.Failed": "[深海寻鱼] ERROR: 未知状态，无法判断免费态或付费态，已安全停止。"
         }
     },
     "SeaDiveAbortUnknownPage": {
         "recognition": "DirectHit",
-        "action": "StopTask",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
         "focus": {
-            "Node.Action.Succeeded": "[深海寻鱼] 页面门禁未通过，已安全停止。"
+            "Node.Action.Failed": "[深海寻鱼] ERROR: 页面门禁未通过，已安全停止。"
         }
     }
 }

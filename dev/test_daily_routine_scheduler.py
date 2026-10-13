@@ -88,6 +88,7 @@ def test_pipeline_topology():
         "DailyRoutineEnableGoldenDolphin",
         "DailyRoutineEnableShakeGame",
         "DailyRoutineEnableFishing",
+        "DailyRoutineEnableSeaDive",
         "DailyRoutineEnableGemGiftBox",
         "DailyRoutineEnableGemOrder",
         "DailyRoutineEnableRomanticHouse",
@@ -111,6 +112,7 @@ def test_pipeline_topology():
         "DailyRoutineStepGoldenDolphin",
         "DailyRoutineStepShakeGame",
         "DailyRoutineStepFishing",
+        "DailyRoutineStepSeaDive",
         "DailyRoutineStepGemGiftBox",
         "DailyRoutineStepGemOrder",
         "DailyRoutineStepRomanticHouse",
@@ -141,6 +143,7 @@ def test_pipeline_topology():
     assert business_next(pdata["ShakeGameVerifyTank"]) == dual_exit, "ShakeGameVerifyTank 未接入双出口路由"
     assert business_next(pdata["GoldenDolphinDone"]) == dual_exit, "GoldenDolphinDone 未接入双出口路由"
     assert business_next(pdata["FishingVerifyExitToTank"]) == dual_exit, "FishingVerifyExitToTank 未接入双出口路由"
+    assert business_next(pdata["DailyRoutineSeaDiveDone"]) == dual_exit, "DailyRoutineSeaDiveDone 未接入双出口路由"
     assert business_next(pdata["DailyFreeGiftVerifyTank"]) == dual_exit, "DailyFreeGiftVerifyTank 未接入双出口路由"
     assert business_next(pdata["ReindeerFishVerifyTank"]) == dual_exit, "ReindeerFishVerifyTank 未接入双出口路由"
     assert business_next(pdata["GoldShellCouponVerifyTank"]) == dual_exit, "GoldShellCouponVerifyTank 未接入双出口路由"

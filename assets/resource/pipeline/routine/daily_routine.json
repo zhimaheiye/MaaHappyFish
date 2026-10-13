@@ -44,6 +44,11 @@
         "action": "DoNothing",
         "enabled": false
     },
+    "DailyRoutineEnableSeaDive": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "enabled": false
+    },
     "DailyRoutineEnableGemGiftBox": {
         "recognition": "DirectHit",
         "action": "DoNothing",
@@ -116,6 +121,7 @@
             "DailyRoutineStepGoldenDolphin",
             "DailyRoutineStepShakeGame",
             "DailyRoutineStepFishing",
+            "DailyRoutineStepSeaDive",
             "DailyRoutineStepGemGiftBox",
             "DailyRoutineStepGemOrder",
             "DailyRoutineStepRomanticHouse",
@@ -298,6 +304,25 @@
             "FishingDailyTask"
         ]
     },
+    "DailyRoutineStepSeaDive": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {
+            "expected_step": "SEA_DIVE"
+        },
+        "action": "DoNothing",
+        "focus": {
+            "Node.Action.Succeeded": "[日常收尾] 开始执行：深海寻鱼，每日最多两次免费，只选100米并立即返航。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "SeaDiveTask"
+        ]
+    },
     "DailyRoutineStepGemGiftBox": {
         "recognition": "Custom",
         "custom_recognition": "CheckDailyRoutineStepReco",
@@ -441,6 +466,24 @@
     "DailyRoutineStandaloneDone": {
         "recognition": "DirectHit",
         "action": "DoNothing"
+    },
+    "DailyRoutineSeaDiveDone": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckDailyRoutineStepReco",
+        "custom_recognition_param": {"expected_step": "SEA_DIVE"},
+        "action": "Custom",
+        "custom_action": "DailyRoutineSubtaskDoneAction",
+        "custom_action_param": {"task_name": "SeaDive", "expected_step": "SEA_DIVE"},
+        "focus": {"Node.Action.Succeeded": "[日常收尾] 深海寻鱼免费机会处理完毕并确认回主鱼缸，继续下一项。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ]
     },
     "DailyRoutineEnablePrincessTask": {
         "recognition": "DirectHit",
