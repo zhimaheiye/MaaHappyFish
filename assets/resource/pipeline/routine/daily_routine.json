@@ -562,6 +562,7 @@
         "custom_recognition": "CheckDailyRoutineStepReco",
         "custom_recognition_param": {"expected_step": "MAGIC_SUMMON"},
         "action": "DoNothing",
+        "timeout": 5000,
         "focus": {"Node.Action.Succeeded": "[日常收尾] 开始执行：魔力召唤一次检查。"},
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -570,9 +571,9 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "PatrolMagicVerifyPage",
-            "DailyRoutineMagicSummonTank",
-            "PatrolMagicAbort"
-        ]
+            "DailyRoutineMagicSummonTank"
+        ],
+        "on_error": ["PatrolMagicAbort"]
     },
     "DailyRoutineMagicSummonTank": {
         "recognition": "TemplateMatch",
@@ -587,6 +588,7 @@
         "custom_recognition": "CheckDailyRoutineStepReco",
         "custom_recognition_param": {"expected_step": "GEM_FUSION"},
         "action": "DoNothing",
+        "timeout": 5000,
         "focus": {"Node.Action.Succeeded": "[日常收尾] 开始执行：宝石融合一次检查。"},
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -596,9 +598,9 @@
             "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionPutInStorage",
             "PatrolGemFusionVerifyPage",
-            "DailyRoutineGemFusionTank",
-            "PatrolGemFusionAbort"
-        ]
+            "DailyRoutineGemFusionTank"
+        ],
+        "on_error": ["PatrolGemFusionAbort"]
     },
     "DailyRoutineGemFusionTank": {
         "recognition": "TemplateMatch",

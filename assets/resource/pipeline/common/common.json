@@ -3,6 +3,7 @@
         "action": "StartApp",
         "package": "com.happyelements.happyfishandroidcns/com.happyelements.happyfish.MainActivity",
         "post_delay": 2000,
+        "timeout": 120000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -20,6 +21,7 @@
         "threshold": 0.8,
         "action": "Click",
         "post_delay": 300,
+        "timeout": 30000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -37,6 +39,7 @@
         "threshold": 0.8,
         "action": "Click",
         "post_delay": 800,
+        "timeout": 120000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",

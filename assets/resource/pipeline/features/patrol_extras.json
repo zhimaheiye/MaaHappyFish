@@ -287,9 +287,11 @@
     },
     "PatrolMagicAbort": {
         "recognition": "DirectHit",
-        "action": "StopTask",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {"message": "[巡检-魔力召唤] ERROR: 页面门禁未通过，已停止且未继续点击。"},
         "focus": {
-            "Node.Action.Succeeded": "[巡检-魔力召唤] 页面门禁未通过，已安全停止且未继续点击。"
+            "Node.Action.Failed": "[巡检-魔力召唤] 页面门禁未通过，已安全停止且未继续点击。"
         }
     },
     "PatrolGemFusionDue": {
@@ -384,9 +386,9 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "PatrolGemFusionPutInStorage",
-            "PatrolGemFusionVerifyPage",
-            "PatrolGemFusionAbort"
-        ]
+            "PatrolGemFusionVerifyPage"
+        ],
+        "on_error": ["PatrolGemFusionAbort"]
     },
     "PatrolGemFusionPutInStorage": {
         "recognition": "TemplateMatch",
@@ -553,9 +555,9 @@
             "PatrolVerifyMainTank2AfterCycle",
             "PatrolVerifyMainTank3AfterCycle",
             "PatrolGemFusionConfirmPutInStorage",
-            "PatrolGemFusionStillOnPage",
-            "PatrolGemFusionAbort"
-        ]
+            "PatrolGemFusionStillOnPage"
+        ],
+        "on_error": ["PatrolGemFusionAbort"]
     },
     "PatrolGemFusionStillOnPage": {
         "recognition": "TemplateMatch",
@@ -613,9 +615,11 @@
     },
     "PatrolGemFusionAbort": {
         "recognition": "DirectHit",
-        "action": "StopTask",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {"message": "[巡检-宝石融合] ERROR: 页面门禁未通过，已停止且未继续点击。"},
         "focus": {
-            "Node.Action.Succeeded": "[巡检-宝石融合] 页面门禁未通过，已安全停止且未继续点击。"
+            "Node.Action.Failed": "[巡检-宝石融合] 页面门禁未通过，已安全停止且未继续点击。"
         }
     }
 }

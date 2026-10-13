@@ -101,11 +101,16 @@ class DailyPatrolFeatureContract(unittest.TestCase):
                 self.assertEqual(verify["recognition"], "TemplateMatch")
                 self.assertIn(done, verify["next"])
                 self.assertLess(verify["next"].index(done), verify["next"].index("PatrolWaitLoop"))
-        self.assertEqual(self.routine["DailyRoutineStepMagicSummon"]["next"][-3:],
-                         ["PatrolMagicVerifyPage", "DailyRoutineMagicSummonTank", "PatrolMagicAbort"])
-        self.assertEqual(self.routine["DailyRoutineStepGemFusion"]["next"][-4:],
+        self.assertEqual(self.routine["DailyRoutineStepMagicSummon"]["next"][-2:],
+                         ["PatrolMagicVerifyPage", "DailyRoutineMagicSummonTank"])
+        self.assertEqual(self.routine["DailyRoutineStepMagicSummon"]["on_error"],
+                         ["PatrolMagicAbort"])
+        self.assertEqual(self.extras["PatrolMagicAbort"]["custom_action"], "FailTaskAction")
+        self.assertEqual(self.routine["DailyRoutineStepGemFusion"]["next"][-3:],
                          ["PatrolGemFusionPutInStorage", "PatrolGemFusionVerifyPage",
-                          "DailyRoutineGemFusionTank", "PatrolGemFusionAbort"])
+                          "DailyRoutineGemFusionTank"])
+        self.assertEqual(self.routine["DailyRoutineStepGemFusion"]["on_error"],
+                         ["PatrolGemFusionAbort"])
 
     def test_completion_is_once_after_verified_tank(self):
         self.init(Context(), {"magic_summon": True, "gem_fusion": True})

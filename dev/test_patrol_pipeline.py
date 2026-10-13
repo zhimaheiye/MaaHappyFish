@@ -489,6 +489,37 @@ class PatrolPipelineTest(unittest.TestCase):
             business_next(self.pipeline["PatrolSelectTank3FromPicker"]),
             ["PatrolVerifyTank3Main"],
         )
+
+    def test_tank_and_starfish_navigation_retries_are_bounded_and_visual(self):
+        for key in ("Tank1", "Tank2", "Tank3", "Cute", "Good", "Bright"):
+            if key.startswith("Tank"):
+                number = key[-1]
+                first = self.pipeline[f"PatrolSelectTank{number}FromPicker"]
+                router_name = f"PatrolRetryTank{number}Router"
+                retry_name = f"PatrolRetryTank{number}FromPicker"
+                verify = f"PatrolVerifyTank{number}Main"
+            else:
+                first = self.pipeline[f"PatrolSelect{key}StarfishTab"]
+                router_name = f"PatrolRetry{key}StarfishRouter"
+                retry_name = f"PatrolRetry{key}StarfishTab"
+                verify = f"PatrolVerify{key}Starfish"
+            router = self.pipeline[router_name]
+            retry = self.pipeline[retry_name]
+            self.assertEqual(first["timeout"], 6000)
+            self.assertEqual(first["on_error"], [router_name])
+            self.assertEqual(router["recognition"], "DirectHit")
+            self.assertEqual(router["timeout"], 2000)
+            self.assertEqual(business_next(router)[0], verify)
+            self.assertEqual(business_next(router)[1], retry_name)
+            self.assertEqual(router["on_error"], ["PatrolAbortNavigation"])
+            self.assertEqual(retry["recognition"], first["recognition"])
+            self.assertEqual(retry.get("template"), first.get("template"))
+            self.assertEqual(retry.get("expected"), first.get("expected"))
+            self.assertEqual(retry["roi"], first["roi"])
+            self.assertEqual(retry["action"], "Click")
+            self.assertNotIn("target", retry)
+            self.assertEqual(business_next(retry), [verify])
+            self.assertEqual(retry["on_error"], ["PatrolAbortNavigation"])
     def test_main_tank_templates_match_recorded_main_frames(self):
         for tank in (1, 2, 3):
             node = self.pipeline[f"PatrolVerifyTank{tank}Main"]
@@ -689,7 +720,6 @@ class PatrolPipelineTest(unittest.TestCase):
             [
                 "PatrolGemFusionConfirmPutInStorage",
                 "PatrolGemFusionStillOnPage",
-                "PatrolGemFusionAbort",
             ],
         )
         self.assertLess(
@@ -730,8 +760,15 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(business_next(retry), ["PatrolVerifyMainAfterCycle"])
 
         # Case 6: 未知状态安全熔断 (Abort)
-        self.assertEqual(router_next[-1], "PatrolGemFusionAbort")
-        self.assertEqual(self.pipeline["PatrolGemFusionAbort"]["action"], "StopTask")
+        self.assertEqual(router["on_error"], ["PatrolGemFusionAbort"])
+        page_router = self.pipeline["PatrolGemFusionPageRouter"]
+        self.assertNotIn("PatrolGemFusionAbort", page_router["next"])
+        self.assertEqual(page_router["on_error"], ["PatrolGemFusionAbort"])
+        self.assertEqual(page_router["timeout"], 5000)
+        abort = self.pipeline["PatrolGemFusionAbort"]
+        self.assertEqual(abort["custom_action"], "FailTaskAction")
+        self.assertNotIn("next", abort)
+        self.assertNotIn("on_error", abort)
 
         # Case 7: 魔力召唤业务链保持完好且未被修改
         magic_due = self.pipeline["PatrolMagicSummonDue"]

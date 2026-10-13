@@ -388,7 +388,7 @@
         ],
         "action": "Click",
         "post_delay": 1200,
-        "timeout": 3000,
+        "timeout": 6000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -399,9 +399,45 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank1Main"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryTank1Router"]
+    },
+    "PatrolRetryTank1Router": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank1Main",
+            "PatrolRetryTank1FromPicker"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolRetryTank1FromPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_入口.png",
+        "threshold": 0.72,
+        "roi": [135, 10, 75, 80],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 6000,
+        "focus": {"Node.Action.Succeeded": "[巡检] 鱼缸 1 选择器仍在，已重新点击一次并等待页面确认。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank1Main"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolVerifyTank1Main": {
         "recognition": "TemplateMatch",
@@ -684,7 +720,7 @@
         ],
         "action": "Click",
         "post_delay": 1200,
-        "timeout": 3000,
+        "timeout": 6000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -695,9 +731,45 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank2Main"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryTank2Router"]
+    },
+    "PatrolRetryTank2Router": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank2Main",
+            "PatrolRetryTank2FromPicker"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolRetryTank2FromPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_入口.png",
+        "threshold": 0.72,
+        "roi": [205, 10, 75, 80],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 6000,
+        "focus": {"Node.Action.Succeeded": "[巡检] 鱼缸 2 选择器仍在，已重新点击一次并等待页面确认。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank2Main"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolVerifyTank2Main": {
         "recognition": "TemplateMatch",
@@ -980,7 +1052,7 @@
         ],
         "action": "Click",
         "post_delay": 1200,
-        "timeout": 3000,
+        "timeout": 6000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -991,9 +1063,45 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyTank3Main"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryTank3Router"]
+    },
+    "PatrolRetryTank3Router": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank3Main",
+            "PatrolRetryTank3FromPicker"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolRetryTank3FromPicker": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_入口.png",
+        "threshold": 0.78,
+        "roi": [275, 10, 75, 80],
+        "action": "Click",
+        "post_delay": 1200,
+        "timeout": 6000,
+        "focus": {"Node.Action.Succeeded": "[巡检] 鱼缸 3 选择器仍在，已重新点击一次并等待页面确认。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolVerifyTank3Main"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolVerifyTank3Main": {
         "recognition": "TemplateMatch",
@@ -1332,7 +1440,7 @@
         ],
         "action": "Click",
         "post_delay": 900,
-        "timeout": 3500,
+        "timeout": 6000,
         "focus": {
             "Node.Action.Succeeded": "[巡检-萌海星] 已点击顶部标签，正在验证是否切换成功。"
         },
@@ -1346,9 +1454,40 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyCuteStarfish"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryCuteStarfishRouter"]
+    },
+    "PatrolRetryCuteStarfishRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolVerifyCuteStarfish",
+            "PatrolRetryCuteStarfishTab"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolRetryCuteStarfishTab": {
+        "recognition": "OCR",
+        "expected": "萌海星",
+        "roi": [80, 70, 800, 100],
+        "action": "Click",
+        "post_delay": 900,
+        "timeout": 6000,
+        "focus": {"Node.Action.Succeeded": "[巡检-萌海星] 仍在海星标签页，已重新点击一次并等待正文确认。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolVerifyCuteStarfish"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolVerifyCuteStarfish": {
         "recognition": "OCR",
@@ -1497,7 +1636,7 @@
         ],
         "action": "Click",
         "post_delay": 900,
-        "timeout": 3500,
+        "timeout": 6000,
         "focus": {
             "Node.Action.Succeeded": "[巡检-乖海星] 已点击顶部标签，正在验证是否切换成功。"
         },
@@ -1511,9 +1650,40 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyGoodStarfish"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryGoodStarfishRouter"]
+    },
+    "PatrolRetryGoodStarfishRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolVerifyGoodStarfish",
+            "PatrolRetryGoodStarfishTab"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolRetryGoodStarfishTab": {
+        "recognition": "OCR",
+        "expected": "乖海星",
+        "roi": [80, 70, 800, 100],
+        "action": "Click",
+        "post_delay": 900,
+        "timeout": 6000,
+        "focus": {"Node.Action.Succeeded": "[巡检-乖海星] 仍在海星标签页，已重新点击一次并等待正文确认。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolVerifyGoodStarfish"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolVerifyGoodStarfish": {
         "recognition": "OCR",
@@ -1662,7 +1832,7 @@
         ],
         "action": "Click",
         "post_delay": 900,
-        "timeout": 3500,
+        "timeout": 6000,
         "focus": {
             "Node.Action.Succeeded": "[巡检-亮海星] 已点击顶部标签，正在验证是否切换成功。"
         },
@@ -1676,9 +1846,40 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolVerifyBrightStarfish"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryBrightStarfishRouter"]
+    },
+    "PatrolRetryBrightStarfishRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolVerifyBrightStarfish",
+            "PatrolRetryBrightStarfishTab"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolRetryBrightStarfishTab": {
+        "recognition": "OCR",
+        "expected": "亮海星",
+        "roi": [80, 70, 800, 100],
+        "action": "Click",
+        "post_delay": 900,
+        "timeout": 6000,
+        "focus": {"Node.Action.Succeeded": "[巡检-亮海星] 仍在海星标签页，已重新点击一次并等待正文确认。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolVerifyBrightStarfish"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolVerifyBrightStarfish": {
         "recognition": "OCR",
