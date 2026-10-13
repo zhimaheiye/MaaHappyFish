@@ -8,7 +8,7 @@
 - 资产：`MaaHappyFish-win-x86_64-v0.7.9.zip`、`MaaHappyFish-win-aarch64-v0.7.9.zip`，均已 uploaded，不是预发布。
 
 ## 尚未正式发布
-- 暂无。v0.7.9 已正式发布；新业务分支仍仅有代码级验证，未做本版 MFA／模拟器实测。仍待取证的问题见 `ISSUES.md`。
+- 2026-10-13 从早期工作树移植限时活动接管包 Action 和测试，尚未接入正式 Pipeline；离线测试与编译通过，未做 MFA／模拟器实测。详见 `docs/features/activity-takeover.md`。正式版仍为 v0.7.9；其它待取证问题见 `ISSUES.md`。
 
 ## 台式机当前运行
 - 来源：

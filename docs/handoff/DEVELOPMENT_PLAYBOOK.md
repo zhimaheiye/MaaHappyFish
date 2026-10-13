@@ -21,6 +21,7 @@
 | 当前版本、完成度、MFA 实测状态、下一步 | `docs/handoff/CURRENT.md` |
 | 打包发版、升级版本、推送 Tag 与发布 CI 门禁 | `docs/release-workflow.md`（唯一权威文档；调度技能：`.agents/skills/maa-release-workflow/SKILL.md`） |
 | 某个功能的状态机、ROI、模板、分支 | 对应 `docs/features/*.md` |
+| 限时活动失败接管包的写包契约与验证边界 | `docs/features/activity-takeover.md` |
 | 游戏资源、稀缺性和实机消耗授权 | `docs/game-knowledge.md` |
 | 通用返回/OCR 等 UI 约定 | `docs/ui-conventions.md` |
 | 当前失败原因 | 与问题时间相符的 MFA/MaaFramework 日志、失败截图 |
