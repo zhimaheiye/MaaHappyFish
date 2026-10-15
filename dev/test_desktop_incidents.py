@@ -21,6 +21,12 @@ def test_band_entry_center():
     for name in ('BandFishStartAtAmusementGrid', 'BandFishEnterFromGrid', 'BandFishStartAtTank'):
         assert band[name]['custom_action'] == 'ClickRecognizedCenterAction'
         assert band[name]['on_error'] == ['BandFishNavigationFailed']
+    failed = band['BandFishNavigationFailed']
+    assert failed['action'] == 'Custom'
+    assert failed['custom_action'] == 'FailTaskAction'
+    assert not failed.get('next')
+    assert not failed.get('on_error')
+    assert '/' not in json.dumps(failed.get('focus', {}), ensure_ascii=False)
     clicks = []
     controller = SimpleNamespace(post_click=lambda x, y: (
         clicks.append((x, y)) or SimpleNamespace(wait=lambda: SimpleNamespace(succeeded=True))

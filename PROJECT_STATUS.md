@@ -8,7 +8,7 @@
 - 资产：`MaaHappyFish-win-x86_64-v0.7.10.zip`、`MaaHappyFish-win-aarch64-v0.7.10.zip`，均已 uploaded，不是预发布。
 
 ## 尚未正式发布
-- 暂无。
+- 2026-10-16：深海寻鱼免费点击在红角标仍在时补点一次，付费关闭后 12 秒内按鱼缸 3、2、1 回主鱼缸；乐队鱼入口未确认改为 FailTaskAction。代码级验证完成，未做 MFA／MuMu 实测，尚未发版。见 `docs/features/sea-dive.md`、`docs/features/band-fish.md`。
 
 ## 台式机当前运行
 - 来源：
@@ -16,6 +16,7 @@
 - 最近同步：
 
 ## 当前说明
+- 2026-10-16 已提交未发版：v0.7.10 现场的深海寻鱼第二轮免费补点、付费关闭认缸，以及乐队鱼入口真实失败。`ucrtbase` 崩溃、Application Hang 与 MuMuManager 查不到实例仍是环境或上游事项。代码级验证完成，未做 MFA／MuMu 实测。详见 `docs/handoff/CURRENT.md`。
 - 2026-10-15 v0.7.10 已发布：包含失败后重复巡检接手、冷启动／切缸／海星点击有界复核、宝石融合与日常魔力召唤真实失败出口、深海寻鱼免费日常入口；限时活动接管包仅注册未接入正式任务。标签 CI `38689368095` 全绿，x64 embedded Python／Agent 冒烟通过，两个 Windows ZIP 已上传。代码级验证完成，本版未做 MFA／MuMu 实测；Android `lmkd` 杀游戏进程与外部值守器误报仍是独立环境／外部组件事项，见 `docs/features/patrol.md`、`ISSUES.md`。
 - 2026-10-09 两仓已同步至处理前最新 main，12 份新值守包交叉取证。10 月 8 日海獭 LEFT 边界仍缺全部体力正证据，网络断线演出不安全自动重试；MuMu 摇晃单次 RPC 超时和 10 月 7 日截屏短暂失败没有可证实的 Python 根因。当前修复范围、验证和待自然复测入口见 `docs/handoff/CURRENT.md` 与对应功能文档；本轮未做 MFA／模拟器测试。
 - 2026-10-07 已拉取 `happyfishgame` 与 `happyfishagent` 最新 `main`，复核 6 份新值守证据包。v0.7.7 手动鱼食漏识别已由 v0.7.8 修复并在后续日志中命中；窗口缺失、手动停止等归为环境/操作状态。当前代码修复了 Focus 文案含半角 `/` 引发的文件解析噪声，并移除金海豚次数耗尽分支无效的可选 RapidOCR 探测。MFAAvalonia 临时目录 `AccessDenied` 属预编译原生客户端非阻断问题，仍登记待上游处理。完成代码级验证，本次未做 MFA/模拟器测试。

@@ -58,9 +58,17 @@ def test_paid_state_x12_detection():
     assert "x12" in paid["expected"].lower() or "12" in paid["expected"]
     assert paid["action"] == "DoNothing"
     assert paid["next"] == ["SeaDiveHomeClose"]
-    # 退出链：HomeClose → VerifyExitTank3 → SelectTank1 → VerifyMainTank1
-    assert p["SeaDiveHomeClose"]["action"] == "Click"
-    assert p["SeaDiveHomeClose"]["next"] == ["SeaDiveVerifyExitTank3"]
+    close = p["SeaDiveHomeClose"]
+    assert close["action"] == "Click"
+    assert close["timeout"] == 12000
+    assert close["next"] == [
+        "SeaDiveVerifyExitTank3",
+        "SeaDiveVerifyExitTank2",
+        "SeaDiveVerifyExitTank1",
+    ]
+    assert p["SeaDiveVerifyExitTank3"]["action"] == "Click"
+    assert p["SeaDiveVerifyExitTank2"]["action"] == "Click"
+    assert p["SeaDiveVerifyExitTank1"]["action"] == "DoNothing"
 
 
 def test_free_available_positive_gate():
@@ -88,8 +96,27 @@ def test_full_free_cycle_topology():
     """Case: FREE → DepthSelect → 100m → InGame → Return → Result → LeftReturn → Retention → Confirm → Home → loop."""
     p = load_pipeline()
 
-    # FREE button click → depth select
+    # FREE button click → depth select；未进入时只允许角标仍在时再点一次
     assert p["SeaDiveClickFreeButton"]["next"] == ["SeaDiveDepthSelectPage"]
+    assert p["SeaDiveClickFreeButton"]["on_error"] == ["SeaDiveFreeClickMissed"]
+    missed = p["SeaDiveFreeClickMissed"]
+    assert missed["recognition"] == "DirectHit"
+    assert missed["timeout"] == 4000
+    assert missed["next"] == ["SeaDiveDepthSelectPage", "SeaDiveFreeRetryGate"]
+    assert "SeaDiveAbortUnknownPage" not in missed["next"]
+    assert missed["on_error"] == ["SeaDiveAbortUnknownPage"]
+    retry = p["SeaDiveFreeRetryGate"]
+    assert retry["template"].endswith("free_badge.png")
+    assert retry["action"] == "DoNothing"
+    assert retry["next"] == ["SeaDiveClickFreeButtonOnce"]
+    assert retry["on_error"] == ["SeaDiveAbortUnknownPage"]
+    once = p["SeaDiveClickFreeButtonOnce"]
+    assert once["action"] == "Click"
+    assert once["expected"] == "深海寻鱼"
+    assert once["next"] == ["SeaDiveDepthSelectPage"]
+    assert once["on_error"] == ["SeaDiveAbortUnknownPage"]
+    assert "SeaDiveClickFreeButton" not in once["next"]
+    assert "SeaDiveFreeClickMissed" not in once.get("on_error", [])
 
     # Depth select page gate → choose 100m
     assert p["SeaDiveDepthSelectPage"]["recognition"] == "OCR"
@@ -158,10 +185,16 @@ def test_cycle_loops_back_to_state_router():
 def test_exit_chain_preserved():
     """Case: 现有付费退出链必须保留，不被 FREE 循环覆盖。"""
     p = load_pipeline()
-    # PaidState → HomeClose → VerifyExitTank3 → SelectTank1 → VerifyMainTank1
+    # PaidState → HomeClose → 鱼缸 3/2 进选择器，或已在鱼缸 1 → VerifyMainTank1
     assert p["SeaDivePaidState"]["next"] == ["SeaDiveHomeClose"]
-    assert p["SeaDiveHomeClose"]["next"] == ["SeaDiveVerifyExitTank3"]
+    assert p["SeaDiveHomeClose"]["next"] == [
+        "SeaDiveVerifyExitTank3",
+        "SeaDiveVerifyExitTank2",
+        "SeaDiveVerifyExitTank1",
+    ]
     assert p["SeaDiveVerifyExitTank3"]["next"] == ["SeaDiveSelectTank1"]
+    assert p["SeaDiveVerifyExitTank2"]["next"] == ["SeaDiveSelectTank1"]
+    assert p["SeaDiveVerifyExitTank1"]["next"] == ["SeaDiveVerifyMainTank1"]
     assert p["SeaDiveSelectTank1"]["next"] == ["SeaDiveVerifyMainTank1"]
     assert p["SeaDiveVerifyMainTank1"]["next"][-2:] == [
         "DailyRoutineSeaDiveDone", "DailyRoutineStandaloneDone"

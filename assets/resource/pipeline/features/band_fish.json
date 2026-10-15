@@ -187,8 +187,9 @@
     },
     "BandFishNavigationFailed": {
         "recognition": "DirectHit",
-        "action": "StopTask",
-        "focus": {"Node.Action.Succeeded": "[乐队鱼] ERROR: 点击入口后未确认演出页面，安全停止。"}
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "focus": {"Node.Action.Failed": "[乐队鱼] ERROR：点击入口后未确认演出页面，安全停止。"}
     },
     "BandFishCheckDone": {
         "recognition": "OCR",

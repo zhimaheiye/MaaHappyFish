@@ -214,6 +214,60 @@
             "SeaDiveDepthSelectPage"
         ],
         "on_error": [
+            "SeaDiveFreeClickMissed"
+        ]
+    },
+    "SeaDiveFreeClickMissed": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "SeaDiveDepthSelectPage",
+            "SeaDiveFreeRetryGate"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveFreeRetryGate": {
+        "recognition": "TemplateMatch",
+        "template": "sea_dive/free_badge.png",
+        "roi": [
+            730,
+            540,
+            70,
+            60
+        ],
+        "threshold": 0.75,
+        "action": "DoNothing",
+        "post_delay": 800,
+        "timeout": 2500,
+        "focus": {
+            "Node.Recognition.Succeeded": "[深海寻鱼] 免费按钮点击后未进入深度选择，免费角标仍在，再点一次。"
+        },
+        "next": [
+            "SeaDiveClickFreeButtonOnce"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveClickFreeButtonOnce": {
+        "recognition": "OCR",
+        "expected": "深海寻鱼",
+        "roi": [
+            530,
+            545,
+            240,
+            70
+        ],
+        "action": "Click",
+        "post_delay": 1500,
+        "timeout": 8000,
+        "next": [
+            "SeaDiveDepthSelectPage"
+        ],
+        "on_error": [
             "SeaDiveAbortUnknownPage"
         ]
     },
@@ -376,9 +430,11 @@
         "threshold": 0.9,
         "action": "Click",
         "post_delay": 700,
-        "timeout": 4000,
+        "timeout": 12000,
         "next": [
-            "SeaDiveVerifyExitTank3"
+            "SeaDiveVerifyExitTank3",
+            "SeaDiveVerifyExitTank2",
+            "SeaDiveVerifyExitTank1"
         ],
         "on_error": [
             "SeaDiveAbortUnknownPage"
@@ -402,6 +458,41 @@
         ],
         "on_error": [
             "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveVerifyExitTank2": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "threshold": 0.85,
+        "action": "Click",
+        "post_delay": 400,
+        "timeout": 4000,
+        "next": [
+            "SeaDiveSelectTank1"
+        ],
+        "on_error": [
+            "SeaDiveAbortUnknownPage"
+        ]
+    },
+    "SeaDiveVerifyExitTank1": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸1_主页面编号.png",
+        "roi": [
+            40,
+            32,
+            45,
+            48
+        ],
+        "threshold": 0.85,
+        "action": "DoNothing",
+        "next": [
+            "SeaDiveVerifyMainTank1"
         ]
     },
     "SeaDiveSelectTank1": {

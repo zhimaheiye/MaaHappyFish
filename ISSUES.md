@@ -4,6 +4,8 @@
 
 ## 当前待修复
 
+- 2026-10-15 15:36:54 MFAAvalonia 以 BEX64 退出，故障模块 `ucrtbase.dll`，异常码 `0xc0000409`。GUI 最后一条业务日志是 15:32:53 巡检正常完成，两路框架日志在崩溃同一秒停止。同日 19:24 海獭按设计在推荐玩家边界安全 FAILED，且未增加今日次数；约 19:24:24 起 GUI 与内存心跳停止，19:51:13 记录 Application Hang（事件 1002，pid 10252）。该时段没有 System 事件 2004，不能写成内存耗尽；19:53:46 人工重启后进程恢复。这两次都属于预编译客户端／原生运行时，本仓库不新增 Pipeline 绕过。见 `docs/features/patrol.md`、`docs/features/sea-otter-gem.md`。
+
 - 2026-10-12 11:36 好友摸宝序号 226 的“下一位”箭头持续约 22 秒未识别，宿主巡检失败。该瞬间没有游戏截图，不能断定列表终点、被其它页面遮挡还是模板瞬时失效。现有代码已改为明确 ERROR／FAILED，不把未知页当成已完成；待同次截图与 OCR、模板最高分后再决定是否存在可安全收尾路径。见 `docs/features/friend-gem.md`。
 
 - 2026-10-12 18:41 Agent 子进程意外退出，18:42 巡检 Custom 失败出口跨进程调用只有 Starting 无结束；19:39 重新点“开始任务”后截屏亦卡住。现有证据同时有 MuMu `get_display_id` 长时间自旋，但没有 Agent 退出码、崩溃转储或 MuMu 服务侧日志，不能归因到 Python Action。MFAAvalonia／MaaFramework 属预编译组件，本仓库不能修进程重建或 Custom RPC 超时；需上游/自有客户端及同次系统日志取证，不能用 `StopTask` 伪装业务失败。见 `docs/features/patrol.md`。

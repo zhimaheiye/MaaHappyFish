@@ -1,6 +1,10 @@
 # 乐队鱼演出自动化 (docs/features/band-fish.md)
 
-**最后更新**: 2026-10-09
+**最后更新**: 2026-10-16
+
+## 2026-10-16 入口未确认改为真实失败
+
+2026-10-15 19:10:42–19:11:10，资源版本 v0.7.10 的日常收尾打印「点击入口后未确认演出页面，安全停止」，随后 `[Worker][op=StopTask] 停止前状态：SUCCEEDED`，界面没有「任务失败」。同一日志窗口没有乐队鱼节点的识别分数，不能据此加盲点重试。`BandFishNavigationFailed` 现为无 `next`／`on_error` 的 `FailTaskAction`，Focus 走 `Node.Action.Failed`。入口仍只点当帧命中框中心。代码级验证完成，本次未运行 MFA／模拟器。19:11:35 人工重新开始后的成功场次，以及 22:58 完整演出，不作为这次出口修复的实机通过证据。网络断线弹窗仍按既有待办处理，不自动重试。
 
 ## 2026-10-08 网络断线提示中断演出
 
@@ -14,7 +18,7 @@
 
 2026-10-01 16:08:58 原始流转记录中，`BandFishEnterFromGrid` 模板命中 `[561,423,60,60]`（约 0.94），实际触摸为 `(613,424)`，离中心 `(591,453)` 36.4px，落在圆形按钮外的图像边角。随后页面仍是游乐园，演出状态 OCR 未命中。历史 17 个样本中有 3 个同类边角失败；这解释了有时成功、有时失败，入口模板无需重截。
 
-`BandFishStartAtTank`、`BandFishStartAtAmusementGrid` 和 `BandFishEnterFromGrid` 保留原页面模板/ROI，改用 `ClickRecognizedCenterAction`，只点击当帧有效命中框中心。无效框、触摸失败或停止请求不追加点击；`BandFishStatusRouter` 12 秒仍无法确认演出状态则显式 ERROR/StopTask。原有最深阶段优先、邀请目标、选曲及付费返场门禁保持原契约。
+`BandFishStartAtTank`、`BandFishStartAtAmusementGrid` 和 `BandFishEnterFromGrid` 保留原页面模板/ROI，改用 `ClickRecognizedCenterAction`，只点击当帧有效命中框中心。无效框、触摸失败或停止请求不追加点击；`BandFishStatusRouter` 12 秒仍无法确认演出状态则进入 `BandFishNavigationFailed`。该节点自 2026-10-16 起为 `FailTaskAction`，不再使用会记成成功的 `StopTask`。原有最深阶段优先、邀请目标、选曲及付费返场门禁保持原契约。
 
 `dev/test_desktop_incidents.py` 验证真实 Maa `Rect` 的中心落点、无效框及停止；邀请、PENDING、选曲、结算和启动恢复专项通过，Pipeline 正则/原生资源加载、注册引用与编译代码级通过。本次未做 MFA/模拟器测试。已完成报告摘要迁入本节，临时报告目录 `台式机报错调查报告（待修复）/乐队鱼日常收尾故障_20261001` 本轮已核对不存在；原始长期日志及正式模板不动。
 
