@@ -1,17 +1,14 @@
 # Project Status
 
 ## 当前正式版
-- 版本：v0.7.9
-- commit：v0.7.9
-- 发布时间：2026-10-13
-- 发布页：https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.9
-- 资产：`MaaHappyFish-win-x86_64-v0.7.9.zip`、`MaaHappyFish-win-aarch64-v0.7.9.zip`，均已 uploaded，不是预发布。
+- 版本：v0.7.10
+- commit：v0.7.10
+- 发布时间：2026-10-15
+- 发布页：https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.10
+- 资产：`MaaHappyFish-win-x86_64-v0.7.10.zip`、`MaaHappyFish-win-aarch64-v0.7.10.zip`，均已 uploaded，不是预发布。
 
 ## 尚未正式发布
-- 2026-10-13 按用户确认保留 MFAAvalonia“前项 FAILED 后继续队列”，供重复任务尝试接手；该行为不再列作客户端待修复。多鱼缸巡检新任务现从已识别 2/3 缸原地继续，已勾选的魔力召唤／宝石融合可从已知页面接手；冷启动有界等待公告／进游戏入口。正常定时新周期另走归一鱼缸 1 的完整路线。未知或缺上下文页面仍真实失败；仅代码级验证，未做 MFA／MuMu 队列接力实测，未发布。
-- 2026-10-13 已从双仓库拉取并分析当天 10 份值守包。针对 v0.7.9 冷启动闪屏期 20 秒超时、巡检切缸与海星页签校验窗口过短、宝石融合 DirectHit 即时假成功停摆，完成有界等待、视觉门禁下单次重试和真实失败出口；同结构的日常魔力召唤入口也消除即时假成功。当前仅代码级验证，尚未发布或实机复测。详见 `docs/features/patrol.md`。
-- 2026-10-13 深海寻鱼新增默认关闭的日常收尾子项，复用已有独立入口：每日只用最多两次免费机会、选 100 米后立即返航、不探寻、不点 `x12` 付费按钮，回主鱼缸后才推进日常队列；未知态真实失败。`happyfishagent` 素材已确认存在并同步至 `280cec3`。仅代码级验证，未做 MFA／模拟器实测，未打包发布。
-- 2026-10-13 从早期工作树移植限时活动接管包 Action 和测试，尚未接入正式 Pipeline；离线测试与编译通过，未做 MFA／模拟器实测。详见 `docs/features/activity-takeover.md`。正式版仍为 v0.7.9；其它待取证问题见 `ISSUES.md`。
+- 暂无。
 
 ## 台式机当前运行
 - 来源：
@@ -19,6 +16,7 @@
 - 最近同步：
 
 ## 当前说明
+- 2026-10-15 v0.7.10 已发布：包含失败后重复巡检接手、冷启动／切缸／海星点击有界复核、宝石融合与日常魔力召唤真实失败出口、深海寻鱼免费日常入口；限时活动接管包仅注册未接入正式任务。标签 CI `38689368095` 全绿，x64 embedded Python／Agent 冒烟通过，两个 Windows ZIP 已上传。代码级验证完成，本版未做 MFA／MuMu 实测；Android `lmkd` 杀游戏进程与外部值守器误报仍是独立环境／外部组件事项，见 `docs/features/patrol.md`、`ISSUES.md`。
 - 2026-10-09 两仓已同步至处理前最新 main，12 份新值守包交叉取证。10 月 8 日海獭 LEFT 边界仍缺全部体力正证据，网络断线演出不安全自动重试；MuMu 摇晃单次 RPC 超时和 10 月 7 日截屏短暂失败没有可证实的 Python 根因。当前修复范围、验证和待自然复测入口见 `docs/handoff/CURRENT.md` 与对应功能文档；本轮未做 MFA／模拟器测试。
 - 2026-10-07 已拉取 `happyfishgame` 与 `happyfishagent` 最新 `main`，复核 6 份新值守证据包。v0.7.7 手动鱼食漏识别已由 v0.7.8 修复并在后续日志中命中；窗口缺失、手动停止等归为环境/操作状态。当前代码修复了 Focus 文案含半角 `/` 引发的文件解析噪声，并移除金海豚次数耗尽分支无效的可选 RapidOCR 探测。MFAAvalonia 临时目录 `AccessDenied` 属预编译原生客户端非阻断问题，仍登记待上游处理。完成代码级验证，本次未做 MFA/模拟器测试。
 - 2026-10-06 修复 2026-10-05 三起值守：好友摸宝非好友文案误点绿色勾选、宝石礼盒入口超时拖垮多鱼缸巡检、鱼宝手动停止被写成牛奶门禁失败。代码级验证完成，本次未做 MFA/模拟器测试。已包含在 v0.7.8。证据与边界见 `docs/features/friend-gem.md`、`gem-gift-box.md`、`fish-baby-hatch.md` 和 `docs/handoff/CURRENT.md`。
