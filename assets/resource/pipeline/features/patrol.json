@@ -109,6 +109,7 @@
     "PatrolStartRouter": {
         "recognition": "DirectHit",
         "action": "DoNothing",
+        "timeout": 60000,
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -118,14 +119,217 @@
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolStartAtFoodPopupAbort",
+            "PatrolStartAtGemFusion",
+            "PatrolStartAtMagicSummon",
             "PatrolStartAtUniversalStarfish",
             "PatrolStartAtManagement",
             "PatrolStartAtPicker",
             "PatrolStartAtTank1",
             "PatrolStartAtTank2",
             "PatrolStartAtTank3",
-            "PatrolAbortUnknownPage"
+            "PatrolStartAtAnnouncement",
+            "PatrolStartAtEnterGame"
+        ],
+        "on_error": ["PatrolAbortUnknownPage"]
+    },
+    "PatrolStartAtGemFusion": {
+        "enabled": false,
+        "recognition": "Or",
+        "any_of": ["PatrolGemFusionRewardIdentity", "PatrolGemFusionVerifyPage"],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolGemFusionPageRouter"
         ]
+    },
+    "PatrolGemFusionRewardIdentity": {
+        "recognition": "And",
+        "all_of": ["PatrolGemFusionPutInStorage", "PatrolGemFusionConfirmPutInStorage"],
+        "action": "DoNothing"
+    },
+    "PatrolStartAtMagicSummon": {
+        "enabled": false,
+        "recognition": "OCR",
+        "expected": "魔力\\s*召唤|魔力|召唤",
+        "roi": [468, 0, 345, 146],
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolMagicVerifyPage"
+        ]
+    },
+    "PatrolStartAtAnnouncement": {
+        "recognition": "TemplateMatch",
+        "template": "关闭公告.png",
+        "threshold": 0.8,
+        "max_hit": 1,
+        "action": "Click",
+        "post_delay": 300,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolStartRouter"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolStartAtEnterGame": {
+        "recognition": "TemplateMatch",
+        "template": "进入游戏.png",
+        "threshold": 0.8,
+        "max_hit": 1,
+        "action": "Click",
+        "post_delay": 800,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolStartRouter"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolCycleStartRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolStartAtPicker",
+            "PatrolStartAtTank1",
+            "PatrolCycleResetTank2",
+            "PatrolCycleResetTank3"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolCycleResetTank2": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolSelectTank1FromPicker"
+        ],
+        "on_error": ["PatrolCycleResetTank2RetryRouter"]
+    },
+    "PatrolCycleResetTank2RetryRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 1500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolCycleResetTank2RetryClick"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolCycleResetTank2RetryClick": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸2_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolSelectTank1FromPicker"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolCycleResetTank3": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolSelectTank1FromPicker"
+        ],
+        "on_error": ["PatrolCycleResetTank3RetryRouter"]
+    },
+    "PatrolCycleResetTank3RetryRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 1500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolCycleResetTank3RetryClick"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolCycleResetTank3RetryClick": {
+        "recognition": "TemplateMatch",
+        "template": "patrol/鱼缸3_主页面编号.png",
+        "threshold": 0.85,
+        "roi": [40, 32, 45, 48],
+        "action": "Click",
+        "post_delay": 800,
+        "timeout": 5000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "[JumpBack]PatrolShellEntryMisTouchPopup",
+            "[JumpBack]PatrolShellPagePopup",
+            "PatrolSelectTank1FromPicker"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolStartAtFoodPopupAbort": {
         "recognition": "OCR",
@@ -240,54 +444,9 @@
             45,
             48
         ],
-        "action": "Click",
-        "post_delay": 800,
-        "timeout": 5000,
-        "focus": {
-            "Node.Action.Succeeded": "[巡检] 已点击鱼缸 2 编号，正在等待鱼缸选择器。"
-        },
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "[JumpBack]PatrolShellEntryMisTouchPopup",
-            "[JumpBack]PatrolShellPagePopup",
-            "PatrolSelectTank1FromPicker"
-        ],
-        "on_error": [
-            "PatrolStartTank2PickerRetry"
-        ]
-    },
-    "PatrolStartTank2PickerRetry": {
-        "recognition": "DirectHit",
         "action": "DoNothing",
-        "timeout": 1500,
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "[JumpBack]PatrolShellEntryMisTouchPopup",
-            "[JumpBack]PatrolShellPagePopup",
-            "PatrolStartTank2PickerClick"
-        ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
-    },
-    "PatrolStartTank2PickerClick": {
-        "recognition": "TemplateMatch",
-        "template": "patrol/鱼缸2_主页面编号.png",
-        "threshold": 0.85,
-        "roi": [40, 32, 45, 48],
-        "action": "Click",
-        "post_delay": 800,
-        "timeout": 5000,
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼缸选择器未出现，再次点击鱼缸 2 编号。"
+            "Node.Action.Succeeded": "[巡检] 已确认当前位于鱼缸 2，从本缸继续检查产物。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -297,10 +456,7 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
-            "PatrolSelectTank1FromPicker"
-        ],
-        "on_error": [
-            "PatrolAbortNavigation"
+            "PatrolCollectTank2"
         ]
     },
     "PatrolStartAtTank3": {
@@ -313,54 +469,9 @@
             45,
             48
         ],
-        "action": "Click",
-        "post_delay": 800,
-        "timeout": 5000,
-        "focus": {
-            "Node.Action.Succeeded": "[巡检] 已点击鱼缸 3 编号，正在等待鱼缸选择器。"
-        },
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "[JumpBack]PatrolShellEntryMisTouchPopup",
-            "[JumpBack]PatrolShellPagePopup",
-            "PatrolSelectTank1FromPicker"
-        ],
-        "on_error": [
-            "PatrolStartTank3PickerRetry"
-        ]
-    },
-    "PatrolStartTank3PickerRetry": {
-        "recognition": "DirectHit",
         "action": "DoNothing",
-        "timeout": 1500,
-        "next": [
-            "[JumpBack]GlobalActivityPagePopup",
-            "[JumpBack]GlobalDailySignPopup",
-            "[JumpBack]GlobalSpecialOfferPopup",
-            "[JumpBack]GlobalNewsPopup",
-            "[JumpBack]GlobalLevelUpPopup",
-            "[JumpBack]PatrolShellEntryMisTouchPopup",
-            "[JumpBack]PatrolShellPagePopup",
-            "PatrolStartTank3PickerClick"
-        ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
-    },
-    "PatrolStartTank3PickerClick": {
-        "recognition": "TemplateMatch",
-        "template": "patrol/鱼缸3_主页面编号.png",
-        "threshold": 0.85,
-        "roi": [40, 32, 45, 48],
-        "action": "Click",
-        "post_delay": 800,
-        "timeout": 5000,
         "focus": {
-            "Node.Action.Succeeded": "[巡检] 鱼缸选择器未出现，再次点击鱼缸 3 编号。"
+            "Node.Action.Succeeded": "[巡检] 已确认当前位于鱼缸 3，从本缸继续检查产物。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -370,10 +481,7 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
-            "PatrolSelectTank1FromPicker"
-        ],
-        "on_error": [
-            "PatrolAbortNavigation"
+            "PatrolCollectTank3"
         ]
     },
     "PatrolSelectTank1FromPicker": {
@@ -1411,7 +1519,7 @@
         ],
         "action": "Click",
         "post_delay": 1600,
-        "timeout": 3500,
+        "timeout": 8000,
         "focus": {
             "Node.Action.Succeeded": "[巡检] 已点击海星入口，准备从萌海星开始补充鱼食。"
         },
@@ -1425,9 +1533,54 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolSelectCuteStarfishTab"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryOpenUniversalStarfishRouter"]
+    },
+    "PatrolRetryOpenUniversalStarfishRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolSelectCuteStarfishTab",
+            "PatrolRetryOpenUniversalStarfishFromManagement"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolManagementPageIdentity": {
+        "recognition": "OCR",
+        "expected": "鱼缸",
+        "roi": [180, 0, 230, 90],
+        "action": "DoNothing"
+    },
+    "PatrolStarfishCardIdentity": {
+        "recognition": "OCR",
+        "expected": "海星",
+        "roi": [80, 190, 1120, 510],
+        "action": "DoNothing"
+    },
+    "PatrolRetryOpenUniversalStarfishFromManagement": {
+        "recognition": "And",
+        "all_of": ["PatrolManagementPageIdentity", "PatrolStarfishCardIdentity"],
+        "box_index": 1,
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 8000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 仍在鱼缸管理页，已重新点击海星卡片一次。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolSelectCuteStarfishTab"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolSelectCuteStarfishTab": {
         "recognition": "OCR",
@@ -1528,7 +1681,7 @@
         ],
         "action": "Click",
         "post_delay": 1600,
-        "timeout": 3500,
+        "timeout": 7000,
         "focus": {
             "Node.Action.Succeeded": "[巡检-萌海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
         },
@@ -1542,9 +1695,52 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteFoodRouter"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryCuteReplenishRouter"]
+    },
+    "PatrolRetryCuteReplenishRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolCuteFoodRouter",
+            "PatrolRetryCuteReplenishFromPage"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolCuteReplenishPageIdentity": {
+        "recognition": "OCR",
+        "expected": "萌海星",
+        "roi": [330, 140, 420, 130],
+        "action": "DoNothing"
+    },
+    "PatrolCuteReplenishButtonIdentity": {
+        "recognition": "OCR",
+        "expected": "补充",
+        "roi": [880, 250, 300, 120],
+        "action": "DoNothing"
+    },
+    "PatrolRetryCuteReplenishFromPage": {
+        "recognition": "And",
+        "all_of": ["PatrolCuteReplenishPageIdentity", "PatrolCuteReplenishButtonIdentity"],
+        "box_index": 1,
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 7000,
+        "focus": {"Node.Action.Succeeded": "[巡检-萌海星] 仍在萌海星页，已重新点击补充一次。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolCuteFoodRouter"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolCuteFoodRouter": {
         "recognition": "OCR",
@@ -1724,7 +1920,7 @@
         ],
         "action": "Click",
         "post_delay": 1600,
-        "timeout": 3500,
+        "timeout": 7000,
         "focus": {
             "Node.Action.Succeeded": "[巡检-乖海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
         },
@@ -1738,9 +1934,52 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodFoodRouter"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryGoodReplenishRouter"]
+    },
+    "PatrolRetryGoodReplenishRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolGoodFoodRouter",
+            "PatrolRetryGoodReplenishFromPage"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolGoodReplenishPageIdentity": {
+        "recognition": "OCR",
+        "expected": "乖海星",
+        "roi": [330, 140, 420, 130],
+        "action": "DoNothing"
+    },
+    "PatrolGoodReplenishButtonIdentity": {
+        "recognition": "OCR",
+        "expected": "补充",
+        "roi": [880, 250, 300, 120],
+        "action": "DoNothing"
+    },
+    "PatrolRetryGoodReplenishFromPage": {
+        "recognition": "And",
+        "all_of": ["PatrolGoodReplenishPageIdentity", "PatrolGoodReplenishButtonIdentity"],
+        "box_index": 1,
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 7000,
+        "focus": {"Node.Action.Succeeded": "[巡检-乖海星] 仍在乖海星页，已重新点击补充一次。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolGoodFoodRouter"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolGoodFoodRouter": {
         "recognition": "OCR",
@@ -1920,7 +2159,7 @@
         ],
         "action": "Click",
         "post_delay": 1600,
-        "timeout": 3500,
+        "timeout": 7000,
         "focus": {
             "Node.Action.Succeeded": "[巡检-亮海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。"
         },
@@ -1934,9 +2173,52 @@
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightFoodRouter"
         ],
-        "on_error": [
-            "PatrolAbortNavigation"
-        ]
+        "on_error": ["PatrolRetryBrightReplenishRouter"]
+    },
+    "PatrolRetryBrightReplenishRouter": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 2500,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolBrightFoodRouter",
+            "PatrolRetryBrightReplenishFromPage"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolBrightReplenishPageIdentity": {
+        "recognition": "OCR",
+        "expected": "亮海星",
+        "roi": [330, 140, 420, 130],
+        "action": "DoNothing"
+    },
+    "PatrolBrightReplenishButtonIdentity": {
+        "recognition": "OCR",
+        "expected": "补充",
+        "roi": [880, 250, 300, 120],
+        "action": "DoNothing"
+    },
+    "PatrolRetryBrightReplenishFromPage": {
+        "recognition": "And",
+        "all_of": ["PatrolBrightReplenishPageIdentity", "PatrolBrightReplenishButtonIdentity"],
+        "box_index": 1,
+        "action": "Click",
+        "post_delay": 1600,
+        "timeout": 7000,
+        "focus": {"Node.Action.Succeeded": "[巡检-亮海星] 仍在亮海星页，已重新点击补充一次。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolBrightFoodRouter"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolBrightFoodRouter": {
         "recognition": "OCR",
@@ -2250,7 +2532,7 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
-            "PatrolStartRouter"
+            "PatrolCycleStartRouter"
         ],
         "on_error": [
             "PatrolWaitLoop"
@@ -2293,9 +2575,9 @@
         "recognition": "DirectHit",
         "action": "Custom",
         "custom_action": "FailTaskAction",
-        "custom_action_param": {"message": "[巡检] ERROR: 未识别到已支持页面，已安全停止。"},
+        "custom_action_param": {"message": "[巡检] ERROR: 60 秒内未识别到已支持页面，已安全停止。"},
         "focus": {
-            "Node.Action.Failed": "[巡检] 未识别到鱼缸、鱼缸选择器或鱼缸管理页，已安全停止。"
+            "Node.Action.Failed": "[巡检] 60 秒内未识别到可接手页面，已安全停止。"
         }
     },
     "PatrolAbortNavigation": {

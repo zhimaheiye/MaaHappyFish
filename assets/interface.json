@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.7.9",
+    "version": "0.7.10",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -127,7 +127,7 @@
             "name": "多鱼缸巡检",
             "entry": "PatrolTask",
             "default_check": false,
-            "description": "首轮立即依次巡检 1/2/3 鱼缸收宝并为三缸海星补充鱼食；可选每小时检查魔力召唤和宝石融合。可选到点插入十二点日常收尾、十点/二十二点好友摸宝。",
+            "description": "从当前已识别的鱼缸、选择器、管理页或海星页接手巡检；在鱼缸 2/3 启动不再重跑鱼缸 1。冷启动最多等 60 秒识别入口；未知页安全失败。可选每小时检查魔力召唤和宝石融合，勾选后也支持从对应已知页面接手；可选到点插入十二点日常收尾、十点/二十二点好友摸宝。",
             "option": [
                 "多鱼缸巡检间隔",
                 "多鱼缸巡检子任务",
@@ -2080,6 +2080,9 @@
                     "pipeline_override": {
                         "PatrolMagicSummonDue": {
                             "enabled": true
+                        },
+                        "PatrolStartAtMagicSummon": {
+                            "enabled": true
                         }
                     }
                 },
@@ -2087,6 +2090,9 @@
                     "name": "宝石融合",
                     "pipeline_override": {
                         "PatrolGemFusionDue": {
+                            "enabled": true
+                        },
+                        "PatrolStartAtGemFusion": {
                             "enabled": true
                         }
                     }

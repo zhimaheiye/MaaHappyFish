@@ -75,7 +75,16 @@ class PatrolPipelineTest(unittest.TestCase):
     def test_clicks_are_guarded_by_visual_recognition(self):
         for name, node in self.pipeline.items():
             if node.get("action") == "Click":
-                self.assertIn(node.get("recognition"), {"OCR", "TemplateMatch"}, name)
+                if node.get("recognition") == "And":
+                    self.assertTrue(node.get("all_of"), name)
+                    for identity in node["all_of"]:
+                        self.assertIn(
+                            self.pipeline[identity]["recognition"],
+                            {"OCR", "TemplateMatch"},
+                            name,
+                        )
+                else:
+                    self.assertIn(node.get("recognition"), {"OCR", "TemplateMatch"}, name)
                 self.assertNotIn("target", node, name)
 
     def test_open_shell_page_is_verified_before_clicking_return(self):
@@ -291,28 +300,81 @@ class PatrolPipelineTest(unittest.TestCase):
             self.assertIn("[JumpBack]PatrolShellPagePopup", reverse_sweep["next"])
 
     def test_start_router_supports_known_resume_stages(self):
-        next_nodes = self.pipeline["PatrolStartRouter"]["next"]
+        router = self.pipeline["PatrolStartRouter"]
+        next_nodes = router["next"]
         for node in (
             "PatrolStartAtFoodPopupAbort",
+            "PatrolStartAtGemFusion",
+            "PatrolStartAtMagicSummon",
             "PatrolStartAtUniversalStarfish",
             "PatrolStartAtManagement",
             "PatrolStartAtPicker",
             "PatrolStartAtTank1",
             "PatrolStartAtTank2",
             "PatrolStartAtTank3",
+            "PatrolStartAtAnnouncement",
+            "PatrolStartAtEnterGame",
         ):
             self.assertIn(node, next_nodes)
+        self.assertEqual(router["timeout"], 60000)
+        self.assertEqual(router["on_error"], ["PatrolAbortUnknownPage"])
+        self.assertNotIn("PatrolAbortUnknownPage", next_nodes)
+        self.assertLess(next_nodes.index("PatrolStartAtFoodPopupAbort"), next_nodes.index("PatrolStartAtTank1"))
         for tank in (2, 3):
             start = self.pipeline[f"PatrolStartAtTank{tank}"]
-            self.assertEqual(start["timeout"], 5000)
-            self.assertEqual(start["on_error"], [f"PatrolStartTank{tank}PickerRetry"])
-            retry = self.pipeline[f"PatrolStartTank{tank}PickerRetry"]
-            self.assertEqual(retry["recognition"], "DirectHit")
+            self.assertEqual(start["recognition"], "TemplateMatch")
+            self.assertEqual(start["template"], f"patrol/鱼缸{tank}_主页面编号.png")
+            self.assertEqual(start["action"], "DoNothing")
+            self.assertEqual(business_next(start), [f"PatrolCollectTank{tank}"])
+            self.assertNotIn(f"PatrolStartTank{tank}PickerRetry", self.pipeline)
+
+        self.assertEqual(business_next(self.pipeline["PatrolTimerDue"]), ["PatrolCycleStartRouter"])
+        cycle = self.pipeline["PatrolCycleStartRouter"]
+        self.assertEqual(business_next(cycle), [
+            "PatrolStartAtPicker",
+            "PatrolStartAtTank1",
+            "PatrolCycleResetTank2",
+            "PatrolCycleResetTank3",
+        ])
+        for tank in (2, 3):
+            reset = self.pipeline[f"PatrolCycleResetTank{tank}"]
+            self.assertEqual(reset["template"], f"patrol/鱼缸{tank}_主页面编号.png")
+            self.assertEqual(reset["action"], "Click")
+            self.assertEqual(business_next(reset), ["PatrolSelectTank1FromPicker"])
+            self.assertEqual(reset["on_error"], [f"PatrolCycleResetTank{tank}RetryRouter"])
+            retry_router = self.pipeline[f"PatrolCycleResetTank{tank}RetryRouter"]
+            self.assertEqual(business_next(retry_router), [f"PatrolCycleResetTank{tank}RetryClick"])
+            retry = self.pipeline[f"PatrolCycleResetTank{tank}RetryClick"]
+            self.assertEqual(retry["template"], reset["template"])
+            self.assertEqual(business_next(retry), ["PatrolSelectTank1FromPicker"])
             self.assertEqual(retry["on_error"], ["PatrolAbortNavigation"])
-            click = self.pipeline[f"PatrolStartTank{tank}PickerClick"]
-            self.assertEqual(click["template"], f"patrol/鱼缸{tank}_主页面编号.png")
-            self.assertIn("PatrolSelectTank1FromPicker", click["next"])
-            self.assertEqual(click["on_error"], ["PatrolAbortNavigation"])
+
+        for name, template in (("Announcement", "关闭公告.png"), ("EnterGame", "进入游戏.png")):
+            boot = self.pipeline[f"PatrolStartAt{name}"]
+            self.assertEqual(boot["template"], template)
+            self.assertEqual(boot["action"], "Click")
+            self.assertEqual(boot["max_hit"], 1)
+            self.assertEqual(business_next(boot), ["PatrolStartRouter"])
+
+        magic = self.pipeline["PatrolStartAtMagicSummon"]
+        gem = self.pipeline["PatrolStartAtGemFusion"]
+        self.assertFalse(magic["enabled"])
+        self.assertFalse(gem["enabled"])
+        self.assertEqual(business_next(magic), ["PatrolMagicVerifyPage"])
+        self.assertEqual(business_next(gem), ["PatrolGemFusionPageRouter"])
+        self.assertEqual(gem["any_of"], ["PatrolGemFusionRewardIdentity", "PatrolGemFusionVerifyPage"])
+        self.assertEqual(
+            self.pipeline["PatrolGemFusionRewardIdentity"]["all_of"],
+            ["PatrolGemFusionPutInStorage", "PatrolGemFusionConfirmPutInStorage"],
+        )
+        with open(INTERFACE_PATHS[0], "r", encoding="utf-8") as file:
+            interface = json.load(file)
+        for case in interface["option"]["多鱼缸巡检子任务"]["cases"]:
+            overrides = case["pipeline_override"]
+            if case["name"] == "魔力召唤":
+                self.assertTrue(overrides["PatrolStartAtMagicSummon"]["enabled"])
+            elif case["name"] == "宝石融合":
+                self.assertTrue(overrides["PatrolStartAtGemFusion"]["enabled"])
 
     def test_each_tank_uses_a_30_second_inactivity_window(self):
         for tank in (1, 2, 3):
@@ -415,6 +477,25 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(entry["recognition"], "OCR")
         self.assertEqual(entry["expected"], "海星")
         self.assertEqual(entry["action"], "Click")
+        self.assertEqual(entry["timeout"], 8000)
+        self.assertEqual(entry["on_error"], ["PatrolRetryOpenUniversalStarfishRouter"])
+        retry_router = self.pipeline["PatrolRetryOpenUniversalStarfishRouter"]
+        self.assertEqual(
+            business_next(retry_router),
+            ["PatrolSelectCuteStarfishTab", "PatrolRetryOpenUniversalStarfishFromManagement"],
+        )
+        self.assertEqual(retry_router["on_error"], ["PatrolAbortNavigation"])
+        retry_click = self.pipeline["PatrolRetryOpenUniversalStarfishFromManagement"]
+        self.assertEqual(retry_click["recognition"], "And")
+        self.assertEqual(
+            retry_click["all_of"],
+            ["PatrolManagementPageIdentity", "PatrolStarfishCardIdentity"],
+        )
+        self.assertEqual(retry_click["box_index"], 1)
+        self.assertEqual(retry_click["action"], "Click")
+        self.assertNotIn("target", retry_click)
+        self.assertEqual(business_next(retry_click), ["PatrolSelectCuteStarfishTab"])
+        self.assertEqual(retry_click["on_error"], ["PatrolAbortNavigation"])
 
         for key, label in (
             ("Cute", "萌海星"),
@@ -436,7 +517,43 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertTrue(old_management_nodes.isdisjoint(self.pipeline))
 
     def test_each_starfish_chooses_food_from_the_actual_popup(self):
-        for key in ("Cute", "Good", "Bright"):
+        for key, label in (
+            ("Cute", "萌海星"),
+            ("Good", "乖海星"),
+            ("Bright", "亮海星"),
+        ):
+            verify = self.pipeline[f"PatrolVerify{key}Starfish"]
+            self.assertEqual(business_next(verify), [f"Patrol{key}Replenish"])
+            self.assertNotIn(f"Patrol{key}AlreadyFull", self.pipeline)
+            replenish = self.pipeline[f"Patrol{key}Replenish"]
+            self.assertEqual(replenish["on_error"], [f"PatrolRetry{key}ReplenishRouter"])
+            self.assertGreater(
+                replenish["timeout"],
+                replenish["post_delay"] + self.pipeline[f"Patrol{key}FoodRouter"]["timeout"],
+            )
+            retry_router = self.pipeline[f"PatrolRetry{key}ReplenishRouter"]
+            self.assertEqual(
+                business_next(retry_router),
+                [f"Patrol{key}FoodRouter", f"PatrolRetry{key}ReplenishFromPage"],
+            )
+            self.assertEqual(retry_router["on_error"], ["PatrolAbortNavigation"])
+            page = self.pipeline[f"Patrol{key}ReplenishPageIdentity"]
+            self.assertEqual(page["expected"], label)
+            self.assertEqual(page["roi"], [330, 140, 420, 130])
+            button = self.pipeline[f"Patrol{key}ReplenishButtonIdentity"]
+            self.assertEqual(button["expected"], "补充")
+            self.assertEqual(button["roi"], [880, 250, 300, 120])
+            retry_click = self.pipeline[f"PatrolRetry{key}ReplenishFromPage"]
+            self.assertEqual(retry_click["recognition"], "And")
+            self.assertEqual(
+                retry_click["all_of"],
+                [f"Patrol{key}ReplenishPageIdentity", f"Patrol{key}ReplenishButtonIdentity"],
+            )
+            self.assertEqual(retry_click["box_index"], 1)
+            self.assertEqual(retry_click["action"], "Click")
+            self.assertNotIn("target", retry_click)
+            self.assertEqual(business_next(retry_click), [f"Patrol{key}FoodRouter"])
+            self.assertEqual(retry_click["on_error"], ["PatrolAbortNavigation"])
             router = self.pipeline[f"Patrol{key}FoodRouter"]
             self.assertEqual(router["recognition"], "OCR")
             self.assertEqual(router["expected"], "选择喂食")
