@@ -24,15 +24,17 @@ def load_pipeline():
 
 
 def test_free_state_router_three_way_split():
-    """Case: FreeStateRouter 必须按 PAID → FREE → UNKNOWN 顺序分流。"""
+    """Case: FreeStateRouter 先等付费态或免费角标，未知态只在超时后失败。"""
     p = load_pipeline()
     router = p["SeaDiveFreeStateRouter"]
     assert router["recognition"] == "DirectHit"
+    assert router["timeout"] == 8000
     assert router["next"] == [
         "SeaDivePaidState",
         "SeaDiveFreeAvailable",
-        "SeaDiveUnknownState",
-    ], "顺序必须是先试付费态，再试免费态，最后兜底停止"
+    ], "同一轮只等待付费态和免费角标"
+    assert "SeaDiveUnknownState" not in router["next"]
+    assert router["on_error"] == ["SeaDiveUnknownState"]
 
 
 def test_start_router_recovers_deepest_state_first():
@@ -96,27 +98,12 @@ def test_full_free_cycle_topology():
     """Case: FREE → DepthSelect → 100m → InGame → Return → Result → LeftReturn → Retention → Confirm → Home → loop."""
     p = load_pipeline()
 
-    # FREE button click → depth select；未进入时只允许角标仍在时再点一次
+    # 免费按钮只点一次，点完只等深度页
     assert p["SeaDiveClickFreeButton"]["next"] == ["SeaDiveDepthSelectPage"]
-    assert p["SeaDiveClickFreeButton"]["on_error"] == ["SeaDiveFreeClickMissed"]
-    missed = p["SeaDiveFreeClickMissed"]
-    assert missed["recognition"] == "DirectHit"
-    assert missed["timeout"] == 4000
-    assert missed["next"] == ["SeaDiveDepthSelectPage", "SeaDiveFreeRetryGate"]
-    assert "SeaDiveAbortUnknownPage" not in missed["next"]
-    assert missed["on_error"] == ["SeaDiveAbortUnknownPage"]
-    retry = p["SeaDiveFreeRetryGate"]
-    assert retry["template"].endswith("free_badge.png")
-    assert retry["action"] == "DoNothing"
-    assert retry["next"] == ["SeaDiveClickFreeButtonOnce"]
-    assert retry["on_error"] == ["SeaDiveAbortUnknownPage"]
-    once = p["SeaDiveClickFreeButtonOnce"]
-    assert once["action"] == "Click"
-    assert once["expected"] == "深海寻鱼"
-    assert once["next"] == ["SeaDiveDepthSelectPage"]
-    assert once["on_error"] == ["SeaDiveAbortUnknownPage"]
-    assert "SeaDiveClickFreeButton" not in once["next"]
-    assert "SeaDiveFreeClickMissed" not in once.get("on_error", [])
+    assert p["SeaDiveClickFreeButton"]["on_error"] == ["SeaDiveAbortUnknownPage"]
+    assert "SeaDiveFreeClickMissed" not in p
+    assert "SeaDiveFreeRetryGate" not in p
+    assert "SeaDiveClickFreeButtonOnce" not in p
 
     # Depth select page gate → choose 100m
     assert p["SeaDiveDepthSelectPage"]["recognition"] == "OCR"
@@ -177,6 +164,7 @@ def test_cycle_loops_back_to_state_router():
     p = load_pipeline()
     home_after = p["SeaDiveVerifyHomeAfterCycle"]
     assert home_after["next"] == ["SeaDiveFreeStateRouter"], "完成一轮后必须回到状态路由器自动判断下一轮"
+    assert home_after.get("post_delay", 0) >= 5000, "回到主页后先等结算飘字结束，再判断下一次"
     # 确认没有硬编码循环次数
     click_nodes = [name for name, n in p.items() if n.get("action") == "Click"]
     # 不应该有任何 for 循环逻辑（pipeline 本身就是声明式的）

@@ -163,9 +163,12 @@
     "SeaDiveFreeStateRouter": {
         "recognition": "DirectHit",
         "action": "DoNothing",
+        "timeout": 8000,
         "next": [
             "SeaDivePaidState",
-            "SeaDiveFreeAvailable",
+            "SeaDiveFreeAvailable"
+        ],
+        "on_error": [
             "SeaDiveUnknownState"
         ]
     },
@@ -210,60 +213,6 @@
         "action": "Click",
         "post_delay": 1500,
         "timeout": 5000,
-        "next": [
-            "SeaDiveDepthSelectPage"
-        ],
-        "on_error": [
-            "SeaDiveFreeClickMissed"
-        ]
-    },
-    "SeaDiveFreeClickMissed": {
-        "recognition": "DirectHit",
-        "action": "DoNothing",
-        "timeout": 4000,
-        "next": [
-            "SeaDiveDepthSelectPage",
-            "SeaDiveFreeRetryGate"
-        ],
-        "on_error": [
-            "SeaDiveAbortUnknownPage"
-        ]
-    },
-    "SeaDiveFreeRetryGate": {
-        "recognition": "TemplateMatch",
-        "template": "sea_dive/free_badge.png",
-        "roi": [
-            730,
-            540,
-            70,
-            60
-        ],
-        "threshold": 0.75,
-        "action": "DoNothing",
-        "post_delay": 800,
-        "timeout": 2500,
-        "focus": {
-            "Node.Recognition.Succeeded": "[深海寻鱼] 免费按钮点击后未进入深度选择，免费角标仍在，再点一次。"
-        },
-        "next": [
-            "SeaDiveClickFreeButtonOnce"
-        ],
-        "on_error": [
-            "SeaDiveAbortUnknownPage"
-        ]
-    },
-    "SeaDiveClickFreeButtonOnce": {
-        "recognition": "OCR",
-        "expected": "深海寻鱼",
-        "roi": [
-            530,
-            545,
-            240,
-            70
-        ],
-        "action": "Click",
-        "post_delay": 1500,
-        "timeout": 8000,
         "next": [
             "SeaDiveDepthSelectPage"
         ],
@@ -414,6 +363,7 @@
             115
         ],
         "action": "DoNothing",
+        "post_delay": 5000,
         "next": [
             "SeaDiveFreeStateRouter"
         ]

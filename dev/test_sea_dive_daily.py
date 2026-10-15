@@ -83,7 +83,10 @@ class SeaDiveDailyTest(unittest.TestCase):
 
     def test_paid_and_unknown_never_click_dive(self):
         self.assertEqual(self.dive["SeaDiveFreeStateRouter"]["next"],
-                         ["SeaDivePaidState", "SeaDiveFreeAvailable", "SeaDiveUnknownState"])
+                         ["SeaDivePaidState", "SeaDiveFreeAvailable"])
+        self.assertEqual(self.dive["SeaDiveFreeStateRouter"]["on_error"],
+                         ["SeaDiveUnknownState"])
+        self.assertGreaterEqual(self.dive["SeaDiveVerifyHomeAfterCycle"].get("post_delay", 0), 5000)
         self.assertEqual(self.dive["SeaDivePaidState"]["action"], "DoNothing")
         self.assertEqual(self.dive["SeaDivePaidState"]["next"], ["SeaDiveHomeClose"])
         self.assertEqual(self.dive["SeaDiveFreeAvailable"]["recognition"], "TemplateMatch")
