@@ -1874,10 +1874,15 @@ def _sync_task_id(task_id: int):
         fishing_state["cast_count"] = 0
 
 
-def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start, early_after_sec=3.0) -> bool:
+def _fishing_qte_stopped(context) -> bool:
+    return context is not None and _task_cancelled(context)
+
+
+def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start, early_after_sec=3.0, context=None) -> bool:
     """
     通用咬钩高速监听与收杆触控内核:
     支持 Controller 容错、异常捕获、帧越界裁剪与安全退出。
+    任务已停止时立即返回，不再等待剩余超时，也不再下发收杆。
     """
     time_limit = time.perf_counter() + timeout_sec
     hit_found = False
@@ -1886,6 +1891,9 @@ def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start, early_af
     detection_seconds = 0.0
 
     while time.perf_counter() < time_limit:
+        if _fishing_qte_stopped(context):
+            print("[钓鱼达人QTE] 收到停止信号，停止监听且不再收杆", flush=True)
+            return False
         try:
             capture_start = time.perf_counter()
             job_cap = ctrl.post_screencap()
@@ -1930,6 +1938,9 @@ def _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_start, early_af
             return False
 
         if hit and not hit_found:
+            if _fishing_qte_stopped(context):
+                print("[钓鱼达人QTE] 收到停止信号，停止监听且不再收杆", flush=True)
+                return False
             t_hit = time.perf_counter()
             hit_found = True
             print(
@@ -2000,6 +2011,9 @@ class FishingCastAndBiteQTEAction(CustomAction):
             if not ctrl:
                 print("[钓鱼达人QTE] 错误: 未获取到 Controller", flush=True)
                 return False
+            if _fishing_qte_stopped(context):
+                print("[钓鱼达人QTE] 收到停止信号，未甩杆", flush=True)
+                return False
 
             # 执行单次甩杆
             print(f"[钓鱼达人QTE] 发送甩杆指令 ({btn_x}, {btn_y})...", flush=True)
@@ -2024,7 +2038,9 @@ class FishingCastAndBiteQTEAction(CustomAction):
                 flush=True,
             )
 
-            return _watch_bite_and_reel(ctrl, roi, btn_x, btn_y, timeout_sec, t_cast_done)
+            return _watch_bite_and_reel(
+                ctrl, roi, btn_x, btn_y, timeout_sec, t_cast_done, context=context
+            )
         except Exception as e:
             traceback.print_exc()
             print(f"[钓鱼达人QTE] 运行异常: {e}", flush=True)
@@ -2059,9 +2075,14 @@ class FishingWatchBiteOnlyAction(CustomAction):
                 print("[钓鱼达人中途恢复] 错误: 未获取到 Controller", flush=True)
                 return False
 
+            if _fishing_qte_stopped(context):
+                print("[钓鱼达人QTE] 收到停止信号，停止监听且不再收杆", flush=True)
+                return False
+
             print(f"[钓鱼达人中途恢复] 检测到画面已在等待咬钩中（收杆状态），不重复甩杆，直接进入高速抓帧监听...", flush=True)
             return _watch_bite_and_reel(
-                ctrl, roi, btn_x, btn_y, timeout_sec, time.perf_counter(), early_after_sec=0.0
+                ctrl, roi, btn_x, btn_y, timeout_sec, time.perf_counter(),
+                early_after_sec=0.0, context=context,
             )
         except Exception as e:
             traceback.print_exc()
