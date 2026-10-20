@@ -9,6 +9,7 @@
 
 ## 尚未正式发布
 - 2026-10-16：深海寻鱼在返回主页后静置，再等免费角标或付费按钮，不再补点；乐队鱼入口未确认改为 FailTaskAction。代码级验证完成，未做 MFA／MuMu 实测，尚未发版。见 `docs/features/sea-dive.md`、`docs/features/band-fish.md`。
+- 2026-10-20：每日免费礼包第一次点开加号后先等待「超值礼包」最多 8 秒，不再和仍可见的加号模板抢着第二次点击；超时才再点一次。代码级验证完成，未做 MFA／MuMu 实测，尚未发版。见 `docs/features/daily-routine.md`。
 - 2026-10-18：钓鱼咬钩监听在任务停止后立刻退出，不再收杆。代码级验证完成，未做 MFA／MuMu 实测，尚未发版。见 `docs/features/fishing.md`。
 
 ## 台式机当前运行

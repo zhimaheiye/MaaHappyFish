@@ -179,8 +179,9 @@ def test_pipeline_topology():
     ]
     assert business_next(pdata["DailyFreeGiftTankEntry"]) == [
         "DailyFreeGiftRechargePage",
-        "DailyFreeGiftTankEntryRetry",
     ]
+    assert pdata["DailyFreeGiftTankEntry"]["on_error"] == ["DailyFreeGiftTankEntryRetry"]
+    assert pdata["DailyFreeGiftTankEntry"]["timeout"] == 8000
     entry_retry = pdata["DailyFreeGiftTankEntryRetry"]
     assert entry_retry["recognition"] == "TemplateMatch"
     assert entry_retry["template"] == "充值页面入口.png"
@@ -188,6 +189,8 @@ def test_pipeline_topology():
     assert entry_retry["threshold"] == 0.8
     assert entry_retry["action"] == "Click"
     assert entry_retry["target"] == [652, 48, 6, 6]
+    assert entry_retry["timeout"] == 8000
+    assert entry_retry["on_error"] == ["DailyFreeGiftAbort"]
     assert business_next(entry_retry) == ["DailyFreeGiftRechargePage"]
     print("[PASS] 免费领取/已售罄分支独立，并在识别返回鱼缸后汇合")
 
