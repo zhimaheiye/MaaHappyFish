@@ -127,7 +127,7 @@ PAGE_LOCAL_CHAINS = {
         "SeaDiveInGame", "SeaDiveClickInGameReturn", "SeaDiveResultPage",
         "SeaDiveClickResultReturn", "SeaDiveRetentionWait", "SeaDiveConfirmReturn",
         "SeaDiveVerifyHomeAfterCycle", "SeaDiveHomeClose", "SeaDiveVerifyExitTank3",
-        "SeaDiveSelectTank1",
+        "SeaDiveVerifyExitTank2", "SeaDiveVerifyExitTank1", "SeaDiveSelectTank1",
     },
     "secret_realm_gate.json": {"SecretRealmGateProcessOrder"},
     # Summon/fusion bridges reuse patrol gates; the intentional activity owns
