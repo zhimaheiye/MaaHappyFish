@@ -11,6 +11,7 @@ from maa.toolkit import Toolkit
 
 import my_action
 import my_reco
+from task_lifecycle import DailyTaskLifecycleSink
 
 
 def main():
@@ -30,6 +31,7 @@ def main():
         socket_id = sys.argv[1]
 
     print(f"[Agent] 正在连接主程序 Socket: {socket_id}...", flush=True)
+    AgentServer.add_tasker_sink(DailyTaskLifecycleSink())
     AgentServer.start_up(socket_id)
     print(f"[Agent] 连接成功，自定义动作与巡检识别器已就绪！", flush=True)
     AgentServer.join()

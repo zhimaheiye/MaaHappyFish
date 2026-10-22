@@ -633,6 +633,7 @@
         "on_error": ["PatrolGemFusionAbort"]
     },
     "DailyRoutineStepActivityEnergy": {
+        "enabled": false,
         "recognition": "Custom",
         "custom_recognition": "CheckDailyRoutineStepReco",
         "custom_recognition_param": {"expected_step": "ACTIVITY_ENERGY"},

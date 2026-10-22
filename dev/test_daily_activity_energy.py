@@ -62,22 +62,25 @@ class DailyActivityEnergyTest(unittest.TestCase):
         daily_routine_state.clear()
         daily_routine_state.update(self.saved)
 
-    def test_default_off_and_one_queue_slot(self):
+    def test_hidden_and_old_config_cannot_enqueue_expired_activity(self):
         files = [ROOT / p for p in ("assets/interface.json", "client/interface.json", "client_avalonia/interface.json")]
         self.assertEqual(files[0].read_bytes(), files[1].read_bytes())
         self.assertEqual(files[0].read_bytes(), files[2].read_bytes())
         option = json.loads(files[0].read_text(encoding="utf-8"))["option"]["日常收尾任务"]
         label = "领取活动体力（酿月食香）"
         self.assertNotIn(label, option["default_case"])
-        case = next(c for c in option["cases"] if c["name"] == label)
-        self.assertEqual(case["pipeline_override"], {"DailyRoutineEnableActivityEnergy": {"enabled": True}})
+        self.assertNotIn(label, [case["name"] for case in option["cases"]])
         self.assertFalse(self.pipeline["DailyRoutineEnableActivityEnergy"]["enabled"])
+        self.assertFalse(self.pipeline["DailyRoutineStepActivityEnergy"]["enabled"])
         action = InitDailyRoutineAction()
         self.assertTrue(action.run(Context(), SimpleNamespace(custom_action_param='{"all_enabled":true}')))
         self.assertNotIn("ACTIVITY_ENERGY", [daily_routine_state["step"], *daily_routine_state["queue"]])
         self.assertTrue(action.run(Context(("DailyRoutineEnableActivityEnergy",)), SimpleNamespace(custom_action_param="null")))
-        self.assertEqual(daily_routine_state["step"], "ACTIVITY_ENERGY")
-        self.assertEqual(daily_routine_state["queue"].count("ACTIVITY_ENERGY"), 0)
+        self.assertNotIn("ACTIVITY_ENERGY", [daily_routine_state["step"], *daily_routine_state["queue"]])
+        self.assertTrue(action.run(Context(), SimpleNamespace(custom_action_param='{"activity_energy":true,"free_gift":true}')))
+        self.assertEqual(daily_routine_state["step"], "FREE_GIFT")
+        self.assertNotIn("ACTIVITY_ENERGY", daily_routine_state["queue"])
+        self.assertEqual(daily_routine_state["tasks"]["ActivityEnergy"]["status"], "DISABLED")
 
     def test_page_gates_and_first_card_only(self):
         p = self.pipeline
@@ -122,7 +125,9 @@ class DailyActivityEnergyTest(unittest.TestCase):
 
     def test_complete_only_after_verified_tank(self):
         context = Context()
-        self.assertTrue(InitDailyRoutineAction().run(context, SimpleNamespace(custom_action_param='{"activity_energy":true}')))
+        # Exercise the retained internal completion helper, not a public entry.
+        daily_routine_state.update(active=True, step="ACTIVITY_ENERGY", queue=["FREE_GIFT"],
+                                   tasks={"ActivityEnergy": {"status": "IDLE"}})
         arg = SimpleNamespace(custom_action_param=json.dumps(
             self.pipeline["DailyActivityEnergyVerifyTank"]["custom_action_param"]
         ))

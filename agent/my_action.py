@@ -88,6 +88,13 @@ except ImportError:
     from agent import local_state
 
 try:
+    from daily_plan import read_daily_plan, daily_task_name, compile_daily_options, daily_option_nodes, daily_config_signature
+    from task_lifecycle import clear_daily_context
+except ImportError:
+    from agent.daily_plan import read_daily_plan, daily_task_name, compile_daily_options, daily_option_nodes, daily_config_signature
+    from agent.task_lifecycle import clear_daily_context
+
+try:
     from puzzle_solver import PUZZLE_SPEC_4X4, PUZZLE_SPEC_5X5, PUZZLE_SPEC_6X6, PuzzleSolver
     from puzzle_solver_5x5 import Puzzle5x5Solver, Puzzle6x6Solver, PuzzleSearchBudgetExceeded
     from puzzle_executor import (
@@ -5096,31 +5103,64 @@ class GreenWildClaimDoneAction(CustomAction):
             return False
 
 
-HANGUP_DAILY_ALL = {"all_enabled": True}
-
-
 @AgentServer.custom_action("InitHangupScheduledDailyAction")
 class InitHangupScheduledDailyAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             param = parse_dict_param(getattr(argv, "custom_action_param", None))
             resume_to = param.get("resume_to") or "collect_fish"
+            if resume_to not in ("patrol", "collect_fish", "friend_gem"):
+                raise ValueError("日常返回目标无效")
+            reference = context.get_node_data("HangupDailyReference") or {}
+            reference_param = reference.get("custom_action_param")
+            if reference_param is None:
+                reference_param = reference.get("action", {}).get("param", {}).get("custom_action_param")
+            task_name = parse_dict_param(reference_param).get("task_name", "").strip()
+            interface, task = read_daily_plan(task_name)
+            overrides = compile_daily_options(interface, task)
+            outer_resume = list(hangup_schedule_state.get("resume_stack", []))
+            child = context.clone()
+            # A clone initially inherits the patrol's overrides. Restore the resource's
+            # daily option targets before applying the referenced task, then discard it.
+            reset_nodes = daily_option_nodes(interface) | {"DailyRoutineEnableSecretRealmGate"}
+            baseline = {name: context.tasker.resource.get_node_data(name) for name in reset_nodes}
+            if not all(baseline.values()) or not child.override_pipeline(baseline):
+                raise ValueError("无法隔离被引用日常的参数")
+            for override in overrides:
+                if not child.override_pipeline(override):
+                    raise ValueError("被引用日常的参数无法加载")
+            globals_ = ["[JumpBack]GlobalActivityPagePopup", "[JumpBack]GlobalDailySignPopup",
+                        "[JumpBack]GlobalSpecialOfferPopup", "[JumpBack]GlobalNewsPopup", "[JumpBack]GlobalLevelUpPopup"]
+            if not child.override_pipeline({
+                "HangupDailyOnTank": {"next": [*globals_, "DailyRoutineTask"]},
+                "DailyRoutineTask": {"custom_action_param": {
+                    "scheduled_run": True, "source_name": daily_task_name(task)}},
+                "DailyRoutineStepAllDone": {"next": [*globals_, "DailyRoutineStandaloneDone"]},
+            }):
+                raise ValueError("无法设置日常调用与返回路径")
             now = datetime.now()
             if not local_state.record_hangup_schedule_attempt("noon_daily_last_date", now):
                 print("[挂机日程] ERROR: 十二点日程去重记录无法落盘，未启动子任务。", flush=True)
                 return False
-            stack = hangup_schedule_state.setdefault("resume_stack", [])
-            stack.append(resume_to)
             hangup_schedule_state["noon_daily_last_date"] = now.date().isoformat()
             print(
-                f"[挂机日程] 已到 12:00，开始执行日常收尾（默认全选），完成后返回 {resume_to}。",
+                f"[挂机日程] 已到十二点，引用日常【{daily_task_name(task)}】，按其完整配置执行，完成后返回 {resume_to}。",
                 flush=True,
             )
-            class _Arg:
-                custom_action_param = json.dumps({**HANGUP_DAILY_ALL, "scheduled_run": True})
-            return InitDailyRoutineAction().run(context, _Arg())
+            print(f"[挂机日程] 引用日常参数：{json.dumps(overrides, ensure_ascii=False)}", flush=True)
+            daily_routine_state["outcome"] = None
+            result = child.run_task("HangupPrepareDaily")
+            completed = (result is not None and result.status.succeeded
+                         and daily_routine_state.get("outcome") == "COMPLETED")
+            clear_daily_context("被引用的日常调用结束")
+            if not completed:
+                print("[挂机日程] ERROR: 引用日常未完整结束；保留失败，不假装返回挂机。", flush=True)
+                return False
+            hangup_schedule_state["resume_stack"] = [*outer_resume, resume_to]
+            return True
         except Exception as e:
             traceback.print_exc()
+            clear_daily_context("日常引用失败")
             print(f"[挂机日程] 启动十二点日常异常: {e}", flush=True)
             return False
 
@@ -5173,6 +5213,8 @@ class InitDailyRoutineAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             daily_routine_state["active"] = True
+            daily_routine_state["outcome"] = None
+            daily_routine_state["config_signature"] = None
             daily_routine_state["tasks"] = {
                 "FreeGift": {"status": "IDLE"},
                 "ReindeerFish": {"status": "IDLE"},
@@ -5265,11 +5307,36 @@ class InitDailyRoutineAction(CustomAction):
                 enable_gf = _is_node_enabled("DailyRoutineEnableGemFusion")
                 enable_ae = _is_node_enabled("DailyRoutineEnableActivityEnergy")
 
-            daily_routine_state["covers_noon_schedule"] = all((
-                enable_fg, enable_rf, enable_gsc, enable_gwd, enable_bf,
-                enable_gd, enable_sg, enable_fi, enable_ggb, enable_go,
-                enable_rh, enable_pt,
-            ))
+            # 酿月食香已结束：保留实现与素材，但旧 Enable 覆盖和直接参数也不能再入队。
+            if enable_ae:
+                print("[日常收尾] 酿月食香已结束，已忽略旧配置中的活动体力领取。", flush=True)
+            enable_ae = False
+            daily_routine_state["tasks"]["ActivityEnergy"]["status"] = "DISABLED"
+
+            selection = {
+                "FreeGift": enable_fg, "ReindeerFish": enable_rf, "GoldShellCoupon": enable_gsc,
+                "GreenWildDaily": enable_gwd, "BandFish": enable_bf, "GoldenDolphin": enable_gd,
+                "ShakeGame": enable_sg, "Fishing": enable_fi, "SeaDive": enable_sd,
+                "GemGiftBox": enable_ggb, "GemOrder": enable_go, "RomanticHouse": enable_rh,
+                "BuyFishFood": enable_bff, "FishBaby": enable_fb, "MagicSummon": enable_ms,
+                "GemFusion": enable_gf, "ActivityEnergy": enable_ae,
+                "SecretRealmGate": enable_srg, "PrincessTask": enable_pt,
+            }
+            try:
+                interface = json.loads(Path("interface.json").read_text(encoding="utf-8-sig"))
+                signature = daily_config_signature(context, interface, selection)
+                daily_routine_state["config_signature"] = signature
+                if param.get("scheduled_run") and local_state.daily_plan_completed_today(signature):
+                    daily_routine_state.update(step="ALL_DONE", queue=[])
+                    for name, enabled in selection.items():
+                        daily_routine_state["tasks"][name]["status"] = "ALREADY_COMPLETED" if enabled else "SKIPPED"
+                    context.override_pipeline({"DailyRoutineInitLog": {"focus": {
+                        "Node.Action.Succeeded": "[日常收尾] 引用的同参数方案今日已完整完成，本次不重复执行。"}}})
+                    return True
+            except (OSError, ValueError, KeyError) as exc:
+                if param.get("scheduled_run"):
+                    raise
+                print(f"[日常收尾] WARNING: 无法生成配置去重指纹，未记录为已覆盖定时日常：{exc}", flush=True)
 
             # 3. 按固定安全顺序构建待执行队列。
             queue = []
@@ -5357,13 +5424,15 @@ class InitDailyRoutineAction(CustomAction):
                 ("宝石订单", enable_go), ("浪漫满屋", enable_rh),
                 ("购买鱼食", enable_bff), ("鱼宝乐园", enable_fb),
                 ("魔力召唤", enable_ms), ("宝石融合", enable_gf),
-                ("领取活动体力", enable_ae),
             )
             selected = "、".join(label for label, enabled in task_labels if enabled) or "无"
             skipped = "、".join(label for label, enabled in task_labels if not enabled) or "无"
             ui_message = (
                 f"[日常收尾] 已选择：{selected}；因未勾选跳过：{skipped}。"
             )
+            if param.get("source_name"):
+                source_name = str(param["source_name"]).replace("/", "、").replace("\\", "、")
+                ui_message = f"[日常收尾] 引用方案【{source_name}】。" + ui_message
             try:
                 context.override_pipeline({
                     "DailyRoutineInitLog": {
@@ -5376,6 +5445,7 @@ class InitDailyRoutineAction(CustomAction):
             return True
         except Exception as e:
             traceback.print_exc()
+            clear_daily_context("日常初始化失败")
             print(f"[日常收尾] 初始化异常: {e}", flush=True)
             return False
 
@@ -6098,6 +6168,9 @@ class EmulatorAdCloseRewardAction(CustomAction):
 class DailyRoutineFinishAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
+            if daily_routine_state.get("step") != "ALL_DONE" or daily_routine_state.get("queue"):
+                print("[日常收尾] ERROR: 队列尚未结束，不能提交完整完成。", flush=True)
+                return False
             tasks = daily_routine_state.get("tasks", {})
             fg_st = tasks.get("FreeGift", {}).get("status", "SKIPPED")
             rf_st = tasks.get("ReindeerFish", {}).get("status", "SKIPPED")
@@ -6137,18 +6210,10 @@ class DailyRoutineFinishAction(CustomAction):
             print(f"  - 公主任务 (PrincessTask)     : {pt_st}", flush=True)
             print("=" * 60, flush=True)
 
-            if (daily_routine_state.get("covers_noon_schedule")
-                    and daily_routine_state.get("step") == "ALL_DONE"
-                    and not daily_routine_state.get("queue")):
-                now = datetime.now()
-                today = now.date().isoformat()
-                if hangup_schedule_state.get("noon_daily_last_date") != today:
-                    if local_state.record_hangup_schedule_attempt("noon_daily_last_date", now):
-                        hangup_schedule_state["noon_daily_last_date"] = today
-                        print("[日常收尾] 本次完整手动运行已覆盖今日十二点日程，不再自动重跑。", flush=True)
-                    else:
-                        hangup_schedule_state["noon_daily_last_date"] = today
-                        print("[日常收尾] WARNING: 今日自动去重记录无法落盘；当前 Agent 不会重跑，重启后仍有重复风险。", flush=True)
+            signature = daily_routine_state.get("config_signature")
+            if signature and not local_state.record_daily_plan_completed(signature):
+                print("[日常收尾] WARNING: 完成方案记录无法落盘，后续定时调用仍可能重跑。", flush=True)
+            daily_routine_state["outcome"] = "COMPLETED"
             daily_routine_state["active"] = False
             daily_routine_state["step"] = "ALL_DONE"
             daily_routine_state["queue"] = []

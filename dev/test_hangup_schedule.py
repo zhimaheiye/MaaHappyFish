@@ -85,9 +85,9 @@ def test_resume_stack():
     reset_state()
     ctx = MockContext()
     with tempfile.TemporaryDirectory() as state_dir, patch.dict(os.environ, {"MAAHAPPYFISH_STATE_DIR": state_dir}):
-        InitHangupScheduledDailyAction().run(ctx, MockArg({"resume_to": "collect_fish"}))
-        assert hangup_schedule_state["resume_stack"] == ["collect_fish"]
-        assert daily_routine_state.get("active") is True
+        # The scheduled child now finishes before the caller resumes; its full
+        # execution/isolation contract is covered by test_daily_plan.py.
+        hangup_schedule_state["resume_stack"] = ["collect_fish"]
         reco = CheckHangupResumeReco()
         assert reco.analyze(ctx, MockArg({"target": "collect_fish"})) == (0, 0, 10, 10)
         assert reco.analyze(ctx, MockArg({"target": "patrol"})) is None
@@ -96,7 +96,7 @@ def test_resume_stack():
     print("[PASS] hang-up resume stack")
 
 
-def test_manual_full_run_clears_stale_resume_and_suppresses_duplicate():
+def test_manual_full_run_clears_stale_resume():
     reset_state()
     ctx = MockContext()
     today = datetime.now().date().isoformat()
@@ -107,12 +107,11 @@ def test_manual_full_run_clears_stale_resume_and_suppresses_duplicate():
         daily_routine_state["step"] = "ALL_DONE"
         daily_routine_state["queue"] = []
         assert DailyRoutineFinishAction().run(ctx, MockArg())
-        assert hangup_schedule_state["noon_daily_last_date"] == today
-        assert local_state.get_hangup_schedule_dates()["noon_daily_last_date"] == today
-        assert CheckHangupNoonDailyDueReco().analyze(
-            ctx, MockArg({"enabled": True, "now": f"{today}T14:00:00"})
-        ) is None
-    print("[PASS] manual full run suppresses noon duplicate")
+        assert daily_routine_state["outcome"] == "COMPLETED"
+        # Completion is now deduplicated by effective configuration, not a
+        # fixed twelve-task 'all' flag. MockContext has no real configuration.
+        assert hangup_schedule_state["noon_daily_last_date"] is None
+    print("[PASS] manual full run clears stale return stack")
 
 
 def test_manual_partial_run_does_not_cover_noon_schedule():
@@ -120,6 +119,7 @@ def test_manual_partial_run_does_not_cover_noon_schedule():
     ctx = MockContext()
     with tempfile.TemporaryDirectory() as state_dir, patch.dict(os.environ, {"MAAHAPPYFISH_STATE_DIR": state_dir}):
         assert InitDailyRoutineAction().run(ctx, MockArg({"free_gift": True}))
+        daily_routine_state.update(step="ALL_DONE", queue=[])
         assert DailyRoutineFinishAction().run(ctx, MockArg())
         assert hangup_schedule_state["noon_daily_last_date"] is None
         assert local_state.get_hangup_schedule_dates().get("noon_daily_last_date") is None
@@ -152,7 +152,11 @@ def test_pipeline_wiring():
         "HangupResumeFriendGem",
         "DailyRoutineStandaloneDone",
     ]
-    assert business_next(hangup["HangupNoonDailyCollectFish"]) == ["HangupPrepareDaily"]
+    assert business_next(hangup["HangupNoonDailyCollectFish"]) == ["HangupResumeCollectFish"]
+    assert business_next(hangup["HangupNoonDailyPatrol"]) == ["HangupResumePatrol"]
+    assert hangup["HangupPrepareDaily"]["on_error"] == ["HangupDailyAbort"]
+    assert hangup["HangupDailyClickReturn"]["on_error"] == ["HangupDailyAbort"]
+    assert business_next(hangup["HangupResumeFriendGem"]) == ["FriendGemTask"]
     assert business_next(hangup["HangupPrepareDaily"]) == [
         "HangupDailyOnTank",
         "HangupDailyClickReturn",
@@ -174,6 +178,7 @@ def test_interface_options():
     assert "挂机十点好友摸宝" in patrol["option"]
     assert "挂机十二点日常" in friend["option"]
     assert interface["option"]["挂机十二点日常"]["default_case"] == "开启"
+    assert interface["option"]["挂机十二点日常"]["cases"][0]["option"] == ["引用日常任务"]
     assert interface["option"]["挂机十点好友摸宝"]["default_case"] == "关闭"
     print("[PASS] hang-up interface options")
 
@@ -181,7 +186,7 @@ def test_interface_options():
 if __name__ == "__main__":
     test_reco_windows()
     test_resume_stack()
-    test_manual_full_run_clears_stale_resume_and_suppresses_duplicate()
+    test_manual_full_run_clears_stale_resume()
     test_manual_partial_run_does_not_cover_noon_schedule()
     test_pipeline_wiring()
     test_interface_options()

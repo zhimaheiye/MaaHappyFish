@@ -65,6 +65,26 @@ def get_current_game_day(now=None):
     return (moment - _GAME_DAY_SHIFT).date().isoformat()
 
 
+def daily_plan_completed_today(signature, now=None):
+    completed = load_local_state().get("daily_plans_completed", {})
+    today = (now or datetime.now()).date().isoformat()
+    signatures = completed.get("signatures") if isinstance(completed, dict) else None
+    return (isinstance(signatures, list) and completed.get("date") == today
+            and signature in signatures)
+
+
+def record_daily_plan_completed(signature, now=None):
+    state = load_local_state()
+    today = (now or datetime.now()).date().isoformat()
+    completed = state.get("daily_plans_completed", {})
+    signatures = completed.get("signatures") if isinstance(completed, dict) and completed.get("date") == today else None
+    signatures = [item for item in signatures if isinstance(item, str)] if isinstance(signatures, list) else []
+    if signature not in signatures:
+        signatures.append(signature)
+    state["daily_plans_completed"] = {"date": today, "signatures": signatures}
+    return save_local_state(state)
+
+
 def _state_dir():
     override = os.environ.get("MAAHAPPYFISH_STATE_DIR")
     if override:

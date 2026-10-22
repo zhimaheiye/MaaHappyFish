@@ -3,7 +3,7 @@
     "name": "MaaHappyFish",
     "label": "开心水族箱小助手",
     "description": "基于 MaaFramework 的开心水族箱自动化日常小助手",
-    "version": "0.7.11",
+    "version": "0.7.12",
     "github": "https://github.com/zhimaheiye/MaaHappyFish",
     "agent": {
         "child_exec": "python",
@@ -2102,7 +2102,7 @@
         "挂机十二点日常": {
             "type": "select",
             "label": "十二点日常收尾",
-            "description": "挂机到当天 12:00 后自动跑一遍日常收尾（子任务默认全选），完成后回到原来的挂机。每个自然日只跑一次。失败兼容后续再补。",
+            "description": "当天十二点后引用当前实例中保存的独立日常任务，使用它的全部勾选与子参数，完成并确认主鱼缸后回到挂机。每个自然日自动尝试一次；失败不当作完成。请先添加并配置独立日常；它不必勾选进入队列。",
             "default_case": "开启",
             "cases": [
                 {
@@ -2123,7 +2123,8 @@
                                 "enabled": true
                             }
                         }
-                    }
+                    },
+                    "option": ["引用日常任务"]
                 },
                 {
                     "name": "关闭",
@@ -2146,6 +2147,15 @@
                     }
                 }
             ]
+        },
+        "引用日常任务": {
+            "type": "input",
+            "label": "引用的独立日常",
+            "description": "留空时要求当前实例中只有一条独立日常。存在多条时，填写要引用的完整显示名（含重命名）；找不到或重名会明确失败，不回退成默认全选。到点读取已保存的配置，不要求先运行该日常。",
+            "inputs": [{"name": "任务显示名", "label": "独立日常显示名", "default": "", "pipeline_type": "string"}],
+            "pipeline_override": {
+                "HangupDailyReference": {"custom_action_param": {"task_name": "{任务显示名}"}}
+            }
         },
         "挂机十点好友摸宝": {
             "type": "select",
@@ -3588,14 +3598,6 @@
                     "name": "宝石融合",
                     "pipeline_override": {
                         "DailyRoutineEnableGemFusion": {
-                            "enabled": true
-                        }
-                    }
-                },
-                {
-                    "name": "领取活动体力（酿月食香）",
-                    "pipeline_override": {
-                        "DailyRoutineEnableActivityEnergy": {
                             "enabled": true
                         }
                     }

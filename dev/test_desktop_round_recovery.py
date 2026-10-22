@@ -279,7 +279,8 @@ class SchedulePersistence(unittest.TestCase):
         arg = SimpleNamespace(custom_action_param='{"resume_to":"patrol"}')
         for hour, key, action in (
             (10, "friend_gem_morning_date", my_action.InitHangupFriendGemAction),
-            (12, "noon_daily_last_date", my_action.InitHangupScheduledDailyAction),
+            # Noon now loads a saved daily in an isolated child context; its
+            # pre-start persistence is covered by test_daily_plan.py.
             (22, "friend_gem_evening_date", my_action.InitHangupFriendGemAction),
         ):
             def started(context, argv):

@@ -8,7 +8,8 @@
 - 资产：`MaaHappyFish-win-x86_64-v0.7.11.zip`、`MaaHappyFish-win-aarch64-v0.7.11.zip`，均已 uploaded，不是预发布。
 
 ## 尚未正式发布
-- 暂无。
+- 2026-10-15：十二点定时引用本实例独立日常的完整配置；任务生命周期清理修复失败后跨日 active 残留漏跑；隔离子调用、配置指纹完成去重及真实回缸返回。代码级验证完成，未做 MFA／MuMu 实测，尚未提交或发版。使用方法见 `docs/features/daily-routine.md`。
+- 2026-10-23：酿月食香活动结束，日常活动体力入口暂停，旧勾选和直接参数不再入队；实现和素材保留，尚未发布。完整本地／远端／旧 stash 审计见 `docs/handoff/RELEASE_AUDIT_20261023.md`。
 
 ## 台式机当前运行
 - 来源：

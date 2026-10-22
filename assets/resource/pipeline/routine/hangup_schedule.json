@@ -1,4 +1,11 @@
 {
+    "HangupDailyReference": {
+        "recognition": "DirectHit",
+        "enabled": false,
+        "action": "Custom",
+        "custom_action": "InitHangupScheduledDailyAction",
+        "custom_action_param": {"task_name": ""}
+    },
     "HangupNoonDailyCollectFish": {
         "recognition": "Custom",
         "custom_recognition": "CheckHangupNoonDailyDueReco",
@@ -12,7 +19,8 @@
         },
         "timeout": 500,
         "focus": {
-            "Node.Action.Succeeded": "[挂机日程] 十二点日常收尾已启动。"
+            "Node.Action.Succeeded": "[挂机日程] 引用日常已完整结束，确认主鱼缸后继续挂机。",
+            "Node.Action.Failed": "[挂机日程] ERROR: 引用日常失败；详见参数或子任务日志。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -20,7 +28,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "HangupPrepareDaily"
+            "HangupResumeCollectFish"
         ]
     },
     "HangupNoonDailyPatrol": {
@@ -36,7 +44,8 @@
         },
         "timeout": 500,
         "focus": {
-            "Node.Action.Succeeded": "[挂机日程] 十二点日常收尾已启动。"
+            "Node.Action.Succeeded": "[挂机日程] 引用日常已完整结束，确认主鱼缸后继续巡检。",
+            "Node.Action.Failed": "[挂机日程] ERROR: 引用日常失败；详见参数或子任务日志。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -44,7 +53,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "HangupPrepareDaily"
+            "HangupResumePatrol"
         ]
     },
     "HangupNoonDailyFriendGem": {
@@ -60,7 +69,8 @@
         },
         "timeout": 500,
         "focus": {
-            "Node.Action.Succeeded": "[挂机日程] 十二点日常收尾已启动。"
+            "Node.Action.Succeeded": "[挂机日程] 引用日常已完整结束，确认主鱼缸后继续好友摸宝。",
+            "Node.Action.Failed": "[挂机日程] ERROR: 引用日常失败；详见参数或子任务日志。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -68,13 +78,15 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "HangupPrepareDaily"
+            "HangupResumeFriendGem"
         ]
     },
     "HangupPrepareDaily": {
         "recognition": "DirectHit",
         "action": "DoNothing",
         "post_delay": 800,
+        "timeout": 6000,
+        "on_error": ["HangupDailyAbort"],
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
             "[JumpBack]GlobalDailySignPopup",
@@ -122,7 +134,7 @@
             "HangupDailyClickReturn"
         ],
         "on_error": [
-            "DailyRoutineInitLog"
+            "HangupDailyAbort"
         ]
     },
     "HangupFriendGemCollectFish": {
@@ -226,7 +238,7 @@
             "HangupClickReturnCollect"
         ],
         "on_error": [
-            "ResumeHarvest"
+            "HangupDailyAbort"
         ]
     },
     "HangupResumePatrol": {
@@ -282,8 +294,14 @@
             "HangupClickReturnPatrol"
         ],
         "on_error": [
-            "PatrolWaitLoop"
+            "HangupDailyAbort"
         ]
+    },
+    "HangupDailyAbort": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "focus": {"Node.Action.Starting": "[挂机日程] ERROR: 未确认主鱼缸，已安全停止，不冒充返回挂机。"}
     },
     "HangupResumeFriendGem": {
         "recognition": "Custom",
@@ -300,7 +318,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "FriendGemFriendRouter"
+            "FriendGemTask"
         ]
     }
 }
