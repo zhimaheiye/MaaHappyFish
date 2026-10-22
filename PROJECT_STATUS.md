@@ -1,15 +1,14 @@
 # Project Status
 
 ## 当前正式版
-- 版本：v0.7.11
-- commit：v0.7.11
-- 发布时间：2026-10-20
-- 发布页：https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.11
-- 资产：`MaaHappyFish-win-x86_64-v0.7.11.zip`、`MaaHappyFish-win-aarch64-v0.7.11.zip`，均已 uploaded，不是预发布。
+- 版本：v0.7.12
+- commit：v0.7.12
+- 发布时间：2026-10-23
+- 发布页：https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.12
+- 资产：`MaaHappyFish-win-x86_64-v0.7.12.zip`、`MaaHappyFish-win-aarch64-v0.7.12.zip`，均已 uploaded，不是预发布。
 
 ## 尚未正式发布
-- 2026-10-15：十二点定时引用本实例独立日常的完整配置；任务生命周期清理修复失败后跨日 active 残留漏跑；隔离子调用、配置指纹完成去重及真实回缸返回。代码级验证完成，未做 MFA／MuMu 实测，尚未提交或发版。使用方法见 `docs/features/daily-routine.md`。
-- 2026-10-23：酿月食香活动结束，日常活动体力入口暂停，旧勾选和直接参数不再入队；实现和素材保留，尚未发布。完整本地／远端／旧 stash 审计见 `docs/handoff/RELEASE_AUDIT_20261023.md`。
+- 暂无。
 
 ## 台式机当前运行
 - 来源：
@@ -17,6 +16,7 @@
 - 最近同步：
 
 ## 当前说明
+- 2026-10-23 v0.7.12 已发布：纳入本轮核对的全部未提交改动，包括独立日常完整配置引用、生命周期清理、配置指纹去重、隔离执行与安全返回，以及酿月食香入口暂停。标签 CI `39813744546` 全绿，Windows 两包 uploaded，x64 embedded Python／Agent 与更新契约通过。未做 MFA／MuMu 实测。详见 `docs/handoff/CURRENT.md` 与 `docs/features/daily-routine.md`。
 - 2026-10-20 v0.7.11 已发布：每日免费礼包先等待充值页标题，钓鱼停止后不再收杆，深海寻鱼回到主页后先等待，乐队鱼入口未确认改为真实失败。标签 CI `39390717004` 全绿，两个 Windows ZIP 已上传。代码级验证完成，本版未做 MFA／MuMu 实测。详见 `docs/handoff/CURRENT.md`。
 - 2026-10-16 已随 v0.7.11 发布：深海寻鱼返回主页后先静置再判断下一次，乐队鱼入口未确认改为真实失败。`ucrtbase` 崩溃、Application Hang 与 MuMuManager 查不到实例仍是环境或上游事项。代码级验证完成，未做 MFA／MuMu 实测。详见 `docs/handoff/CURRENT.md`。
 - 2026-10-18 已随 v0.7.11 发布：用户放弃钓鱼达人后，咬钩监听结束且不再收杆。同批值守里的海獭边界、普通饵 30 秒未咬钩后续钓，以及巡检摇晃的 MuMuManager 超时，都不是新的业务缺陷。代码级验证完成，未做 MFA／MuMu 实测。详见 `docs/handoff/CURRENT.md`。

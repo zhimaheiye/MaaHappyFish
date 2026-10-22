@@ -2,6 +2,8 @@
 
 **更新时间**: 2026-10-23
 
+**2026-10-23 v0.7.12 正式发布**：发布提交 `b83b973`、标签 `v0.7.12`，CI Run `39813744546` 全绿，Windows x86_64／aarch64 两个 ZIP 均为 uploaded、非预发布；x64 包内 Python／Agent 导入、更新契约、全局弹窗及统一收宝门禁通过。本轮全部待提交实现已纳入：定时引用本实例独立日常完整配置及名称输入、失败／停止后的生命周期清理、按完整配置去重、克隆上下文与真实完成／回缸恢复，以及酿月食香入口暂停。未运行 MFA／MuMu，不代表实机验收。下方审计及 10 月 15 日段落为当时记录，其“未发布”状态现已由本次发布取代。
+
 **2026-10-23 未发版审计与过期入口暂停**：本地 main 与 origin/main 同为 `c4f3190`，相对 v0.7.11 标签仅有文档提交；未提交的 10 月 15 日日常引用、生命周期清理、配置指纹去重和隔离执行／安全返回仍未进入正式包。旧 stash 对应业务修复与素材已在 v0.7.11，未恢复或删除。酿月食香入口现已隐藏，初始化强制禁用旧活动体力参数，引用旧方案时仅忽略该退役勾选；实现和素材保留，不实现通用领体力。此次仅代码级验证，未运行 MFA／MuMu，未提交、推送或发版；正式版仍为 v0.7.11。详见 [审计记录](RELEASE_AUDIT_20261023.md) 与 [活动体力](../features/activity-energy.md)。
 
 **2026-10-20 v0.7.11 正式发布**：标签 `v0.7.11` 的 CI Run `39390717004` 全绿，Windows x86_64／aarch64 两个 ZIP 均为 `uploaded`、非预发布；`verify (win, x86_64)` 通过。此版纳入每日免费礼包先等「超值礼包」再决定是否第二次点击加号、钓鱼停止后不再收杆、深海寻鱼回到主页后先等待，以及乐队鱼入口未确认时如实失败。没有同帧截图的好友下一位箭头仍按未知页停止。本次是代码级验证与发行包 CI，未运行 MFA／MuMu。
@@ -108,8 +110,8 @@
 
 | 项目 | 信息 |
 | :--- | :--- |
-| **Current version** | `0.7.11` |
-| **Latest release** | [`v0.7.11`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.11) |
+| **Current version** | `0.7.12` |
+| **Latest release** | [`v0.7.12`](https://github.com/zhimaheiye/MaaHappyFish/releases/tag/v0.7.12) |
 | **CI hard gate** | `verify (win, x86_64)` PASS（GitHub Windows Runner embedded Python 冒烟 + 更新契约门禁） |
 | **Release health** | 🟢 **Healthy** — 启用 GitHub 程序内原生整包自动更新（发版流程标准详见 [release-workflow.md](../release-workflow.md)） |
 
