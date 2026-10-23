@@ -20,7 +20,7 @@
 1. **绝对禁止**：实现任何涉及付费（氪金）的自动化操作。
 2. **鱼宝乐园边界**：仅自动执行用户手工配置的免费养成步骤；绝不点击付费“一键孵化”、购买资源或自动代选孵化完成后的鱼宝。
 3. **日志输出限制**：**严禁在 Python print 中使用任何 Emoji 字符**。Windows 控制台默认 GBK 编码不支持 Unicode Emoji，会导致 Python 进程 `UnicodeEncodeError` 崩溃。
-4. **界面同步限制**：**严禁仅修改某一处 `interface.json`**，修改 `assets/interface.json` 后必须手动复制到 `client_avalonia/` 和 `client/`。
+4. **界面同步限制**：`assets/interface.json` 是源文件；修改后同步到本机实际存在的 `client_avalonia/` 和 `client/` 副本并校验一致性，不要求为此创建未安装的客户端目录。发布与验证以 `docs/release-workflow.md` 为准。
 
 ## 关键架构决策及其理由
 - **万能过渡节点 (ResumeHarvest)**

@@ -168,11 +168,11 @@ git diff --check
 | Pipeline `expected` / OCR / Focus | `dev/test_pipeline_regex.py`，特别检查正则特殊字符与 Focus 半角斜杠 |
 | CustomAction / CustomRecognition | 注册引用门禁、显式返回值、`parse_dict_param()` 空值测试 |
 | 新第三方 import | 更新 `agent/requirements-release.txt`，用发布 embedded Python 做 import 冒烟 |
-| `interface.json` | 三份文件字节一致，运行 `dev/test_update_contract.py` |
+| `interface.json` | 源文件与本机实际存在的客户端副本字节一致；目录可选，运行 `dev/test_update_contract.py`，详见 `docs/release-workflow.md` |
 | 模板/ROI | 文件存在、真实页面正样本、相似控件负样本；ADB 模式还要主 Agent 复核最终裁图 |
 | 高频/长按/循环动作 | 停止状态单测或 Mock，确保停止后不再点击/滑动 |
 | 稀缺资源流程 | 先做 replay/mock/前置页面验证，MFA 结果单独登记 |
-| 打包发布 (Release) | 完整执行唯一权威文档 `docs/release-workflow.md`，通过 4 项静态门禁、全量全局弹窗与统一收宝契约及受影响业务单测，两阶段更新状态，推送 tag 触发 CI 并验证 8 目标构建资产 |
+| 打包发布 (Release) | 完整执行唯一权威文档 `docs/release-workflow.md`，按其当前门禁、状态更新、tag/CI 和 Windows 发布资产要求验收；不要沿用旧对话的 8 目标矩阵 |
 
 ## 八、历史错误与解决方式
 
@@ -183,6 +183,7 @@ git diff --check
 | 金海豚入口未识别后固定点击 `(674, 468)`，误点鱼缸游鱼 | 把坐标兜底当作导航恢复 | 删除盲点；建立鱼缸 -> 游乐园 -> 图标 -> 小游戏逐层视觉门禁 |
 | `expected: "0("` 使整份 Pipeline 加载失败 | Maa 把 `expected` 当 `std::regex`，括号未转义 | 优先用“刷新体力”等稳定语义；需要特殊字符时 JSON 双反斜杠转义；每次跑正则门禁 |
 | Python Agent 无故退出 | `print()` 中 Emoji 在 Windows GBK 下触发编码异常 | Python 日志禁用 Emoji；UI 文案用 Pipeline `focus` 注入 |
+| 摇一摇 Mock 通过，现场却报 `Context` 没有 `controller` | 2026-09-12 旧工作树误用 `context.controller`，宽松 Mock 也伪造了同名字段；日志证明的是旧现场错误，不能推断发布标签仍带此错 | 控制器从 `context.tasker.controller` 取得；用 `SimpleNamespace(tasker=...)` 等真实结构替身，并断言不存在顶层 `controller`。修复已见 `2aa2845e`，归档前 HEAD `ef896b9c` 的实现与 `dev/test_shake_gem_collect_test.py` 仍保留此约束。来源：Antigravity「打包发版」`6c3f42d9-858d-4a5e-9473-78d6c3534a81`；错误版本仅为 historical conversation evidence，修复为 historical committed fact；2026-10-24 只做代码回溯 |
 | 发布包 Agent LinkStart 失败，而开发机正常 | 开发机有 `cv2`，发布 embedded Python 缺依赖 | 同步 `requirements-release.txt`，CI/本地用发布 Python 真实 import |
 | 早期发布包存在 Agent “正在启动”但无法建立连接 | embedded Python 的 `python*._pth` 会隔离 `sys.path`；历史打包现场还遇到含中文的辅助 `.cmd` 在该链路解析不稳定 | 发布包必须显式启用 `import site` 并加入 `Lib/site-packages`、`../agent`，脚本保持 ASCII 兼容；当前 `install.yml` 已写入这些路径并以 ASCII 保存，最终必须由 `verify (win, x86_64)` 下载真实 artifact 后用内置 Python 冒烟闭环 |
 | 客户端表面像“设备没连上”或一直停在 Agent 启动，但没有明确 Agent 报错 | UI/日志层可能掩盖 Agent 进程启动即退出；截图截断还可能把完整路径显示得像缺盘符 | 先用 adb 自证设备，再读 MaaFramework 日志确认连接、截图初始化和 Android ID；随后检查 Python Agent 进程是否存活，并用客户端同一启动命令本地复现退出。修改 Agent/资源后必须彻底退出 MFAAvalonia（含托盘）再验证，避免旧进程/旧资源造成假象 |
