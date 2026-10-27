@@ -47,6 +47,7 @@
 | 维护"日常收尾"每日串联总控任务 | `docs/features/daily-routine.md` |
 | 维护"精彩活动体力"酿月食香第一卡片 | `docs/features/activity-energy.md` |
 | 维护限时活动识别失败时的截图、轨迹与日志接管包 | `docs/features/activity-takeover.md`；当前仅注册 Action，正式任务未接线 |
+| 讨论可选外部 LLM Agent 托管、能力调用契约、跨任务调度与自维护边界 | `docs/agent-supervisor-proposal.md`（长期提案，尚未实现；MaaHappyFish 本体仍不依赖 AI） |
 | 维护"许愿神灯"独立活动任务 | `docs/features/wishing-lamp.md` |
 | 维护"秘境之门"独立与日常送鱼任务 | `docs/features/secret-realm-gate.md` |
 | 维护"手机看广告"连续自动化 | `docs/features/mobile-ads.md` |
