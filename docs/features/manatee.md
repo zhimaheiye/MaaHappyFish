@@ -1,6 +1,6 @@
 # 海牛先生周末喂食 (`ManateeTask`)
 
-2026-10-27（未发布）：共享 `FriendPageNavigationFailed` 从 StopTask 改为无后继的 FailTaskAction，列表未确认时如实 FAILED；海牛的留言箱桥接、周末门禁和投喂业务保持原契约。好友摸宝自己的页签等待改为每次 8 秒，不将这项等待变更写成海牛实测结果。海牛 Pipeline 和共享导航相关回归通过，本次仅代码级验证，未做 MFA／模拟器测试。详见 [好友摸宝](friend-gem.md)。
+2026-10-27（已随 v0.7.13 发布／仅代码级验证）：共享 `FriendPageNavigationFailed` 从 StopTask 改为无后继的 FailTaskAction，列表未确认时如实 FAILED；海牛的留言箱桥接、周末门禁和投喂业务保持原契约。好友摸宝自己的页签等待改为每次 8 秒，不将这项等待变更写成海牛实测结果。海牛 Pipeline 和共享导航相关回归通过，本次仅代码级验证，未做 MFA／模拟器测试。详见 [好友摸宝](friend-gem.md)。
 
 2026-10-13：好友摸宝模式下喂食完成后需识别“下一位”箭头。新值守包证实普通好友出口的该箭头有时持续未命中；`ManateeReturnFriendGem` 现与其它好友切换出口一样在候选耗尽时显式 FAILED，不把未知页面当作已完成或盲点箭头。未取得海牛分支同帧故障截图，本次仅代码级验证。
 

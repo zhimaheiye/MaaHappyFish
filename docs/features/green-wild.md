@@ -1,6 +1,6 @@
 # 绿野寻仙踪 (`GreenWildTask` / `GreenWildDailyTask`)
 
-## 2026-10-26 领奖门禁失败导致重复开贝壳、买鱼（未发布）
+## 2026-10-26 领奖门禁失败导致重复开贝壳、买鱼（已随 v0.7.13 发布／仅代码级验证）
 
 正式安装目录 `D:/MaaHappyFish-win-x86_64-v0.4.4/logs/log-20261026.log` 记录：13:06:24 买鱼回缸，13:06:27 领奖入口门禁失败，13:06:29 再次启动绿野日常；13:12:30 开贝壳累计到 66 轮。对应 `debug/maafw.bak.2026.10.26-13.13.46.178.log` 确认入口模板最高分 0.152697（阈值 0.8），任务页与领取 OCR 也未命中，随后走 `GreenWildAbort → DailyRoutineReturnIfActive → DailyRoutineDispatcher`。日常步骤仍是 `GREEN_WILD_DAILY`，重入初始化又开启开贝壳和买鱼；不是整段日常重新初始化，也不是开贝壳未退出。
 
