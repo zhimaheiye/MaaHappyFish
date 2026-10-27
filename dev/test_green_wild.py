@@ -118,10 +118,14 @@ def run_tests():
 
     for node_name, node in pipeline.items():
         successors = node.get("next")
-        if node_name in ("GreenWildVerifyTank", "GreenWildAbort"):
+        if node_name == "GreenWildVerifyTank":
             assert successors == ["DailyRoutineReturnIfActive", "DailyRoutineStandaloneDone"]
         elif successors:
             assert successors[:len(GLOBAL_HANDLERS)] == GLOBAL_HANDLERS, node_name
+
+    abort = pipeline["GreenWildAbort"]
+    assert abort["custom_action"] == "FailTaskAction"
+    assert not abort.get("next") and not abort.get("on_error")
 
     for name in (
         "绿野寻仙踪_入口.png",

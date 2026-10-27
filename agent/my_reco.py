@@ -55,6 +55,23 @@ except ImportError:
 
 timer_state = starfish_timer_state
 
+
+@AgentServer.custom_recognition("CheckGemGiftBoxListReco")
+class CheckGemGiftBoxListReco(CustomRecognition):
+    """The list title remains visible behind a modal; exclude that modal explicitly."""
+
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        parse_dict_param(argv.custom_recognition_param)
+        try:
+            dialog = context.run_recognition("GemGiftBoxExchangeDialog", argv.image)
+            if dialog is None or dialog.hit:
+                return None
+            page = context.run_recognition("GemGiftBoxRun", argv.image)
+            return page.box if page and page.hit else None
+        except Exception as exc:
+            print(f"[宝石礼盒] ERROR: 列表页面复核异常: {exc}", flush=True)
+            return None
+
 try:
     from fish_baby import PREFERENCES, classify_sky, group_preferences, resolve_preferences
 except ImportError:
@@ -680,6 +697,13 @@ class CheckPatrolFeatureTimerReco(CustomRecognition):
 
         state["last_run_time"] = now
         return (0, 0, 10, 10)
+
+
+@AgentServer.custom_recognition("CheckSeaOtterNormalCompletionReco")
+class CheckSeaOtterNormalCompletionReco(CustomRecognition):
+    def analyze(self, context: Context, argv: CustomRecognition.AnalyzeArg) -> Optional[RectType]:
+        parse_dict_param(getattr(argv, "custom_recognition_param", None))
+        return (0, 0, 10, 10) if sea_otter_gem_state.get("normal_completion") else None
 
 
 @AgentServer.custom_recognition("CheckOpenShellLoopReco")

@@ -125,6 +125,12 @@ except ImportError:
     from agent.puzzle_position import PuzzlePositionError, parse_piece_positions
 
 
+try:
+    from starfish_food import pick_starfish_food
+except ImportError:
+    from agent.starfish_food import pick_starfish_food
+
+
 def _capture_720p(controller):
     job = controller.post_screencap()
     if not job:
@@ -674,6 +680,74 @@ class ClickRecognizedCenterAction(CustomAction):
             return bool(ctrl.post_click(*_box_center(box)).wait().succeeded)
         except Exception as e:
             print(f"[中心点击] ERROR: {e}", flush=True)
+            return False
+
+
+@AgentServer.custom_action("FeedPatrolStarfishFoodAction")
+class FeedPatrolStarfishFoodAction(CustomAction):
+    """Recheck each food click, allow one missed-click retry, and verify the target panel."""
+
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        try:
+            param = parse_dict_param(argv.custom_action_param)
+            panel = param.get("panel_node")
+            if panel not in {f"Patrol{key}ReplenishPageIdentity" for key in ("Cute", "Good", "Bright")}:
+                print("[巡检-海星喂食] ERROR: 缺少对应海星页面门禁，未点击。", flush=True)
+                return False
+            ctrl = context.tasker.controller
+            if not ctrl:
+                return False
+            selected_name = None
+            for attempt in range(2):
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    return False
+                popup = context.run_recognition("PatrolFoodPopupStillOpen", frame)
+                if popup is None or not popup.hit:
+                    print("[巡检-海星喂食] ERROR: 点击前未确认选择喂食弹窗，未点击。", flush=True)
+                    return False
+                picked = pick_starfish_food(frame)
+                if picked is None or (selected_name is not None and picked[0] != selected_name):
+                    print("[巡检-海星喂食] ERROR: 原鱼食未重新识别，未补点或改投其它鱼食。", flush=True)
+                    return False
+                selected_name, box = picked
+                if _task_cancelled(context):
+                    return False
+                if not ctrl.post_click(*_box_center(box)).wait().succeeded:
+                    return False
+                print(f"[巡检-海星喂食] 第 {attempt + 1} 次点击{selected_name}已下发，等待弹窗关闭与海星页面确认。", flush=True)
+                deadline = time.monotonic() + 4.0
+                closed_frames = 0
+                still_open = False
+                while time.monotonic() < deadline:
+                    if _task_cancelled(context):
+                        return False
+                    frame = _capture_720p(ctrl)
+                    if frame is None:
+                        return False
+                    popup = context.run_recognition("PatrolFoodPopupStillOpen", frame)
+                    if popup is None:
+                        return False
+                    still_open = bool(popup.hit)
+                    if still_open:
+                        closed_frames = 0
+                    else:
+                        target = context.run_recognition(panel, frame)
+                        closed_frames = closed_frames + 1 if target is not None and target.hit else 0
+                        if closed_frames >= 2:
+                            print("[巡检-海星喂食] 已连续两帧确认弹窗关闭及对应海星页面。", flush=True)
+                            return True
+                    time.sleep(0.25)
+                if not still_open:
+                    break
+                if attempt == 0:
+                    print("[巡检-海星喂食] 弹窗仍在，将基于新画面复核同种鱼食后最多补点一次。", flush=True)
+            print("[巡检-海星喂食] ERROR: 投喂后未确认弹窗关闭及对应海星页面，停止。", flush=True)
+            return False
+        except Exception as exc:
+            print(f"[巡检-海星喂食] ERROR: 投喂验证异常: {exc}", flush=True)
             return False
 
 
@@ -1674,10 +1748,29 @@ def _open_star_friends(context: Context, controller) -> bool:
             return False
         x, y = STAR_TAB_CENTER
         print(f"[好友摸宝] 留言处理结束，点击星级好友页签 ({x}, {y})。", flush=True)
+        if _task_cancelled(context):
+            return False
         if not _click_succeeded(controller, x, y):
             print("[好友摸宝] ERROR: 星级好友页签点击未下发。", flush=True)
             return False
-        time.sleep(1.0)
+        # The tab switch can finish after the old two-second click budget.
+        # Wait for the actual list; retry only after a fresh inbox gate above.
+        deadline = time.monotonic() + 8.0
+        while time.monotonic() < deadline:
+            if _task_cancelled(context):
+                return False
+            time.sleep(0.25)
+            if _task_cancelled(context):
+                return False
+            frame = _capture_720p(controller)
+            if frame is None:
+                print("[好友摸宝] ERROR: 等待星级好友列表时截图失败。", flush=True)
+                return False
+            if _recognition_box(context, "FriendPageStarFriendsIdentity", frame) is not None:
+                print("[好友摸宝] 已确认星级好友列表。", flush=True)
+                return True
+    if _task_cancelled(context):
+        return False
     frame = _capture_720p(controller)
     if frame is not None and _recognition_box(context, "FriendPageStarFriendsIdentity", frame) is not None:
         print("[好友摸宝] 已确认星级好友列表。", flush=True)
@@ -2358,9 +2451,10 @@ class SeaOtterAdvancePairAction(CustomAction):
 
 @AgentServer.custom_action("SeaOtterReturnFromRecommendedAction")
 class SeaOtterReturnFromRecommendedAction(CustomAction):
-    """RIGHT 时返回末位好友；LEFT 到边界不能证明寻宝体力耗尽。"""
+    """RIGHT 返回末位继续；LEFT 到推荐玩家是本轮正常扫描终点。"""
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
+            parse_dict_param(getattr(argv, "custom_action_param", None))
             ctrl = context.tasker.controller
             if not ctrl:
                 print("[海獭摸宝] 错误: 未获取到 Controller", flush=True)
@@ -2369,13 +2463,20 @@ class SeaOtterReturnFromRecommendedAction(CustomAction):
                 print("[海獭摸宝] 收到停止请求，未从推荐玩家页面继续操作", flush=True)
                 return False
             if sea_otter_gem_state.get("current_side", "left") == "left":
-                sea_otter_gem_state["completion_reason"] = "BOUNDARY_STAMINA_UNVERIFIED"
-                sea_otter_gem_state["normal_completion"] = False
-                print(
-                    "[海獭摸宝] ERROR: 已到推荐玩家边界，但未确认寻宝体力耗尽；本轮未完成，不增加今日次数。",
-                    flush=True,
-                )
-                return False
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    return False
+                arrow = context.run_recognition("SeaOtterRecommendedBridge", frame)
+                friend = [context.run_recognition(name, frame) for name in (
+                    "SeaOtterHasStaminaPanel", "SeaOtterFriendLiked", "SeaOtterFriendUnliked")]
+                if (arrow is None or not arrow.hit or any(result is None for result in friend)
+                        or any(result.hit for result in friend) or _task_cancelled(context)):
+                    print("[海獭摸宝] ERROR: 推荐玩家终点未通过当帧复核，停止。", flush=True)
+                    return False
+                sea_otter_gem_state["completion_reason"] = "RECOMMENDED_BOUNDARY_REACHED"
+                sea_otter_gem_state["normal_completion"] = True
+                print("[海獭摸宝] 已到推荐玩家边界，本轮扫描正常结束。", flush=True)
+                return True
 
             print("[SeaOtter] side=RIGHT ui=RECOMMENDED action=PREV_AS_LAST_FRIEND_BRIDGE", flush=True)
             ctrl.post_click(1085, 68).wait()
@@ -2398,12 +2499,14 @@ class SeaOtterSwitchPairAction(CustomAction):
 
 @AgentServer.custom_action("SeaOtterBoundaryIncompleteAction")
 class SeaOtterBoundaryIncompleteAction(CustomAction):
-    """末位 RIGHT 耗尽仍回 LEFT；真正扫描边界不能计为体力耗尽。"""
+    """兼容旧注册名：末位 RIGHT 耗尽回 LEFT，LEFT 耗尽正常结束。"""
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             param = parse_dict_param(getattr(argv, "custom_action_param", None))
             reason = str(param.get("reason") or "BOUNDARY_STAMINA_UNVERIFIED")
+            if _task_cancelled(context):
+                return False
             if (reason == "LAST_FRIEND_STAMINA_UNVERIFIED"
                     and sea_otter_gem_state.get("current_side") == "right"):
                 ctrl = context.tasker.controller
@@ -2418,15 +2521,20 @@ class SeaOtterBoundaryIncompleteAction(CustomAction):
                 sea_otter_gem_state["current_side"] = "left"
                 print("[SeaOtter] side=RIGHT ui=EXHAUSTED action=PREV_AS_REFRESH_BRIDGE", flush=True)
                 return True
-            sea_otter_gem_state["normal_completion"] = False
-            sea_otter_gem_state["completion_reason"] = reason
-            print(
-                f"[海獭摸宝] ERROR: 到达好友边界 ({reason})，未确认寻宝体力耗尽；本轮未完成，不增加今日次数。",
-                flush=True,
-            )
-            # 返回 False 只表示不计入完整运行。Pipeline on_error 接着返回主鱼缸。
-            # 未使用体力提示由后续节点识别后失败，这里不点击确认。
-            return False
+            ctrl = context.tasker.controller
+            frame = _capture_720p(ctrl) if ctrl else None
+            if (reason != "LAST_FRIEND_STAMINA_UNVERIFIED" or frame is None
+                    or not _recognition_box(context, "SeaOtterGrayRightArrow", frame)
+                    or not _recognition_box(context, "SeaOtterLastFriendExhausted", frame)
+                    or _task_cancelled(context)):
+                sea_otter_gem_state["normal_completion"] = False
+                sea_otter_gem_state["completion_reason"] = reason
+                print("[海獭摸宝] ERROR: 末位耗尽终点未通过当帧复核，停止。", flush=True)
+                return False
+            sea_otter_gem_state["normal_completion"] = True
+            sea_otter_gem_state["completion_reason"] = "LAST_FRIEND_EXHAUSTED"
+            print("[海獭摸宝] 末位好友已耗尽，本轮扫描正常结束。", flush=True)
+            return True
         except Exception as e:
             traceback.print_exc()
             print(f"[海獭摸宝] 边界处理异常: {e}", flush=True)
@@ -2582,6 +2690,9 @@ class SeaOtterFinalizeAction(CustomAction):
 
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
+            if _task_cancelled(context):
+                print("[海獭摸宝] 收到停止请求，未记录完成次数。", flush=True)
+                return False
             if not sea_otter_gem_state.get("normal_completion"):
                 reason = sea_otter_gem_state.get("completion_reason")
                 if reason and str(reason).startswith("SAFETY_"):
@@ -3853,6 +3964,19 @@ def _gem_gift_box_card_click_point(recipe_box, marker_box):
     return click_x, click_y
 
 
+@AgentServer.custom_action("InitGemGiftBoxAction")
+class InitGemGiftBoxAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        parse_dict_param(argv.custom_action_param)
+        try:
+            for name in ("GemGiftBoxRecoverCloseDialog", "GemGiftBoxRecoverClickReturn"):
+                context.clear_hit_count(name)
+            return True
+        except Exception as exc:
+            print(f"[宝石礼盒] ERROR: 恢复计数初始化失败: {exc}", flush=True)
+            return False
+
+
 @AgentServer.custom_action("GemGiftBoxExchangeAllAction")
 class GemGiftBoxExchangeAllAction(CustomAction):
     """按配方等级逐一完成七张宝石礼盒卡片，使用每日 10/10 状态防重。"""
@@ -3940,7 +4064,7 @@ class GemGiftBoxExchangeAllAction(CustomAction):
                 count_roi = _gem_gift_box_card_roi(recipe_box, "count")
                 override = {
                     "GemGiftBoxCompletedCount": {
-                        "expected": ".*兑换.*10/10.*",
+                        "expected": ".*[兑兌][换換].*10/10.*",
                         "roi": count_roi,
                     }
                 }
@@ -4012,6 +4136,19 @@ class GemGiftBoxExchangeAllAction(CustomAction):
                 if dialog_frame is None:
                     print(f"[宝石礼盒] 点击 {level}级配方后未确认兑换弹窗，安全停止", flush=True)
                     return False
+                # A retained OK badge is not proof of remaining daily exchanges.
+                if _recognition_box(context, "GemGiftBoxDialogCompletedCount", dialog_frame) is not None:
+                    close_box = _recognition_box(context, "GemGiftBoxDialogCloseIdentity", dialog_frame)
+                    if close_box is None or cancelled(f"关闭 {level}级已满弹窗"):
+                        return False
+                    ctrl.post_click(*_box_center(close_box)).wait()
+                    page_frame, _ = wait_for("GemGiftBoxRecoveryListIdentity", 4.0)
+                    if page_frame is None:
+                        print(f"[宝石礼盒] ERROR: {level}级已满弹窗未能关闭，停止。", flush=True)
+                        return False
+                    completed_levels.append(level)
+                    print(f"[宝石礼盒] {level}级弹窗确认今日已满，已关闭且未增加数量或提交兑换。", flush=True)
+                    continue
                 plus_box = _recognition_box(context, "GemGiftBoxPlusButton", dialog_frame)
                 if plus_box is None:
                     print(f"[宝石礼盒] {level}级配方兑换弹窗未识别到加号，安全停止", flush=True)
@@ -5621,7 +5758,7 @@ class GemGiftBoxSkipAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
             print(
-                "[宝石礼盒] 页面未按预期识别或等待超时，已跳过本次兑换并继续后续任务，不因此失败多鱼缸巡检。",
+                "[宝石礼盒] 已确认回到主鱼缸，跳过本次兑换并继续后续任务。",
                 flush=True,
             )
             if daily_routine_state.get("active") and daily_routine_state.get("step") == "GEM_GIFT_BOX":

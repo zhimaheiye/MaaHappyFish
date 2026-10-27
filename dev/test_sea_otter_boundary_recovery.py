@@ -1,4 +1,4 @@
-"""2026-10-03 海獭边界回归：固定现场帧/真实 MaaFramework，不连接设备。"""
+"""海獭失败保护回归：固定现场帧/真实 MaaFramework，不连接设备。"""
 import json
 import os
 import sys
@@ -65,8 +65,7 @@ class BoundaryRecovery(unittest.TestCase):
         override = {name: {**node, "next": [n for n in node["next"] if not n.startswith("[JumpBack]")]}
                     for name, node in pipeline.items() if node.get("next")}
         cases = [
-            ("SeaOtterGrayRightArrow", {}, {}),  # 真实末位帧 OCR 0(12点刷新体力)。
-            ("SeaOtterAddFriendPage", {}, {"recognition": "DirectHit"}),
+            # A forced recommended candidate over a real friend's frame must fail revalidation.
             ("SeaOtterRecommendedBridge", {}, {"recognition": "DirectHit"}),
             ("SeaOtterLimitReached", {"total_harvests": 1000}, {}),
             ("SeaOtterLimitReached", {"consecutive_exhausted": 30}, {}),

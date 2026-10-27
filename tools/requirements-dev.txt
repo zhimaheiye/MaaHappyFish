@@ -1,0 +1,11 @@
+# Development baseline matching the copied client MaaFramework v5.12.3.
+# Use Python 3.13 x64 in .venv; do not install into a running release client.
+-r ../agent/requirements-release.txt
+-r requirements.txt
+maafw==5.12.3
+opencv-python-headless==4.12.0.88
+numpy==2.2.6
+pytest==9.1.1
+pillow==13.0.0
+jsonschema==4.26.0
+referencing==0.37.0

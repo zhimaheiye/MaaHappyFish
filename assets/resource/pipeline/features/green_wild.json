@@ -213,14 +213,11 @@
     },
     "GreenWildAbort": {
         "recognition": "DirectHit",
-        "action": "DoNothing",
-        "focus": {
-            "Node.Action.Succeeded": "[绿野寻仙踪] 页面门禁未通过，跳过本步骤。"
-        },
-        "next": [
-            "DailyRoutineReturnIfActive",
-            "DailyRoutineStandaloneDone"
-        ]
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {
+            "message": "[绿野寻仙踪] ERROR: 页面门禁未通过，停止本次任务，避免重复开贝壳和买鱼。"
+        }
     },
     "GreenWildDailyTask": {
         "recognition": "DirectHit",

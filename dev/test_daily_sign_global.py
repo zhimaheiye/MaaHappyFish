@@ -114,8 +114,8 @@ PAGE_LOCAL_CHAINS = {
     },
     "golden_dolphin.json": {"GoldenDolphinResumeSettlement"},
     "shake_game.json": {"ShakeGameResumeSettlement"},
-    # Daily completion/abort bridges do not navigate forward into another page.
-    "green_wild.json": {"GreenWildVerifyTank", "GreenWildAbort"},
+    # The daily completion bridge does not navigate into another page.
+    "green_wild.json": {"GreenWildVerifyTank"},
     # Deep-sea paid/free and return states have distinct local gates. Never apply
     # the generic activity-return control to a paid/free selection or result.
     "sea_dive.json": {

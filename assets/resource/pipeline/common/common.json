@@ -134,8 +134,9 @@
     },
     "FriendPageNavigationFailed": {
         "recognition": "DirectHit",
-        "action": "StopTask",
-        "focus": {"Node.Action.Succeeded": "[好友导航] ERROR: 星级好友列表未确认，安全停止。"}
+        "action": "Custom",
+        "custom_action": "FailTaskAction",
+        "custom_action_param": {"message": "[好友导航] ERROR: 星级好友列表未确认，安全停止。"}
     },
     "GlobalDailySignPopup": {
         "recognition": "TemplateMatch",

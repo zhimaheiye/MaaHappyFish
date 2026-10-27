@@ -83,7 +83,11 @@ def step(ctrl, ctx, ui_state):
         harvest_act.run(ctx, None)
         return 'CONTINUE'
     elif ui_state == 'RECOMMENDED':
-        return 'CONTINUE' if recommended_bridge_act.run(ctx, None) else 'DONE'
+        ctx.run_recognition = lambda name, frame: SimpleNamespace(
+            hit=name == "SeaOtterRecommendedBridge", box=(1170, 54, 60, 30))
+        with patch("agent.my_action._capture_720p", return_value=0):
+            ok = recommended_bridge_act.run(ctx, None)
+        return 'DONE' if not ok or sea_otter_gem_state["normal_completion"] else 'CONTINUE'
     else:
         raise ValueError(f"Unknown ui_state {ui_state}")
 
@@ -254,7 +258,7 @@ def test_scenario_e():
 
 
 def test_scenario_f():
-    """末位好友耗尽后进入推荐玩家页，不能当作寻宝体力全部耗尽。"""
+    """LEFT 耗尽后到达推荐玩家页，本轮扫描正常结束。"""
     ctrl = MockController()
     ctx = MockContext(ctrl)
     init_act.run(ctx, None)
@@ -262,12 +266,12 @@ def test_scenario_f():
     assert step(ctrl, ctx, 'EXHAUSTED') == 'CONTINUE'
     assert sea_otter_gem_state["current_side"] == "left"
     assert step(ctrl, ctx, 'RECOMMENDED') == 'DONE'
-    assert sea_otter_gem_state["completion_reason"] == "BOUNDARY_STAMINA_UNVERIFIED"
-    assert not sea_otter_gem_state["normal_completion"]
+    assert sea_otter_gem_state["completion_reason"] == "RECOMMENDED_BOUNDARY_REACHED"
+    assert sea_otter_gem_state["normal_completion"]
 
     clicks = [a for a in ctrl.actions if a in ('CLICK_NEXT', 'CLICK_PREV')]
     assert clicks == ['CLICK_NEXT'], "进入推荐玩家后不应再执行 Prev 或其他点击"
-    print("[PASS] Scenario F: 推荐玩家边界报告未完成，零额外点击！")
+    print("[PASS] Scenario F: 推荐玩家边界正常完成，零额外点击！")
 
 
 def test_last_friend_gray_arrow_harvest():
@@ -413,8 +417,10 @@ def test_friend_gate_pipeline():
         "SeaOtterLastFriendHarvestable",
         "SeaOtterWaitScreen",
     ]
-    assert business_next("SeaOtterLastFriendExhausted") == ["SeaOtterFriendRouter"]
-    assert pipeline["SeaOtterLastFriendExhausted"]["on_error"] == ["SeaOtterHomeReturnRouter"]
+    assert business_next("SeaOtterLastFriendExhausted") == ["SeaOtterScanComplete", "SeaOtterFriendRouter"]
+    assert pipeline["SeaOtterLastFriendExhausted"]["on_error"] == ["SeaOtterNavigationFailed"]
+    assert business_next("SeaOtterScanComplete") == ["SeaOtterHomeReturnRouter"]
+    assert pipeline["SeaOtterScanComplete"]["custom_recognition"] == "CheckSeaOtterNormalCompletionReco"
     home = pipeline["SeaOtterHomeReturnRouter"]
     assert home["next"] == [
         "SeaOtterUnusedStaminaDialog",

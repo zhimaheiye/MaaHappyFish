@@ -222,10 +222,10 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterScanComplete",
             "SeaOtterFriendRouter"
         ],
-        "on_error": ["SeaOtterHomeReturnRouter"],
-        "focus": {"Node.Action.Failed": "[海獭摸宝] 末位好友耗尽，今日次数未增加，开始返回主鱼缸。"}
+        "on_error": ["SeaOtterNavigationFailed"]
     },
     "SeaOtterLastFriendHarvestable": {
         "recognition": "TemplateMatch",
@@ -271,7 +271,21 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterScanComplete",
             "SeaOtterFriendRouter"
+        ]
+    },
+    "SeaOtterScanComplete": {
+        "recognition": "Custom",
+        "custom_recognition": "CheckSeaOtterNormalCompletionReco",
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterHomeReturnRouter"
         ]
     },
     "SeaOtterHomeReturnRouter": {
@@ -374,8 +388,16 @@
     "SeaOtterReturnedHome": {
         "recognition": "DirectHit",
         "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "SeaOtterDone"
+        ],
         "focus": {
-            "Node.Action.Succeeded": "[海獭摸宝] 已返回主鱼缸。本次未计入完整运行，今日次数未增加。"
+            "Node.Action.Succeeded": "[海獭摸宝] 已返回主鱼缸，准备记录本轮完成。"
         }
     },
     "SeaOtterNavigationFailed": {

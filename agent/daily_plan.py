@@ -34,7 +34,9 @@ def read_daily_plan(task_name="", data_root=None):
 
 
 def daily_task_name(task):
-    return task.get("display_name_override") or task.get("label") or task.get("name", "日常收尾")
+    # MFA stores the user-visible renamed title in remark.
+    return (task.get("remark") or task.get("display_name_override")
+            or task.get("label") or task.get("name", "日常收尾"))
 
 
 def daily_option_nodes(interface):
@@ -112,6 +114,13 @@ def compile_daily_options(interface, task):
                 selected = choice.get("selected_cases")
                 if selected is None:
                     selected = option.get("default_case", [])
+                # Normalize only the known historical daily checkbox name.
+                # Iterating declared cases below applies old+new selections once.
+                if (name == "日常收尾任务" and isinstance(selected, list)
+                        and any(case["name"] == "浪漫满屋祝福" for case in cases)
+                        and not any(case["name"] == "浪漫满屋" for case in cases)):
+                    selected = ["浪漫满屋祝福" if case == "浪漫满屋" else case
+                                for case in selected]
                 if name == "日常收尾任务" and isinstance(selected, list) and "领取活动体力（酿月食香）" in selected:
                     print("[日常收尾] 酿月食香已结束，已忽略引用方案中旧的活动体力勾选。", flush=True)
                     selected = [case for case in selected if case != "领取活动体力（酿月食香）"]

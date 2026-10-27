@@ -66,10 +66,8 @@ def test_pipeline_contract():
     assert pipeline["GemGiftBoxTask"]["timeout"] == 10000
     assert pipeline["GemGiftBoxTask"]["on_error"] == ["GemGiftBoxAbort"]
     abort = pipeline["GemGiftBoxAbort"]
-    assert abort["action"] == "Custom"
-    assert abort["custom_action"] == "GemGiftBoxSkipAction"
-    assert abort["action"] != "StopTask"
-    assert business_next(abort) == ["GemGiftBoxRecoverTank", "GemGiftBoxRecoverClickReturn"]
+    assert abort["action"] == "DoNothing"
+    assert business_next(abort) == ["GemGiftBoxRecoverCloseDialog", "GemGiftBoxRecoverTank", "GemGiftBoxRecoverClickReturn"]
     assert pipeline["GemGiftBoxUnexpectedDialog"]["action"] == "DoNothing"
     assert business_next(pipeline["GemGiftBoxUnexpectedDialog"]) == ["GemGiftBoxAbort"]
     for name in (
@@ -81,16 +79,22 @@ def test_pipeline_contract():
     ):
         assert pipeline[name]["on_error"] == ["GemGiftBoxAbort"]
     assert pipeline["GemGiftBoxRecoverTank"]["template"] == "主界面特征.png"
-    assert pipeline["GemGiftBoxRecoverClickReturn"]["expected"] == "^返回$"
-    assert pipeline["GemGiftBoxRecoverClickReturn"]["action"] == "Click"
+    recovery = pipeline["GemGiftBoxRecoverClickReturn"]
+    assert recovery["recognition"] == "And"
+    assert recovery["all_of"][0] == "GemGiftBoxRecoveryListIdentity"
+    assert recovery["all_of"][1]["expected"] == "^返回$"
+    assert recovery["custom_action"] == "ClickRecognizedCenterAction"
+    assert pipeline["GemGiftBoxRecoverTank"]["custom_action"] == "GemGiftBoxSkipAction"
     assert business_next(pipeline["GemGiftBoxRecoverTank"]) == [
         "DailyRoutineReturnIfActive",
         "GemGiftBoxStandaloneFail",
     ]
-    assert business_next(pipeline["GemGiftBoxRecoverGiveUp"]) == [
-        "DailyRoutineReturnIfActive",
-        "GemGiftBoxStandaloneFail",
-    ]
+    assert pipeline["GemGiftBoxRecoverGiveUp"]["custom_action"] == "FailTaskAction"
+    assert "next" not in pipeline["GemGiftBoxRecoverGiveUp"]
+    close = pipeline["GemGiftBoxRecoverCloseDialog"]
+    assert close["all_of"] == ["GemGiftBoxExchangeDialog", "GemGiftBoxDialogCloseIdentity"]
+    assert close["box_index"] == 1
+    assert close["max_hit"] == 3
     standalone = pipeline["GemGiftBoxStandaloneFail"]
     assert standalone["custom_action"] == "FailTaskAction"
     assert "next" not in standalone
@@ -102,6 +106,16 @@ def test_card_click_uses_recipe_and_ok_midpoint():
     recipe_box = (55, 196, 108, 41)
     marker_box = (587, 195, 47, 35)
     assert my_action._gem_gift_box_card_click_point(recipe_box, marker_box) == (360, 215)
+
+
+def test_entry_resets_bounded_recovery_counts_for_each_invocation():
+    names = []
+    pipeline = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    assert pipeline["GemGiftBoxTask"]["custom_action"] == "InitGemGiftBoxAction"
+    action = my_action.InitGemGiftBoxAction()
+    for _ in range(2):
+        assert action.run(SimpleNamespace(clear_hit_count=names.append), SimpleNamespace(custom_action_param="null"))
+    assert names == ["GemGiftBoxRecoverCloseDialog", "GemGiftBoxRecoverClickReturn"] * 2
 
 
 def test_skip_advances_daily_routine_once():
@@ -183,6 +197,11 @@ class Controller:
             self.pending_level = None
             if self.failure_mode != "dialog_missing":
                 self.state = "dialog"
+                if self.failure_mode == "completed_dialog":
+                    self.completed.add(self.current_level)
+        elif self.state == "dialog" and x >= 980 and y < 200:
+            self.state = "page"
+            self.current_level = None
         elif self.state == "dialog" and y < 480:
             self.plus_clicks += 1
         elif self.state == "dialog":
@@ -257,6 +276,12 @@ class Context:
             return Result()
         if node_name == "GemGiftBoxExchangeDialog":
             return Result(ctrl.state == "dialog", (800, 250, 100, 80))
+        if node_name == "GemGiftBoxDialogCompletedCount":
+            return Result(ctrl.state == "dialog" and ctrl.current_level in ctrl.completed, (790, 577, 170, 30))
+        if node_name == "GemGiftBoxDialogCloseIdentity":
+            return Result(ctrl.state == "dialog", (987, 127, 43, 43))
+        if node_name == "GemGiftBoxRecoveryListIdentity":
+            return Result(ctrl.state == "page", (20, 90, 250, 40))
         if node_name == "GemGiftBoxPlusButton":
             return Result(ctrl.state == "dialog", (900, 370, 40, 40))
         if node_name == "GemGiftBoxExchangeButton":
@@ -425,6 +450,75 @@ def test_scenario_e_partial_exchange_continues_to_subsequent_recipes():
     assert context.controller.plus_clicks == 5 * 9
 
 
+def test_completed_count_accepts_mixed_glyphs_but_not_partial_counts():
+    import re
+    pipeline = json.loads(PIPELINE_PATH.read_text(encoding="utf-8"))
+    pattern = pipeline["GemGiftBoxCompletedCount"]["expected"]
+    assert pipeline["GemGiftBoxDialogCompletedCount"]["expected"] == pattern
+    for text in ("今日已兑换10/10", "今日已兌换10/10", "今日已兌換10/10", "今日已兑換10/10"):
+        assert re.fullmatch(pattern, text)
+    for text in ("今日已兑换1/10", "今日已兑换0/10", "今日已兑换9/10", "999+/10"):
+        assert not re.fullmatch(pattern, text)
+
+
+def test_completed_dialog_is_closed_without_plus_or_exchange():
+    from unittest.mock import patch
+    context = Context(completed=set(), failure_mode="completed_dialog")
+    with patch.object(my_action.time, "sleep"):
+        assert my_action.GemGiftBoxExchangeAllAction().run(context, SimpleNamespace())
+    assert context.controller.completed == set(my_action.GEM_GIFT_BOX_LEVELS)
+    assert context.controller.plus_clicks == 0
+    assert len([p for p in context.controller.clicks if p == (1008, 148)]) == 7
+    assert not any(y >= 480 and x >= 790 for x, y in context.controller.clicks)
+
+
+def test_real_failure_frame_recognizes_full_dialog_and_blocks_background_return():
+    import cv2
+    from maa.controller import CustomController
+    from maa.resource import Resource
+    from maa.tasker import Tasker
+    from maa.library import Library
+    from maa.toolkit import Toolkit
+    from agent.my_reco import CheckGemGiftBoxListReco
+    Library.open(Library.framework_libpath.parent, agent_server=False)
+    Toolkit.init_option(str(ROOT / "temp/gem-gift-box-native"))
+    frame = cv2.imdecode(np.frombuffer(
+        (ROOT / "dev/fixtures/gem_gift_box/completed_dialog_20261024.png").read_bytes(), np.uint8), cv2.IMREAD_COLOR)
+
+    class OfflineController(CustomController):
+        def connect(self): return True
+        def request_uuid(self): return "gem-gift-box-offline"
+        def get_features(self): return 0
+        def screencap(self): return frame
+
+    resource = Resource()
+    assert resource.post_bundle(ROOT / "assets/resource").wait().succeeded
+    resource.register_custom_recognition("CheckGemGiftBoxListReco", CheckGemGiftBoxListReco())
+    controller = OfflineController()
+    assert controller.post_connection().wait().succeeded
+    tasker = Tasker()
+    assert tasker.bind(resource, controller)
+    # Override actions with DoNothing: this test cannot click or control a device.
+    for node, expected in (("GemGiftBoxDialogCompletedCount", True),
+                           ("GemGiftBoxRecoverCloseDialog", True),
+                           ("GemGiftBoxRecoverClickReturn", False)):
+        result = tasker.post_task(node, {node: {"action": "DoNothing", "next": [],
+            "on_error": [], "timeout": 0, "focus": {}}}).wait()
+        assert result.succeeded == expected, node
+
+
+def test_list_identity_fails_closed_for_modal_unknown_or_missing_recognition():
+    from agent.my_reco import CheckGemGiftBoxListReco
+    reco = CheckGemGiftBoxListReco()
+    arg = SimpleNamespace(image=np.zeros((720, 1280, 3), np.uint8), custom_recognition_param="null")
+    for dialog, page, expected in ((Result(True), Result(True, (1, 2, 3, 4)), None),
+                                    (None, Result(True, (1, 2, 3, 4)), None),
+                                    (Result(False), Result(False), None),
+                                    (Result(False), Result(True, (1, 2, 3, 4)), (1, 2, 3, 4))):
+        context = SimpleNamespace(run_recognition=lambda name, image: dialog if name == "GemGiftBoxExchangeDialog" else page)
+        assert reco.analyze(context, arg) == expected
+
+
 def test_transaction_failure_aborts_dialog_missing():
     """防御测试 1：配方卡片点击后兑换弹窗未打开，必须安全 Abort 返回 False。"""
     original_sleep = my_action.time.sleep
@@ -465,6 +559,7 @@ if __name__ == "__main__":
     test_pipeline_contract()
     test_skip_advances_daily_routine_once()
     test_card_click_uses_recipe_and_ok_midpoint()
+    test_entry_resets_bounded_recovery_counts_for_each_invocation()
     test_interface_is_synchronized()
     test_all_seven_recipes_are_identity_driven_and_not_repeated()
     test_scenario_a_missing_ok_on_first_recipe_does_not_abort_subsequent()
@@ -477,4 +572,8 @@ if __name__ == "__main__":
     test_transaction_failure_aborts_dialog_missing()
     test_transaction_failure_aborts_confirm_missing()
     test_transaction_failure_aborts_stuck_in_confirm()
+    test_completed_count_accepts_mixed_glyphs_but_not_partial_counts()
+    test_completed_dialog_is_closed_without_plus_or_exchange()
+    test_list_identity_fails_closed_for_modal_unknown_or_missing_recognition()
+    test_real_failure_frame_recognizes_full_dialog_and_blocks_background_return()
     print("[PASS] 宝石礼盒七配方身份、10/10 防重、部分兑换、无OK跳过与防御异常全场景闭环验证通过")

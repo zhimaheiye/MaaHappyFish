@@ -644,8 +644,57 @@
             "FishBabyVerifyIncubation"
         ],
         "on_error": [
+            "FishBabyIncubationCategory",
+            "FishBabyUnavailableExitHome",
             "FishBabyAbort"
         ]
+    },
+    "FishBabyUnavailableExitHome": {
+        "recognition": "And",
+        "all_of": ["FishBabyAtHome", "FishBabyHomeStart"],
+        "action": "Click",
+        "target": [1201, 57, 24, 24],
+        "post_delay": 1500,
+        "timeout": 5000,
+        "focus": {
+            "Node.Action.Succeeded": "[鱼宝乐园] 开始孵化未能进入，已点击主页关闭，正在确认主鱼缸。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "FishBabyUnavailableVerifyTank"
+        ],
+        "on_error": ["FishBabyAbort"]
+    },
+    "FishBabyUnavailableVerifyTank": {
+        "recognition": "TemplateMatch",
+        "template": "主界面特征.png",
+        "roi": [0, 200, 150, 400],
+        "threshold": 0.7,
+        "action": "Custom",
+        "custom_action": "DailyRoutineSubtaskDoneAction",
+        "custom_action_param": {
+            "task_name": "FishBaby",
+            "expected_step": "FISH_BABY",
+            "status": "SKIPPED"
+        },
+        "timeout": 8000,
+        "focus": {
+            "Node.Action.Succeeded": "[鱼宝乐园] 本轮未开始孵化，已确认回到主鱼缸，继续后续任务。"
+        },
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "DailyRoutineReturnIfActive",
+            "DailyRoutineStandaloneDone"
+        ],
+        "on_error": ["FishBabyAbort"]
     },
     "FishBabyVerifyIncubation": {
         "recognition": "OCR",

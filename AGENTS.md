@@ -14,6 +14,7 @@
 | --- | --- |
 | 需了解整体架构或边界约束 | `PRODUCT.md` |
 | 查看当前正式版与机器运行状态 | `PROJECT_STATUS.md` |
+| 本机开发环境迁移、Python、开发启动入口与证据仓库位置 | `docs/development-environment.md` |
 | 查看或登记待修复问题 | `ISSUES.md` |
 | 查看用户尚未正式立项的长期想法/粗略备忘 | `待办.md`；它不是 Bug 跟踪器。条目一旦进入正式开发或形成可执行问题，应迁移到对应功能文档 / `ISSUES.md`，并从 `待办.md` 删除，避免双份事实源 |
 | 接手当前工作或查看进度 | `docs/handoff/CURRENT.md` |

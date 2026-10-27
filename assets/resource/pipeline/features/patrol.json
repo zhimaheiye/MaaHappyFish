@@ -119,6 +119,7 @@
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolStartAtFoodPopupAbort",
+            "PatrolStartAtFriendList",
             "PatrolStartAtGemFusion",
             "PatrolStartAtMagicSummon",
             "PatrolStartAtUniversalStarfish",
@@ -131,6 +132,30 @@
             "PatrolStartAtEnterGame"
         ],
         "on_error": ["PatrolAbortUnknownPage"]
+    },
+    "PatrolStartAtFriendList": {
+        "recognition": "And",
+        "all_of": [
+            "FriendPageStarFriendsIdentity",
+            {"recognition": "OCR", "expected": "^返回$", "roi": [1, 0, 189, 119]}
+        ],
+        "box_index": 1,
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
+        "post_delay": 1000,
+        "timeout": 8000,
+        "focus": {"Node.Action.Succeeded": "[巡检] 已确认星级好友列表并点击返回，等待主鱼缸。"},
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "PatrolStartAtTank1",
+            "PatrolStartAtTank2",
+            "PatrolStartAtTank3"
+        ],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolStartAtGemFusion": {
         "enabled": false,
@@ -1764,10 +1789,10 @@
         "recognition": "Custom",
         "custom_recognition": "PickStarfishShellFoodReco",
         "action": "Custom",
-        "custom_action": "ClickRecognizedCenterAction",
-        "post_delay": 2200,
+        "custom_action": "FeedPatrolStarfishFoodAction",
+        "post_delay": 0,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-萌海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。"
+            "Node.Action.Succeeded": "[巡检-萌海星] 已确认投放廉价、普通、高级或深海鱼食中排在最前的一种，弹窗已关闭。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -1778,7 +1803,10 @@
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolCuteAfterFeedRouter"
-        ]
+        ],
+        "custom_action_param": {
+            "panel_node": "PatrolCuteReplenishPageIdentity"
+        }
     },
     "PatrolCuteAfterFeedRouter": {
         "recognition": "DirectHit",
@@ -2003,10 +2031,10 @@
         "recognition": "Custom",
         "custom_recognition": "PickStarfishShellFoodReco",
         "action": "Custom",
-        "custom_action": "ClickRecognizedCenterAction",
-        "post_delay": 2200,
+        "custom_action": "FeedPatrolStarfishFoodAction",
+        "post_delay": 0,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-乖海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。"
+            "Node.Action.Succeeded": "[巡检-乖海星] 已确认投放廉价、普通、高级或深海鱼食中排在最前的一种，弹窗已关闭。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -2017,7 +2045,10 @@
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolGoodAfterFeedRouter"
-        ]
+        ],
+        "custom_action_param": {
+            "panel_node": "PatrolGoodReplenishPageIdentity"
+        }
     },
     "PatrolGoodAfterFeedRouter": {
         "recognition": "DirectHit",
@@ -2242,10 +2273,10 @@
         "recognition": "Custom",
         "custom_recognition": "PickStarfishShellFoodReco",
         "action": "Custom",
-        "custom_action": "ClickRecognizedCenterAction",
-        "post_delay": 2200,
+        "custom_action": "FeedPatrolStarfishFoodAction",
+        "post_delay": 0,
         "focus": {
-            "Node.Action.Succeeded": "[巡检-亮海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。"
+            "Node.Action.Succeeded": "[巡检-亮海星] 已确认投放廉价、普通、高级或深海鱼食中排在最前的一种，弹窗已关闭。"
         },
         "next": [
             "[JumpBack]GlobalActivityPagePopup",
@@ -2256,7 +2287,10 @@
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
             "PatrolBrightAfterFeedRouter"
-        ]
+        ],
+        "custom_action_param": {
+            "panel_node": "PatrolBrightReplenishPageIdentity"
+        }
     },
     "PatrolBrightAfterFeedRouter": {
         "recognition": "DirectHit",

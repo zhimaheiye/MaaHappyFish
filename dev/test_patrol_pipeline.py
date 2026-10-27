@@ -304,6 +304,7 @@ class PatrolPipelineTest(unittest.TestCase):
         next_nodes = router["next"]
         for node in (
             "PatrolStartAtFoodPopupAbort",
+            "PatrolStartAtFriendList",
             "PatrolStartAtGemFusion",
             "PatrolStartAtMagicSummon",
             "PatrolStartAtUniversalStarfish",
@@ -565,7 +566,8 @@ class PatrolPipelineTest(unittest.TestCase):
 
             pick = self.pipeline[f"Patrol{key}PickFood"]
             self.assertEqual(pick["custom_recognition"], "PickStarfishShellFoodReco")
-            self.assertEqual(pick["custom_action"], "ClickRecognizedCenterAction")
+            self.assertEqual(pick["custom_action"], "FeedPatrolStarfishFoodAction")
+            self.assertEqual(pick["custom_action_param"], {"panel_node": f"Patrol{key}ReplenishPageIdentity"})
             self.assertNotIn("target", pick)
             self.assertNotIn(f"Patrol{key}SpecialFood", self.pipeline)
             self.assertNotIn(f"Patrol{key}CloseFoodDialog", self.pipeline)

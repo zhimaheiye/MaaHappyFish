@@ -51,7 +51,9 @@ def test_message_box_bridge():
     assert bridge['next'] == ['FriendPageStarFriendsIdentity']
     assert bridge['on_error'] == ['FriendPageNavigationFailed']
     assert common['FriendPageStarFriendsIdentity']['expected'] == '星级好友'
-    assert common['FriendPageNavigationFailed']['action'] == 'StopTask'
+    failed = common['FriendPageNavigationFailed']
+    assert failed['custom_action'] == 'FailTaskAction'
+    assert not failed.get('next') and not failed.get('on_error')
     handler = '[JumpBack]FriendPageMessageBoxToStarFriends'
     friend = load('features/friend_gem.json')
     assert handler not in friend['FriendGemStartRouter']['next']
@@ -65,8 +67,12 @@ def test_message_box_bridge():
 
 def test_lucky_moment_close():
     common = load('common/common.json')
-    assert common['GlobalActivityPagePopup']['any_of'][0] == 'GlobalLuckyMomentTitle'
-    assert common['GlobalActivityPagePopup']['next'][0] == 'GlobalLuckyMomentClose'
+    assert common['GlobalActivityPagePopup']['any_of'] == [
+        'GlobalDancingFishPopup', 'GlobalLuckyMomentTitle', 'GlobalActivityPageReturn'
+    ]
+    assert common['GlobalActivityPagePopup']['next'] == [
+        'GlobalDancingFishPopup', 'GlobalLuckyMomentClose', 'GlobalActivityPageReturn'
+    ]
     assert common['GlobalLuckyMomentIdentity']['all_of'] == [
         'GlobalLuckyMomentTitle', 'GlobalLuckyMomentText'
     ]

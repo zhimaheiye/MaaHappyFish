@@ -60,6 +60,8 @@ ResumeHarvest (万能返回节点)
 
 ## 防误触机制
 
+2026-10-25 巡检补强：`PatrolCute/Good/BrightPickFood` 使用独立的 `FeedPatrolStarfishFoodAction`，确认喂食弹窗与新帧鱼食后点击；最多一次同种鱼食补点，每次最多等待 4 秒，并连续两帧确认弹窗消失及对应海星正文才报告成功。未知页或取消不补点，不把触摸下发当成投喂完成。仅 Patrol 接入此动作，CollectFish／独立入口仍遵循各自流程；详情与 44 项代码级验证见 [patrol.md](patrol.md)，本轮未做实机测试。
+
 - **背景**: 游戏内频繁点击水域会触发鱼的详细信息横幅，遮挡主要 UI。
 - **设计**: 不使用随机点击水域来取消焦点，使用 `DismissFishBannerIfOpen` 挂机 `4.5s` (idle)，等待横幅自然超时消失。
 

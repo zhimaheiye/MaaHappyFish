@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from agent.daily_plan import read_daily_plan, compile_daily_options
+from agent.daily_plan import read_daily_plan, compile_daily_options, daily_task_name
 from agent.my_action import InitHangupScheduledDailyAction, InitDailyRoutineAction, DailyRoutineFinishAction
 from agent.my_reco import CheckHangupNoonDailyDueReco, CheckHangupFriendGemDueReco
 from agent.runtime_state import daily_routine_state, hangup_schedule_state
@@ -107,6 +107,61 @@ class DailyPlanTests(unittest.TestCase):
         with patch.dict(os.environ, {"MFA_INSTANCE_ID": "../default"}):
             with self.assertRaises(ValueError):
                 read_daily_plan()
+
+    def test_mfa_remark_names_and_legacy_fallbacks(self):
+        first, second = saved_daily("旧名称一"), saved_daily("旧名称二")
+        first["remark"] = "日常收尾（零点）"
+        second["remark"] = "日常收尾（中午）"
+        self.write_tasks([first, second])
+        self.assertEqual(read_daily_plan(first["remark"])[1], first)
+        self.assertEqual(read_daily_plan(second["remark"])[1], second)
+        for name in ("", "旧名称一", "日常收尾"):
+            with self.assertRaises(ValueError):
+                read_daily_plan(name)
+        second["remark"] = first["remark"]
+        self.write_tasks([first, second])
+        with self.assertRaises(ValueError):
+            read_daily_plan(first["remark"])
+        for task, expected in (
+            ({"remark": "备注", "display_name_override": "旧名", "label": "标签", "name": "名称"}, "备注"),
+            ({"remark": "", "display_name_override": "旧名"}, "旧名"),
+            ({"remark": "", "label": "标签", "name": "名称"}, "标签"),
+            ({"name": "名称"}, "名称"),
+        ):
+            self.assertEqual(daily_task_name(task), expected)
+
+    def test_legacy_romantic_checkbox_alias_is_exact_and_nonmutating(self):
+        current = saved_daily(selected=["浪漫满屋祝福"])
+        expected = compile_daily_options(INTERFACE, current)
+        for selected in (["浪漫满屋"], ["浪漫满屋", "浪漫满屋祝福"]):
+            task = saved_daily(selected=selected)
+            before = copy.deepcopy(task)
+            overrides = compile_daily_options(INTERFACE, task)
+            self.assertEqual(overrides, expected)
+            self.assertEqual(sum("DailyRoutineEnableRomanticHouse" in o for o in overrides), 1)
+            self.assertEqual(task, before)
+        for selected in ([], ["浪漫满屋旧版"]):
+            task = saved_daily(selected=selected)
+            if selected:
+                with self.assertRaisesRegex(ValueError, "多选项已失效"):
+                    compile_daily_options(INTERFACE, task)
+            else:
+                self.assertFalse(any("DailyRoutineEnableRomanticHouse" in o
+                                     for o in compile_daily_options(INTERFACE, task)))
+
+    def test_remark_and_legacy_choice_resolve_together(self):
+        task = saved_daily(selected=["浪漫满屋", "浪漫满屋祝福", "每日免费礼包"])
+        task.pop("display_name_override")
+        task["remark"] = "日常收尾（零点）"
+        self.write_tasks([task])
+        interface, saved = read_daily_plan(task["remark"])
+        ctx = Context()
+        for override in compile_daily_options(interface, saved):
+            ctx.override_pipeline(override)
+        self.assertTrue(ctx.nodes["DailyRoutineEnableRomanticHouse"]["enabled"])
+        self.assertTrue(ctx.nodes["DailyRoutineEnableFreeGift"]["enabled"])
+        self.assertFalse(ctx.nodes["DailyRoutineEnableFishBaby"]["enabled"])
+        self.assertEqual(read_daily_plan(task["remark"])[1], task)
 
     def test_selected_nested_inputs_and_nondefault_parameters(self):
         task = saved_daily(selected=["购买鱼食", "鱼宝乐园", "深海寻鱼（仅每日最多2次免费，立即返航）"])

@@ -4,7 +4,7 @@
 语义契约：
 - 游戏日以凌晨 04:00 为界（game_day = now - 4h 的日期），无需定时器；
 - 计数持久化在本机 %LOCALAPPDATA%/MaaHappyFish/state.json（测试用临时目录注入）；
-- 好友边界未确认寻宝体力耗尽时不得 +1；已验证正常完成的计数 helper 保留；
+- 好友扫描正常终点才 +1，不把单个摸宝动作或未知页算作完成；
 - Safety Limit（max_harvests / consecutive_exhausted）、手动停止、异常、Abort 均不计数；
 - 同一次任务幂等：Finalize 重复进入只计一次；
 - 计数仅作记录，不拦截任务启动；
@@ -16,6 +16,7 @@ import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -38,6 +39,7 @@ class MockArg:
 class MockContext:
     def __init__(self):
         self.pipeline_overrides = []
+        self.tasker = SimpleNamespace(running=True, stopping=False, controller=None)
 
     def override_pipeline(self, value):
         self.pipeline_overrides.append(value)
@@ -132,7 +134,7 @@ def run_tests():
 
         # Normal completion：+1
         InitSeaOtterStateAction().run(MockContext(), MockArg())
-        # 单独验证已确认完成的持久化契约；当前生产 Pipeline 不会设置此标志。
+        # 单独验证已确认完成的持久化契约；原生边界回放另测终点门禁。
         sea_otter_gem_state["normal_completion"] = True
         sea_otter_gem_state["completion_reason"] = "VERIFIED_COMPLETION"
         assert sea_otter_gem_state["normal_completion"] is True
@@ -141,7 +143,7 @@ def run_tests():
         assert ls.get_sea_otter_daily_count() == 2  # 上一次记录 1 + 本次
         done_focus = finalize_context.pipeline_overrides[-1]["SeaOtterDoneDisplay"]["focus"]["Node.Action.Succeeded"]
         assert "/" not in done_focus and "上限 3 次" in done_focus
-        print("[PASS] 已确认完整结束的计数契约 +1（测试注入，不代表已有 UI 门禁）")
+        print("[PASS] 已确认正常结束的计数契约 +1")
 
         # 同一次任务 Finalize 重复进入：只 +1
         assert finalize.run(MockContext(), MockArg()) is True
@@ -202,7 +204,7 @@ def run_tests():
         assert InitSeaOtterStateAction().run(MockContext(), MockArg(task_id=770000003)) is True
         print("[PASS] 达到 3/3 记录后不阻止任务启动（仅记账）")
 
-        # ---- Pipeline 静态契约：边界不得通向成功出口，失败没有 StopTask 兜底 ----
+        # ---- Pipeline：正常边界经完成路由，失败没有 StopTask 兜底 ----
         pipeline = json.loads(SEA_OTTER_PATH.read_text(encoding="utf-8"))
         done = pipeline["SeaOtterDone"]
         assert done["action"] == "Custom"
@@ -210,7 +212,8 @@ def run_tests():
         last_friend = pipeline["SeaOtterLastFriendExhausted"]
         assert last_friend["custom_action"] == "SeaOtterBoundaryIncompleteAction"
         assert "SeaOtterDone" not in last_friend.get("next", [])
-        assert last_friend["on_error"] == ["SeaOtterHomeReturnRouter"]
+        assert "SeaOtterScanComplete" in last_friend["next"]
+        assert last_friend["on_error"] == ["SeaOtterNavigationFailed"]
         home = pipeline["SeaOtterHomeReturnRouter"]["next"]
         assert home[0] == "SeaOtterUnusedStaminaDialog"
         assert "SeaOtterDone" not in home
@@ -220,7 +223,7 @@ def run_tests():
         assert pipeline["SeaOtterUnusedStaminaDialog"]["action"] == "DoNothing"
         assert pipeline["SeaOtterUnusedStaminaDialog"]["next"] == ["SeaOtterNavigationFailed"]
         assert pipeline["SeaOtterReturnedHome"]["action"] == "DoNothing"
-        assert "next" not in pipeline["SeaOtterReturnedHome"]
+        assert pipeline["SeaOtterReturnedHome"]["next"][-1] == "SeaOtterDone"
         add_friend = pipeline["SeaOtterAddFriendPage"]
         assert add_friend["custom_action"] == "SeaOtterMarkNormalCompletionAction"
         assert add_friend["custom_action_param"]["reason"] == "FRIEND_LIST_EXHAUSTED"
@@ -235,7 +238,7 @@ def run_tests():
         assert mode["default_case"] == "自动导航返回主鱼缸"
         manual = next(case for case in mode["cases"] if case["name"].startswith("手动运行"))
         manual_override = manual["pipeline_override"]
-        assert manual_override["SeaOtterLastFriendExhausted"]["on_error"] == ["SeaOtterNavigationFailed"]
+        assert manual_override["SeaOtterScanComplete"]["next"] == ["SeaOtterDone"]
         assert manual_override["SeaOtterNonFriendBack"]["action"] == "DoNothing"
         assert manual_override["SeaOtterNonFriendBack"]["next"] == ["SeaOtterDone"]
         assert done["on_error"] == ["SeaOtterNavigationFailed"]
@@ -243,7 +246,7 @@ def run_tests():
         assert failure["custom_action"] == "FailTaskAction"
         assert not failure.get("next") and not failure.get("on_error")
         assert pipeline["SeaOtterLimitReached"]["action"] == "DoNothing"
-        print("[PASS] 末位 LEFT 与安全上限返回真实失败；非好友页按列表终点返回")
+        print("[PASS] 末位 LEFT 正常完成，RIGHT 继续；安全上限仍真实失败")
 
         # 清理环境变量，避免影响同进程其它测试
         os.environ.pop("MAAHAPPYFISH_STATE_DIR", None)
