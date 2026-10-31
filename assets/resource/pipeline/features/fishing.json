@@ -569,7 +569,7 @@
     },
     "FishingRound": {
         "recognition": "OCR",
-        "expected": "甩杆",
+        "expected": "甩[杆桿]",
         "roi": [
             1050,
             520,
@@ -637,7 +637,7 @@
     },
     "FishingPostRoundCheckReady": {
         "recognition": "OCR",
-        "expected": "甩杆",
+        "expected": "甩[杆桿]",
         "roi": [
             1050,
             520,

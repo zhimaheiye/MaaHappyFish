@@ -229,7 +229,7 @@
             "[JumpBack]GlobalSpecialOfferPopup",
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
-            "OpenShellStartRouter"
+            "GreenWildDailyPreflight"
         ]
     },
     "GreenWildDailyBuyFishEntry": {
@@ -541,6 +541,42 @@
         ],
         "on_error": [
             "GreenWildReturn"
+        ]
+    },
+    "GreenWildDailyPreflight": {
+        "recognition": "DirectHit",
+        "action": "DoNothing",
+        "timeout": 4000,
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "GreenWildDailyEntryPresent"
+        ],
+        "on_error": [
+            "GreenWildAbort"
+        ]
+    },
+    "GreenWildDailyEntryPresent": {
+        "recognition": "TemplateMatch",
+        "template": "绿野寻仙踪_入口.png",
+        "roi": [
+            120,
+            258,
+            90,
+            90
+        ],
+        "threshold": 0.8,
+        "action": "DoNothing",
+        "next": [
+            "[JumpBack]GlobalActivityPagePopup",
+            "[JumpBack]GlobalDailySignPopup",
+            "[JumpBack]GlobalSpecialOfferPopup",
+            "[JumpBack]GlobalNewsPopup",
+            "[JumpBack]GlobalLevelUpPopup",
+            "OpenShellStartRouter"
         ]
     }
 }

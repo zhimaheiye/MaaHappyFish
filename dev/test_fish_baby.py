@@ -105,7 +105,9 @@ class FishBabyContract(unittest.TestCase):
 
     def test_entry_retries_only_confirmed_tank_and_unknown_stops(self):
         nodes = json.loads((ROOT / "assets/resource/pipeline/features/fish_baby.json").read_text(encoding="utf-8"))
-        self.assertEqual(nodes["FishBabyEntryRouter"]["next"], [
+        self.assertEqual(nodes["FishBabyEntryRouter"]["next"], ["FishBabyAtHome"])
+        self.assertEqual(nodes["FishBabyEntryRouter"]["timeout"], 8000)
+        self.assertEqual(nodes["FishBabyEntryRouter"]["on_error"], [
             "FishBabyAtHome", "FishBabyMainTankSky", "FishBabyAbort"])
         self.assertEqual(nodes["FishBabyMainTankSky"]["next"], ["FishBabyRetryTank"])
         self.assertEqual(nodes["FishBabyRetryTank"]["next"], ["FishBabyEntryCoral"])

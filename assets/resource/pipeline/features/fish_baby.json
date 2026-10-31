@@ -773,6 +773,10 @@
         "recognition": "DirectHit",
         "action": "DoNothing",
         "next": [
+            "FishBabyAtHome"
+        ],
+        "timeout": 8000,
+        "on_error": [
             "FishBabyAtHome",
             "FishBabyMainTankSky",
             "FishBabyAbort"

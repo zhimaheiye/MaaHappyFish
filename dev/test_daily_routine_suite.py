@@ -51,7 +51,12 @@ import my_reco
 class DummyContext:
     class DummyTasker:
         controller = None
+        stopping = False
+        running = True
     tasker = DummyTasker()
+
+    def run_recognition(self, name, frame):
+        return types.SimpleNamespace(hit=name == "BandFishStartAtTank", box=(20, 450, 40, 40))
 
 class DummyArg:
     def __init__(self, param="{}"):
@@ -120,7 +125,14 @@ def run_tests():
         def post_click(self, x, y):
             self.clicks.append((x, y))
             class Job:
-                def wait(self): pass
+                failed = False
+                def wait(self): return self
+            return Job()
+
+        def post_screencap(self):
+            class Job:
+                def wait(self): return self
+                def get(self): return np.zeros((720, 1280, 3), dtype=np.uint8)
             return Job()
 
     ctx = DummyContext()

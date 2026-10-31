@@ -57,6 +57,7 @@
 | 查询游戏通用 UI 识别约定 | `docs/ui-conventions.md` |
 | 维护客户端项目图标 | `docs/features/client-appearance.md` |
 | 排查客户端更新下载、TLS、半包与安装状态 | `docs/features/client-update.md` |
+| 排查客户端闪退、Windows 崩溃转储、提交内存耗尽与开发依赖串用 | `docs/features/client-stability.md` |
 | 拉取双仓库并分析、修复、清理自动化运行错误日志 | `.agents/skills/maa-log-repair-workflow/SKILL.md`（执行入口；证据结论仍回写对应功能文档与交接文档） |
 
 > **路由表职责**：上面的表是仓库入口级总路由；`docs/handoff/DEVELOPMENT_PLAYBOOK.md` 维护“信息类型 → 权威来源”的接手视角，`CURRENT.md`/功能文档只维护各自主题内的局部链接。三处可以同时存在，但不要把它们当成三份需要逐行同步的同一张表；新增长期文档时至少更新本入口表，并按实际职责更新相关局部入口。

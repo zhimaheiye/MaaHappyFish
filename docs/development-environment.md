@@ -23,6 +23,14 @@ py -3.13 -m venv .venv
 选中项目解释器。直接双击 MFAAvalonia.exe 会使用系统 PATH，不能保证选中此环境。
 VS Code 默认解释器也已指向 `.venv`。
 
+2026-10-31 已发现实际运行曾绕过该启动入口而选中全局 MaaFw 5.10.2。
+`agent/main.py` 现于第三方 import 前，在确认真实源码仓库、接口源文件及同主次版本
+`.venv` 后优先加载其 site-packages，避免开发 Agent 串用全局依赖；不启动额外子进程，
+不修改系统 Python。直接双击时 `sys.executable` 仍可能是系统 Python，但 Maa 及其依赖
+来自项目环境，启动日志分别记录二者。正式发布目录不启用此逻辑。仍推荐上述专用启动脚本；
+Python 主次版本不一致或专用 Maa 缺失时明确停止，不能静默回退。验证和崩溃边界见
+[客户端稳定性调查](features/client-stability.md)。
+
 2026-10-26，D 盘根目录的 `Run-MaaHappyFish.bat` → `Start-MaaHappyFish.ps1`
 启动链已改为启动 `D:\happyfishgame\client_avalonia\MFAAvalonia.exe`，工作目录为
 开发客户端目录，并仅为子进程设置 `.venv\Scripts` PATH 与 `VIRTUAL_ENV`。

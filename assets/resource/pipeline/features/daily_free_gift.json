@@ -100,10 +100,10 @@
         "recognition": "OCR",
         "expected": "超值礼包",
         "roi": [
-            492,
-            0,
-            224,
-            147
+            540,
+            45,
+            133,
+            49
         ],
         "action": "Click",
         "post_delay": 800,
@@ -117,7 +117,8 @@
         ],
         "on_error": [
             "DailyFreeGiftAbort"
-        ]
+        ],
+        "only_rec": true
     },
     "DailyFreeGiftTankEntry": {
         "recognition": "TemplateMatch",

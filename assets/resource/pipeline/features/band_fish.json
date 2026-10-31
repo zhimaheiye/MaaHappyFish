@@ -552,6 +552,9 @@
             "[JumpBack]GlobalNewsPopup",
             "[JumpBack]GlobalLevelUpPopup",
             "BandFishAfterExitRouter"
+        ],
+        "on_error": [
+            "BandFishNavigationFailed"
         ]
     },
     "BandFishAfterExitRouter": {
@@ -598,6 +601,17 @@
     "BandFishAfterExitStandaloneDone": {
         "recognition": "Custom",
         "custom_recognition": "CheckBandFishStandaloneDoneReco",
+        "action": "DoNothing"
+    },
+    "BandFishExitReturn": {
+        "recognition": "OCR",
+        "expected": "^返回$",
+        "roi": [
+            1,
+            0,
+            189,
+            119
+        ],
         "action": "DoNothing"
     }
 }

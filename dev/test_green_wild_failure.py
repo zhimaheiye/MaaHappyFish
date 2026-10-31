@@ -60,6 +60,9 @@ def test_native_missing_claim_entrance_does_not_repeat_consumption(mode):
     overrides = {name: {"enabled": False} for name in resource.node_list
                  if name.startswith("Global") or name.startswith("DailyRoutineStep")}
     overrides.update({
+        # These older cases intentionally replay failure after shell/buy;
+        # the new pre-consumption visual gate has separate native coverage.
+        "GreenWildDailyEntryPresent": {"recognition": "DirectHit"},
         "DailyRoutineStepGreenWildDaily": {"enabled": True},
         "DailyRoutineStepPrincessTask": {"enabled": True, "action": "Custom",
                                          "custom_action": "OfflineRecord", "custom_action_param": "next",

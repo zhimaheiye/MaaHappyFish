@@ -89,8 +89,14 @@ def run_tests():
 
     assert pipeline["GreenWildDailyTask"]["custom_action"] == "InitGreenWildDailyAction"
     assert business_next(pipeline["GreenWildDailyTask"]) == [
-        "OpenShellStartRouter",
+        "GreenWildDailyPreflight",
     ]
+    assert business_next(pipeline["GreenWildDailyPreflight"]) == ["GreenWildDailyEntryPresent"]
+    assert pipeline["GreenWildDailyPreflight"]["on_error"] == ["GreenWildAbort"]
+    assert pipeline["GreenWildDailyEntryPresent"]["template"] == pipeline["GreenWildEntry"]["template"]
+    assert pipeline["GreenWildDailyEntryPresent"]["roi"] == pipeline["GreenWildEntry"]["roi"]
+    assert pipeline["GreenWildDailyEntryPresent"]["action"] == "DoNothing"
+    assert business_next(pipeline["GreenWildDailyEntryPresent"]) == ["OpenShellStartRouter"]
     assert business_next(open_shell["OpenShellVerifyMainAfterDone"]) == [
         "GreenWildDailyBuyFishEntry",
         "OpenShellStandaloneComplete",

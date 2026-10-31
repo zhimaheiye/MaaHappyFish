@@ -1,5 +1,10 @@
 ﻿import sys
 
+from dev_environment import configure_development_imports
+
+# Resolve junctions and select local dependencies before any third-party import.
+_development_site = configure_development_imports(__file__)
+
 try:
     sys.stdout.reconfigure(line_buffering=True)
     sys.stderr.reconfigure(line_buffering=True)
@@ -15,6 +20,10 @@ from task_lifecycle import DailyTaskLifecycleSink
 
 
 def main():
+    from importlib.metadata import version
+    print(f"[Agent] Python: {sys.executable}; MaaFramework: {version('maafw')}", flush=True)
+    if _development_site is not None:
+        print(f"[Agent] 开发依赖目录: {_development_site}", flush=True)
     Toolkit.init_option("./")
 
     if len(sys.argv) < 2:

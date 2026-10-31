@@ -3808,17 +3808,57 @@ def advance_daily_routine_step(task_name: str, biz_status: str):
 
 @AgentServer.custom_action("BandFishExitToTankAction")
 class BandFishExitToTankAction(CustomAction):
-    """
-    乐队鱼结算并安全返回主鱼缸动作:
-    1. 判断并沉淀业务状态 (DONE / PENDING);
-    2. 若处于 DailyRoutineTask 流程中，同步子任务状态并推进下一阶段;
-    3. 点击左上角返回 [91, 46] -> 关闭潜在浮层 [640, 150]，确保 100% 回到主鱼缸。
-    """
+    """Verify each exit layer and the tank before advancing the daily queue."""
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         try:
+            parse_dict_param(getattr(argv, "custom_action_param", None))
             ctrl = context.tasker.controller
             if not ctrl:
                 print("[乐队鱼退出] 错误: 未获取到 Controller", flush=True)
+                return False
+
+            deadline = time.monotonic() + 12.0
+            returned = False
+            closed_grid = False
+            tank_frames = 0
+            while time.monotonic() < deadline:
+                if _task_cancelled(context):
+                    return False
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    return False
+                # A grid can overlay the tank; it must disappear before completion.
+                grid = _recognition_box(context, "BandFishStartAtAmusementGrid", frame)
+                tank = _recognition_box(context, "BandFishStartAtTank", frame)
+                if tank is not None and grid is None:
+                    tank_frames += 1
+                    if tank_frames >= 2:
+                        break
+                else:
+                    tank_frames = 0
+                    performance = _recognition_box(context, "BandFishStartAtMyPerformance", frame)
+                    point = None
+                    if performance is not None and not returned:
+                        box = _recognition_box(context, "BandFishExitReturn", frame)
+                        if box is not None:
+                            point = _box_center(box)
+                            returned = True
+                    elif grid is not None and not closed_grid:
+                        # The existing outside-panel point is safe only on a
+                        # positively identified amusement grid, never on the tank.
+                        point = (640, 150)
+                        closed_grid = True
+                    if point is not None:
+                        if _task_cancelled(context):
+                            return False
+                        job = ctrl.post_click(*point)
+                        if not job or job.wait().failed:
+                            return False
+                time.sleep(0.25)
+            else:
+                print("[乐队鱼退出] ERROR: 未确认返回主鱼缸，不推进日常队列", flush=True)
+                return False
+            if _task_cancelled(context):
                 return False
 
             status = band_fish_state.get("status")
@@ -3834,17 +3874,7 @@ class BandFishExitToTankAction(CustomAction):
                 print(f"[日常收尾] 乐队鱼 ({stage}) 状态沉淀: {biz_status}", flush=True)
                 advance_daily_routine_step("BandFish", biz_status)
 
-            print(f"[乐队鱼退出] 业务状态: {biz_status}，执行物理退出回鱼缸...", flush=True)
-
-            # 点击左上角返回按钮
-            ctrl.post_click(91, 46).wait()
-            time.sleep(1.8)
-
-            # 保底点击安全区域关闭可能残留的游乐园面板
-            ctrl.post_click(640, 150).wait()
-            time.sleep(1.0)
-
-            print("[乐队鱼退出] 已安全退出回主鱼缸", flush=True)
+            print(f"[乐队鱼退出] 已确认返回主鱼缸，业务状态: {biz_status}", flush=True)
             return True
         except Exception as e:
             traceback.print_exc()
