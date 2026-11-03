@@ -61,15 +61,16 @@ def test_paid_state_x12_detection():
     assert paid["action"] == "DoNothing"
     assert paid["next"] == ["SeaDiveHomeClose"]
     close = p["SeaDiveHomeClose"]
-    assert close["action"] == "Click"
+    assert close["action"] == "Custom"
+    assert close["custom_action"] == "ClickRecognizedCenterAction"
     assert close["timeout"] == 12000
     assert close["next"] == [
         "SeaDiveVerifyExitTank3",
         "SeaDiveVerifyExitTank2",
         "SeaDiveVerifyExitTank1",
     ]
-    assert p["SeaDiveVerifyExitTank3"]["action"] == "Click"
-    assert p["SeaDiveVerifyExitTank2"]["action"] == "Click"
+    assert p["SeaDiveVerifyExitTank3"]["custom_action"] == "ClickRecognizedCenterAction"
+    assert p["SeaDiveVerifyExitTank2"]["custom_action"] == "ClickRecognizedCenterAction"
     assert p["SeaDiveVerifyExitTank1"]["action"] == "DoNothing"
 
 

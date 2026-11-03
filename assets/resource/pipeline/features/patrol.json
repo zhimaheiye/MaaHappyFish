@@ -249,7 +249,8 @@
         "template": "patrol/鱼缸2_主页面编号.png",
         "threshold": 0.85,
         "roi": [40, 32, 45, 48],
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 800,
         "timeout": 5000,
         "next": [
@@ -285,7 +286,8 @@
         "template": "patrol/鱼缸2_主页面编号.png",
         "threshold": 0.85,
         "roi": [40, 32, 45, 48],
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 800,
         "timeout": 5000,
         "next": [
@@ -305,7 +307,8 @@
         "template": "patrol/鱼缸3_主页面编号.png",
         "threshold": 0.85,
         "roi": [40, 32, 45, 48],
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 800,
         "timeout": 5000,
         "next": [
@@ -341,7 +344,8 @@
         "template": "patrol/鱼缸3_主页面编号.png",
         "threshold": 0.85,
         "roi": [40, 32, 45, 48],
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 800,
         "timeout": 5000,
         "next": [

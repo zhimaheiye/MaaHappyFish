@@ -340,13 +340,15 @@ class PatrolPipelineTest(unittest.TestCase):
         for tank in (2, 3):
             reset = self.pipeline[f"PatrolCycleResetTank{tank}"]
             self.assertEqual(reset["template"], f"patrol/鱼缸{tank}_主页面编号.png")
-            self.assertEqual(reset["action"], "Click")
+            self.assertEqual(reset["custom_action"], "ClickRecognizedCenterAction")
+            self.assertEqual(reset["action"], "Custom")
             self.assertEqual(business_next(reset), ["PatrolSelectTank1FromPicker"])
             self.assertEqual(reset["on_error"], [f"PatrolCycleResetTank{tank}RetryRouter"])
             retry_router = self.pipeline[f"PatrolCycleResetTank{tank}RetryRouter"]
             self.assertEqual(business_next(retry_router), [f"PatrolCycleResetTank{tank}RetryClick"])
             retry = self.pipeline[f"PatrolCycleResetTank{tank}RetryClick"]
             self.assertEqual(retry["template"], reset["template"])
+            self.assertEqual(retry["custom_action"], "ClickRecognizedCenterAction")
             self.assertEqual(business_next(retry), ["PatrolSelectTank1FromPicker"])
             self.assertEqual(retry["on_error"], ["PatrolAbortNavigation"])
 

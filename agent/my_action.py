@@ -613,6 +613,8 @@ def _confirm_golden_dolphin_dialog_closed(ctrl, tpl_confirm, screen_confirm, btn
         ctrl.post_click(btn_cx, btn_cy).wait()
         time.sleep(0.8)
         job = ctrl.post_screencap()
+        if job:
+            job.wait()
         sc = job.get() if job else None
         if sc is None:
             continue
@@ -2469,8 +2471,11 @@ class SeaOtterReturnFromRecommendedAction(CustomAction):
                 arrow = context.run_recognition("SeaOtterRecommendedBridge", frame)
                 friend = [context.run_recognition(name, frame) for name in (
                     "SeaOtterHasStaminaPanel", "SeaOtterFriendLiked", "SeaOtterFriendUnliked")]
+                if _task_cancelled(context):
+                    print("[海獭摸宝] 收到停止请求，终止推荐玩家当帧复核", flush=True)
+                    return False
                 if (arrow is None or not arrow.hit or any(result is None for result in friend)
-                        or any(result.hit for result in friend) or _task_cancelled(context)):
+                        or any(result.hit for result in friend)):
                     print("[海獭摸宝] ERROR: 推荐玩家终点未通过当帧复核，停止。", flush=True)
                     return False
                 sea_otter_gem_state["completion_reason"] = "RECOMMENDED_BOUNDARY_REACHED"
@@ -2523,10 +2528,11 @@ class SeaOtterBoundaryIncompleteAction(CustomAction):
                 return True
             ctrl = context.tasker.controller
             frame = _capture_720p(ctrl) if ctrl else None
+            if _task_cancelled(context):
+                return False
             if (reason != "LAST_FRIEND_STAMINA_UNVERIFIED" or frame is None
                     or not _recognition_box(context, "SeaOtterGrayRightArrow", frame)
-                    or not _recognition_box(context, "SeaOtterLastFriendExhausted", frame)
-                    or _task_cancelled(context)):
+                    or not _recognition_box(context, "SeaOtterLastFriendExhausted", frame)):
                 sea_otter_gem_state["normal_completion"] = False
                 sea_otter_gem_state["completion_reason"] = reason
                 print("[海獭摸宝] ERROR: 末位耗尽终点未通过当帧复核，停止。", flush=True)
@@ -4608,13 +4614,15 @@ def _return_golden_dolphin_to_tank(ctrl, templates, timeout: float = 8.0):
     tpl_main = templates.get("main")
     tpl_cancel = templates.get("cancel")
     tpl_dolphin = templates.get("dolphin")
-    if tpl_main is None or tpl_cancel is None or tpl_dolphin is None:
+    tpl_confirm = templates.get("confirm")
+    if tpl_main is None or tpl_cancel is None or tpl_dolphin is None or tpl_confirm is None:
         print("[金海豚退出] ERROR: 缺少归位所需视觉模板，安全终止", flush=True)
         return False
 
     deadline = time.monotonic() + timeout
     last_action_at = 0.0
-    last_scores = (0.0, 0.0, 0.0)
+    stable_main_frames = 0
+    last_scores = (0.0, 0.0, 0.0, 0.0)
     while time.monotonic() < deadline:
         frame = _capture_720p(ctrl)
         if frame is None:
@@ -4624,8 +4632,16 @@ def _return_golden_dolphin_to_tank(ctrl, templates, timeout: float = 8.0):
         main_score, _ = _match_golden_dolphin_template(frame, tpl_main)
         cancel_score, cancel_center = _match_golden_dolphin_template(frame, tpl_cancel)
         panel_score, _ = _match_golden_dolphin_template(frame, tpl_dolphin)
-        last_scores = (main_score, cancel_score, panel_score)
-        if main_score >= 0.70:
+        confirm_score, _ = _match_golden_dolphin_template(frame, tpl_confirm)
+        last_scores = (main_score, cancel_score, panel_score, confirm_score)
+        clean_main = (
+            main_score >= 0.70
+            and cancel_score < 0.70
+            and panel_score < 0.70
+            and confirm_score < 0.65
+        )
+        stable_main_frames = stable_main_frames + 1 if clean_main else 0
+        if stable_main_frames >= 2:
             print(f"[金海豚退出] 已确认返回主鱼缸 (score={main_score:.3f})", flush=True)
             return True
 
@@ -4647,10 +4663,11 @@ def _return_golden_dolphin_to_tank(ctrl, templates, timeout: float = 8.0):
             last_action_at = now
         time.sleep(0.35)
 
-    main_score, cancel_score, panel_score = last_scores
+    main_score, cancel_score, panel_score, confirm_score = last_scores
     print(
         "[金海豚退出] ERROR: 归位超时，未确认主鱼缸，"
-        f"main={main_score:.3f}, result={cancel_score:.3f}, panel={panel_score:.3f}",
+        f"main={main_score:.3f}, result={cancel_score:.3f}, "
+        f"panel={panel_score:.3f}, confirm={confirm_score:.3f}",
         flush=True,
     )
     return False
@@ -6528,6 +6545,7 @@ def _get_shake_game_templates():
         return cv2.imdecode(np.fromfile(p, dtype=np.uint8), cv2.IMREAD_COLOR)
 
     return {
+        "main": _load_tpl("主界面特征.png"),
         "entrance": _load_tpl("游乐园入口.png"),
         "shake_entrance": _load_tpl("摇一摇_入口.png"),
         "confirm": _load_tpl("金海豚_确定按钮.png"),
@@ -6579,8 +6597,9 @@ class ShakeGameNavigationAction(CustomAction):
             tpl_ent = tpls.get("entrance")
             tpl_shake = tpls.get("shake_entrance")
             tpl_confirm = tpls.get("confirm")
+            tpl_main = tpls.get("main")
 
-            if tpl_ent is None or tpl_shake is None or tpl_confirm is None:
+            if tpl_main is None or tpl_ent is None or tpl_shake is None or tpl_confirm is None:
                 print("[摇一摇导航] ERROR: 缺少关键视觉模板，安全终止任务！", flush=True)
                 shake_game_state["status"] = "FAILED"
                 return False
@@ -6632,7 +6651,17 @@ class ShakeGameNavigationAction(CustomAction):
                 if in_amusement_panel:
                     print(f"[摇一摇导航] 状态判定：当前已处于游乐园面板内 (摇一摇入口 match={max_vs:.3f})", flush=True)
                 else:
-                    # 状态判定 2: 主鱼缸场景，检测游乐园入口
+                    # 状态判定 2: 必须先确认主鱼缸，再检测游乐园入口。
+                    # 不能把其它小游戏或结算中的局部相似图案当成入口后跨层点击。
+                    main_score, _ = _match_golden_dolphin_template(screen, tpl_main)
+                    if main_score < 0.70:
+                        print(
+                            f"[摇一摇导航] ERROR: 当前既非游乐园面板也未确认主鱼缸 "
+                            f"(main={main_score:.3f})，安全终止。",
+                            flush=True,
+                        )
+                        shake_game_state["status"] = "FAILED"
+                        return False
                     print("[摇一摇导航] 状态判定：当前未在游乐园面板，检测主鱼缸游乐园入口...", flush=True)
                     res_e = cv2.matchTemplate(screen, tpl_ent, cv2.TM_CCOEFF_NORMED)
                     _, max_ve, _, loc_e = cv2.minMaxLoc(res_e)
@@ -6728,6 +6757,7 @@ class ShakeGameNavigationAction(CustomAction):
 
             if is_exhausted:
                 print(f"[摇一摇导航] 检测到提示「今天的机会已全部用完」，点击绿色对号按钮 ({btn_cx}, {btn_cy}) 关闭并验证...", flush=True)
+                dialog_closed = False
                 for click_retry in range(3):
                     ctrl.post_click(btn_cx, btn_cy).wait()
                     time.sleep(1.2)
@@ -6737,10 +6767,16 @@ class ShakeGameNavigationAction(CustomAction):
                         max_vc_after = cv2.minMaxLoc(res_check)[1] if res_check is not None else 0
                         gc_after = _find_green_check(sc_after)
                         if max_vc_after < 0.65 and gc_after is None:
+                            dialog_closed = True
                             print("[摇一摇导航] 验证通过：机会耗尽提示弹窗已成功关闭！", flush=True)
                             break
                         if gc_after:
                             btn_cx, btn_cy = gc_after
+
+                if not dialog_closed:
+                    print("[摇一摇导航] ERROR: 机会耗尽提示连续 3 次点击后仍未关闭，安全停止。", flush=True)
+                    shake_game_state["status"] = "FAILED"
+                    return False
 
                 shake_game_state["status"] = "NO_STAMINA"
                 return True

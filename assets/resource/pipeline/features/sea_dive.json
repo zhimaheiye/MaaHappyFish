@@ -378,7 +378,8 @@
             110
         ],
         "threshold": 0.9,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 700,
         "timeout": 12000,
         "next": [
@@ -400,7 +401,8 @@
             48
         ],
         "threshold": 0.85,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 400,
         "timeout": 4000,
         "next": [
@@ -420,7 +422,8 @@
             48
         ],
         "threshold": 0.85,
-        "action": "Click",
+        "action": "Custom",
+        "custom_action": "ClickRecognizedCenterAction",
         "post_delay": 400,
         "timeout": 4000,
         "next": [
