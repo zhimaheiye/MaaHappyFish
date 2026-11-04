@@ -3,6 +3,7 @@
 import json
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -10,6 +11,8 @@ sys.path.insert(0, str(ROOT))
 
 import numpy as np
 import cv2
+
+import agent.my_action as my_action
 
 from agent.fish_baby import (
     FOOD_PREFERENCES,
@@ -101,7 +104,33 @@ class FishBabyContract(unittest.TestCase):
         self.assertEqual(nodes["FishBabyRunRound"]["next"], ["FishBabyExitIncubation", "FishBabyExitHome"])
         self.assertEqual(nodes["FishBabyExitIncubation"]["next"], ["FishBabyExitHome"])
         self.assertEqual(nodes["FishBabyExitHome"]["next"], ["FishBabyVerifyTankAfterRound"])
+        self.assertEqual(nodes["FishBabyRunRound"]["on_error"], ["FishBabyAbortCleanup"])
+        cleanup = nodes["FishBabyAbortCleanup"]
+        self.assertEqual(cleanup["custom_action"], "FishBabyReturnToTankAction")
+        self.assertEqual(cleanup["next"], ["FishBabyAbort"])
+        self.assertEqual(cleanup["on_error"], ["FishBabyAbort"])
         self.assertNotIn("一键孵化", json.dumps(nodes, ensure_ascii=False))
+
+    def test_failure_cleanup_unwinds_known_layers_before_main_tank(self):
+        class Controller:
+            pass
+
+        class Tasker:
+            controller = Controller()
+
+        class Context:
+            tasker = Tasker()
+
+        clicks = []
+        states = iter(["BABY", "CATEGORY", "HOME", "MAIN_TANK"])
+        frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+        with patch.object(my_action, "_capture_720p", return_value=frame), \
+                patch.object(my_action, "_fish_baby_page_state", side_effect=lambda *_: next(states)), \
+                patch.object(my_action, "_fish_baby_click", side_effect=lambda _, point: clicks.append(point)), \
+                patch.object(my_action, "_task_cancelled", return_value=False), \
+                patch.object(my_action.time, "sleep", return_value=None):
+            self.assertTrue(my_action._fish_baby_return_to_main_tank(Context()))
+        self.assertEqual(clicks, [(851, 635), (1213, 69), (1213, 69)])
 
     def test_entry_retries_only_confirmed_tank_and_unknown_stops(self):
         nodes = json.loads((ROOT / "assets/resource/pipeline/features/fish_baby.json").read_text(encoding="utf-8"))

@@ -113,4 +113,8 @@ def test_only_home_start_failure_can_use_skip_exit():
     assert verify["template"] == "主界面特征.png"
     assert verify["custom_action_param"]["status"] == "SKIPPED"
     assert verify["on_error"] == ["FishBabyAbort"]
-    assert nodes["FishBabyRunRound"]["on_error"] == ["FishBabyAbort"]
+    assert nodes["FishBabyRunRound"]["on_error"] == ["FishBabyAbortCleanup"]
+    cleanup = nodes["FishBabyAbortCleanup"]
+    assert cleanup["custom_action"] == "FishBabyReturnToTankAction"
+    assert cleanup["next"] == ["FishBabyAbort"]
+    assert cleanup["on_error"] == ["FishBabyAbort"]

@@ -617,7 +617,7 @@
             "FishBabyExitHome"
         ],
         "on_error": [
-            "FishBabyAbort"
+            "FishBabyAbortCleanup"
         ]
     },
     "FishBabyAtHome": {
@@ -882,6 +882,16 @@
             "DailyRoutineReturnIfActive",
             "DailyRoutineStandaloneDone"
         ]
+    },
+    "FishBabyAbortCleanup": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "FishBabyReturnToTankAction",
+        "focus": {
+            "Node.Action.Succeeded": "[鱼宝乐园] 本轮门禁失败，已退回主鱼缸，再向调用方报告失败。"
+        },
+        "next": ["FishBabyAbort"],
+        "on_error": ["FishBabyAbort"]
     },
     "FishBabyAbort": {
         "recognition": "DirectHit",

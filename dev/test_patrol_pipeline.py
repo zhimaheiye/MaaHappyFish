@@ -303,6 +303,8 @@ class PatrolPipelineTest(unittest.TestCase):
         router = self.pipeline["PatrolStartRouter"]
         next_nodes = router["next"]
         for node in (
+            "PatrolStartAtFishBabySelection",
+            "PatrolStartAtFishBabyHome",
             "PatrolStartAtFoodPopupAbort",
             "PatrolStartAtFriendList",
             "PatrolStartAtGemFusion",
@@ -320,6 +322,16 @@ class PatrolPipelineTest(unittest.TestCase):
         self.assertEqual(router["timeout"], 60000)
         self.assertEqual(router["on_error"], ["PatrolAbortUnknownPage"])
         self.assertNotIn("PatrolAbortUnknownPage", next_nodes)
+        self.assertLess(next_nodes.index("PatrolStartAtFishBabySelection"), next_nodes.index("PatrolStartAtTank1"))
+        selection = self.pipeline["PatrolStartAtFishBabySelection"]
+        self.assertEqual(selection["recognition"], "OCR")
+        self.assertEqual(selection["custom_action"], "FishBabyReturnToTankAction")
+        self.assertEqual(business_next(selection), ["PatrolStartRouter"])
+        home = self.pipeline["PatrolStartAtFishBabyHome"]
+        self.assertEqual(home["recognition"], "And")
+        self.assertEqual(home["all_of"], ["FishBabyAtHome", "PatrolFishBabyHomeStartIdentity"])
+        self.assertEqual(home["custom_action"], "FishBabyReturnToTankAction")
+        self.assertEqual(business_next(home), ["PatrolStartRouter"])
         self.assertLess(next_nodes.index("PatrolStartAtFoodPopupAbort"), next_nodes.index("PatrolStartAtTank1"))
         for tank in (2, 3):
             start = self.pipeline[f"PatrolStartAtTank{tank}"]

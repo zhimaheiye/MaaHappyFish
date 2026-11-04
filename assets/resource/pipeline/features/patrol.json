@@ -118,6 +118,8 @@
             "[JumpBack]GlobalLevelUpPopup",
             "[JumpBack]PatrolShellEntryMisTouchPopup",
             "[JumpBack]PatrolShellPagePopup",
+            "PatrolStartAtFishBabySelection",
+            "PatrolStartAtFishBabyHome",
             "PatrolStartAtFoodPopupAbort",
             "PatrolStartAtFriendList",
             "PatrolStartAtGemFusion",
@@ -132,6 +134,37 @@
             "PatrolStartAtEnterGame"
         ],
         "on_error": ["PatrolAbortUnknownPage"]
+    },
+    "PatrolStartAtFishBabySelection": {
+        "recognition": "OCR",
+        "expected": "请选择孵化方式|请选择鱼宝宝|请选择鱼粮|请选择玩耍方式|请选择牛奶",
+        "roi": [930, 540, 330, 170],
+        "action": "Custom",
+        "custom_action": "FishBabyReturnToTankAction",
+        "timeout": 15000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 接手到鱼宝乐园选择页，已安全退回主鱼缸并重新识别入口。"
+        },
+        "next": ["PatrolStartRouter"],
+        "on_error": ["PatrolAbortNavigation"]
+    },
+    "PatrolFishBabyHomeStartIdentity": {
+        "recognition": "OCR",
+        "expected": "开始孵化",
+        "roi": [510, 580, 280, 120],
+        "action": "DoNothing"
+    },
+    "PatrolStartAtFishBabyHome": {
+        "recognition": "And",
+        "all_of": ["FishBabyAtHome", "PatrolFishBabyHomeStartIdentity"],
+        "action": "Custom",
+        "custom_action": "FishBabyReturnToTankAction",
+        "timeout": 15000,
+        "focus": {
+            "Node.Action.Succeeded": "[巡检] 接手到鱼宝乐园主页，已安全退回主鱼缸并重新识别入口。"
+        },
+        "next": ["PatrolStartRouter"],
+        "on_error": ["PatrolAbortNavigation"]
     },
     "PatrolStartAtFriendList": {
         "recognition": "And",

@@ -367,6 +367,64 @@ def _fish_baby_at_home(context, frame):
     ) is not None
 
 
+def _fish_baby_page_state(context, frame):
+    """Classify only the fish-baby pages that have a verified safe exit."""
+    if _recognition_box(context, "FishBabyAtMainTank", frame) is not None:
+        return "MAIN_TANK"
+    if _fish_baby_at_home(context, frame):
+        return "HOME"
+    prompts = (
+        ("请选择孵化方式", "CATEGORY"),
+        ("请选择鱼宝宝", "BABY"),
+        ("请选择鱼粮", "FOOD"),
+        ("请选择玩耍方式", "PLAY"),
+        ("请选择牛奶", "MILK"),
+    )
+    for expected, state in prompts:
+        if _fish_baby_ocr_box(context, frame, expected, FISH_BABY_PROMPT_ROI) is not None:
+            return state
+    return None
+
+
+def _fish_baby_return_to_main_tank(context, seconds=12.0):
+    """Unwind known fish-baby layers without turning the failed task into success."""
+    controller = getattr(getattr(context, "tasker", None), "controller", None)
+    if controller is None:
+        return _fish_baby_fail(context, "[鱼宝乐园] ERROR: 退场时控制器不可用。")
+
+    deadline = time.monotonic() + seconds
+    unknown_frames = 0
+    while time.monotonic() < deadline:
+        if _task_cancelled(context):
+            return False
+        frame = _capture_720p(controller)
+        if frame is None:
+            return _fish_baby_fail(context, "[鱼宝乐园] ERROR: 退场时无法取得当前画面。")
+        state = _fish_baby_page_state(context, frame)
+        if state == "MAIN_TANK":
+            print("[鱼宝乐园] 已确认安全返回主鱼缸。", flush=True)
+            return True
+        if state is None:
+            unknown_frames += 1
+            if unknown_frames >= 3:
+                return _fish_baby_fail(
+                    context,
+                    "[鱼宝乐园] ERROR: 退场时页面门禁未知，未继续点击。",
+                )
+            time.sleep(0.5)
+            continue
+
+        unknown_frames = 0
+        if state in {"BABY", "FOOD", "PLAY", "MILK"}:
+            print(f"[鱼宝乐园] 已确认 {state} 子层，点击金色返回箭头。", flush=True)
+            _fish_baby_click(context, (851, 635))
+        elif state in {"CATEGORY", "HOME"}:
+            print(f"[鱼宝乐园] 已确认 {state} 页面，点击右上关闭。", flush=True)
+            _fish_baby_click(context, (1213, 69))
+        time.sleep(0.8)
+    return _fish_baby_fail(context, "[鱼宝乐园] ERROR: 退场超时，未确认返回主鱼缸。")
+
+
 def _fish_baby_sleeping(context, frame, targets, located, *, at_home=False):
     # 工具栏关闭后浮具整体下移 30px（2026-10-02 MFA 失败帧）。
     sleeping = set()
@@ -418,7 +476,10 @@ def _fish_baby_run_batch(context, kind, targets, located):
         time.sleep(0.4)
         frame = _capture_720p(context.tasker.controller)
         if frame is None or not has_green_check(frame, center):
-            return _fish_baby_fail(context, f"[鱼宝乐园] ERROR: {kind} 未确认 {number} 号宝宝绿勾，未点击执行按钮。")
+            return _fish_baby_fail(
+                context,
+                f"[鱼宝乐园] ERROR: {kind} 未确认 {number} 号宝宝绿勾；该编号床位可能已空或点击未生效，请核对宝宝更换后的编号配置。未点击执行按钮。",
+            )
 
     frame = _capture_720p(context.tasker.controller)
     if frame is None or _fish_baby_ocr_box(context, frame, config["button"], button_roi) is None:
@@ -507,6 +568,13 @@ class FishBabySetUniformPreferenceAction(CustomAction):
 class FishBabyNormalizeCategoryAction(CustomAction):
     def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
         return _fish_baby_normalize_category(context)
+
+
+@AgentServer.custom_action("FishBabyReturnToTankAction")
+class FishBabyReturnToTankAction(CustomAction):
+    def run(self, context: Context, argv: CustomAction.RunArg) -> bool:
+        parse_dict_param(argv.custom_action_param)
+        return _fish_baby_return_to_main_tank(context)
 
 
 @AgentServer.custom_action("FishBabyRunRoundAction")
