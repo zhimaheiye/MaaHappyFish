@@ -101,7 +101,7 @@ PAGE_LOCAL_CHAINS = {
         "FishBabyAtHome", "FishBabyHomeStart", "FishBabyVerifyIncubation",
         "FishBabyAtMainTank", "FishBabyEntryCoral", "FishBabyEntryBubble",
         "FishBabyEntryRouter", "FishBabyMainTankSky", "FishBabyRetryTank",
-        "FishBabyExitIncubation", "FishBabyExitHome",
+        "FishBabyExitIncubation", "FishBabyExitHome", "FishBabyAbortCleanup",
     } | {
         f"FishBaby{kind}{i}" for i in range(1, 9)
         for kind in ("FoodPreference", "Preference", "MilkPreference")
@@ -112,6 +112,9 @@ PAGE_LOCAL_CHAINS = {
         "GoldShellCouponTank3ToPicker", "GoldShellCouponPickerTank1",
         "GoldShellCouponVerifyTank1BeforeEntry",
     },
+    # The return action verifies each fish-baby layer, then re-enters the router
+    # that already prioritizes global popups. Do not interrupt that cleanup chain.
+    "patrol.json": {"PatrolStartAtFishBabySelection", "PatrolStartAtFishBabyHome"},
     "golden_dolphin.json": {"GoldenDolphinResumeSettlement"},
     "shake_game.json": {"ShakeGameResumeSettlement"},
     # The daily completion bridge does not navigate into another page.

@@ -1,4 +1,33 @@
 {
+    "ShakeGamePlayingIdentity": {
+        "recognition": "And",
+        "all_of": ["ShakeGameScoreIdentity", "ShakeGameTimerIdentity"],
+        "action": "DoNothing"
+    },
+    "ShakeGameScoreIdentity": {
+        "recognition": "OCR",
+        "expected": "分[数數]",
+        "roi": [1050, 0, 230, 90],
+        "action": "DoNothing"
+    },
+    "ShakeGameTimerIdentity": {
+        "recognition": "OCR",
+        "expected": "[0-9]+[.][0-9]+\\s*[sS]",
+        "roi": [0, 0, 220, 90],
+        "action": "DoNothing"
+    },
+    "ShakeGameConfirmIdentity": {
+        "recognition": "OCR",
+        "expected": "想玩.*小[游遊][戏戲]",
+        "roi": [300, 180, 680, 280],
+        "action": "DoNothing"
+    },
+    "ShakeGameExhaustedIdentity": {
+        "recognition": "OCR",
+        "expected": "[机機][会會].*用完|明天再[来來]",
+        "roi": [300, 180, 680, 280],
+        "action": "DoNothing"
+    },
     "ShakeGameTask": {
         "recognition": "DirectHit",
         "action": "Custom",

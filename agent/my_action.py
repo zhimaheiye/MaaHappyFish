@@ -6690,6 +6690,11 @@ class ShakeGameNavigationAction(CustomAction):
                 shake_game_state["status"] = "SETTLEMENT"
                 return True
 
+            if _recognition_box(context, "ShakeGamePlayingIdentity", screen) is not None:
+                shake_game_state["status"] = "READY_TO_PLAY"
+                print("[摇一摇导航] 已确认局内分数与倒计时，继续本局。", flush=True)
+                return True
+
             # Deepest-First 状态检查 0: 检查是否已经处于确认/机会用完弹窗
             gc_init = _find_green_check(screen)
             res_c_init = cv2.matchTemplate(screen, tpl_confirm, cv2.TM_CCOEFF_NORMED) if tpl_confirm is not None else None
@@ -6792,57 +6797,63 @@ class ShakeGameNavigationAction(CustomAction):
                     time.sleep(0.6)
 
             if not has_confirm or screen_confirm is None:
-                print("[摇一摇导航] 未检测到确认对号按钮，安全收起面板退出", flush=True)
-                shake_game_state["status"] = "NO_STAMINA"
-                ctrl.post_click(640, 150).wait()
-                time.sleep(1.0)
-                return True
+                print("[摇一摇导航] ERROR: 未检测到确认按钮，未确认机会耗尽，安全停止。", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
 
-            # 区分“今天的机会已全部用完”与“您想玩这个小游戏吗”
-            is_exhausted = False
-            try:
-                sc_720 = cv2.resize(screen_confirm, (1280, 720))
-                red_patch = sc_720[430:490, 650:710]
-                hsv_p = cv2.cvtColor(red_patch, cv2.COLOR_BGR2HSV)
-                mask_r = ((hsv_p[:, :, 0] < 10) | (hsv_p[:, :, 0] > 170)) & (hsv_p[:, :, 1] > 90) & (hsv_p[:, :, 2] > 90)
-                has_red_cancel = bool(np.sum(mask_r) > 400)
-                if not has_red_cancel:
-                    is_exhausted = True
-            except Exception:
-                pass
-
-            if not is_exhausted:
-                try:
-                    from rapidocr_onnxruntime import RapidOCR
-                    _ocr = RapidOCR()
-                    res_ocr, _ = _ocr(screen_confirm)
-                    for _, txt, _ in (res_ocr or []):
-                        if any(k in txt for k in ("用完", "明天再来", "全部用完", "明天")):
-                            is_exhausted = True
+            # 弹窗动画中红叉可能尚未出现；只按正文判定，不以红色缺失推断耗尽。
+            dialog_kind = None
+            for _ in range(6):
+                if _task_cancelled(context):
+                    return False
+                screen_confirm = _capture_720p(ctrl)
+                if screen_confirm is not None:
+                    for node in ("ShakeGameExhaustedIdentity", "ShakeGameConfirmIdentity"):
+                        if _recognition_box(context, node, screen_confirm) is not None:
+                            dialog_kind = node
                             break
-                except Exception:
-                    pass
+                    if dialog_kind:
+                        button_score, button_center = _match_golden_dolphin_template(screen_confirm, tpl_confirm)
+                        green_center = _find_green_check(screen_confirm)
+                        if green_center or button_score >= 0.70:
+                            btn_cx, btn_cy = green_center or button_center
+                            break
+                        dialog_kind = None
+                time.sleep(0.5)
 
-            if is_exhausted:
+            if dialog_kind is None:
+                print("[摇一摇导航] ERROR: 未确认入场或次数耗尽正文，未点击。", flush=True)
+                shake_game_state["status"] = "FAILED"
+                return False
+
+            if dialog_kind == "ShakeGameExhaustedIdentity":
                 print(f"[摇一摇导航] 检测到提示「今天的机会已全部用完」，点击绿色对号按钮 ({btn_cx}, {btn_cy}) 关闭并验证...", flush=True)
                 dialog_closed = False
                 for click_retry in range(3):
+                    if _task_cancelled(context):
+                        return False
                     ctrl.post_click(btn_cx, btn_cy).wait()
                     time.sleep(1.2)
                     sc_after = _capture_720p(ctrl)
                     if sc_after is not None:
+                        if _recognition_box(context, "ShakeGameExhaustedIdentity", sc_after) is None:
+                            main_score, _ = _match_golden_dolphin_template(sc_after, tpl_main)
+                            if main_score >= 0.70:
+                                dialog_closed = True
+                                print("[摇一摇导航] 机会耗尽提示已关闭，并确认主鱼缸。", flush=True)
+                            break
                         res_check = cv2.matchTemplate(sc_after, tpl_confirm, cv2.TM_CCOEFF_NORMED) if tpl_confirm is not None else None
                         max_vc_after = cv2.minMaxLoc(res_check)[1] if res_check is not None else 0
                         gc_after = _find_green_check(sc_after)
-                        if max_vc_after < 0.65 and gc_after is None:
-                            dialog_closed = True
-                            print("[摇一摇导航] 验证通过：机会耗尽提示弹窗已成功关闭！", flush=True)
+                        if gc_after is None and max_vc_after < 0.70:
                             break
-                        if gc_after:
-                            btn_cx, btn_cy = gc_after
+                        _, button_center = _match_golden_dolphin_template(sc_after, tpl_confirm)
+                        btn_cx, btn_cy = gc_after or button_center
+                    else:
+                        break
 
                 if not dialog_closed:
-                    print("[摇一摇导航] ERROR: 机会耗尽提示连续 3 次点击后仍未关闭，安全停止。", flush=True)
+                    print("[摇一摇导航] ERROR: 未确认耗尽提示关闭并回到主鱼缸，安全停止。", flush=True)
                     shake_game_state["status"] = "FAILED"
                     return False
 
@@ -6852,9 +6863,23 @@ class ShakeGameNavigationAction(CustomAction):
             # 点击绿色确认按钮进入小游戏
             print(f"[摇一摇导航] 点击确认按钮 ({btn_cx}, {btn_cy}) 进入小游戏...", flush=True)
             ctrl.post_click(btn_cx, btn_cy).wait()
-            time.sleep(2.0)
-            shake_game_state["status"] = "READY_TO_PLAY"
-            return True
+            for _ in range(8):
+                if _task_cancelled(context):
+                    return False
+                time.sleep(0.5)
+                frame = _capture_720p(ctrl)
+                if frame is None:
+                    continue
+                if _recognition_box(context, "ShakeGamePlayingIdentity", frame) is not None:
+                    shake_game_state["status"] = "READY_TO_PLAY"
+                    return True
+                score, _ = _match_golden_dolphin_template(frame, tpls.get("cancel"))
+                if score >= 0.70:
+                    shake_game_state["status"] = "SETTLEMENT"
+                    return True
+            print("[摇一摇导航] ERROR: 入场点击后未确认局内或结算，未重复点击。", flush=True)
+            shake_game_state["status"] = "FAILED"
+            return False
         except Exception as e:
             traceback.print_exc()
             print(f"[摇一摇导航] 运行异常: {e}", flush=True)

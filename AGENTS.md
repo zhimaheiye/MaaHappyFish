@@ -40,6 +40,7 @@
 | 维护"浪漫满屋"情侣鱼祝福 | `docs/features/romantic-house.md` |
 | 维护"金海豚小游戏"活动自动化 | `docs/features/golden-dolphin.md` |
 | 维护"每日魔幻拼图"离线标格、最短路径与后续 Swipe 执行 | `docs/features/daily-magic-puzzle.md` |
+| 维护"购物狂欢季"棋盘拖拽合成、已有体力与保险箱生成 | `docs/features/shopping-carnival.md`（不获取体力，保险箱产物为锁定棋子） |
 | 维护"公主任务"奖励列领取 | `docs/features/princess-task.md` |
 | 维护"绿野寻仙踪"入口/任务/返回与日常开贝壳买鱼 | `docs/features/green-wild.md` |
 | 维护"摇一摇小游戏"活动自动化 | `docs/features/shake-game.md` |
@@ -71,7 +72,7 @@
 1. 完整阅读本文件 `AGENTS.md`，先掌握硬规则、工具边界和文档路由；
 2. 阅读 `PRODUCT.md`，确认项目定位、架构、禁止事项与非目标；
 3. 阅读 `docs/handoff/CURRENT.md`，区分“代码已实现”“代码级验证通过”“MFA 实机通过”和“仍待取证”；
-4. 阅读 `docs/handoff/DEVELOPMENT_PLAYBOOK.md`，了解用户偏好、证据模式、AGY 边界和历史事故；
+4. 阅读 `docs/handoff/DEVELOPMENT_PLAYBOOK.md`，了解用户偏好、证据模式、AGY 边界和历史事故；尤其执行第四节“先自行判断，再决定是否提问”，不得把已有授权、可查证现场或常规技术选择重新交给用户决定；
 5. 根据文档路由表阅读本次任务对应的 `docs/features/*.md`；涉及资源消耗时再读 `docs/game-knowledge.md`，涉及模板/OCR/通用按钮时再读 `docs/ui-conventions.md`；
 6. 执行 `git status --short`，检查当前差异与未跟踪文件；修 bug 时同时定位对应时间段的 MFA/MaaFramework 日志；
 7. 最后再阅读目标 Pipeline、Agent 实现和相应 `dev/test_*.py`，建立“需求 -> 当前 UI 状态 -> 节点 -> Action/Reco -> 测试”的完整映射后才能修改。
@@ -227,6 +228,8 @@ Agent 运行在用户当前活跃开发机上，以下约束必须严格遵守�
 5. 绝不为了"验证代码是否跑通"而反复消耗稀缺资源
 
 ### Phased Collaboration（分阶段协作规则）
+
+**checkpoint 不等于向用户索要决定或重新授权**：主 Agent 先依据已有授权、文档、当前截图与日志完成判断；范围内的阶段检查由主 Agent 自行完成并继续执行，需要时只汇报结论。不能因为“进入新阶段”或出现“稀缺资源”字样就机械停工；先核对具体操作是否已获授权。只有自行查证后仍存在影响正确性或安全的关键歧义，或确实超出现有授权，才询问用户，并说清已查证什么、还缺什么以及为何无法自行决定。具体提问前检查见接手手册第四节。
 
 新功能开发若满足以下任意条件，必须采用分阶段协作模式：
 - 步骤多，业务机制尚不清楚

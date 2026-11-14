@@ -43,6 +43,15 @@
     ],
     "task": [
         {
+            "name": "购物狂欢季合成",
+            "entry": "ShoppingCarnivalTask",
+            "default_check": false,
+            "description": "请先打开购物狂欢季棋盘。自动识别同类同级棋子并拖拽，优先解锁；气泡棋子默认点击忽略，不付费戳破；默认只合成现有棋子；选择生成模式后，优先使用5级保险箱生成锁定棋子，再使用已有体力生成。锁定棋子只作为合成目标。不获取体力、不购买、不删除或提取其它资源。空格不足、页面不明或升级未确认时停止。已验证只合成循环、保险箱生成、体力生成与合成交替及气泡忽略；体力耗尽后的完整收尾仍待验证。",
+            "option": [
+                "购物狂欢季合成模式"
+            ]
+        },
+        {
             "name": "启动游戏",
             "entry": "StartAppTask",
             "default_check": false,
@@ -271,6 +280,10 @@
             "description": "新安装使用的默认列表；手机看广告仅适配特定真实手机，深海寻鱼免费流程尚待本版 MFA 实测，均需从添加任务中手动加入。",
             "task": [
                 {
+                    "name": "购物狂欢季合成",
+                    "enabled": false
+                },
+                {
                     "name": "启动游戏",
                     "enabled": false
                 },
@@ -366,6 +379,35 @@
         }
     ],
     "option": {
+        "购物狂欢季合成模式": {
+            "type": "select",
+            "label": "合成模式",
+            "default_case": "只合成现有棋子",
+            "cases": [
+                {
+                    "name": "只合成现有棋子",
+                    "pipeline_override": {
+                        "ShoppingCarnivalTask": {
+                            "custom_action_param": {
+                                "generation_limit": 0,
+                                "operation_limit": 600
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "使用已有体力生成并合成",
+                    "pipeline_override": {
+                        "ShoppingCarnivalTask": {
+                            "custom_action_param": {
+                                "generation_limit": 200,
+                                "operation_limit": 600
+                            }
+                        }
+                    }
+                }
+            ]
+        },
         "鱼宝喂食设置": {
             "type": "select",
             "label": "喂食",

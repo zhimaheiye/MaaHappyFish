@@ -16,6 +16,7 @@ from maa.toolkit import Toolkit
 
 import my_action
 import my_reco
+import shopping_carnival
 from task_lifecycle import DailyTaskLifecycleSink
 
 

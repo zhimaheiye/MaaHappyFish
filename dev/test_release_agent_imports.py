@@ -71,6 +71,8 @@ def main():
         print("  [PASS] my_action imported successfully")
         import my_reco
         print("  [PASS] my_reco imported successfully")
+        import shopping_carnival
+        print("  [PASS] shopping_carnival imported successfully")
     except Exception as e:
         print(f"  [FAIL] Failed to import agent modules: {e}")
         import traceback

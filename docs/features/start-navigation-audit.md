@@ -60,7 +60,8 @@
 | `HangupNoonDaily*` | 调度安全检查点；主鱼缸或可识别左上返回的页面 | 引用本实例独立日常完整参数；未知页失败 | `HangupPrepareDaily` → `DailyRoutineTask`；完成后 `HangupResume*` | 本次有效返回目标；新顶层任务不继承旧 active／返回栈 | 主鱼缸确认后才启动子队列；完整完成且回缸后才返回；好友模式重建入口而非猜旧序号；缺失／重名配置不默认执行 | 2026-10-15 配置、生命周期及原生离线嵌套调用通过；未做 MFA／MuMu 实测 |
 | `GoldenDolphinTask` | 主鱼缸、游乐园、确认弹窗、隐藏启动/奖励雨、结算 | 支持 | `GoldenDolphinNavigationAction` | 奖励优先级、局数 | 确认点击后等待 fresh frame；局内须命中奖励/启动贝币；退出须连续两帧主缸且排除确认、结算与面板后才推进 | 2026-11-03 旧帧竞态与回缸门禁代码级通过，未实机复测 |
 | `DailyMagicPuzzleTask` | 拼图页面 | 仅支持该页 | `DailyMagicPuzzleSolve` | 6×6 当前盘面 | 非拼图页不导航 | Intentional Unsupported：只允许拼图页 |
-| `ShakeGameTask` | 主鱼缸、游乐园、确认弹窗、局内、结算 | 已确认主缸、面板、确认弹窗与结算支持；局内缺证据 | `ShakeGameNavigationAction` | MuMu 路径与明确 VM index | 只有主缸门禁通过才打开游乐园；其它小游戏和未知活动页零点击失败；结算模板命中才退出；绝不默认 VM 0 | 2026-11-03 跨小游戏误导航修复代码级通过；Live Blocked：局内缺截图/模板 |
+| `ShoppingCarnivalTask` | 购物狂欢季 8×6 棋盘，无选中或已有选中棋子 | 支持当前棋盘重建 | `ShoppingCarnivalMergeAction` | 无跨次进度，当前会话缓存仅复用未变化格 | 只按真实同名同级拖拽，白底锁定格不得作为来源；单击后最多三秒确认目标选中，不补点；选中气泡先凭正文与忽略 OCR 清除，格空后重建棋盘；合成以目标等级加一确认，允许奖励回填来源格并重扫；生成模式支持5级保险箱，新增锁定棋子仅作合成目标；不获取体力、付费戳破、删除、提取或兑换；其它页不导航 | 只合成循环成功；MFA 连续记录63次合成、8次保险箱生成、34次体力生成、2次气泡忽略；个位数9识别误停已修复，耗尽收尾仍待实机验证，详见购物狂欢季文档 |
+| `ShakeGameTask` | 主鱼缸、游乐园、确认弹窗、带左上小数秒倒计时及右上分数的局内、结算 | 支持已取证状态 | `ShakeGameNavigationAction` | MuMu 路径与明确 VM index | 只有主缸门禁通过才打开游乐园；正文正向区分确认与耗尽，缺红叉不代表耗尽；局内双 OCR 同帧门禁直接接手；补点须重认耗尽正文与按钮；其它小游戏和未知活动页零入口点击失败；结算模板命中才退出；绝不默认 VM 0 | 2026-11-08 MaaDebugger 真实局内截图识别及既有测试通过；完整入场／耗尽分支未实机验收 |
 | `ShakeGemCollectTestTask` | 指定主鱼缸测试场景 | 仅固定测试入口 | `ShakeGemCollectVerifyTank` | 明确 VM index | 不扩展为通用任务 | Intentional Unsupported：测试专用 |
 | `GoldShellCouponTask` | 鱼缸 1/2/3、鱼缸选择器、分类页、金贝壳页、兑换后确认/结果 | 支持；3 缸需先切至 1 缸 | `GoldShellCouponRouter` | 当轮兑换确认 | 识别鱼缸编号才展开选择器；切至 1 缸并复核后才找贝壳入口；入口被鱼暂时遮挡时在主鱼缸门禁下最多重试 12 次；未知页停止 | 2026-09-28 两次导航修复代码级通过，待 MFA 自然复测 |
 | `EmulatorAdTask` | 主鱼缸、广告中、广告后 | 支持既有路由 | `EmulatorAdRouter` | 广告轮次/启动标记 | 只在适配模拟器路径运行 | 已支持 |

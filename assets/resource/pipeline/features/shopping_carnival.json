@@ -1,0 +1,70 @@
+{
+    "ShoppingCarnivalTask": {
+        "recognition": "DirectHit",
+        "action": "Custom",
+        "custom_action": "ShoppingCarnivalMergeAction",
+        "custom_action_param": {"generation_limit": 0, "operation_limit": 600},
+        "focus": {"Node.Action.Starting": "[购物狂欢季] 从当前棋盘开始识别，按所选模式合成。"}
+    },
+    "ShoppingCarnivalBoardIdentity": {
+        "recognition": "TemplateMatch",
+        "template": "shopping_carnival/title.png",
+        "roi": [22, 206, 205, 165],
+        "threshold": 0.90
+    },
+    "ShoppingCarnivalGenerator": {
+        "recognition": "TemplateMatch",
+        "template": "shopping_carnival/generator.png",
+        "roi": [1100, 555, 120, 100],
+        "threshold": 0.90
+    },
+    "ShoppingCarnivalEnergy": {
+        "recognition": "OCR",
+        "roi": [1157, 648, 48, 43],
+        "expected": "^[xX×]?[ ]*[0-9]+$"
+    },
+    "ShoppingCarnivalEnergyEmpty": {
+        "recognition": "TemplateMatch",
+        "template": "shopping_carnival/energy_zero.png",
+        "roi": [1145, 652, 38, 34],
+        "threshold": 0.95
+    },
+    "ShoppingCarnivalEnergyTight": {
+        "recognition": "OCR",
+        "roi": [1145, 655, 40, 28],
+        "only_rec": true,
+        "expected": "^[xX×]?[ ]*[0-9]+$"
+    },
+    "ShoppingCarnivalEnergySingle": {
+        "recognition": "OCR",
+        "roi": [1148, 656, 42, 24],
+        "only_rec": true,
+        "expected": "^[xX×][ ]*[0-9]$"
+    },
+    "ShoppingCarnivalBubbleDescription": {
+        "recognition": "OCR",
+        "roi": [1085, 300, 160, 76],
+        "expected": ".+"
+    },
+    "ShoppingCarnivalIgnoreBubble": {
+        "recognition": "OCR",
+        "roi": [1090, 378, 150, 48],
+        "expected": "^忽略$"
+    },
+    "ShoppingCarnivalItemName": {
+        "recognition": "OCR",
+        "roi": [1075, 150, 176, 37],
+        "expected": ".+"
+    },
+    "ShoppingCarnivalItemLevel": {
+        "recognition": "OCR",
+        "roi": [1176, 189, 25, 19],
+        "only_rec": true,
+        "expected": "^[0-9]{1,2}$"
+    },
+    "ShoppingCarnivalItemDescription": {
+        "recognition": "OCR",
+        "roi": [1080, 303, 170, 100],
+        "expected": ".+"
+    }
+}
