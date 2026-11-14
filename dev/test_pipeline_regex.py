@@ -72,7 +72,7 @@ def check_pipeline_regex():
         from maa.resource import Resource
 
         r = Resource()
-        job = r.post_bundle("client_avalonia/resource")
+        job = r.post_bundle("assets/resource")
         res = job.wait()
         if res.succeeded:
             print(f"[PASS] MaaFramework Resource.post_bundle succeeded! (Loaded {len(r.node_list)} nodes)")
