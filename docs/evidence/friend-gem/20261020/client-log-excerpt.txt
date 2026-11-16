@@ -1,0 +1,74 @@
+[2026-10-20 12:14:31.165][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [公主任务] 已确认返回主鱼缸，任务完成。
+[2026-10-20 12:14:31.389][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [日常收尾] 子任务【PrincessTask】完成（DONE)，所有勾选任务已执行完毕！
+[2026-10-20 12:14:31.394][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [公主任务] 已确认返回主鱼缸，任务完成。
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] ============================================================
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   【日常收尾 DailyRoutineTask】全部勾选子任务执行完毕！
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 每日免费礼包（FreeGift）    ：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 驯鹿鱼送收礼（ReindeerFish）：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 兑换金贝壳券（GoldShellCoupon）：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 绿野寻仙踪日常（GreenWildDaily）：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 乐队鱼演出（BandFish）      ：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 金海豚小游戏（GoldenDolphin）：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 摇一摇小游戏（ShakeGame）    ：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 钓鱼达人（Fishing）         ：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 深海寻鱼免费（SeaDive）     ：IDLE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 宝石礼盒兑换（GemGiftBox）  ：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 宝石订单（GemOrder）        ：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 浪漫满屋（RomanticHouse）   ：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 购买鱼食（BuyFishFood）    ：IDLE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 鱼宝乐园（FishBaby）        ：IDLE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 魔力召唤（MagicSummon）    ：IDLE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 宝石融合（GemFusion）      ：IDLE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 领取活动体力（ActivityEnergy）：IDLE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 秘境之门（SecretRealmGate） ：IDLE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout]   - 公主任务（PrincessTask）    ：DONE
+[2026-10-20 12:14:34.430][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] ============================================================
+[2026-10-20 12:14:34.434][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [日常收尾] 所有已选子任务均已流转完成。
+[2026-10-20 12:14:35.351][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [挂机日程] 子任务结束，返回挂机循环：friend_gem
+[2026-10-20 12:14:39.243][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 已尝试采集气泡次数：1/30（当前好友序号：224)
+[2026-10-20 12:14:41.778][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（1/12)
+[2026-10-20 12:14:44.746][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（2/12)
+[2026-10-20 12:14:47.805][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（3/12)
+[2026-10-20 12:15:00.078][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（7/12)
+[2026-10-20 12:15:03.004][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（8/12)
+[2026-10-20 12:15:05.961][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（9/12)
+[2026-10-20 12:15:08.942][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（10/12)
+[2026-10-20 12:15:11.842][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（11/12)
+[2026-10-20 12:15:14.764][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 暂未发现气泡（12/12)
+[2026-10-20 12:15:17.417][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] 当前好友连续 12 次未发现气泡，判定水面无可收气泡，切换下一位
+[2026-10-20 12:15:38.521][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [好友摸宝] ERROR：下一位好友箭头未识别，当前页面未知；未继续点击。
+[2026-10-20 12:15:38.771][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 队列任务完成（异步）。
+[2026-10-20 12:15:38.809][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorLog] 任务失败：多鱼缸巡检
+[2026-10-20 12:15:38.845][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorLog] 开始任务：多鱼缸巡检
+[2026-10-20 12:15:46.164][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 队列任务开始（异步）。
+[2026-10-20 12:15:50.641][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检] 开始首轮：依次收取鱼缸 1、2、3 的产物，再为三只海星补充鱼食。
+[2026-10-20 12:15:51.493][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [收宝石模式] 当前模式设置为：IMAGE
+[2026-10-20 12:15:54.257][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-萌海星] 已点击顶部标签，正在验证是否切换成功。
+[2026-10-20 12:15:55.941][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-萌海星] 页面已确认，准备打开选择鱼食弹窗。
+[2026-10-20 12:15:56.953][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-萌海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。
+[2026-10-20 12:16:00.418][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [海星喂食] 识别到廉价鱼食，点击鱼食袋上半部分（644, 173, 62, 43)
+[2026-10-20 12:16:00.685][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-萌海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。
+[2026-10-20 12:16:04.645][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-萌海星] 鱼食投放成功，喂食弹窗已关闭。
+[2026-10-20 12:16:05.934][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-乖海星] 已点击顶部标签，正在验证是否切换成功。
+[2026-10-20 12:16:07.772][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-乖海星] 页面已确认，准备打开选择鱼食弹窗。
+[2026-10-20 12:16:08.890][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-乖海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。
+[2026-10-20 12:16:12.177][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [海星喂食] 识别到深海鱼食，点击鱼食袋上半部分（663, 218, 36, 18)
+[2026-10-20 12:16:12.443][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-乖海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。
+[2026-10-20 12:16:16.540][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-乖海星] 鱼食投放成功，喂食弹窗已关闭。
+[2026-10-20 12:16:17.613][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-亮海星] 已点击顶部标签，正在验证是否切换成功。
+[2026-10-20 12:16:19.414][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-亮海星] 页面已确认，准备打开选择鱼食弹窗。
+[2026-10-20 12:16:20.481][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-亮海星] 已点击补充鱼食，正在打开选择鱼食弹窗并识别可用类型。
+[2026-10-20 12:16:23.841][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [海星喂食] 识别到廉价鱼食，点击鱼食袋上半部分（644, 173, 62, 43)
+[2026-10-20 12:16:24.108][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-亮海星] 已投放廉价、普通、高级或深海鱼食中排在最前的一种。
+[2026-10-20 12:16:28.065][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检-亮海星] 鱼食投放成功，喂食弹窗已关闭。
+[2026-10-20 12:16:29.128][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检] 三只海星均已检查，正在返回鱼缸管理页。
+[2026-10-20 12:16:34.322][INF] [cfg=Default][inst=配置 1/default][src=Agent][op=Stdout] [巡检] ERROR：页面门禁未通过，已停止且未继续点击。
+[2026-10-20 12:16:34.324][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorMarkdown] [巡检] 页面门禁未通过，已停止且未继续点击。请查看识别日志。
+[2026-10-20 12:16:34.575][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 队列任务完成（异步）。
+[2026-10-20 12:16:34.578][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorLog] 任务失败：多鱼缸巡检
+[2026-10-20 12:16:34.601][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动附加结束脚本开始（异步）。
+[2026-10-20 12:16:34.604][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动附加结束脚本完成（异步）。
+[2026-10-20 12:16:34.612][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=ExecuteTaskQueue] >>> 任务 启动任务完成（异步）。
+[2026-10-20 12:16:34.635][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=StopTask] 停止前状态：FAILED
+[2026-10-20 12:16:34.636][INF] [cfg=Default][inst=配置 1/default][src=Worker][op=StopTask] >>> 任务 停止maafw任务开始（异步）。
+[2026-10-20 12:16:34.689][INF] [cfg=Default][inst=配置 1/default][src=Monitor][op=MonitorLog] 任务运行失败！

@@ -1,6 +1,22 @@
 # 乐队鱼演出自动化 (docs/features/band-fish.md)
 
-**最后更新**: 2026-10-16
+> 归档核验（2026-11-16）：本机基线 HEAD 为 `6e14068`，远端 `82be54d` 仅新增框架 schema。本文 11 月 14 日 17:18、11 月 15 日与 11 月 16 日的修复／优化指本机未提交工作树及当时验证记录，不是 v0.8.1 或远端已实现。此次仅归档文档和证据，未提交对应 Agent、Pipeline 与测试改动；后续开发须先检查本地差异，不能仅拉取本归档提交就认定修复生效。
+
+
+**最后更新**: 2026-11-16
+
+## 2026-11-16 停止边界与共享跳过识别（本地优化／未发布）
+
+早期上游实现调查后，源码确认正常演出 45 秒循环缺少持续停止检查，而已有接手分支会检查；同一个跳过按钮在 Pipeline 和 Python 中各维护一份 ROI／阈值，Python 每轮还重新查找并解码图片。这是代码级差距，未将其归因为近期报错或原生闪退。
+
+- 正常选曲、演出及中途接手的等待改用单调时钟，每个等待片段最多 0.1 秒检查停止；截图前后、输入前和完成状态写入前检查停止，取消返回 False，不继续点击／滑动，也不写入 DONE。原5秒选曲弹窗、6秒跳过窗口、45秒演出上限及等待总量保持不变。此机制不保证原生截图／输入阻塞可立即取消。
+- `check_band_fish_skip_button(context, frame)` 只读取已有 `BandFishStartAtPlaying` 的识别结果并取框中心。删除 Python 模板加载器及重复常量；模板仍为 `乐队鱼_跳过.png`，ROI `[1010,575,155,139]`、阈值0.85，正常与接手流程共用同一规则。不改变结算标题／确定双门禁、选曲黄色选中态、好友名单或付费返场边界。
+- MaaDebugger 1.20.1 与项目 MaaFramework 5.12.3 原生检查：`dev/exploration/band_fish/performance_stream/` 的 `frame_0037_20.4s.png`、`frame_0023_12.6s.png`、`frame_0018_9.9s.png` 均命中，分数约0.966897、0.966896、0.966893，与原 OpenCV 匹配一致，中心均为 `(1087,644)`。`frame_0001_0.5s.png`、`frame_0009_4.9s.png`、`frame_0070_37.3s.png` 及该功能目录下 `step7_01_before_click_confirm.png`、`01_start.png`、`step4_reentered_performance.png` 均未命中。未新建或裁剪模板。
+- 沿用既有选曲／日常测试，适配共享识别接口与模拟时钟，补充等待、截图、识别和点击后的停止断言；选曲套件含11个取消边界、日常11个子场景、PENDING套件及结算／启动／稳定性27项通过。321条正则、1004节点原生资源加载、注册引用、开发环境完整导入及编译通过。没有新增测试文件、辅助脚本、CI或依赖；代码级及真实截图验证完成，本次未做 MFA／模拟器任务实测。
+
+开发客户端通过 Agent Junction 使用本地代码，完整重启后加载；正式包仍为 v0.8.1。已核对 ISSUES，无上述已完成缺陷残留；网络断线与原生稳定性事项继续保留。局部稳定等待缺少可证明收益的转场对照，本轮不接入，不提高识别容错或延长超时。
+
+参考：2021-12-31 [MAA 可取消等待](https://github.com/MaaAssistantArknights/MaaAssistantArknights/blob/8f001a0cae2eb63ffaafeddfd21bc845cbf51a93/src/MeoAssistant/AbstractTask.cpp)及[模板资源复用](https://github.com/MaaAssistantArknights/MaaAssistantArknights/blob/8f001a0cae2eb63ffaafeddfd21bc845cbf51a93/src/MeoAssistant/TemplResource.cpp)。借鉴机制，未复制外部实现；年代不构成人工编写的证明。
 
 ## 2026-10-31 退出后误入海星与提前推进（未发布）
 
@@ -45,6 +61,7 @@
 - 结算身份必须同帧 OCR 命中 `^我的乐章$`（`[500,170,280,100]`）和底部 `^确定$`（`[500,630,280,85]`）；点击实际确定文字框中心。绿色像素、主鱼缸游鱼或其它页面的确定按钮不能单独触发结算恢复。启动恢复与正常演出的两个结算等待阶段共用此门禁。
 - 选曲弹窗恢复复用本次 UI 的最新/指定乐章配置、OCR bbox、黄色选中态与标题/确定双门禁；未确认黄色选中态绝不消耗每日体力。
 - 已在演出或结算时只恢复跳过/等待结算/领取结果，不重新进入、不重新点击演出确认；完成状态只沉淀一次。
+- 正常与恢复演出共用 `BandFishStartAtPlaying` 的跳过识别；等待和输入边界可取消，停止后不记录完成。具体原图及代码级验证见2026-11-16节，未做本轮实机验收。
 - 好友邀请弹窗依赖丢失的 `target_slot` 与 `target_name` 运行时上下文。当前没有经过证据确认的安全关闭路径，因此登记为 `Intentional Unsupported / Missing Context`，从该状态启动会安全停止且不会确认邀请。
 - 本轮没有操作模拟器；恢复入口为代码实现与离线门禁状态。已有“最新乐章”标准链路的历史 MFA 结果不等于本轮恢复入口已实测。
 
@@ -245,14 +262,13 @@ stateDiagram-v2
    - **职责 2: 选曲确认**：动态等待选曲弹窗，按配置 OCR 选择最新乐章或指定乐章，验证黄色选中态后才点击 OCR 识别到的【确定】按钮消耗体力；
    - **职责 3: 演出与跳过检测 (4 阶段状态机)**：
      - `PLAYING`：进入演出动画阶段；
-     - `WAIT_SKIP_BUTTON`：在 6 秒前置探测窗口内调用 `check_band_fish_skip_button(f_cur)`，只在用户给定 ROI EX `[1010, 575, 155, 139]` 内匹配 `乐队鱼_跳过.png`；
+     - `WAIT_SKIP_BUTTON`：在 6 秒前置探测窗口内调用 `check_band_fish_skip_button(context, f_cur)`，通过 `BandFishStartAtPlaying` 在用户给定 ROI EX `[1010, 575, 155, 139]` 内匹配 `乐队鱼_跳过.png`；
      - `CLICK_SKIP`：若检测到有效坐标则点击跳过，平滑转入结算等待；
      - `WAIT_RESULT`：若探测窗口内未检出跳过，或点击跳过后，转入结算轮询等待；未识别到结算状态时禁止盲点点击；
    - **职责 4: 结算等待与领取**：同时 OCR 确认“我的乐章”标题和底部【确定】，点击当帧文字框中心领取结算奖励；若已进入“返场演出”页面则无需点击结算。
    - **职责 5: 状态沉淀**：标记 `band_fish_state["status"] = "DONE"` 与 `band_fish_state["performance_finished"] = True`；
 3. **跳过按钮识别接口 (`check_band_fish_skip_button`)**：
-   - `load_band_fish_skip_template()`: 兼容开发目录与发行包目录加载 `乐队鱼_跳过.png`，不存在或读取失败时安全返回 `None`；
-   - `check_band_fish_skip_button(frame)`: 在 ROI EX `[1010, 575, 155, 139]` 内执行模板匹配，阈值 `0.85`；只有识别成功才点击模板中心；
+   - `check_band_fish_skip_button(context, frame)`: 通过原生资源识别 `BandFishStartAtPlaying`，ROI、阈值和模板只在 Pipeline 维护；只有当帧命中才返回框中心，否则返回 `None`。旧 Python 模板加载器已于2026-11-16删除；
 4. **日常收尾 Pass 2 调度闭环**：
    - 勾选乐队鱼时，`InitDailyRoutineAction` 在末尾追加 `"BAND_FISH_PASS2"`；
    - 排队流转：`BAND_FISH_PASS1 -> 其他已勾选日常任务 -> BAND_FISH_PASS2 -> ALL_DONE`；乐队鱼 Pass 1 固定最先执行，利用其他任务耗时等待人机好友接受；

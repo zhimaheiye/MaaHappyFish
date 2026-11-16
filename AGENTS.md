@@ -256,6 +256,8 @@ Step 1 探索（截图/OCR/路径）
 
 ### CustomAction / CustomRecognition 实现规范
 
+- 同一视觉目标的启动恢复与正常执行优先复用已有 Pipeline 识别节点，Python 通过 `context.run_recognition(node, current_frame)` 读取同帧结果；不要另维护一份模板路径、ROI、阈值或在轮询中重复解码模板。更换实现须对真实正负帧核对命中与坐标，不能只靠模拟流程证明等价。
+- CustomAction 的等待和输入边界须检查停止：等待期间、截图返回后、下发点击或滑动前、写入完成状态前均要核对 `tasker.stopping/running`。经过时长使用单调时钟；按日期或时刻调度仍使用日历时间，不机械替换。此检查不能中断已经进入原生层的阻塞调用，不宣称解决原生挂死。
 - **必须显式返回 `True` / `False`**（Action）或 `RectType | None`（Recognition），不能靠 Python 默认返回 `None`。
 - `custom_action_param` 和 `custom_recognition_param` 可能收到字符串 `"null"`（Pipeline 未配置参数时），必须通过 `agent/param_utils.py` 的 `parse_dict_param()` 安全解析，不能直接 `json.loads()`。
 - 所有新增 Action/Reco 均需统一走 `param_utils` 工具函数，防御 null、空字符串、类型错误等边界情况。
