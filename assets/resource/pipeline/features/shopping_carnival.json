@@ -18,28 +18,11 @@
         "roi": [1100, 555, 120, 100],
         "threshold": 0.90
     },
-    "ShoppingCarnivalEnergy": {
-        "recognition": "OCR",
-        "roi": [1157, 648, 48, 43],
-        "expected": "^[xX×]?[ ]*[0-9]+$"
-    },
     "ShoppingCarnivalEnergyEmpty": {
         "recognition": "TemplateMatch",
         "template": "shopping_carnival/energy_zero.png",
         "roi": [1145, 652, 38, 34],
         "threshold": 0.95
-    },
-    "ShoppingCarnivalEnergyTight": {
-        "recognition": "OCR",
-        "roi": [1145, 655, 40, 28],
-        "only_rec": true,
-        "expected": "^[xX×]?[ ]*[0-9]+$"
-    },
-    "ShoppingCarnivalEnergySingle": {
-        "recognition": "OCR",
-        "roi": [1148, 656, 42, 24],
-        "only_rec": true,
-        "expected": "^[xX×][ ]*[0-9]$"
     },
     "ShoppingCarnivalBubbleDescription": {
         "recognition": "OCR",

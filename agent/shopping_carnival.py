@@ -260,18 +260,9 @@ class ShoppingCarnivalSession:
               f"已确认升级为 {upgraded[0]} 等级 {upgraded[1]}。", flush=True)
         return True
 
-    def energy(self, image):
-        if self.recognition("ShoppingCarnivalEnergyEmpty", image).hit:
-            return 0
-        text = self.text("ShoppingCarnivalEnergy", image)
-        if not text:
-            text = self.text("ShoppingCarnivalEnergyTight", image)
-        if not text:
-            text = self.text("ShoppingCarnivalEnergySingle", image)
-        match = re.fullmatch(r"[xX×]?\s*([0-9]{1,4})", text.strip())
-        if not match:
-            raise RuntimeError("现有体力读数不明确")
-        return int(match.group(1))
+    def energy_empty(self, image):
+        # Only zero blocks generation; exact positive OCR is not a business gate.
+        return self.recognition("ShoppingCarnivalEnergyEmpty", image).hit
 
     def generate(self, before, cells):
         self.check_running()
@@ -281,18 +272,18 @@ class ShoppingCarnivalSession:
         button = self.recognition("ShoppingCarnivalGenerator", before)
         if not button.hit:
             raise RuntimeError("生成按钮未识别")
-        old_energy = self.energy(before)
-        if old_energy <= 0:
-            raise RuntimeError("体力不足，不点击生成")
+        if self.energy_empty(before):
+            return False
         x, y, w, h = tuple(button.box)
         self.click(x + w // 2, y + h // 2)
         self.wait(1.2)
-        after, new_cells = self.board()
-        if self.energy(after) != old_energy - 1 or sum(
+        _, new_cells = self.board()
+        if sum(
             cell["empty"] for cell in new_cells
         ) != sum(cell["empty"] for cell in cells) - 1:
-            raise RuntimeError("生成后体力与空格变化未确认，停止而不连点")
-        print(f"[购物狂欢季] 已确认生成一枚棋子，现有体力 {old_energy - 1}。", flush=True)
+            raise RuntimeError("生成后空格变化未确认，停止而不连点")
+        print("[购物狂欢季] 已确认生成一枚棋子，继续识别合成。", flush=True)
+        return True
 
     def generate_from_box(self, index):
         # This specific Max item generates locked pieces; other Max resources
@@ -304,11 +295,10 @@ class ShoppingCarnivalSession:
             raise RuntimeError("保险箱选中态未确认，不点击")
         if sum(cell["empty"] for cell in cells) < 4:
             raise RuntimeError("空格少于四格，保留保险箱等待整理")
-        old_energy = self.energy(before)
         self.click(*CENTERS[index])
         for _ in range(6):
             self.wait(0.5)
-            after, new_cells = self.board()
+            _, new_cells = self.board()
             added = [i for i, cell in enumerate(cells)
                      if cell["empty"] and not new_cells[i]["empty"]]
             if not added:
@@ -318,11 +308,9 @@ class ShoppingCarnivalSession:
                     or any(not cell["empty"] and new_cells[i]["empty"]
                            for i, cell in enumerate(cells) if i != index)):
                 continue
-            if self.energy(after) != old_energy:
-                raise RuntimeError("保险箱生成后体力变化异常，停止而不重复点击")
             self.known_cells.clear()
             print(f"[购物狂欢季] 保险箱已生成一枚锁定棋子（格 {added[0] + 1}），"
-                  "体力未变；重新识别并优先解锁。", flush=True)
+                  "重新识别并优先解锁。", flush=True)
             return
         raise RuntimeError("保险箱点击后未确认新增锁定棋子，停止而不重复点击")
 
@@ -369,7 +357,7 @@ class ShoppingCarnivalMergeAction(CustomAction):
                     image, cells = session.board()
                     box = next((i for i, identity in identities.items()
                                 if is_box_generator(identity)), None)
-                    if generation_limit == 0 or (box is None and session.energy(image) == 0):
+                    if generation_limit == 0 or (box is None and session.energy_empty(image)):
                         print(f"[购物狂欢季] 本轮合成结束：已合成 {merged} 对、生成 {generated} 枚；"
                               "当前无已确认可移动的同类同级对。", flush=True)
                         return True
@@ -378,7 +366,8 @@ class ShoppingCarnivalMergeAction(CustomAction):
                     if box is not None:
                         session.generate_from_box(box)
                     else:
-                        session.generate(image, cells)
+                        if not session.generate(image, cells):
+                            continue
                     generated += 1
                     observation_retries = 0
             raise RuntimeError("达到操作上限，尚未完成")

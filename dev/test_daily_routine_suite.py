@@ -299,9 +299,7 @@ def run_tests():
     print("\n[Test 10] 验证 BandFishPerformAction 选曲安全门禁与跳过状态机")
     assert registered_actions.get("BandFishPerformAction") is not None
     assert hasattr(my_action, "check_band_fish_skip_button")
-    assert hasattr(my_action, "load_band_fish_skip_template")
-    assert my_action.check_band_fish_skip_button(None) is None
-    assert my_action.load_band_fish_skip_template() is not None
+    assert my_action.check_band_fish_skip_button(None, None) is None
 
     from test_band_fish_score_selection import main as run_band_fish_score_tests
     assert run_band_fish_score_tests() == 0

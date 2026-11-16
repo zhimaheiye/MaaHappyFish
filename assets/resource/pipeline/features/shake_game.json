@@ -6,8 +6,9 @@
     },
     "ShakeGameScoreIdentity": {
         "recognition": "OCR",
-        "expected": "分[数數]",
-        "roi": [1050, 0, 230, 90],
+        "expected": "^分?[数數]\\s*[:：]\\s*[0-9]+$",
+        "roi": [1115, 8, 165, 46],
+        "only_rec": true,
         "action": "DoNothing"
     },
     "ShakeGameTimerIdentity": {

@@ -57,8 +57,9 @@ class Job:
 
 
 class FakeController:
-    def __init__(self, page="top", highlight=True):
+    def __init__(self, page="top", highlight=True, skip_pos=None):
         self.screen = "ready"
+        self.skip_pos = skip_pos
         self.page = page
         self.highlight = highlight
         self.selected_box = None
@@ -108,6 +109,10 @@ class FakeContext:
 
     def run_recognition(self, node_name, _frame, pipeline_override=None):
         ctrl = self.tasker.controller
+        if node_name == "BandFishStartAtPlaying":
+            pos = ctrl.skip_pos
+            return _result(ctrl.screen == "performance" and pos is not None,
+                           (pos[0] - 18, pos[1] - 12, 36, 24) if pos else (0, 0, 0, 0))
         if node_name == "BandFishCheckReady":
             return _result(ctrl.screen == "ready", READY_BOX)
         if node_name == "BandFishScoreDialogTitle":
@@ -143,20 +148,24 @@ def _result(hit, box):
 
 
 def _run(param, *, page="top", highlight=True, skip_pos=None):
-    ctrl = FakeController(page=page, highlight=highlight)
+    ctrl = FakeController(page=page, highlight=highlight, skip_pos=skip_pos)
     ctx = FakeContext(ctrl)
     old_sleep = my_action.time.sleep
-    old_skip_check = my_action.check_band_fish_skip_button
-    my_action.time.sleep = lambda _seconds: None
-    if skip_pos is not None:
-        my_action.check_band_fish_skip_button = lambda _frame: skip_pos
+    old_monotonic = my_action.time.monotonic
+    clock = [0.0]
+
+    def sleep(seconds):
+        clock[0] += seconds
+
+    my_action.time.sleep = sleep
+    my_action.time.monotonic = lambda: clock[0]
     band_fish_state["status"] = "READY_TO_PERFORM"
     band_fish_state["performance_finished"] = False
     try:
         ok = my_action.BandFishPerformAction().run(ctx, Arg(param))
     finally:
         my_action.time.sleep = old_sleep
-        my_action.check_band_fish_skip_button = old_skip_check
+        my_action.time.monotonic = old_monotonic
     return ok, ctrl
 
 
@@ -192,21 +201,18 @@ def main():
 
     template_path = repo_root / "assets" / "resource" / "image" / "乐队鱼_跳过.png"
     assert template_path.is_file()
-    assert my_action.load_band_fish_skip_template() is not None
-    assert my_action._BAND_FISH_SKIP_ROI == (1010, 575, 155, 139)
-
-    synthetic_template = np.random.default_rng(42).integers(0, 256, (24, 36, 3), dtype=np.uint8)
-    synthetic_frame = np.zeros((720, 1280, 3), dtype=np.uint8)
-    synthetic_frame[620:644, 1080:1116] = synthetic_template
-    old_template_loader = my_action.load_band_fish_skip_template
-    my_action.load_band_fish_skip_template = lambda: synthetic_template
-    try:
-        assert my_action.check_band_fish_skip_button(synthetic_frame) == (1098, 632)
-        outside_roi = np.zeros((720, 1280, 3), dtype=np.uint8)
-        outside_roi[100:124, 100:136] = synthetic_template
-        assert my_action.check_band_fish_skip_button(outside_roi) is None
-    finally:
-        my_action.load_band_fish_skip_template = old_template_loader
+    pipeline = json.loads((repo_root / "assets/resource/pipeline/features/band_fish.json").read_text(encoding="utf-8"))
+    skip_node = pipeline["BandFishStartAtPlaying"]
+    assert skip_node["template"] == "乐队鱼_跳过.png"
+    assert skip_node["roi"] == [1010, 575, 155, 139]
+    assert skip_node["threshold"] == 0.85
+    ctx = FakeContext(FakeController(skip_pos=(1098, 632)))
+    ctx.tasker.controller.screen = "performance"
+    frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+    assert my_action.check_band_fish_skip_button(ctx, frame) == (1098, 632)
+    assert my_action.check_band_fish_skip_button(ctx, None) is None
+    ctx.tasker.controller.skip_pos = None
+    assert my_action.check_band_fish_skip_button(ctx, frame) is None
 
     ok, named = _run(
         {"score_mode": "named", "score_name": "欢乐颂", "score_ocr_keyword": "欢乐"},
@@ -239,11 +245,11 @@ def main():
     assert ok is False
     assert (1024, 360) not in unsafe.clicks, "未确认黄色选中态时严禁点击消耗体力的确定按钮"
 
-    ok, skipped = _run({"score_mode": "named", "score_name": "欢乐颂"}, skip_pos=(1180, 45))
+    ok, skipped = _run({"score_mode": "named", "score_name": "欢乐颂"}, skip_pos=(1098, 632))
     assert ok is True
-    assert (1180, 45) in skipped.clicks
+    assert (1098, 632) in skipped.clicks
 
-    print("[PASS] 乐队鱼指定/最新乐章选择、确认前安全门禁与跳过分支验证通过")
+    print("[PASS] 乐队鱼选曲安全门禁与共享跳过接口适配通过")
     return 0
 
 

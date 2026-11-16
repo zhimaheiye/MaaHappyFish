@@ -2859,70 +2859,25 @@ class LogBandFishStatusAction(CustomAction):
             return False
 
 
-_BAND_FISH_SKIP_ROI = (1010, 575, 155, 139)
-_BAND_FISH_SKIP_THRESHOLD = 0.85
+def check_band_fish_skip_button(context: Context, frame: Optional[np.ndarray]) -> Optional[Tuple[int, int]]:
+    """复用启动入口的同帧识别规则，不在轮询中重新加载模板。"""
+    box = _recognition_box(context, "BandFishStartAtPlaying", frame)
+    return _box_center(box) if box else None
 
 
-def load_band_fish_skip_template() -> Optional[np.ndarray]:
-    """
-    加载乐队鱼“跳过”按钮模板图片。
-    同时兼容开发目录与发行包目录；若文件不存在或读取失败则安全返回 None。
-    """
-    try:
-        agent_dir = os.path.dirname(os.path.abspath(__file__))
-        candidate_dirs = [
-            os.path.join(agent_dir, "../resource/image"),
-            os.path.join(agent_dir, "../assets/resource/image"),
-            os.path.join(agent_dir, "../../assets/resource/image"),
-            os.path.abspath("assets/resource/image"),
-            os.path.abspath("client_avalonia/resource/image"),
-            os.path.abspath("resource/image"),
-        ]
-        for directory in candidate_dirs:
-            template_path = os.path.abspath(os.path.join(directory, "乐队鱼_跳过.png"))
-            if not os.path.isfile(template_path):
-                continue
-            template = cv2.imdecode(np.fromfile(template_path, dtype=np.uint8), cv2.IMREAD_COLOR)
-            if template is not None and template.size > 0:
-                return template
-    except Exception as e:
-        print(f"[乐队鱼演出] 加载跳过模板异常: {e}", flush=True)
-    return None
+def _band_fish_check_running(context: Context):
+    if _task_cancelled(context):
+        raise InterruptedError("已收到停止请求，未继续操作或记录完成")
 
 
-def check_band_fish_skip_button(frame: Optional[np.ndarray]) -> Optional[Tuple[int, int]]:
-    """
-    检测乐队鱼演出界面的“跳过”按钮中心坐标 (x, y)。
-    只在用户提供的 ROI EX [1010, 575, 155, 139] 内进行模板匹配。
-    未识别到模板时安全返回 None，严禁猜测固定坐标或盲点。
-    """
-    if frame is None:
-        return None
-    try:
-        height, width = frame.shape[:2]
-        if width != 1280 or height != 720:
-            frame = cv2.resize(frame, (1280, 720))
-
-        template = load_band_fish_skip_template()
-        if template is None:
-            return None
-
-        roi_x, roi_y, roi_w, roi_h = _BAND_FISH_SKIP_ROI
-        search = frame[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
-        template_h, template_w = template.shape[:2]
-        if search.size == 0 or template_w > search.shape[1] or template_h > search.shape[0]:
-            return None
-
-        result = cv2.matchTemplate(search, template, cv2.TM_CCOEFF_NORMED)
-        _, max_score, _, max_loc = cv2.minMaxLoc(result)
-        if max_score >= _BAND_FISH_SKIP_THRESHOLD:
-            return (
-                roi_x + max_loc[0] + template_w // 2,
-                roi_y + max_loc[1] + template_h // 2,
-            )
-    except Exception as e:
-        print(f"[乐队鱼演出] 识别跳过按钮异常: {e}", flush=True)
-    return None
+def _band_fish_wait(context: Context, seconds: float):
+    deadline = time.monotonic() + seconds
+    while True:
+        _band_fish_check_running(context)
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return
+        time.sleep(min(0.1, remaining))
 
 
 def _band_fish_settlement_button(context: Context, frame: Optional[np.ndarray]) -> Optional[Tuple[int, int]]:
@@ -2933,23 +2888,23 @@ def _band_fish_settlement_button(context: Context, frame: Optional[np.ndarray]) 
 
 def _resume_band_fish_performance(context: Context, ctrl, initial_frame=None) -> bool:
     """Resume an already playing/settled performance and record completion once."""
-    started = time.time()
+    started = time.monotonic()
     frame = initial_frame
-    while time.time() - started < 45.0:
-        if _task_cancelled(context):
-            print("[乐队鱼演出] 已收到停止请求，停止恢复演出。", flush=True)
-            return False
+    while time.monotonic() - started < 45.0:
+        _band_fish_check_running(context)
         if frame is None:
             frame = _capture_720p(ctrl)
+            _band_fish_check_running(context)
         if frame is None:
-            time.sleep(0.4)
+            _band_fish_wait(context, 0.4)
             continue
 
         settle_pos = _band_fish_settlement_button(context, frame)
         if settle_pos is not None:
             print(f"[乐队鱼演出] 已确认结算按钮，点击 {settle_pos} 领取奖励。", flush=True)
+            _band_fish_check_running(context)
             ctrl.post_click(*settle_pos).wait()
-            time.sleep(2.0)
+            _band_fish_wait(context, 2.0)
             band_fish_state["status"] = "DONE"
             band_fish_state["performance_finished"] = True
             return True
@@ -2957,19 +2912,21 @@ def _resume_band_fish_performance(context: Context, ctrl, initial_frame=None) ->
         if hasattr(context, "run_recognition"):
             done = context.run_recognition("BandFishCheckDone", frame)
             if done and done.hit:
+                _band_fish_check_running(context)
                 print("[乐队鱼演出] 已回到返场演出页，本局完成。", flush=True)
                 band_fish_state["status"] = "DONE"
                 band_fish_state["performance_finished"] = True
                 return True
 
-        skip_pos = check_band_fish_skip_button(frame)
+        skip_pos = check_band_fish_skip_button(context, frame)
         if skip_pos is not None:
             print(f"[乐队鱼演出] 恢复到演出中，点击识别到的跳过按钮 {skip_pos}。", flush=True)
+            _band_fish_check_running(context)
             ctrl.post_click(*skip_pos).wait()
-            time.sleep(1.0)
+            _band_fish_wait(context, 1.0)
 
         frame = None
-        time.sleep(1.0)
+        _band_fish_wait(context, 1.0)
 
     print("[乐队鱼演出] 错误: 恢复演出后 45 秒内未识别到结算或返场状态。", flush=True)
     return False
@@ -2981,7 +2938,12 @@ class BandFishResumePerformanceAction(CustomAction):
         ctrl = context.tasker.controller
         if not ctrl:
             return False
-        return _resume_band_fish_performance(context, ctrl, _capture_720p(ctrl))
+        try:
+            _band_fish_check_running(context)
+            return _resume_band_fish_performance(context, ctrl)
+        except InterruptedError as e:
+            print(f"[乐队鱼演出] {e}", flush=True)
+            return False
 
 
 def _band_fish_score_candidates(context: Context, frame, expected: str = ".+"):
@@ -3057,6 +3019,7 @@ class BandFishPerformAction(CustomAction):
                 print("[乐队鱼演出] 错误: 未获取到 Controller", flush=True)
                 return False
 
+            _band_fish_check_running(context)
             param = parse_dict_param(argv.custom_action_param)
             score_mode = str(param.get("score_mode", "latest")).strip().lower()
             score_name = str(param.get("score_name", "欢乐颂")).strip()
@@ -3072,10 +3035,12 @@ class BandFishPerformAction(CustomAction):
             print(f"[乐队鱼演出] 检测到全员就绪，准备选择{score_label}...", flush=True)
 
             def capture_frame():
+                _band_fish_check_running(context)
                 job = ctrl.post_screencap()
                 if not job:
                     return None
                 job.wait()
+                _band_fish_check_running(context)
                 f = job.get()
                 if f is not None:
                     fh, fw = f.shape[:2]
@@ -3100,16 +3065,17 @@ class BandFishPerformAction(CustomAction):
                     return False
                 btn_x, btn_y = _box_center(ready_box)
                 print(f"[乐队鱼演出] 点击【开始演出】按钮 ({btn_x}, {btn_y})...", flush=True)
+                _band_fish_check_running(context)
                 ctrl.post_click(btn_x, btn_y).wait()
-                time.sleep(1.8)
+                _band_fish_wait(context, 1.8)
 
                 # 职责 2: 必须同时识别弹窗标题和确定按钮，才允许在列表内操作。
-                t_dlg = time.time()
+                t_dlg = time.monotonic()
                 confirm_box = None
-                while time.time() - t_dlg < 5.0:
+                while time.monotonic() - t_dlg < 5.0:
                     candidate = capture_frame()
                     if candidate is None:
-                        time.sleep(0.3)
+                        _band_fish_wait(context, 0.3)
                         continue
                     title_box = _recognition_box(context, "BandFishScoreDialogTitle", candidate)
                     candidate_confirm = _recognition_box(context, "BandFishScoreConfirm", candidate)
@@ -3117,7 +3083,7 @@ class BandFishPerformAction(CustomAction):
                         f_dlg = candidate
                         confirm_box = candidate_confirm
                         break
-                    time.sleep(0.4)
+                    _band_fish_wait(context, 0.4)
 
             if f_dlg is None or confirm_box is None:
                 print("[乐队鱼演出] 错误: 未同时识别选曲弹窗标题与“确定”按钮，未消耗体力", flush=True)
@@ -3131,11 +3097,9 @@ class BandFishPerformAction(CustomAction):
                 previous = f_dlg
                 bottom_confirmed = False
                 for swipe_index in range(8):
-                    if _task_cancelled(context):
-                        print("[乐队鱼演出] 已收到停止请求，未继续选曲", flush=True)
-                        return False
+                    _band_fish_check_running(context)
                     ctrl.post_swipe(750, 590, 750, 250, 450).wait()
-                    time.sleep(0.7)
+                    _band_fish_wait(context, 0.7)
                     current = capture_frame()
                     if (
                         _recognition_box(context, "BandFishScoreDialogTitle", current) is None
@@ -3170,11 +3134,9 @@ class BandFishPerformAction(CustomAction):
                 for _ in range(8):
                     if target_box is not None:
                         break
-                    if _task_cancelled(context):
-                        print("[乐队鱼演出] 已收到停止请求，未继续查找指定乐章", flush=True)
-                        return False
+                    _band_fish_check_running(context)
                     ctrl.post_swipe(750, 250, 750, 590, 450).wait()
-                    time.sleep(0.7)
+                    _band_fish_wait(context, 0.7)
                     current = capture_frame()
                     if (
                         _recognition_box(context, "BandFishScoreDialogTitle", current) is None
@@ -3195,11 +3157,9 @@ class BandFishPerformAction(CustomAction):
                 for _ in range(8):
                     if target_box is not None:
                         break
-                    if _task_cancelled(context):
-                        print("[乐队鱼演出] 已收到停止请求，未继续查找指定乐章", flush=True)
-                        return False
+                    _band_fish_check_running(context)
                     ctrl.post_swipe(750, 590, 750, 250, 450).wait()
-                    time.sleep(0.7)
+                    _band_fish_wait(context, 0.7)
                     current = capture_frame()
                     if (
                         _recognition_box(context, "BandFishScoreDialogTitle", current) is None
@@ -3223,8 +3183,9 @@ class BandFishPerformAction(CustomAction):
 
             target_x, target_y = _box_center(target_box)
             print(f"[乐队鱼演出] OCR 定位乐章【{target_name}】于 ({target_x}, {target_y})，执行选择", flush=True)
+            _band_fish_check_running(context)
             ctrl.post_click(target_x, target_y).wait()
-            time.sleep(0.6)
+            _band_fish_wait(context, 0.6)
 
             selected_frame = capture_frame()
             selected_expected = score_expected if score_mode == "named" else target_name
@@ -3239,19 +3200,17 @@ class BandFishPerformAction(CustomAction):
             ):
                 print("[乐队鱼演出] 错误: 选中后弹窗门禁不完整，未消耗体力", flush=True)
                 return False
-            if _task_cancelled(context):
-                print("[乐队鱼演出] 已收到停止请求，未点击消耗体力的确定按钮", flush=True)
-                return False
 
             confirm_x, confirm_y = _box_center(confirm_box)
             print(f"[乐队鱼演出] 已确认选中【{target_name}】，点击识别到的【确定】按钮 ({confirm_x}, {confirm_y}) 开始演出...", flush=True)
+            _band_fish_check_running(context)
             ctrl.post_click(confirm_x, confirm_y).wait()
-            time.sleep(2.0)
+            _band_fish_wait(context, 2.0)
 
             # 职责 3 & 4: 演出与跳过检测 (4 阶段状态机: PLAYING -> WAIT_SKIP_BUTTON -> CLICK_SKIP -> WAIT_RESULT)
             print("[乐队鱼演出] 演出已开始，进入演出动画等待与跳过/结算轮询 (最长等待 45s)...", flush=True)
-            t_perf_start = time.time()
-            t_skip_start = time.time()
+            t_perf_start = time.monotonic()
+            t_skip_start = time.monotonic()
             skip_window_sec = 6.0  # 前置跳过探测时间窗口
             settlement_detected = False
             confirm_settle_x, confirm_settle_y = None, None
@@ -3262,14 +3221,14 @@ class BandFishPerformAction(CustomAction):
             stage = "WAIT_SKIP_BUTTON"
             print(f"[乐队鱼演出] 状态流转: PLAYING -> WAIT_SKIP_BUTTON (开始检测跳过按钮)", flush=True)
 
-            while time.time() - t_perf_start < 45.0:
-                time.sleep(1.5)
+            while time.monotonic() - t_perf_start < 45.0:
+                _band_fish_wait(context, 1.5)
                 f_cur = capture_frame()
                 if f_cur is None:
                     continue
 
                 if stage == "WAIT_SKIP_BUTTON":
-                    skip_pos = check_band_fish_skip_button(f_cur)
+                    skip_pos = check_band_fish_skip_button(context, f_cur)
                     if skip_pos is not None:
                         skip_x, skip_y = skip_pos
                         print(f"[乐队鱼演出] 检测到跳过按钮坐标: ({skip_x}, {skip_y})，状态流转: WAIT_SKIP_BUTTON -> CLICK_SKIP", flush=True)
@@ -3295,15 +3254,16 @@ class BandFishPerformAction(CustomAction):
                             stage = "WAIT_RESULT"
                             break
 
-                        if time.time() - t_skip_start >= skip_window_sec:
+                        if time.monotonic() - t_skip_start >= skip_window_sec:
                             print("[乐队鱼演出] 跳过探测窗口结束 (未检测到跳过按钮或无需跳过)，状态流转: WAIT_SKIP_BUTTON -> WAIT_RESULT (进入结算等待)", flush=True)
                             stage = "WAIT_RESULT"
 
                 if stage == "CLICK_SKIP":
                     if skip_x is not None and skip_y is not None:
                         print(f"[乐队鱼演出] 执行跳过点击 ({skip_x}, {skip_y})...", flush=True)
+                        _band_fish_check_running(context)
                         ctrl.post_click(skip_x, skip_y).wait()
-                        time.sleep(1.0)
+                        _band_fish_wait(context, 1.0)
                     print("[乐队鱼演出] 点击跳过按钮完成，状态流转: CLICK_SKIP -> WAIT_RESULT (进入结算等待)", flush=True)
                     stage = "WAIT_RESULT"
                     continue
@@ -3328,17 +3288,22 @@ class BandFishPerformAction(CustomAction):
             # 职责 4: 领取结算奖励
             if settlement_detected and confirm_settle_x is not None:
                 print(f"[乐队鱼演出] 点击结算弹窗【确定】按钮 ({confirm_settle_x}, {confirm_settle_y}) 领取奖励...", flush=True)
+                _band_fish_check_running(context)
                 ctrl.post_click(confirm_settle_x, confirm_settle_y).wait()
-                time.sleep(2.0)
+                _band_fish_wait(context, 2.0)
             elif not settlement_detected:
                 print("[乐队鱼演出] 错误: 未识别到结算弹窗或返场状态，拒绝盲点结算区域", flush=True)
                 return False
 
             # 职责 5: 沉淀完成状态
+            _band_fish_check_running(context)
             band_fish_state["status"] = "DONE"
             band_fish_state["performance_finished"] = True
             print("[乐队鱼演出] 演出完整闭环执行完毕，状态已沉淀: DONE (performance_finished=True)", flush=True)
             return True
+        except InterruptedError as e:
+            print(f"[乐队鱼演出] {e}", flush=True)
+            return False
         except Exception as e:
             traceback.print_exc()
             print(f"[乐队鱼演出] 执行演出异常: {e}", flush=True)
